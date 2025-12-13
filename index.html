@@ -7,16 +7,19 @@
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Arial Black', Arial, sans-serif; }
         canvas { display: block; }
+        #game-container { position: relative; width: 100vw; height: 100vh; }
+        
         #start-screen {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: url('https://thumbs.dreamstime.com/b/colorful-sunset-highway-sleek-car-palm-trees-surreal-highly-detailed-scene-electrifying-neon-colors-sports-races-down-377068965.jpg') center/cover no-repeat;
+            background: url('assets/start-background.jpg') center/cover no-repeat;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             color: #ff00ff;
             text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
+            z-index: 10;
         }
         #title {
             font-size: 80px;
@@ -29,6 +32,7 @@
             font-size: 30px;
             margin-bottom: 50px;
             text-align: center;
+            line-height: 1.6;
         }
         #start-button {
             padding: 20px 60px;
@@ -39,24 +43,13 @@
             cursor: pointer;
             box-shadow: 0 0 20px #00ffff;
             transition: all 0.3s;
+            border-radius: 10px;
         }
         #start-button:hover {
             transform: scale(1.1);
             box-shadow: 0 0 40px #00ffff;
         }
-        #hud { position: absolute; bottom: 20px; left: 20px; color: white; font-family: Arial; font-size: 24px; text-shadow: 2px 2px 4px black; display: none; }
-        #game-container { position: relative; }
-    </style>
-</head>
-<body>
-    <div id="game-container">
-        <div id="start-screen">
-            <div id="title">COCKPIT RACER</div>
-            <div id="instructions">W / ↑ : Accelerate<br>S / ↓ : Brake<br>A/D or ←/→ : Steer</div>
-            <button id="start-button">START GAME</button>
-        </div>
-        <div id="hud">Speed: 0 km/h</div>
-    </div>
-    <script type="module" src="main.js"></script>
-</body>
-</html>
+        #hud {
+            position: absolute;
+            bottom: 20px;
+            left: 20px
