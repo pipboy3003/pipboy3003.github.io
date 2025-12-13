@@ -1463,42 +1463,18 @@
      * Speichert den aktuellen Spielstand in Firestore.
      */
     async function saveGame() {
-        if (!isAuthReady || !userId) {
-            log("Fehler: Authentifizierung noch nicht abgeschlossen. Speichern fehlgeschlagen.", "text-red-500");
-            return;
-        }
-        
-        els.saveBtn.disabled = true;
+        // *** DIESE ZEILE HINZUFÜGEN, UM FIREBASE ZU ÜBERSPRINGEN ***
+        log("Speichern in der Cloud deaktiviert. Nur lokales Speichern verfügbar.", "text-yellow-500");
+        // return; // <-- Wenn Sie die Cloud-Logik komplett überspringen wollen
 
-        const savePath = `artifacts/${appId}/users/${userId}/pipboy_saves`;
-        const saveDocRef = doc(db, savePath, 'save_slot_01');
-        
+        // ... (Der gesamte Firebase-Code kann bleiben oder auskommentiert werden)
+
+        // Unabhängig von Firebase: Lokales Speichern in localStorage
         try {
-            // Vereinfache die Ausrüstung, um nur den Namen zu speichern
-            const simpleEquipment = {};
-            for (const slot in gameState.equipment) {
-                simpleEquipment[slot] = { name: gameState.equipment[slot].name };
-            }
-
-            // Kopiere den Zustand und überschreibe die Ausrüstung
-            const saveState = {
-                ...gameState,
-                equipment: simpleEquipment,
-                // Speichere die ursprüngliche Waffe nicht, da sie nur temporär ist
-                originalWeaponDuringCombat: null 
-            };
-            
-            await setDoc(saveDocRef, {
-                mapLayout: mapLayout,
-                gameState: saveState,
-                timestamp: new Date().toISOString()
-            });
-            log("Spielstand erfolgreich gespeichert!", "text-green-400");
-        } catch (error) {
-            console.error("Fehler beim Speichern:", error);
-            log("FEHLER: Speichern fehlgeschlagen. Siehe Konsole.", "text-red-500");
-        } finally {
-            els.saveBtn.disabled = false;
+            localStorage.setItem('pipboy_save_01', JSON.stringify(gameState));
+            log("Spiel erfolgreich lokal gespeichert.", "text-green-500");
+        } catch(e) {
+            log("FEHLER: Lokales Speichern fehlgeschlagen: " + e.message, "text-red-500");
         }
     }
 
