@@ -522,6 +522,11 @@
         enemyHpDisplay: document.getElementById('enemy-hp-display-center')
     };
 
+    function calculateMaxHP(endurance) {
+        // Basis-HP (100) + 10 TP pro Punkt über 5 END
+        return 100 + (endurance - 5) * 10;
+    }
+
     function expToNextLevel(level) {
         return 100 + level * 50; 
     }
@@ -539,7 +544,11 @@
             gameState.statPoints++;
             gameState.exp -= expNeeded;
             expNeeded = expToNextLevel(gameState.level);
-            gameState.health = Math.min(100, gameState.health + 20); 
+            
+            // HP Steigerung beim Level-Up
+            const maxHp = calculateMaxHP(getStat('END')); 
+            gameState.health = Math.min(maxHp, gameState.health + 20); // Heilung um 20 TP beim Level-Up, max bis zum neuen MaxHP
+            
             log(`LEVEL UP! Du bist jetzt Level ${gameState.level}! +1 Stat-Punkt.`, 'text-red-500 bg-yellow-400/20');
         }
         updateUI();
@@ -550,6 +559,16 @@
             gameState.stats[statKey]++; 
             gameState.statPoints--; 
             gameState.tempStatIncrease = {}; 
+            
+            // NEU: Max HP sofort nach END-Erhöhung aktualisieren
+            if (statKey === 'END') {
+                const newMaxHp = calculateMaxHP(getStat('END'));
+                // Falls die aktuellen HP niedriger sind als der alte Max HP, behalten, aber der neue Max HP ist der Limit.
+                // Heilung muss manuell erfolgen (z.B. beim Arzt oder Level-Up)
+                gameState.maxHealth = newMaxHp;
+                log(`Max HP auf ${newMaxHp} erhöht (+10)!`, 'text-green-400');
+            }
+            
             log(`${statKey} permanent auf ${gameState.stats[statKey]} erhöht.`, 'text-yellow-400');
             updateUI();
         }
@@ -599,6 +618,9 @@
     }
 
     function updateUI() {
+        const currentMaxHp = calculateMaxHP(getStat('END'));
+        gameState.maxHealth = currentMaxHp; 
+
         els.levelDisplay.textContent = gameState.level;
         els.expCurrentDisplay.textContent = gameState.exp;
         
@@ -631,10 +653,15 @@
             } else if (isTempIncreased) {
                  btn = `<span class="pip-stat-value text-red-500">[+TEMP]</span>`; 
             }
+            
+            let extraInfo = '';
+            if (k === 'END') {
+                extraInfo = `<br><span class="text-xs opacity-70">Max TP: ${currentMaxHp}</span>`;
+            }
 
             return `
                 <div class="stat-item">
-                    <span>${k}: <span class="pip-stat-value">${displayVal}</span></span>
+                    <span>${k}: <span class="pip-stat-value">${displayVal}</span>${extraInfo}</span>
                     ${btn}
                 </div>
             `;
@@ -647,10 +674,10 @@
             <div>Waffe: <span class="pip-stat-value">${gameState.equipment.weapon.name}</span></div>
         `;
 
-        els.hp.textContent = `${gameState.health}/100`;
-        const hpPercent = Math.max(0, gameState.health); 
+        els.hp.textContent = `${Math.round(gameState.health)}/${currentMaxHp}`; // Angepasste Anzeige
+        const hpPercent = Math.max(0, (gameState.health / currentMaxHp) * 100); 
         els.hpBar.style.width = `${hpPercent}%`;
-        els.hpBar.className = gameState.health < 30 ? 'bg-red-500 h-full' : 'bg-[#39ff14] h-full';
+        els.hpBar.className = gameState.health < (currentMaxHp * 0.3) ? 'bg-red-500 h-full' : 'bg-[#39ff14] h-full';
         
         els.ammo.textContent = gameState.ammo;
         els.caps.textContent = `${gameState.caps} Kronenkorken`;
@@ -947,6 +974,15 @@
                     btn.innerHTML += `<br> (Fehlt ${opt.cost-gameState.caps} KK)`;
                 }
             }
+            
+            // NEU: Heilung beim Arzt setzt Max HP
+            if (opt.isHeal) {
+                opt.action = () => {
+                    gameState.health = gameState.maxHealth; 
+                    log("Vollständig geheilt.", "text-green-400"); 
+                    enterCity();
+                }
+            }
 
             btn.disabled = isDisabled;
 
@@ -1003,6 +1039,9 @@
                 currentZone: "Neues Ödland", // Aktualisierte Zone
             };
             
+            // Max HP muss neu berechnet werden, da END aus Equipment sich geändert haben könnte
+            gameState.maxHealth = calculateMaxHP(getStat('END'));
+
             els.text.textContent = "Neuer Sektor! Die Landschaft ist anders...";
             revealMap(startX, startY);
             updateUI();
@@ -1118,9 +1157,7 @@
 
     function enterCity() {
         showCityDialog([
-            { text: "Arzt (25 KK) | TP vollst.", cost: 25, action: () => {
-                gameState.health = 100; log("Vollständig geheilt.", "text-green-400"); enterCity();
-            }},
+            { text: "Arzt (25 KK) | TP vollst.", cost: 25, isHeal: true, action: () => {} }, // isHeal Flag für updateUI
             { text: "Händler | Munition (+5) 10 KK", cost: 10, action: () => {
                 gameState.ammo += 5; log("+5 Munition gekauft.", "text-green-400"); enterCity();
             }},
@@ -1161,7 +1198,13 @@
                 item: opt,
                 isDisabled: isDisabled,
                 action: () => {
+                    // Aktualisiere Ausrüstung
                     gameState.equipment[opt.slot] = opt; 
+                    
+                    // NEU: Max HP nach Ausrüstungswechsel aktualisieren
+                    const newMaxHp = calculateMaxHP(getStat('END'));
+                    gameState.maxHealth = newMaxHp;
+
                     log(`${opt.name} ausgerüstet und gekauft.`, 'text-yellow-400');
                     showBuyMenu();
                 }
@@ -1205,7 +1248,7 @@
         els.gameScreen.classList.add('damage-flash');
         setTimeout(() => els.gameScreen.classList.remove('damage-flash'), 100);
         gameState.health -= damage;
-        log(`Schaden erlitten: -${damage} TP`, "text-red-500");
+        log(`Schaden erlitten: -${Math.round(damage)} TP`, "text-red-500");
         checkDeath();
     }
 
@@ -1298,6 +1341,11 @@
         if (gameState.originalWeaponDuringCombat) {
             gameState.equipment.weapon = gameState.originalWeaponDuringCombat;
             gameState.originalWeaponDuringCombat = null;
+            
+            // NEU: Max HP nach Ausrüstungswechsel (zurück) aktualisieren
+            const newMaxHp = calculateMaxHP(getStat('END'));
+            gameState.maxHealth = newMaxHp;
+            
             log(`Zurück zur Waffe: ${gameState.equipment.weapon.name}.`, 'text-green-500');
         }
 
@@ -1353,7 +1401,7 @@
     window.applyStatPoint = applyStatPoint;
     window.movePlayer = movePlayer;
     window.confirmCityEntry = confirmCityEntry;
-    window.confirmSectorChange = confirmSectorChange; // NEU hinzugefügt
+    window.confirmSectorChange = confirmSectorChange; 
     window.resolveCombat = resolveCombat;
     window.resolveFlee = resolveFlee;
     window.switchView = switchView;
@@ -1382,16 +1430,27 @@
         const { layout, startX, startY } = generateRandomMap();
         mapLayout = layout.map(row => row.split(''));
 
+        const initialEquipment = { 
+            head: items.none_head, 
+            body: items.armor_vault, 
+            feet: items.none_feet,
+            weapon: items.fists
+        };
+
+        // Temporäres Objekt für die Basis-Stats + Equipment
+        const tempState = { stats: {...BASE_STATS}, equipment: initialEquipment };
+        
+        // Initial Max HP berechnen
+        const initialEndurance = 5 + initialEquipment.body.bonus.END; // Vault-Anzug gibt +1 END
+        const initialMaxHp = calculateMaxHP(initialEndurance);
+
+
         gameState = {
             player: { x: startX, y: startY },
             stats: {...BASE_STATS},
-            equipment: { 
-                head: items.none_head, 
-                body: items.armor_vault, 
-                feet: items.none_feet,
-                weapon: items.fists
-            },
-            health: 100,
+            equipment: initialEquipment,
+            health: initialMaxHp, // Setze HP auf Max HP beim Start
+            maxHealth: initialMaxHp, // NEU: Max HP als Zustand speichern
             ammo: 10,
             caps: 50,
             explored: {},
