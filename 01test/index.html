@@ -16,7 +16,6 @@
         #view-container { width: 100%; flex-grow: 1; display: flex; justify-content: center; align-items: center; background-color: var(--pip-bg); border-bottom: 2px solid var(--pip-green); position: relative; overflow: hidden; }
         
         .header-bar { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 1rem; border-bottom: 2px solid var(--pip-green); background: rgba(57, 255, 20, 0.05); flex-shrink: 0; }
-        /* Disabled Style hinzugefügt */
         .action-button { background-color: #0f150f; color: var(--pip-green); border: 1px solid var(--pip-green); padding: 5px 10px; margin: 2px; cursor: pointer; text-transform: uppercase; font-size: 1.1rem; transition: all 0.1s; }
         .action-button:hover { background-color: var(--pip-dim); color: white; }
         .action-button:disabled { opacity: 0.3; cursor: not-allowed; border-color: #1a4d1a; color: #1a4d1a; background-color: #050505; }
@@ -32,6 +31,16 @@
         
         .blink-red { animation: blink-red-anim 1s infinite; }
         @keyframes blink-red-anim { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* NEU: LEVEL UP ANIMATION (GOLD BLINKEN) */
+        @keyframes flash-gold {
+            0%, 100% { color: var(--pip-green); border-color: var(--pip-green); }
+            50% { color: #ffd700; border-color: #ffd700; box-shadow: 0 0 8px #ffd700; }
+        }
+        .level-up-alert {
+            animation: flash-gold 1s infinite;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -118,7 +127,6 @@
 
     window.onload = function() {
         const verDisplay = document.getElementById('version-display');
-        
         fetch('Version?t=' + Date.now())
             .then(res => {
                 if(!res.ok) throw new Error("Keine Version Datei");
@@ -128,10 +136,8 @@
                 const ver = versionText.trim();
                 verDisplay.textContent = ver;
                 verDisplay.classList.remove('animate-pulse');
-                
                 console.log("Lade Version:", ver);
-                return loadScript('ui.js?v=' + ver)
-                    .then(() => loadScript('game.js?v=' + ver));
+                return loadScript('ui.js?v=' + ver).then(() => loadScript('game.js?v=' + ver));
             })
             .then(() => {
                 if(typeof UI !== 'undefined' && typeof Game !== 'undefined') {
