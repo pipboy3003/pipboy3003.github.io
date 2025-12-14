@@ -20,7 +20,7 @@ const UI = {
             btnWiki: document.getElementById('btn-wiki'),
             btnMap: document.getElementById('btn-map'),
             btnChar: document.getElementById('btn-char'),
-            btnQuests: document.getElementById('btn-quests'), // NEU
+            btnQuests: document.getElementById('btn-quests'),
             
             btnUp: document.getElementById('btn-up'),
             btnDown: document.getElementById('btn-down'),
@@ -32,11 +32,10 @@ const UI = {
 
         this.els.btnNew.onclick = () => Game.init();
         
-        // Button Logic
         this.els.btnWiki.onclick = () => this.toggleView('wiki');
         this.els.btnMap.onclick = () => this.toggleView('worldmap');
         this.els.btnChar.onclick = () => this.toggleView('char');
-        this.els.btnQuests.onclick = () => this.toggleView('quests'); // NEU
+        this.els.btnQuests.onclick = () => this.toggleView('quests');
 
         this.els.btnUp.onclick = () => Game.move(0, -1);
         this.els.btnDown.onclick = () => Game.move(0, 1);
@@ -89,7 +88,7 @@ const UI = {
             if (name === 'worldmap') this.renderWorldMap();
             if (name === 'city') this.renderCity();
             if (name === 'combat') this.renderCombat();
-            if (name === 'quests') this.renderQuests(); // NEU
+            if (name === 'quests') this.renderQuests();
 
             this.update();
 
@@ -114,30 +113,41 @@ const UI = {
         const expPct = Math.min(100, (Game.state.xp / nextXp) * 100);
         if(this.els.expBarTop) this.els.expBarTop.style.width = `${expPct}%`;
         
-        // --- BUTTON HIGHLIGHTING ---
+        // --- BUTTON HIGHLIGHTING & STATUS ---
         this.els.btnWiki.classList.remove('active');
         this.els.btnMap.classList.remove('active');
         this.els.btnChar.classList.remove('active');
-        this.els.btnQuests.classList.remove('active'); // NEU
+        this.els.btnQuests.classList.remove('active');
 
         if (Game.state.view === 'wiki') this.els.btnWiki.classList.add('active');
         if (Game.state.view === 'worldmap') this.els.btnMap.classList.add('active');
         if (Game.state.view === 'char') this.els.btnChar.classList.add('active');
-        if (Game.state.view === 'quests') this.els.btnQuests.classList.add('active'); // NEU
+        if (Game.state.view === 'quests') this.els.btnQuests.classList.add('active');
 
+        // CHAR LEVEL UP ALERT (GOLD)
         if(Game.state.statPoints > 0) {
             this.els.btnChar.classList.add('level-up-alert');
             this.els.btnChar.innerHTML = "CHAR <span class='text-yellow-400'>!</span>";
         } else {
             this.els.btnChar.classList.remove('level-up-alert');
-            this.els.btnChar.textContent = "CHAR";
+            this.els.btnChar.textContent = "CHARAKTER";
+        }
+
+        // QUEST ALERT (CYAN - NUR WENN UNGELESEN)
+        const unreadQuests = Game.state.quests.some(q => !q.read);
+        if(unreadQuests) {
+            this.els.btnQuests.classList.add('quest-alert');
+            this.els.btnQuests.innerHTML = "AUFGABEN <span class='text-cyan-400'>!</span>";
+        } else {
+            this.els.btnQuests.classList.remove('quest-alert');
+            this.els.btnQuests.textContent = "AUFGABEN";
         }
 
         const inCombat = Game.state.view === 'combat';
         this.els.btnWiki.disabled = inCombat;
         this.els.btnMap.disabled = inCombat;
         this.els.btnChar.disabled = inCombat;
-        this.els.btnQuests.disabled = inCombat; // NEU
+        this.els.btnQuests.disabled = inCombat;
         this.els.btnNew.disabled = inCombat;
 
         if(Game.state.view === 'map') {
@@ -195,21 +205,28 @@ const UI = {
         const list = document.getElementById('quest-list');
         if(!list) return;
         
-        // Liste rendern
-        list.innerHTML = Game.state.quests.map(q => `
-            <div class="border border-green-900 bg-green-900/10 p-2 flex items-center gap-3 cursor-pointer hover:bg-green-900/30 transition-all" onclick="UI.showQuestDetail('${q.id}')">
+        list.innerHTML = Game.state.quests.map(q => {
+            const status = q.read ? '' : '<span class="text-cyan-400 font-bold">[NEU]</span> ';
+            const opacity = q.read ? 'opacity-70' : 'opacity-100 bg-green-900/20';
+            
+            return `
+            <div class="border border-green-900 p-2 flex items-center gap-3 cursor-pointer hover:bg-green-900/30 transition-all ${opacity}" onclick="UI.showQuestDetail('${q.id}')">
                 <div class="text-3xl">✉️</div>
                 <div>
-                    <div class="font-bold text-lg text-yellow-400">${q.title}</div>
+                    <div class="font-bold text-lg text-yellow-400">${status}${q.title}</div>
                     <div class="text-xs opacity-70">Zum Lesen klicken</div>
                 </div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
     },
 
     showQuestDetail: function(id) {
         const quest = Game.state.quests.find(q => q.id === id);
         if(!quest) return;
+
+        // MARK AS READ
+        quest.read = true;
+        this.update(); // Update Buttons sofort
 
         const list = document.getElementById('quest-list');
         const detail = document.getElementById('quest-detail');
@@ -227,6 +244,7 @@ const UI = {
     closeQuestDetail: function() {
         document.getElementById('quest-detail').classList.add('hidden');
         document.getElementById('quest-list').classList.remove('hidden');
+        this.renderQuests(); // Liste neu rendern (damit [NEU] verschwindet)
     },
 
     renderChar: function() {
