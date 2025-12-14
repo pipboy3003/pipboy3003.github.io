@@ -11,6 +11,3 @@ Hier sind 3 Vorschläge für den nächsten Schritt. Sag mir, worauf du Lust hast
     V.A.T.S. Kampf-System: Der Kampf ist aktuell reines Glück. Wir könnten ein System einbauen, bei dem man Körperteile anvisiert (Kopf, Torso, Beine) mit unterschiedlichen Trefferchancen.
 
     Speichern & Laden: Damit dein Fortschritt (Level, Position) erhalten bleibt, wenn du den Browser schließt (via localStorage).
-
-BUGS BUGS BUGS
-- MAP angeklickt, zurück geht nicht durch wieder drauf drücken
