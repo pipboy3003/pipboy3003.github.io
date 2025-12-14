@@ -2,6 +2,9 @@ To-Do's
 - Zur Vault zurück (auf sie drauf) öffnet ein ergeinis fenster. "Ausruhen" oder "Weiter geht's" als Möglichkeiten. Ausruhen fült die TP komplett auf mit dem Kommentar "Du fühlst dich wie neu gebohren"
 - Ausrüsten der 10mm Pistole verbraucht Muniton - Diese muss auch beim Händler gekauft werden können. 10er Pack für 10 KK.
 - Großes "Game Over" Fenster in Rot und blinkend bei Tot
+
+- Grafiken verbessern
+
 - EXP Anzeige Balken fehlt im CHAR Menü + auf dem Overlay rechts vn der TP, ist aufgeführt aber kein Balken.
 - Benötige EXP steigt mit den Leveln an
 - Monster bringen je nach schwierigkeit andere EXP Punkte. 
