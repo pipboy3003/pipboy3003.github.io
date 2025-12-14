@@ -1,0 +1,296 @@
+
+        /* --- PIP-BOY CORE STYLES --- */
+        :root {
+            --pip-green: #39ff14; 
+            --pip-dim: #1a4d1a;
+            --pip-dark: #0a0f0a;
+            --pip-bg: #050505;
+            --pip-shadow: 0 0 10px rgba(57, 255, 20, 0.4);
+            
+            /* Wasteland Map Colors */
+            --color-arid: #4a3d34; 
+            --color-path: #8b7d6b; 
+            --color-rock: #5c544d; 
+            --color-water: #224f80; 
+            --color-city: #7a661f; 
+            --color-fog: #000000;
+        }
+
+        body {
+            background-color: #000;
+            color: var(--pip-green);
+            font-family: 'VT323', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center; 
+            min-height: 100vh;
+            padding: 0; 
+            margin: 0;
+            overflow: hidden; 
+            user-select: none;
+        }
+
+        #pipboy-case {
+            background-color: #1a1a1a;
+            padding: 10px;
+            border-radius: 20px;
+            box-shadow: inset 0 0 20px #000, 0 0 15px #333;
+            width: 100%;
+            max-width: 1200px;
+            height: 98vh; 
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.05s ease-in-out; 
+        }
+        
+        .screen-shake {
+            animation: shake 0.2s cubic-bezier(.36,.07,.19,.97) both;
+            transform: translate3d(0, 0, 0);
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        #game-screen {
+            background-color: var(--pip-dark);
+            border: 2px solid var(--pip-green);
+            box-shadow: inset 0 0 20px rgba(57, 255, 20, 0.1);
+            border-radius: 10px;
+            width: 100%;
+            flex-grow: 1; 
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .damage-flash {
+            animation: flash-red 0.1s;
+        }
+
+        @keyframes flash-red {
+            0% { box-shadow: inset 0 0 30px rgba(255, 0, 0, 0.5); }
+            100% { box-shadow: inset 0 0 20px rgba(57, 255, 20, 0.1); }
+        }
+
+        #game-screen::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 50;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+        
+        #system-status-bar {
+            border-bottom: 2px solid var(--pip-green);
+            padding: 0.5rem 1rem;
+            background: rgba(57, 255, 20, 0.05); 
+            flex-shrink: 0;
+        }
+
+        #view-container {
+            width: 100%;
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--pip-bg);
+            border-bottom: 2px solid var(--pip-green); 
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .view {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: opacity 0.3s, transform 0.3s, filter 0.3s;
+        }
+        
+        .view.transition-out {
+            opacity: 0;
+            transform: scale(1.1);
+            filter: blur(5px);
+        }
+
+        /* WICHTIG: Das Canvas muss absolute positioniert werden, um vom JS skaliert zu werden */
+        #game-canvas {
+            image-rendering: pixelated; 
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.1);
+            position: absolute;
+            /* Starte mit transform(0,0) und scale(1), wird durch JS korrigiert */
+            transform-origin: top left;
+        }
+        
+        /* --- WORLD MAP STYLES --- */
+        #world-map-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 2px;
+            width: 80%;
+            max-width: 800px; 
+            aspect-ratio: 1 / 1; 
+            padding: 10px;
+            border: 2px solid var(--pip-green);
+            background-color: var(--pip-dark);
+        }
+
+        .sector-tile {
+            aspect-ratio: 1 / 1;
+            background-color: var(--pip-dim);
+            border: 1px solid var(--pip-green);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.7rem;
+            color: var(--pip-green);
+            position: relative;
+        }
+        
+        .sector-tile.explored {
+            background-color: var(--color-arid);
+            color: #000;
+        }
+        
+        .sector-tile.current-sector {
+            background-color: #39ff14 !important;
+            box-shadow: 0 0 10px var(--pip-green);
+            color: #000;
+            font-weight: bold;
+        }
+        
+        .sector-tile .marker {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1rem;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+        
+        /* --- END WORLD MAP STYLES --- */
+
+        #log-panel {
+            background-color: rgba(0,0,0,0.5);
+            font-size: 0.9rem;
+            min-height: 100px; 
+        }
+        
+        #log-area {
+            overflow-y: auto; 
+            padding: 5px;
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column-reverse; 
+            animation: fadeInLog 0.3s ease-out;
+            flex-grow: 1;
+            min-height: 0; /* Wichtig für flex grow */
+        }
+
+        @keyframes fadeInLog {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        #main-content { 
+            display: flex; 
+            flex-direction: row; 
+            flex-grow: 1; 
+            overflow: hidden;
+        }
+        
+        #main-panel {
+            width: 100%;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header-bar {
+            display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 1rem;
+            border-bottom: 2px solid var(--pip-green); background: rgba(57, 255, 20, 0.05); flex-shrink: 0;
+        }
+        .section-header {
+            color: #000; background-color: var(--pip-green); font-size: 1.1rem; text-transform: uppercase;
+            padding: 1px 6px; margin-bottom: 2px; font-weight: bold; letter-spacing: 1px; display: inline-block;
+        }
+        .pip-text { color: var(--pip-green); font-size: 1.1rem; }
+        .pip-stat-value { color: #fff; text-shadow: 0 0 5px var(--pip-green); }
+        .action-button {
+            background-color: #0f150f; color: var(--pip-green); border: 1px solid var(--pip-green);
+            padding: 10px; margin: 4px; cursor: pointer; text-transform: uppercase; font-size: 1.1rem;
+            transition: all 0.1s; box-shadow: 0 0 5px rgba(57, 255, 20, 0.2);
+        }
+        .action-button:hover { background-color: var(--pip-dim); }
+        .action-button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        #combat-view {
+            border: 4px solid #ff3914; 
+            background-color: rgba(255, 0, 0, 0.15);
+            color: #ff3914;
+            flex-direction: column;
+            gap: 1.5rem;
+            width: 80%;
+            max-width: 400px;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        #char-display-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            padding: 0 1rem;
+        }
+        .char-section {
+            width: 100%;
+            border: 1px solid var(--pip-dim);
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem 1rem;
+            font-size: 1.2rem;
+        }
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .level-bar {
+            background-color: var(--pip-dim);
+            border: 1px solid var(--pip-green);
+            height: 10px;
+            margin-top: 5px;
+        }
+        .level-progress {
+            background-color: var(--pip-green);
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: var(--pip-green); border-radius: 3px; }
+        ::-webkit-scrollbar-track { background: var(--pip-dark); }
+
+    
