@@ -113,7 +113,7 @@ const UI = {
         const expPct = Math.min(100, (Game.state.xp / nextXp) * 100);
         if(this.els.expBarTop) this.els.expBarTop.style.width = `${expPct}%`;
         
-        // --- BUTTON HIGHLIGHTING & STATUS ---
+        // Highlighting
         this.els.btnWiki.classList.remove('active');
         this.els.btnMap.classList.remove('active');
         this.els.btnChar.classList.remove('active');
@@ -124,7 +124,7 @@ const UI = {
         if (Game.state.view === 'char') this.els.btnChar.classList.add('active');
         if (Game.state.view === 'quests') this.els.btnQuests.classList.add('active');
 
-        // CHAR LEVEL UP ALERT (GOLD)
+        // Level Up Alert
         if(Game.state.statPoints > 0) {
             this.els.btnChar.classList.add('level-up-alert');
             this.els.btnChar.innerHTML = "CHAR <span class='text-yellow-400'>!</span>";
@@ -133,7 +133,7 @@ const UI = {
             this.els.btnChar.textContent = "CHARAKTER";
         }
 
-        // QUEST ALERT (CYAN - NUR WENN UNGELESEN)
+        // Quest Alert
         const unreadQuests = Game.state.quests.some(q => !q.read);
         if(unreadQuests) {
             this.els.btnQuests.classList.add('quest-alert');
@@ -193,6 +193,29 @@ const UI = {
         this.els.dialog.style.display = 'block';
     },
 
+    // NEU: Supermarkt Dialog
+    enterSupermarket: function() {
+        Game.state.inDialog = true;
+        this.els.dialog.innerHTML = '';
+        
+        const enterBtn = document.createElement('button');
+        enterBtn.className = "action-button w-full mb-1 border-red-500 text-red-300";
+        enterBtn.textContent = "Betreten (Gefahr!)";
+        enterBtn.onclick = () => { 
+            Game.loadSector(0, 0, true); // true = Interior
+            this.leaveDialog();
+        };
+        
+        const leaveBtn = document.createElement('button');
+        leaveBtn.className = "action-button w-full";
+        leaveBtn.textContent = "Weitergehen";
+        leaveBtn.onclick = () => this.leaveDialog();
+
+        this.els.dialog.appendChild(enterBtn);
+        this.els.dialog.appendChild(leaveBtn);
+        this.els.dialog.style.display = 'block';
+    },
+
     leaveDialog: function() {
         Game.state.inDialog = false;
         this.els.dialog.innerHTML = '';
@@ -205,28 +228,23 @@ const UI = {
         const list = document.getElementById('quest-list');
         if(!list) return;
         
-        list.innerHTML = Game.state.quests.map(q => {
-            const status = q.read ? '' : '<span class="text-cyan-400 font-bold">[NEU]</span> ';
-            const opacity = q.read ? 'opacity-70' : 'opacity-100 bg-green-900/20';
-            
-            return `
-            <div class="border border-green-900 p-2 flex items-center gap-3 cursor-pointer hover:bg-green-900/30 transition-all ${opacity}" onclick="UI.showQuestDetail('${q.id}')">
+        list.innerHTML = Game.state.quests.map(q => `
+            <div class="border border-green-900 bg-green-900/10 p-2 flex items-center gap-3 cursor-pointer hover:bg-green-900/30 transition-all" onclick="UI.showQuestDetail('${q.id}')">
                 <div class="text-3xl">✉️</div>
                 <div>
-                    <div class="font-bold text-lg text-yellow-400">${status}${q.title}</div>
+                    <div class="font-bold text-lg text-yellow-400">${q.read ? '' : '<span class="text-cyan-400">[NEU]</span> '}${q.title}</div>
                     <div class="text-xs opacity-70">Zum Lesen klicken</div>
                 </div>
-            </div>`;
-        }).join('');
+            </div>
+        `).join('');
     },
 
     showQuestDetail: function(id) {
         const quest = Game.state.quests.find(q => q.id === id);
         if(!quest) return;
 
-        // MARK AS READ
         quest.read = true;
-        this.update(); // Update Buttons sofort
+        this.update();
 
         const list = document.getElementById('quest-list');
         const detail = document.getElementById('quest-detail');
@@ -244,7 +262,7 @@ const UI = {
     closeQuestDetail: function() {
         document.getElementById('quest-detail').classList.add('hidden');
         document.getElementById('quest-list').classList.remove('hidden');
-        this.renderQuests(); // Liste neu rendern (damit [NEU] verschwindet)
+        this.renderQuests();
     },
 
     renderChar: function() {
@@ -287,8 +305,8 @@ const UI = {
         const grid = document.getElementById('world-grid');
         if(!grid) return;
         grid.innerHTML = '';
-        for(let y=0; y<10; y++) {
-            for(let x=0; x<10; x++) {
+        for(let y=0; y<8; y++) { // 8x8 Grid angepasst
+            for(let x=0; x<8; x++) {
                 const d = document.createElement('div');
                 d.className = "border border-green-900/50 flex justify-center items-center text-xs";
                 if(x===Game.state.sector.x && y===Game.state.sector.y) {
@@ -299,6 +317,8 @@ const UI = {
                 grid.appendChild(d);
             }
         }
+        // Grid Style anpassen für 8x8
+        grid.style.gridTemplateColumns = "repeat(8, 1fr)";
     },
 
     renderCity: function() {
