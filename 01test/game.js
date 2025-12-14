@@ -1,20 +1,23 @@
 const Game = {
-    TILE: 30, MAP_W: 20, MAP_H: 12,
+    TILE: 40, // Größere Tiles für Details
+    MAP_W: 40, // Viel größere Karte (Scrolling!)
+    MAP_H: 40,
     
-    // Farben für die Minimap oder Fallback
+    // Farbcodes für Automap / Fallback
     colors: { 
-        'V':'#39ff14', 'C':'#eab308', 'X':'#ff3914', 'G':'#00ffff', 
-        '.':'#5d5345', // Boden dunkler
-        'T':'#1a4d1a', // Wald
-        'R':'#5c544d', // Fels
-        '~':'#224f80', // Wasser
-        'H':'#8b4513', // Haus
-        'D':'#000000'  // Dungeon
+        'V':'#39ff14', 'C':'#eab308', 'G':'#00ffff', 
+        '.':'#5d5345', // Ödland Boden
+        '_':'#eecfa1', // Wüste Boden
+        ',':'#1a3300', // Dschungel Boden
+        '=':'#333333', // Stadt Straße
+        'T':'#1a4d1a', 'R':'#5c544d', '~':'#224f80',
+        'B':'#1a1a1a', // Gebäude Wand
+        'S':'#ff0000', // Supermarkt Eingang
+        '#':'#000000'  // Interior Boden
     },
 
     monsters: {
         moleRat: { name: "Maulwurfsratte", hp: 30, dmg: 5, xp: [20, 30], loot: 5, minLvl: 1 },
-        mutantRose: { name: "Mutanten Rose", hp: 45, dmg: 15, loot: 15, xp: [45, 60], minLvl: 1 },
         raider: { name: "Raider", hp: 70, dmg: 15, loot: 25, xp: [70, 90], minLvl: 2 },
         deathclaw: { name: "Todesklaue", hp: 200, dmg: 50, loot: 100, xp: [450, 550], minLvl: 5 }
     },
@@ -30,32 +33,39 @@ const Game = {
     },
 
     state: null, worldData: {}, ctx: null, loopId: null,
+    
+    // Kamera Position
+    camera: { x: 0, y: 0 },
 
     init: function() {
         this.worldData = {};
-        const startX = Math.floor(Math.random() * (this.MAP_W - 2)) + 1;
-        const startY = Math.floor(Math.random() * (this.MAP_H - 2)) + 1;
+        
+        // Random Startsektor (Sichere Zone 3-6)
+        const startSecX = Math.floor(Math.random() * 4) + 3;
+        const startSecY = Math.floor(Math.random() * 4) + 3;
 
         this.state = {
-            sector: {x: 5, y: 5}, 
-            player: {x: startX, y: startY},
+            sector: {x: startSecX, y: startSecY}, 
+            player: {x: 20, y: 20}, // Mitte der Map
             stats: { STR: 5, PER: 5, END: 5, INT: 5, AGI: 5, LUC: 5 },
             equip: { weapon: this.items.fists, body: this.items.vault_suit },
             hp: 100, maxHp: 100, xp: 0, lvl: 1, caps: 50, ammo: 10, statPoints: 0,
             view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, explored: {}, 
             tempStatIncrease: {},
-            quests: [
-                { id: "q1", title: "Der Weg nach Hause", text: "Willkommen im einsamen Ödland einer längst vergessenen Zeit.\n\nDeine Aufgabe in der freien Wildbahn ist es, den Weg nach Hause zu finden!\n\nViel Erfolg!!!", read: false }
-            ]
+            quests: [ { id: "q1", title: "Der Weg nach Hause", text: "Finde den Weg nach Hause!", read: false } ]
         };
         
         this.state.hp = this.calculateMaxHP(this.getStat('END'));
         this.state.maxHp = this.state.hp;
         
-        this.loadSector(5, 5);
+        this.loadSector(this.state.sector.x, this.state.sector.y);
+        
+        // Sicherstellen, dass wir nicht im Wald spawnen
+        this.findSafeSpawn();
+
         UI.switchView('map').then(() => {
             if(UI.els.gameOver) UI.els.gameOver.classList.add('hidden');
-            UI.log("System bereit. Grafik-Engine v2 geladen.", "text-green-400");
+            UI.log("System bereit. Kamera-System aktiviert.", "text-green-400");
         });
     },
 
@@ -81,45 +91,151 @@ const Game = {
         }
     },
 
-    // --- MAP GENERATION V2 (Organischer) ---
-    loadSector: function(sx, sy) {
-        const key = `${sx},${sy}`;
-        if(!this.worldData[key]) {
-            // 1. Leere Map (Boden)
-            let map = Array(this.MAP_H).fill().map(() => Array(this.MAP_W).fill('.'));
-            
-            // 2. Rand-Felsen
-            for(let i=0; i<this.MAP_W; i++) { map[0][i] = '^'; map[this.MAP_H-1][i] = '^'; }
-            for(let i=0; i<this.MAP_H; i++) { map[i][0] = '^'; map[i][this.MAP_W-1] = '^'; }
-            
-            // 3. Organische Cluster (Wald T, Wasser ~, Felsen R)
-            this.addClusters(map, 'T', 4, 3); // 4 Cluster Wald
-            this.addClusters(map, '~', 2, 4); // 2 Cluster Wasser
-            this.addClusters(map, 'R', 3, 2); // 3 Cluster Felsen
-
-            // 4. Tore
-            if(sy>0) this.clearGate(map, 10, 0, 'G');
-            if(sy<9) this.clearGate(map, 10, this.MAP_H-1, 'G');
-            if(sx>0) this.clearGate(map, 0, 6, 'G');
-            if(sx<9) this.clearGate(map, this.MAP_W-1, 6, 'G');
-            
-            // 5. POIs (Point of Interests)
-            if(sx===5 && sy===5) {
-                map[this.state.player.y][this.state.player.x] = 'V';
+    // Sucht einen freien Platz für den Spieler
+    findSafeSpawn: function() {
+        let safe = false;
+        while(!safe) {
+            const tile = this.state.currentMap[this.state.player.y][this.state.player.x];
+            // Erlaubte Böden
+            if(['.', '_', ',', '='].includes(tile)) {
+                safe = true;
             } else {
-                if(Math.random() < 0.3) this.placeRandomly(map, 'C'); // Stadt
-                if(Math.random() < 0.2) this.placeRandomly(map, 'H'); // Ruine
-                if(Math.random() < 0.1) this.placeRandomly(map, 'D'); // Höhle
+                this.state.player.x = Math.floor(Math.random() * (this.MAP_W-2)) + 1;
+                this.state.player.y = Math.floor(Math.random() * (this.MAP_H-2)) + 1;
             }
-            
-            this.worldData[key] = { layout: map, explored: {} };
         }
-        this.state.currentMap = this.worldData[key].layout;
-        this.state.explored = this.worldData[key].explored;
-        this.state.zone = `Sektor ${sx},${sy}`;
     },
 
-    // Hilfsfunktionen für Map-Gen
+    // --- BIOME & MAP GEN ---
+    loadSector: function(sx, sy, isInterior = false) {
+        const key = `${sx},${sy}`;
+        
+        // Dungeon / Interior Logik
+        if (isInterior) {
+            this.generateDungeon();
+            this.state.zone = "Supermarkt (Gefahr!)";
+            return;
+        }
+
+        if(!this.worldData[key]) {
+            // Biome bestimmen anhand Koordinaten (einfaches Clustering)
+            let biome = 'wasteland';
+            if (sx < 3 && sy < 3) biome = 'jungle';
+            else if (sx > 6 && sy > 6) biome = 'desert';
+            else if (Math.random() < 0.3) biome = 'city'; // 30% Stadt Chance
+
+            let groundChar = '.';
+            if(biome === 'desert') groundChar = '_';
+            if(biome === 'jungle') groundChar = ',';
+            if(biome === 'city') groundChar = '=';
+
+            let map = Array(this.MAP_H).fill().map(() => Array(this.MAP_W).fill(groundChar));
+            
+            // Rand
+            for(let i=0; i<this.MAP_W; i++) { map[0][i] = '^'; map[this.MAP_H-1][i] = '^'; }
+            for(let i=0; i<this.MAP_H; i++) { map[i][0] = '^'; map[i][this.MAP_W-1] = '^'; }
+
+            // Generierung je nach Biome
+            if (biome === 'wasteland') {
+                this.addClusters(map, 'T', 15, 2); // Wenig Wald
+                this.addClusters(map, 'R', 10, 2); // Felsen
+            } 
+            else if (biome === 'jungle') {
+                this.addClusters(map, 'T', 40, 4); // Viel Wald
+                this.addClusters(map, '~', 10, 3); // Wasser
+            }
+            else if (biome === 'desert') {
+                this.addClusters(map, 'R', 20, 1); // Viele kleine Felsen
+                // Kakteen simulieren wir später im Draw als 'T' auf Sand
+                if(Math.random() > 0.5) this.addClusters(map, 'T', 5, 1); 
+            }
+            else if (biome === 'city') {
+                this.generateCityLayout(map);
+            }
+
+            // Vault (nur einmalig im Start)
+            // Hier vereinfacht: Wenn Sektor 5,5 -> Vault
+            if(sx===5 && sy===5) {
+                map[20][20] = 'V';
+            }
+
+            // Tore
+            if(sy>0) this.clearGate(map, Math.floor(this.MAP_W/2), 0, 'G', groundChar);
+            if(sy<9) this.clearGate(map, Math.floor(this.MAP_W/2), this.MAP_H-1, 'G', groundChar);
+            if(sx>0) this.clearGate(map, 0, Math.floor(this.MAP_H/2), 'G', groundChar);
+            if(sx<9) this.clearGate(map, this.MAP_W-1, Math.floor(this.MAP_H/2), 'G', groundChar);
+
+            this.worldData[key] = { layout: map, explored: {}, biome: biome };
+        }
+        
+        const data = this.worldData[key];
+        this.state.currentMap = data.layout;
+        this.state.explored = data.explored;
+        
+        let zoneName = "Ödland";
+        if(data.biome === 'city') zoneName = "Ruinenstadt";
+        if(data.biome === 'desert') zoneName = "Glühende Wüste";
+        if(data.biome === 'jungle') zoneName = "Überwucherte Zone";
+        this.state.zone = `${zoneName} (${sx},${sy})`;
+    },
+
+    generateCityLayout: function(map) {
+        // Straßen Raster
+        for(let x=4; x<this.MAP_W; x+=8) {
+            for(let y=1; y<this.MAP_H-1; y++) map[y][x] = '=';
+        }
+        for(let y=4; y<this.MAP_H; y+=8) {
+            for(let x=1; x<this.MAP_W-1; x++) map[y][x] = '=';
+        }
+
+        // Gebäude (B) in den Lücken
+        for(let y=1; y<this.MAP_H-1; y++) {
+            for(let x=1; x<this.MAP_W-1; x++) {
+                if(map[y][x] === '=') {
+                    // 10% Chance auf Schutt auf der Straße
+                    if(Math.random() < 0.1) map[y][x] = 'R'; 
+                } else {
+                    // Gebäude füllen
+                    map[y][x] = 'B';
+                }
+            }
+        }
+
+        // Supermarkt platzieren
+        let placed = false;
+        while(!placed) {
+            let rx = Math.floor(Math.random() * (this.MAP_W-4)) + 2;
+            let ry = Math.floor(Math.random() * (this.MAP_H-4)) + 2;
+            // Muss an Straße liegen
+            if(map[ry][rx] === 'B' && (map[ry+1][rx]==='=' || map[ry-1][rx]==='=')) {
+                map[ry][rx] = 'S';
+                placed = true;
+            }
+        }
+    },
+
+    generateDungeon: function() {
+        // Simpler Raum voller Gegner
+        let map = Array(this.MAP_H).fill().map(() => Array(this.MAP_W).fill('B')); // Alles Wand
+        
+        // Innenraum aushöhlen
+        for(let y=10; y<30; y++) {
+            for(let x=10; x<30; x++) {
+                map[y][x] = '#'; // Boden
+            }
+        }
+        // Ausgang
+        map[29][20] = 'G'; 
+        
+        this.state.currentMap = map;
+        this.state.player.x = 20;
+        this.state.player.y = 28;
+        // In Dungeons sieht man alles sofort (oder auch nicht, hier: ja)
+        this.state.explored = {}; 
+        for(let y=0; y<this.MAP_H; y++) 
+            for(let x=0; x<this.MAP_W; x++) this.state.explored[`${x},${y}`] = true;
+    },
+
     addClusters: function(map, type, count, size) {
         for(let k=0; k<count; k++) {
             let cx = Math.floor(Math.random() * (this.MAP_W-4)) + 2;
@@ -127,9 +243,8 @@ const Game = {
             for(let y=cy-size; y<=cy+size; y++) {
                 for(let x=cx-size; x<=cx+size; x++) {
                     if(x>1 && x<this.MAP_W-2 && y>1 && y<this.MAP_H-2) {
-                        // Kreisförmig & Zufall für organischen Look
-                        if(Math.random() > 0.3 && Math.hypot(x-cx, y-cy) <= size) {
-                            if(map[y][x] === '.') map[y][x] = type;
+                        if(Math.random() > 0.4 && Math.hypot(x-cx, y-cy) <= size) {
+                            if(['.', '_', ','].includes(map[y][x])) map[y][x] = type;
                         }
                     }
                 }
@@ -137,23 +252,13 @@ const Game = {
         }
     },
 
-    placeRandomly: function(map, char) {
-        let placed = false;
-        while(!placed) {
-            let x = Math.floor(Math.random()*(this.MAP_W-4))+2;
-            let y = Math.floor(Math.random()*(this.MAP_H-4))+2;
-            if(map[y][x] === '.') { map[y][x] = char; placed = true; }
-        }
-    },
-
-    clearGate: function(map, x, y, char) {
+    clearGate: function(map, x, y, char, ground) {
         map[y][x] = char;
-        // Mache den Weg zum Tor frei (entferne Hindernisse drumherum)
         for(let dy=-1; dy<=1; dy++) {
             for(let dx=-1; dx<=1; dx++) {
                 let ny = y+dy, nx = x+dx;
                 if(ny>0 && ny<this.MAP_H-1 && nx>0 && nx<this.MAP_W-1) {
-                    if(map[ny][nx] !== 'V') map[ny][nx] = '.';
+                    if(map[ny][nx] !== 'V') map[ny][nx] = ground;
                 }
             }
         }
@@ -162,8 +267,11 @@ const Game = {
     initCanvas: function() {
         const cvs = document.getElementById('game-canvas');
         if(!cvs) return;
-        cvs.width = this.MAP_W * this.TILE;
-        cvs.height = this.MAP_H * this.TILE;
+        // Canvas Größe bleibt fest (Fenstergröße), aber wir zeichnen nur einen Ausschnitt
+        const viewContainer = document.getElementById('view-container');
+        cvs.width = viewContainer.offsetWidth;
+        cvs.height = viewContainer.offsetHeight;
+        
         this.ctx = cvs.getContext('2d');
         if(this.loopId) cancelAnimationFrame(this.loopId);
         this.drawLoop();
@@ -175,144 +283,111 @@ const Game = {
         this.loopId = requestAnimationFrame(() => this.drawLoop());
     },
 
-    // --- NEUE RENDER ENGINE ---
+    // --- KAMERA & RENDER ---
     draw: function() {
         if(!this.ctx) return;
         const ctx = this.ctx;
+        const cvs = ctx.canvas;
+
+        // Kamera berechnen (Spieler zentrieren)
+        // Ziel: Player Pixel Position - Halbe Canvas Breite
+        let targetCamX = (this.state.player.x * this.TILE) - (cvs.width / 2);
+        let targetCamY = (this.state.player.y * this.TILE) - (cvs.height / 2);
+
+        // Clamping (Kamera darf nicht aus der Map rausfahren)
+        const maxCamX = (this.MAP_W * this.TILE) - cvs.width;
+        const maxCamY = (this.MAP_H * this.TILE) - cvs.height;
         
-        // Boden füllen
-        ctx.fillStyle = "#1a1a1a"; // Dunkler Hintergrund
-        ctx.fillRect(0, 0, this.MAP_W * this.TILE, this.MAP_H * this.TILE);
-        
-        for(let y=0; y<this.MAP_H; y++) {
-            for(let x=0; x<this.MAP_W; x++) {
-                // Nebel des Krieges
-                if(this.state.explored[`${x},${y}`]) {
-                    const tile = this.state.currentMap[y][x];
-                    this.drawTile(ctx, x, y, tile);
-                } else {
-                    // Fog (Schwarz)
-                    ctx.fillStyle = "#000";
-                    ctx.fillRect(x*this.TILE, y*this.TILE, this.TILE, this.TILE);
+        this.camera.x = Math.max(0, Math.min(targetCamX, maxCamX));
+        this.camera.y = Math.max(0, Math.min(targetCamY, maxCamY));
+
+        // Hintergrund (Schwarz)
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+        // Transformation speichern und verschieben
+        ctx.save();
+        ctx.translate(-this.camera.x, -this.camera.y);
+
+        // Sichtbaren Bereich berechnen (Performance!)
+        const startCol = Math.floor(this.camera.x / this.TILE);
+        const endCol = startCol + (cvs.width / this.TILE) + 1;
+        const startRow = Math.floor(this.camera.y / this.TILE);
+        const endRow = startRow + (cvs.height / this.TILE) + 1;
+
+        for(let y = startRow; y <= endRow; y++) {
+            for(let x = startCol; x <= endCol; x++) {
+                if(y >= 0 && y < this.MAP_H && x >= 0 && x < this.MAP_W) {
+                    if(this.state.explored[`${x},${y}`]) {
+                        this.drawTile(ctx, x, y, this.state.currentMap[y][x]);
+                    } else {
+                        // Optional: Fog of War Style
+                        // ctx.fillStyle = "#111"; ctx.fillRect(x*this.TILE, y*this.TILE, this.TILE, this.TILE);
+                    }
                 }
             }
         }
-        
-        // Spieler zeichnen (Roter Punkt mit Schein)
+
+        // Spieler
         const px = this.state.player.x * this.TILE + this.TILE/2;
         const py = this.state.player.y * this.TILE + this.TILE/2;
-        
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "#ff3914";
+        ctx.shadowBlur = 15; ctx.shadowColor = "#ff3914";
         ctx.fillStyle = "#ff3914";
-        ctx.beginPath();
-        ctx.arc(px, py, this.TILE/3, 0, Math.PI*2);
-        ctx.fill();
-        ctx.shadowBlur = 0; // Reset
+        ctx.beginPath(); ctx.arc(px, py, this.TILE/3, 0, Math.PI*2); ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.restore();
     },
 
-    // Die Grafik-Funktion
     drawTile: function(ctx, x, y, type) {
         const ts = this.TILE;
         const px = x * ts;
         const py = y * ts;
 
-        // 1. Boden Textur (immer unter allem außer Wasser)
+        // Bodenfarben je nach Biome/Tile
+        let bg = this.colors['.'];
+        if(type === '_') bg = this.colors['_']; // Wüste
+        if(type === ',') bg = this.colors[',']; // Dschungel
+        if(type === '=' || type === 'B' || type === 'S') bg = this.colors['=']; // Stadt
+        if(type === '#') bg = this.colors['#']; // Dungeon
+
+        // Wasser hat keinen Boden drunter
         if (type !== '~') {
-            ctx.fillStyle = "#5d5345"; // Sand/Erde
+            ctx.fillStyle = bg;
             ctx.fillRect(px, py, ts, ts);
-            // Noise Effekt (Dreck)
-            ctx.fillStyle = "rgba(0,0,0,0.2)";
-            if((x+y)%3===0) ctx.fillRect(px+5, py+5, 2, 2);
-            if((x*y)%5===0) ctx.fillRect(px+20, py+20, 2, 2);
         }
 
-        // 2. Objekt Zeichnen
+        // Objekte
         switch(type) {
-            case '^': // Mauer
-                ctx.fillStyle = "#2a2a2a";
-                ctx.fillRect(px, py, ts, ts);
-                ctx.strokeStyle = "#444";
-                ctx.strokeRect(px, py, ts, ts);
+            case '^': // Wand
+                ctx.fillStyle = "#222"; ctx.fillRect(px, py, ts, ts);
+                ctx.strokeStyle = "#555"; ctx.strokeRect(px, py, ts, ts);
                 break;
-            
             case 'T': // Baum
-                // Schatten
-                ctx.fillStyle = "rgba(0,0,0,0.3)";
-                ctx.beginPath(); ctx.arc(px+ts/2+2, py+ts/2+2, ts/3, 0, Math.PI*2); ctx.fill();
-                // Stamm
-                ctx.fillStyle = "#3e2723";
-                ctx.fillRect(px+ts/2-3, py+ts/2, 6, ts/2);
-                // Krone
-                ctx.fillStyle = "#1b5e20";
-                ctx.beginPath(); ctx.arc(px+ts/2, py+ts/2-5, ts/2.5, 0, Math.PI*2); ctx.fill();
-                // Highlight
-                ctx.fillStyle = "#2e7d32";
-                ctx.beginPath(); ctx.arc(px+ts/2-3, py+ts/2-8, ts/5, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "#1b5e20"; // Grün
+                if(bg === this.colors['_']) ctx.fillStyle = "#2e7d32"; // Kaktus Farbe
+                ctx.beginPath(); ctx.moveTo(px+ts/2, py+2); ctx.lineTo(px+ts-2, py+ts-2); ctx.lineTo(px+2, py+ts-2); ctx.fill();
                 break;
-
-            case 'R': // Fels
-                ctx.fillStyle = "#757575";
-                ctx.beginPath();
-                ctx.moveTo(px+5, py+ts-5);
-                ctx.lineTo(px+ts/2, py+5);
-                ctx.lineTo(px+ts-5, py+ts-5);
-                ctx.fill();
-                // Schattierung
-                ctx.fillStyle = "rgba(0,0,0,0.2)";
-                ctx.beginPath();
-                ctx.moveTo(px+ts/2, py+5);
-                ctx.lineTo(px+ts/2, py+ts-5);
-                ctx.lineTo(px+ts-5, py+ts-5);
-                ctx.fill();
-                break;
-
             case '~': // Wasser
-                ctx.fillStyle = "#1e3a8a";
+                ctx.fillStyle = this.colors['~']; ctx.fillRect(px, py, ts, ts);
+                break;
+            case 'R': // Fels
+                ctx.fillStyle = "#555"; ctx.beginPath(); ctx.arc(px+ts/2, py+ts/2, ts/3, 0, Math.PI*2); ctx.fill();
+                break;
+            case 'B': // Hauswand
+                ctx.fillStyle = "#333"; ctx.fillRect(px+2, py+2, ts-4, ts-4);
+                ctx.fillStyle = "#000"; ctx.fillRect(px+5, py+5, ts-10, ts-10); // Dach
+                break;
+            case 'S': // Supermarkt
+                ctx.fillStyle = "#ef4444"; // Rot
                 ctx.fillRect(px, py, ts, ts);
-                // Wellen
-                ctx.fillStyle = "#3b82f6";
-                ctx.fillRect(px+5, py+10, 10, 2);
-                ctx.fillRect(px+15, py+20, 8, 2);
+                ctx.fillStyle = "#fff"; ctx.font="bold 20px monospace"; ctx.fillText("M", px+10, py+28);
                 break;
-
-            case 'V': // Vault (Zahnrad Symbolik)
-                ctx.fillStyle = "#fbbf24"; // Gold
-                ctx.beginPath(); ctx.arc(px+ts/2, py+ts/2, ts/2-2, 0, Math.PI*2); ctx.fill();
-                ctx.fillStyle = "#000";
-                ctx.beginPath(); ctx.arc(px+ts/2, py+ts/2, ts/3, 0, Math.PI*2); ctx.fill();
-                ctx.fillStyle = "#fbbf24"; 
-                ctx.font = "10px monospace"; ctx.fillText("111", px+6, py+ts/2+3);
+            case 'V': 
+                ctx.fillStyle = this.colors['V']; ctx.beginPath(); ctx.arc(px+ts/2, py+ts/2, ts/3, 0, Math.PI*2); ctx.fill();
                 break;
-
-            case 'C': // Stadt
-                ctx.fillStyle = "#8b4513"; // Holz Gebäude
-                ctx.fillRect(px+2, py+10, ts-4, ts-10);
-                ctx.fillStyle = "#ffff00"; // Fenster Licht
-                ctx.fillRect(px+8, py+15, 6, 6);
-                ctx.fillStyle = "#fff";
-                ctx.font = "9px monospace"; ctx.fillText("CTY", px+4, py+8);
-                break;
-
-            case 'G': // Gate (Tor)
-                ctx.fillStyle = "#00ffff"; // Cyan Leuchten
-                ctx.fillRect(px, py, ts, ts);
-                ctx.fillStyle = "#000";
-                ctx.fillRect(px+2, py+2, ts-4, ts-4); // Rahmen effekt
-                break;
-            
-            case 'H': // Haus Ruine
-                ctx.fillStyle = "#5d4037"; 
-                ctx.fillRect(px+4, py+8, ts-8, ts-8);
-                ctx.fillStyle = "#000"; // Kaputte Tür
-                ctx.fillRect(px+ts/2-3, py+ts-8, 6, 8);
-                break;
-
-            case 'D': // Dungeon Höhle
-                ctx.fillStyle = "#3e2723"; // Berg
-                ctx.beginPath(); ctx.arc(px+ts/2, py+ts/2+5, ts/2, Math.PI, 0); ctx.fill();
-                ctx.fillStyle = "#000"; // Loch
-                ctx.beginPath(); ctx.arc(px+ts/2, py+ts/2+5, ts/4, Math.PI, 0); ctx.fill();
+            case 'G':
+                ctx.fillStyle = this.colors['G']; ctx.fillRect(px+5, py+5, ts-10, ts-10);
                 break;
         }
     },
@@ -321,27 +396,35 @@ const Game = {
         if(this.state.inDialog || this.state.isGameOver) return;
         const nx = this.state.player.x + dx;
         const ny = this.state.player.y + dy;
+        
+        // Map Grenzen
+        if(nx < 0 || nx >= this.MAP_W || ny < 0 || ny >= this.MAP_H) return;
+
         const tile = this.state.currentMap[ny][nx];
         
-        // Kollision mit neuen Objekten
-        if(tile === '^' || tile === 'T' || tile === 'R' || tile === '~') { 
-            let msg = "Weg blockiert.";
-            if(tile === '~') msg = "Zu tiefes Wasser.";
-            if(tile === 'T') msg = "Dichter Wald.";
-            if(tile === 'R') msg = "Felsen im Weg.";
-            UI.log(msg, "text-gray-500"); 
-            return; 
+        // Kollision (Wände, Wasser, Bäume, Felsen, Gebäude)
+        if(['^', 'T', '~', 'R', 'B'].includes(tile)) { 
+            UI.log("Weg blockiert.", "text-gray-500"); return; 
         }
         
         this.state.player.x = nx;
         this.state.player.y = ny;
         this.reveal(nx, ny);
         
-        if(tile === 'G') this.changeSector(nx, ny);
-        else if(tile === 'C') UI.switchView('city');
+        if(tile === 'G') {
+            if(this.state.zone.includes("Supermarkt")) {
+                // Raus aus Dungeon
+                this.loadSector(this.state.sector.x, this.state.sector.y);
+                UI.log("Zurück an der Oberfläche.", "text-green-400");
+                // Platziere Spieler neben Supermarkt (quick fix)
+                this.findSafeSpawn(); 
+            } else {
+                this.changeSector(nx, ny);
+            }
+        }
+        else if(tile === 'S') UI.enterSupermarket();
         else if(tile === 'V') UI.enterVault();
-        else if(tile === 'H' || tile === 'D') UI.log("Sieht verlassen aus...", "text-yellow-500"); // Placeholder für Dungeons
-        else if(Math.random()<0.1 && tile === '.') this.startCombat();
+        else if(Math.random()<0.1 && tile !== 'S' && tile !== 'G') this.startCombat();
         UI.update();
     },
 
@@ -355,45 +438,55 @@ const Game = {
 
     changeSector: function(px, py) {
         let sx=this.state.sector.x, sy=this.state.sector.y;
-        if(py===0) sy--; else if(py===11) sy++;
-        if(px===0) sx--; else if(px===19) sx++;
+        if(py===0) sy--; else if(py===this.MAP_H-1) sy++;
+        if(px===0) sx--; else if(px===this.MAP_W-1) sx++;
+        
+        // World Bounds Check (0-7 bei 8x8)
+        if(sx < 0 || sx > 7 || sy < 0 || sy > 7) {
+            UI.log("Ende der Weltkarte.", "text-red-500");
+            // Spieler zurücksetzen
+            this.state.player.x -= (px===0 ? -1 : 1);
+            return;
+        }
+
         this.state.sector = {x: sx, y: sy};
         this.loadSector(sx, sy);
-        if(py===0) this.state.player.y=10; else if(py===11) this.state.player.y=1;
-        if(px===0) this.state.player.x=18; else if(px===19) this.state.player.x=1;
+        
+        // Spieler Position auf neuer Map
+        if(py===0) this.state.player.y=this.MAP_H-2; else if(py===this.MAP_H-1) this.state.player.y=1;
+        if(px===0) this.state.player.x=this.MAP_W-2; else if(px===this.MAP_W-1) this.state.player.x=1;
+        
+        this.findSafeSpawn(); // Sicherheitshalber
         this.reveal(this.state.player.x, this.state.player.y);
-        UI.log(`Sektor: ${sx},${sy}`, "text-blue-400");
+        UI.log(`Sektorwechsel: ${sx},${sy}`, "text-blue-400");
     },
 
     startCombat: function() {
-        const templates = Object.values(this.monsters).filter(m => this.state.lvl >= m.minLvl);
-        const template = templates[Math.floor(Math.random() * templates.length)];
+        // Monster Auswahl basierend auf Biome
+        let pool = [];
+        if(this.state.zone.includes("Wüste")) pool = [this.monsters.moleRat, this.monsters.raider];
+        else if(this.state.zone.includes("Supermarkt")) pool = [this.monsters.raider, this.monsters.raider]; // Viele Raider
+        else if(this.state.zone.includes("Dschungel")) pool = [this.monsters.mutantRose];
+        else pool = [this.monsters.moleRat];
+
+        if(this.state.lvl >= 5) pool.push(this.monsters.deathclaw);
+
+        const template = pool[Math.floor(Math.random()*pool.length)];
         
         let enemy = { ...template };
         const isLegendary = Math.random() < 0.1;
-        
         if(isLegendary) {
             enemy.isLegendary = true;
             enemy.name = "Legendäre " + enemy.name;
-            enemy.hp = Math.floor(enemy.hp * 2.0); 
-            enemy.maxHp = enemy.hp;
-            enemy.dmg = Math.floor(enemy.dmg * 1.5); 
-            enemy.loot = Math.floor(enemy.loot * 3.0); 
-            if(Array.isArray(enemy.xp)) {
-                enemy.xp = [enemy.xp[0]*3, enemy.xp[1]*3]; 
-            } else {
-                enemy.xp = enemy.xp * 3;
-            }
-        } else {
-            enemy.maxHp = enemy.hp;
-        }
+            enemy.hp *= 2; enemy.maxHp = enemy.hp; enemy.dmg = Math.floor(enemy.dmg*1.5);
+            enemy.loot *= 3; 
+            if(Array.isArray(enemy.xp)) enemy.xp = [enemy.xp[0]*3, enemy.xp[1]*3];
+        } else enemy.maxHp = enemy.hp;
         
         this.state.enemy = enemy;
         this.state.inDialog = true;
         UI.switchView('combat').then(() => UI.renderCombat());
-        
-        if(isLegendary) UI.log("ACHTUNG: LEGENDÄRE PRÄSENZ!", "text-yellow-400 font-bold");
-        else UI.log(`${enemy.name} greift an!`, "text-red-500");
+        UI.log(isLegendary ? "LEGENDÄRER GEGNER!" : "Kampf gestartet!", isLegendary ? "text-yellow-400" : "text-red-500");
     },
 
     getRandomXP: function(xpData) {
@@ -418,17 +511,13 @@ const Game = {
 
             if(Math.random() > 0.3) {
                 const baseDmg = wpn.baseDmg || 2;
-                const strBonus = this.getStat('STR') * 1.5;
-                const dmg = Math.floor(baseDmg + strBonus);
+                const dmg = Math.floor(baseDmg + (this.getStat('STR') * 1.5));
                 this.state.enemy.hp -= dmg;
-                UI.log(`Treffer! ${dmg} Schaden.`, "text-green-400");
-                
+                UI.log(`Treffer: ${dmg} Schaden.`, "text-green-400");
                 if(this.state.enemy.hp <= 0) {
-                    this.state.enemy.hp = 0;
                     this.state.caps += this.state.enemy.loot;
                     UI.log(`Sieg! ${this.state.enemy.loot} KK.`, "text-yellow-400");
-                    const randomXp = this.getRandomXP(this.state.enemy.xp);
-                    this.gainExp(randomXp);
+                    this.gainExp(this.getRandomXP(this.state.enemy.xp));
                     this.endCombat();
                     return;
                 }
@@ -454,7 +543,7 @@ const Game = {
             const armor = (this.getStat('END') * 0.5);
             const dmg = Math.max(1, Math.floor(this.state.enemy.dmg - armor));
             this.state.hp -= dmg;
-            UI.log(`Gegner trifft: -${dmg} TP.`, "text-red-400");
+            UI.log(`Schaden erhalten: ${dmg}`, "text-red-400");
             this.checkDeath();
         } else UI.log("Gegner verfehlt.", "text-gray-500");
     },
