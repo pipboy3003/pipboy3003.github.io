@@ -141,6 +141,54 @@
             box-shadow: 0 0 10px rgba(57, 255, 20, 0.1);
             position: absolute;
         }
+        
+        /* --- WORLD MAP STYLES --- */
+        #world-map-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 2px;
+            width: 80%;
+            max-width: 800px; 
+            aspect-ratio: 1 / 1; 
+            padding: 10px;
+            border: 2px solid var(--pip-green);
+            background-color: var(--pip-dark);
+        }
+
+        .sector-tile {
+            aspect-ratio: 1 / 1;
+            background-color: var(--pip-dim);
+            border: 1px solid var(--pip-green);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.7rem;
+            color: var(--pip-green);
+            position: relative;
+        }
+        
+        .sector-tile.explored {
+            background-color: var(--color-arid);
+            color: #000;
+        }
+        
+        .sector-tile.current-sector {
+            background-color: #39ff14 !important;
+            box-shadow: 0 0 10px var(--pip-green);
+            color: #000;
+            font-weight: bold;
+        }
+        
+        .sector-tile .marker {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1rem;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+        
+        /* --- END WORLD MAP STYLES --- */
 
         #log-panel {
             background-color: rgba(0,0,0,0.5);
@@ -267,6 +315,7 @@
                 <button id="new-game-btn" class="action-button px-2 py-1 text-xs leading-none bg-red-900 border-red-500" onclick="initNewGame()">NEUES SPIEL</button>
                 <button id="quit-btn" class="action-button px-2 py-1 text-xs leading-none bg-gray-700 border-gray-500" onclick="quitGame()">BEENDEN</button>
                 <button id="wiki-btn" class="action-button px-2 py-1 text-sm leading-none" onclick="switchView('wiki')">WIKI</button>
+                <button id="map-btn" class="action-button px-2 py-1 text-sm leading-none" onclick="switchView('worldmap')">MAP</button>
                 <button id="char-btn" class="action-button px-2 py-1 text-sm leading-none" onclick="switchView('character')">CHAR</button>
             </div>
         </header>
@@ -316,6 +365,13 @@
                                 <p class="pip-text">Die Karte wird nicht angezeigt. Bewegung (WASD / Pfeile) ist weiterhin im Ödland aktiv.</p>
                                 <p class="mt-4 pip-text">Aktuelle Zone: <span id="current-zone-display-map">Ödland</span></p>
                             </div>
+                        </div>
+
+                        <div id="worldmap-view" class="view justify-center items-center" style="display: none; flex-direction: column; gap: 1rem;">
+                            <h1 class="city-header text-center text-3xl mb-4">GLOBALER SEKTOR-SCAN (10x10)</h1>
+                            <div id="world-map-grid">
+                            </div>
+                            <button class="action-button mt-4 mb-2" onclick="switchView('map')">Zurück zum lokalen Sektor</button>
                         </div>
 
                         <div id="city-view" class="view justify-start items-start p-2 sm:p-6" style="display: none; overflow-y: auto;">
@@ -377,7 +433,7 @@
                         <div id="combat-view" class="view" style="display: none;">
                             <div class="bg-red-900/10 border-4 border-red-500 rounded-lg p-8 flex flex-col gap-4 w-11/12 max-w-sm">
                                 <h1 class="text-3xl font-bold text-red-500 tracking-wider">GEFAHR!</h1>
-                                <div id="combat-display-center" class="text-white text-center">
+                                <div class="text-white text-center">
                                     <div class="text-3xl font-extrabold" id="enemy-name-center"></div>
                                     <div class="text-lg" id="enemy-hp-display-center"></div>
                                 </div>
@@ -430,23 +486,32 @@
 </div>
 
 <script>
+    // --- GLOBALE EINSTELLUNGEN ---
     const TILE_SIZE = 30; 
     const MAP_WIDTH = 20; 
     const MAP_HEIGHT = 12; 
     
+    // --- WELTKARTE EINSTELLUNGEN ---
+    const WORLD_SIZE = 10; // 10x10 Raster
+    const START_SECTOR_X = 5;
+    const START_SECTOR_Y = 5;
+    // Das Ziel wird zufällig auf den äußeren Rand gelegt
+    const GOAL_SECTOR = { x: 0, y: 0 }; // Wird in initNewGame gesetzt
+
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d'); 
 
     canvas.width = MAP_WIDTH * TILE_SIZE;
     canvas.height = MAP_HEIGHT * TILE_SIZE;
     
-    let mapLayout = []; 
+    let mapLayout = []; // Die aktuelle 20x12 Karte
+    let worldState = {}; // Speichert die Informationen aller 10x10 Sektoren
     
     const mapColors = {
         'V': '#39ff14', 
-        'C': '#39ff14', 
-        'X': '#39ff14', 
-        'G': '#00ffff', // NEU: Tor zur nächsten Map (Cyan)
+        'C': '#7a661f', // Stadt
+        'X': '#ff3914', // Ziel (Goal)
+        'G': '#00ffff', // Tor zum Sektorwechsel
         '.': '#4a3d34', 
         '#': '#8b7d6b', 
         '^': '#5c544d', 
@@ -499,9 +564,12 @@
         pipBoyCase: document.getElementById('pipboy-case'),
         gameScreen: document.getElementById('game-screen'),
         mapView: document.getElementById('map-view'),
+        worldMapView: document.getElementById('worldmap-view'), // NEU
+        worldMapGrid: document.getElementById('world-map-grid'), // NEU
         cityView: document.getElementById('city-view'),
         charView: document.getElementById('character-view'), 
         charBtn: document.getElementById('char-btn'),
+        mapBtn: document.getElementById('map-btn'), // NEU
         wikiBtn: document.getElementById('wiki-btn'),
         wikiView: document.getElementById('wiki-view'),
         wikiContent: document.getElementById('wiki-content'),      
@@ -545,9 +613,8 @@
             gameState.exp -= expNeeded;
             expNeeded = expToNextLevel(gameState.level);
             
-            // HP Steigerung beim Level-Up
             const maxHp = calculateMaxHP(getStat('END')); 
-            gameState.health = Math.min(maxHp, gameState.health + 20); // Heilung um 20 TP beim Level-Up, max bis zum neuen MaxHP
+            gameState.health = Math.min(maxHp, gameState.health + 20); 
             
             log(`LEVEL UP! Du bist jetzt Level ${gameState.level}! +1 Stat-Punkt.`, 'text-red-500 bg-yellow-400/20');
         }
@@ -560,11 +627,8 @@
             gameState.statPoints--; 
             gameState.tempStatIncrease = {}; 
             
-            // NEU: Max HP sofort nach END-Erhöhung aktualisieren
             if (statKey === 'END') {
                 const newMaxHp = calculateMaxHP(getStat('END'));
-                // Falls die aktuellen HP niedriger sind als der alte Max HP, behalten, aber der neue Max HP ist der Limit.
-                // Heilung muss manuell erfolgen (z.B. beim Arzt oder Level-Up)
                 gameState.maxHealth = newMaxHp;
                 log(`Max HP auf ${newMaxHp} erhöht (+10)!`, 'text-green-400');
             }
@@ -674,21 +738,21 @@
             <div>Waffe: <span class="pip-stat-value">${gameState.equipment.weapon.name}</span></div>
         `;
 
-        els.hp.textContent = `${Math.round(gameState.health)}/${currentMaxHp}`; // Angepasste Anzeige
+        els.hp.textContent = `${Math.round(gameState.health)}/${currentMaxHp}`; 
         const hpPercent = Math.max(0, (gameState.health / currentMaxHp) * 100); 
         els.hpBar.style.width = `${hpPercent}%`;
         els.hpBar.className = gameState.health < (currentMaxHp * 0.3) ? 'bg-red-500 h-full' : 'bg-[#39ff14] h-full';
         
         els.ammo.textContent = gameState.ammo;
         els.caps.textContent = `${gameState.caps} Kronenkorken`;
-        els.zoneDisplay.textContent = gameState.currentZone;
+        els.zoneDisplay.textContent = `${gameState.currentZone} (${gameState.currentSector.x},${gameState.currentSector.y})`;
 
         if (gameState.currentEnemy) {
             els.enemyName.textContent = gameState.currentEnemy.name.toUpperCase();
             els.enemyHpDisplay.textContent = `TP: ${gameState.currentEnemy.hp}/${gameState.currentEnemy.maxHp}`;
         }
 
-        const isControlHidden = gameState.inDialog || gameState.isGameOver || gameState.currentView !== 'map';
+        const isControlHidden = gameState.inDialog || gameState.isGameOver || (gameState.currentView !== 'map' && gameState.currentView !== 'city');
         els.moveContainer.style.visibility = isControlHidden ? 'hidden' : 'visible';
         
         els.btns.style.display = gameState.inDialog ? 'flex' : 'none'; 
@@ -696,11 +760,26 @@
         if (gameState.isGameOver) els.restart.style.display = 'block';
         else els.restart.style.display = 'none';
     }
+    
+    // --- NEUE FUNKTIONEN FÜR DIE WELTKARTE ---
+    
+    function getSectorKey(x, y) {
+        return `${x},${y}`;
+    }
 
-    function generateRandomMap() {
+    function generateRandomMap(sectorX, sectorY) {
+        const key = getSectorKey(sectorX, sectorY);
+        let sectorData = worldState[key];
+        
+        // Wenn der Sektor schon existiert, lade seine Layout-Daten
+        if (sectorData && sectorData.layout) {
+             return { layout: sectorData.layout.map(row => row.split('')), startX: MAP_WIDTH / 2, startY: MAP_HEIGHT / 2 };
+        }
+        
         let newMap = Array(MAP_HEIGHT).fill(0).map(() => Array(MAP_WIDTH).fill('.'));
+        const spots = [];
 
-        // Mauern um die Map ziehen
+        // 1. Mauern um die Map ziehen
         for (let y = 0; y < MAP_HEIGHT; y++) {
             newMap[y][0] = '^';
             newMap[y][MAP_WIDTH - 1] = '^';
@@ -709,42 +788,43 @@
             newMap[0][x] = '^';
             newMap[MAP_HEIGHT - 1][x] = '^';
         }
-
-        // NEU: Das Tor 'G' an einem zufälligen Rand platzieren (außer Ecken)
-        const borderIndex = Math.floor(Math.random() * 4); // 0=oben, 1=unten, 2=links, 3=rechts
         
-        let gateX, gateY;
+        // 2. Tore ('G') an den Rändern, die nicht am Rand der Welt sind
         
-        if (borderIndex === 0) { // Oben
-            gateX = Math.floor(Math.random() * (MAP_WIDTH - 2)) + 1; // 1 bis MAP_WIDTH-2
-            gateY = 0;
-        } else if (borderIndex === 1) { // Unten
-            gateX = Math.floor(Math.random() * (MAP_WIDTH - 2)) + 1;
-            gateY = MAP_HEIGHT - 1;
-        } else if (borderIndex === 2) { // Links
-            gateX = 0;
-            gateY = Math.floor(Math.random() * (MAP_HEIGHT - 2)) + 1;
-        } else { // Rechts
-            gateX = MAP_WIDTH - 1;
-            gateY = Math.floor(Math.random() * (MAP_HEIGHT - 2)) + 1;
+        const isWorldEdge = (x, y) => x === 0 || x === WORLD_SIZE - 1 || y === 0 || y === WORLD_SIZE - 1;
+        const placeGate = (x, y, borderIndex) => {
+            const range = borderIndex === 0 || borderIndex === 1 ? MAP_WIDTH - 2 : MAP_HEIGHT - 2;
+            const pos = Math.floor(Math.random() * range) + 1;
+            
+            if (borderIndex === 0 && sectorY > 0) newMap[0][pos] = 'G'; // Oben (nach Nord)
+            if (borderIndex === 1 && sectorY < WORLD_SIZE - 1) newMap[MAP_HEIGHT - 1][pos] = 'G'; // Unten (nach Süd)
+            if (borderIndex === 2 && sectorX > 0) newMap[pos][0] = 'G'; // Links (nach West)
+            if (borderIndex === 3 && sectorX < WORLD_SIZE - 1) newMap[pos][MAP_WIDTH - 1] = 'G'; // Rechts (nach Ost)
+        };
+        
+        for (let i = 0; i < 4; i++) {
+             placeGate(sectorX, sectorY, i);
         }
 
-        newMap[gateY][gateX] = 'G'; // Das Tor setzen
-        
-        // Wasserfläche (unpassierbar)
-        const waterSize = Math.floor(Math.random() * 2) + 2; 
-        const waterStart = { x: Math.floor(Math.random() * (MAP_WIDTH - waterSize - 1)) + 1, 
-                             y: Math.floor(Math.random() * (MAP_HEIGHT - waterSize - 1)) + 1 };
-        
-        for (let y = waterStart.y; y < waterStart.y + waterSize; y++) {
-            for (let x = waterStart.x; x < waterStart.x + waterSize; x++) {
-                if (newMap[y] && newMap[y][x] === '.') newMap[y][x] = '~';
-            }
-        }
 
-        const spots = [];
+        // 3. Besondere Orte: Vault (V), Ziel (X), Stadt (C)
         const minDistance = 5; 
+        let hasPOI = false;
+        let poiMarkers = [];
 
+        if (sectorX === START_SECTOR_X && sectorY === START_SECTOR_Y) {
+            poiMarkers.push('V'); // Nur Vault am Startpunkt
+        }
+        if (sectorX === GOAL_SECTOR.x && sectorY === GOAL_SECTOR.y) {
+            poiMarkers.push('X'); // Nur Ziel am Zielpunkt
+        }
+        
+        // Städte: 40% Chance auf einer nicht-Vault/Ziel Kachel
+        if (poiMarkers.length === 0 && Math.random() < 0.4) {
+            poiMarkers.push('C');
+        }
+
+        // Platziere POIs
         function isValidPlacement(x, y) {
             if (!newMap[y] || newMap[y][x] !== '.') return false;
             for (const spot of spots) {
@@ -755,7 +835,6 @@
             return true;
         }
 
-        const poiMarkers = ['V', 'C', 'X'];
         for (const marker of poiMarkers) {
             let placed = false;
             let attempts = 100;
@@ -765,39 +844,42 @@
                 if (isValidPlacement(x, y)) {
                     newMap[y][x] = marker;
                     spots.push({ x, y, marker });
+                    hasPOI = true;
                     placed = true;
                 }
                 attempts--;
             }
         }
-
-        if (spots.length >= 2) {
-            spots.sort((a, b) => a.y !== b.y ? a.y - b.y : a.x - b.x); 
-
-            for (let i = 0; i < spots.length - 1; i++) {
-                const start = spots[i];
-                const end = spots[i + 1];
-
-                let cy = start.y;
-                while (cy !== end.y) {
-                    cy += (end.y > start.y ? 1 : -1);
-                    if (newMap[cy] && newMap[cy][start.x] === '.') newMap[cy][start.x] = '#';
-                }
-                
-                let cx = start.x;
-                while (cx !== end.x) {
-                    cx += (end.x > start.x ? 1 : -1);
-                    if (newMap[end.y] && newMap[end.y][cx] === '.') newMap[end.y][cx] = '#';
+        
+        // 4. Wasser und Pfade (optional)
+        if (!hasPOI) { // Wenn keine POIs, etwas Terrain hinzufügen
+            const waterSize = Math.floor(Math.random() * 2) + 2; 
+            const waterStart = { x: Math.floor(Math.random() * (MAP_WIDTH - waterSize - 1)) + 1, 
+                                 y: Math.floor(Math.random() * (MAP_HEIGHT - waterSize - 1)) + 1 };
+            
+            for (let y = waterStart.y; y < waterStart.y + waterSize; y++) {
+                for (let x = waterStart.x; x < waterStart.x + waterSize; x++) {
+                    if (newMap[y] && newMap[y][x] === '.') newMap[y][x] = '~';
                 }
             }
         }
 
         const generatedMap = newMap.map(row => row.join(''));
         
+        sectorData = {
+            layout: generatedMap,
+            explored: false,
+            markers: spots.map(s => s.marker)
+        };
+        worldState[key] = sectorData;
+
         // Finde einen Startpunkt abseits des Tors und der Mauer
-        let startX = 1, startY = 1;
+        let startX = Math.floor(MAP_WIDTH / 2);
+        let startY = Math.floor(MAP_HEIGHT / 2);
+
+        // Wenn Vault existiert, starte daneben
         const vaultSpot = spots.find(s => s.marker === 'V');
-        if (vaultSpot) { startX = vaultSpot.x; startY = vaultSpot.y; }
+        if (vaultSpot) { startX = vaultSpot.x; startY = vaultSpot.y + 1; }
 
         return { layout: generatedMap, startX, startY };
     }
@@ -860,20 +942,58 @@
         }
     }
     
+    function showWorldMap() {
+        els.worldMapGrid.innerHTML = '';
+        
+        for (let y = 0; y < WORLD_SIZE; y++) {
+            for (let x = 0; x < WORLD_SIZE; x++) {
+                const key = getSectorKey(x, y);
+                const sector = worldState[key];
+                const tile = document.createElement('div');
+                tile.className = 'sector-tile';
+                
+                let isExplored = sector && sector.explored;
+                let markers = sector ? sector.markers : [];
+                
+                if (isExplored) {
+                    tile.classList.add('explored');
+                }
+                
+                if (x === gameState.currentSector.x && y === gameState.currentSector.y) {
+                    tile.classList.add('current-sector');
+                    tile.textContent = 'YOU';
+                }
+
+                if (markers.length > 0) {
+                    const markerEl = document.createElement('span');
+                    markerEl.className = 'marker';
+                    if (markers.includes('V')) markerEl.textContent = 'VLT';
+                    else if (markers.includes('X')) markerEl.textContent = 'GOAL';
+                    else if (markers.includes('C')) markerEl.textContent = 'CITY';
+                    tile.appendChild(markerEl);
+                }
+                
+                els.worldMapGrid.appendChild(tile);
+            }
+        }
+    }
+    
     function switchView(newView) {
         if (gameState.currentView === newView) {
-            if (newView === 'character' || newView === 'wiki') {
+            if (newView === 'character' || newView === 'wiki' || newView === 'worldmap') {
                 switchView('map');
                 return;
             }
             return;
         }
 
-        const oldViewEl = gameState.currentView === 'map' ? els.mapView : gameState.currentView === 'city' ? els.cityView : gameState.currentView === 'character' ? els.charView : gameState.currentView === 'wiki' ? els.wikiView : els.combatView;
-        const newViewEl = newView === 'map' ? els.mapView : newView === 'city' ? els.cityView : newView === 'character' ? els.charView : newView === 'wiki' ? els.wikiView : els.combatView;
+        const oldViewEl = document.getElementById(gameState.currentView + '-view');
+        const newViewEl = document.getElementById(newView + '-view');
         
+        // Alle Navigationsbuttons deaktivieren
         els.charBtn.disabled = true; 
         els.wikiBtn.disabled = true;
+        els.mapBtn.disabled = true;
         
         if (oldViewEl) {
             oldViewEl.classList.add('transition-out');
@@ -888,14 +1008,21 @@
             gameState.currentView = newView;
             
             setTimeout(() => {
+                // Alle Navigationsbuttons re-aktivieren
                 els.charBtn.disabled = false; 
                 els.wikiBtn.disabled = false;
+                els.mapBtn.disabled = false;
 
                 if (newView === 'map') {
                     els.text.textContent = "Zurück im Ödland.";
                     gameState.currentZone = "Ödland";
                     closeCityDialog();
                     requestAnimationFrame(draw); 
+                } else if (newView === 'worldmap') { // NEU: Weltkarte
+                    els.text.textContent = "Globalen Sektor-Scan aufgerufen.";
+                    gameState.currentZone = "WELTKARTE";
+                    showWorldMap();
+                    gameState.inDialog = false;
                 } else if (newView === 'city') {
                     els.text.textContent = "Willkommen in Rusty Springs.";
                     gameState.currentZone = "Rusty Springs";
@@ -975,7 +1102,6 @@
                 }
             }
             
-            // NEU: Heilung beim Arzt setzt Max HP
             if (opt.isHeal) {
                 opt.action = () => {
                     gameState.health = gameState.maxHealth; 
@@ -1006,51 +1132,50 @@
         updateUI();
     }
 
-    // NEU: Funktion zum Wechseln des Sektors / Generieren der nächsten Map
-    function confirmSectorChange(change) {
+    function confirmSectorChange(change, dx, dy, playerX, playerY) {
         els.btns.innerHTML = ''; 
         
         if (change) {
             log("Tor durchschritten. Sektorwechsel beginnt...", "text-yellow-400");
             
-            // Speichern des aktuellen Zustands, den wir behalten wollen
-            const savedState = {
-                stats: gameState.stats,
-                equipment: gameState.equipment,
-                health: gameState.health,
-                ammo: gameState.ammo,
-                caps: gameState.caps,
-                level: gameState.level,
-                exp: gameState.exp,
-                statPoints: gameState.statPoints,
-            };
+            const nextX = gameState.currentSector.x + dx;
+            const nextY = gameState.currentSector.y + dy;
             
-            // Generiere neue Map (wie bei initNewGame)
-            const { layout, startX, startY } = generateRandomMap();
+            // Speichere den aktuellen Fortschritt im Sektor (Erkundung)
+            const currentSectorKey = getSectorKey(gameState.currentSector.x, gameState.currentSector.y);
+            worldState[currentSectorKey].explored = true; 
+            
+            // Lade/Generiere den neuen Sektor
+            const { layout, startX, startY } = generateRandomMap(nextX, nextY);
             mapLayout = layout.map(row => row.split(''));
             
-            // Neuen GameState setzen, aber alte Werte beibehalten
-            gameState = {
-                ...gameState, // Behält alle UI/View-Flags (z.B. currentView='map')
-                ...savedState, // Überschreibt mit den behaltenen Werten
-                player: { x: startX, y: startY }, // Neuer Startpunkt
-                explored: {}, // Neue Karte ist unerforscht
-                inDialog: false,
-                currentZone: "Neues Ödland", // Aktualisierte Zone
-            };
-            
-            // Max HP muss neu berechnet werden, da END aus Equipment sich geändert haben könnte
+            // Setze den Spieler an die korrekte Position
+            let newPlayerX = startX;
+            let newPlayerY = startY;
+            if (dx === 1) newPlayerX = 1; // Westrand
+            else if (dx === -1) newPlayerX = MAP_WIDTH - 2; // Ostrand
+            else if (dy === 1) newPlayerY = 1; // Nordrand
+            else if (dy === -1) newPlayerY = MAP_HEIGHT - 2; // Südrand
+
+            gameState.currentSector = { x: nextX, y: nextY };
+            gameState.player = { x: newPlayerX, y: newPlayerY }; 
+            gameState.explored = {}; // Neue Karte ist unerforscht
+
+            // Aktualisiere HP und UI
             gameState.maxHealth = calculateMaxHP(getStat('END'));
 
-            els.text.textContent = "Neuer Sektor! Die Landschaft ist anders...";
-            revealMap(startX, startY);
+            els.text.textContent = `Neuer Sektor (${nextX},${nextY})! Die Landschaft ist anders...`;
+            revealMap(gameState.player.x, gameState.player.y);
             updateUI();
             draw();
-            log("Sektorwechsel abgeschlossen. Neue Zone erkunden.", "text-yellow-400");
+            log(`Sektorwechsel abgeschlossen. Neue Zone erkunden.`, "text-yellow-400");
             
         } else {
             gameState.inDialog = false;
             els.text.textContent = "Ödland Ebene.";
+            // Wenn der Spieler sich gegen den Wechsel entscheidet, stelle die Position des Spielers auf das Feld vor dem Tor zurück.
+            gameState.player.x = playerX;
+            gameState.player.y = playerY;
             updateUI();
         }
     }
@@ -1061,14 +1186,14 @@
         const nx = gameState.player.x + dx;
         const ny = gameState.player.y + dy;
 
-        // Prüfen, ob die Bewegung außerhalb der Grenzen liegt, um Fehler zu vermeiden
         if (nx < 0 || nx >= MAP_WIDTH || ny < 0 || ny >= MAP_HEIGHT) {
-            log("Ende der Kartendaten erreicht.", "text-gray-500");
+            log("Ende der Kartendaten erreicht (Fehler).", "text-gray-500");
             return; 
         }
 
         const tile = mapLayout[ny][nx];
-        const oldTile = mapLayout[gameState.player.y][gameState.player.x];
+        const oldX = gameState.player.x;
+        const oldY = gameState.player.y;
 
         if (tile === '^') { 
             log("Massive Felsen/Mauer. Nicht passierbar.", "text-gray-500");
@@ -1080,24 +1205,42 @@
             return; 
         }
 
-        if (tile === 'G') { // NEU: Tor zur nächsten Map!
+        if (tile === 'G') { 
+            // Berechne die Richtung des Sektorwechsels basierend auf der Position des Tors
+            let sectorDx = 0;
+            let sectorDy = 0;
+            if (ny === 0) sectorDy = -1; // Nord (Obere Kante)
+            else if (ny === MAP_HEIGHT - 1) sectorDy = 1; // Süd (Untere Kante)
+            else if (nx === 0) sectorDx = -1; // West (Linke Kante)
+            else if (nx === MAP_WIDTH - 1) sectorDx = 1; // Ost (Rechte Kante)
+
+            // Prüfe, ob der Wechsel innerhalb der Weltgrenzen liegt
+            const nextX = gameState.currentSector.x + sectorDx;
+            const nextY = gameState.currentSector.y + sectorDy;
+            
+            if (nextX < 0 || nextX >= WORLD_SIZE || nextY < 0 || nextY >= WORLD_SIZE) {
+                log("Ende der Weltkarte erreicht. Weitergehen nicht möglich.", "text-red-500");
+                return;
+            }
+
+            // Der Spieler darf das Tor betreten
             gameState.player.x = nx;
             gameState.player.y = ny;
             revealMap(nx, ny);
             
             log("Tor zum nächsten Sektor in Reichweite.", "text-yellow-400");
-            els.text.innerHTML = "Möchtest du den Sektor wechseln? <b>LEVEL: " + gameState.level + "</b>";
+            els.text.innerHTML = `Möchtest du in Sektor <b>(${nextX},${nextY})</b> wechseln?`;
             gameState.inDialog = true;
             
             els.btns.innerHTML = `
-                <button class="action-button w-1/3 text-base" onclick="confirmSectorChange(false)">Bleiben</button>
-                <button class="action-button w-2/3 text-lg font-extrabold bg-green-900 border-green-500" onclick="confirmSectorChange(true)">SEKTOR WECHSELN</button>
+                <button class="action-button w-1/3 text-base" onclick="confirmSectorChange(false, ${sectorDx}, ${sectorDy}, ${oldX}, ${oldY})">Bleiben</button>
+                <button class="action-button w-2/3 text-lg font-extrabold bg-green-900 border-green-500" onclick="confirmSectorChange(true, ${sectorDx}, ${sectorDy}, ${oldX}, ${oldY})">SEKTOR WECHSELN</button>
             `;
             updateUI();
             return; 
         }
 
-        if (tile === 'C' && oldTile !== 'C') {
+        if (tile === 'C') {
             gameState.player.x = nx;
             gameState.player.y = ny;
             revealMap(nx, ny);
@@ -1135,6 +1278,9 @@
     }
 
     function revealMap(px, py) {
+        const currentSectorKey = getSectorKey(gameState.currentSector.x, gameState.currentSector.y);
+        worldState[currentSectorKey].explored = true;
+
         for(let y = py-1; y <= py+1; y++) {
             for(let x = px-1; x <= px+1; x++) {
                 if (mapLayout[y] && mapLayout[y][x]) {
@@ -1145,7 +1291,8 @@
     }
 
     function handleTileEvent(tile, x, y) {
-        if (tile === 'C' || tile === 'G') { return; } // G ebenfalls ignorieren
+        if (tile === 'C' || tile === 'G' || tile === 'V') { return; } 
+
         if (tile === 'X') { victory(); return; }
 
         if (tile === '.' || tile === '#') {
@@ -1157,7 +1304,7 @@
 
     function enterCity() {
         showCityDialog([
-            { text: "Arzt (25 KK) | TP vollst.", cost: 25, isHeal: true, action: () => {} }, // isHeal Flag für updateUI
+            { text: "Arzt (25 KK) | TP vollst.", cost: 25, isHeal: true, action: () => {} }, 
             { text: "Händler | Munition (+5) 10 KK", cost: 10, action: () => {
                 gameState.ammo += 5; log("+5 Munition gekauft.", "text-green-400"); enterCity();
             }},
@@ -1198,10 +1345,8 @@
                 item: opt,
                 isDisabled: isDisabled,
                 action: () => {
-                    // Aktualisiere Ausrüstung
                     gameState.equipment[opt.slot] = opt; 
                     
-                    // NEU: Max HP nach Ausrüstungswechsel aktualisieren
                     const newMaxHp = calculateMaxHP(getStat('END'));
                     gameState.maxHealth = newMaxHp;
 
@@ -1342,7 +1487,6 @@
             gameState.equipment.weapon = gameState.originalWeaponDuringCombat;
             gameState.originalWeaponDuringCombat = null;
             
-            // NEU: Max HP nach Ausrüstungswechsel (zurück) aktualisieren
             const newMaxHp = calculateMaxHP(getStat('END'));
             gameState.maxHealth = newMaxHp;
             
@@ -1410,6 +1554,7 @@
     window.showBuyMenu = showBuyMenu; 
     window.showWiki = showWiki;
     window.showMonsterDetails = showMonsterDetails;
+    window.showWorldMap = showWorldMap; // NEU
 
     els.restart.onclick = initNewGame;
     window.addEventListener('resize', handleResize);
@@ -1426,10 +1571,36 @@
 
     function initNewGame() {
         els.log.innerHTML = '';
+        worldState = {}; // Globaler Zustand der Welt zurücksetzen
+
+        // 1. Ziel-Sektor festlegen (eine zufällige äußere Kachel, nicht die Startkachel)
+        let goalX, goalY;
+        do {
+            const edge = Math.floor(Math.random() * 4); // 0=N, 1=S, 2=W, 3=O
+            if (edge === 0) { // N
+                goalY = 0;
+                goalX = Math.floor(Math.random() * (WORLD_SIZE - 2)) + 1;
+            } else if (edge === 1) { // S
+                goalY = WORLD_SIZE - 1;
+                goalX = Math.floor(Math.random() * (WORLD_SIZE - 2)) + 1;
+            } else if (edge === 2) { // W
+                goalX = 0;
+                goalY = Math.floor(Math.random() * (WORLD_SIZE - 2)) + 1;
+            } else { // O
+                goalX = WORLD_SIZE - 1;
+                goalY = Math.floor(Math.random() * (WORLD_SIZE - 2)) + 1;
+            }
+        } while (goalX === START_SECTOR_X && goalY === START_SECTOR_Y);
         
-        const { layout, startX, startY } = generateRandomMap();
+        GOAL_SECTOR.x = goalX;
+        GOAL_SECTOR.y = goalY;
+        log(`Ziel-Sektor auf (${GOAL_SECTOR.x},${GOAL_SECTOR.y}) festgelegt.`, 'text-blue-400');
+        
+        // 2. Erzeuge die Startkarte (Sektor 5,5)
+        const { layout, startX, startY } = generateRandomMap(START_SECTOR_X, START_SECTOR_Y);
         mapLayout = layout.map(row => row.split(''));
 
+        // 3. Initialisiere GameState
         const initialEquipment = { 
             head: items.none_head, 
             body: items.armor_vault, 
@@ -1437,23 +1608,19 @@
             weapon: items.fists
         };
 
-        // Temporäres Objekt für die Basis-Stats + Equipment
-        const tempState = { stats: {...BASE_STATS}, equipment: initialEquipment };
-        
-        // Initial Max HP berechnen
-        const initialEndurance = 5 + initialEquipment.body.bonus.END; // Vault-Anzug gibt +1 END
+        const initialEndurance = getStat('END'); // Base 5 + Body +1 = 6
         const initialMaxHp = calculateMaxHP(initialEndurance);
 
-
         gameState = {
+            currentSector: { x: START_SECTOR_X, y: START_SECTOR_Y }, // NEU: Aktueller Sektor
             player: { x: startX, y: startY },
             stats: {...BASE_STATS},
             equipment: initialEquipment,
-            health: initialMaxHp, // Setze HP auf Max HP beim Start
-            maxHealth: initialMaxHp, // NEU: Max HP als Zustand speichern
+            health: initialMaxHp, 
+            maxHealth: initialMaxHp, 
             ammo: 10,
             caps: 50,
-            explored: {},
+            explored: {}, // Lokale Map-Erkundung (wird bei Sektorwechsel zurückgesetzt)
             inDialog: false,
             isGameOver: false,
             currentView: 'map', 
@@ -1466,10 +1633,12 @@
             originalWeaponDuringCombat: null 
         };
         
+        // UI-Views zurücksetzen
         els.cityView.style.display = 'none';
         els.charView.style.display = 'none';
         els.wikiView.style.display = 'none';
         els.combatView.style.display = 'none'; 
+        els.worldMapView.style.display = 'none'; // NEU
         els.mapView.style.display = 'flex';
         els.text.textContent = "System initialisiert...";
         els.btns.innerHTML = '';
@@ -1477,7 +1646,7 @@
         revealMap(startX, startY);
         handleResize(); 
         updateUI(); 
-        log("Neues Spiel gestartet. Willkommen im Ödland.", "text-yellow-400");
+        log("Neues Spiel gestartet. Du verlässt den Vault.", "text-yellow-400");
         
         draw();
     }
