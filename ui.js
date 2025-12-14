@@ -23,15 +23,22 @@ const UI = {
             charBtn: document.getElementById('char-btn'),
             mapBtn: document.getElementById('map-btn'), 
             wikiBtn: document.getElementById('wiki-btn'),
+            newGameBtn: document.getElementById('new-game-btn'),
+            quitBtn: document.getElementById('quit-btn'),
             
             zoneDisplay: document.getElementById('current-zone-display'),
             levelDisplay: document.getElementById('level-display'),
             expCurrentDisplay: document.getElementById('exp-current-display'), 
-            
-            // Referenzen für dynamisch geladene Inhalte müssen später geholt werden:
-            // stats, equip, levelDisplayChar, expBar, cityOptions, etc.
         };
         
+        // Event Listener für die Header-Buttons (Fix für defekte Buttons)
+        if (this.els.newGameBtn) this.els.newGameBtn.addEventListener('click', () => Game.initNewGame());
+        if (this.els.quitBtn) this.els.quitBtn.addEventListener('click', () => Game.quitGame());
+        if (this.els.wikiBtn) this.els.wikiBtn.addEventListener('click', () => this.switchView('wiki'));
+        if (this.els.mapBtn) this.els.mapBtn.addEventListener('click', () => this.switchView('worldmap'));
+        if (this.els.charBtn) this.els.charBtn.addEventListener('click', () => this.switchView('character'));
+        if (this.els.restart) this.els.restart.addEventListener('click', () => Game.initNewGame());
+
         window.addEventListener('resize', this.handleResize.bind(this));
         window.addEventListener('orientationchange', this.handleResize.bind(this));
 
@@ -90,30 +97,23 @@ const UI = {
         }
 
         // Steuerung und Game Over
-        // Steuerung ist nur sichtbar auf der MAP, wenn kein Dialog läuft und das Spiel nicht vorbei ist.
         const isControlHidden = Game.gameState.inDialog || Game.gameState.isGameOver || Game.gameState.currentView !== 'map';
         
-        // Anzeigen/Verstecken der Bewegungssteuerung
         if (this.els.moveContainer) {
             this.els.moveContainer.style.visibility = isControlHidden ? 'hidden' : 'visible';
         }
         
-        // Anzeigen/Verstecken der Dialog-Buttons
         this.els.btns.style.display = Game.gameState.inDialog ? 'flex' : 'none'; 
         this.els.restart.style.display = Game.gameState.isGameOver ? 'block' : 'none';
 
         // Stellt sicher, dass die Stat-Buttons in der Char-Ansicht sichtbar sind
         if (Game.gameState.currentView === 'character' && Game.gameState.statPoints > 0) {
-            // Re-render, um die Stat-Buttons zu aktualisieren
             this.updateCharView(currentMaxHp);
         }
     },
     
     // --- VIEW MANAGEMENT ---
-    
-    // Asynchrones Laden von HTML-Views
     loadView: async function(viewName) {
-        // Pfad zur View-Datei im Unterordner 'views'
         const path = `views/${viewName}.html`; 
         try {
             const response = await fetch(path);
@@ -121,55 +121,49 @@ const UI = {
             return await response.text();
         } catch (error) {
             this.log(`FEHLER beim Laden der View ${viewName}: ${error.message}`, 'text-red-500');
-            // Zeigt eine Fehlermeldung, wenn das Laden fehlschlägt
             return `<div id="${viewName}-view" class="view justify-center items-center text-red-500" style="display: flex;">FEHLER: View ${viewName} konnte nicht geladen werden. Prüfen Sie den views/-Ordner und die Pfade.</div>`;
         }
     },
 
     switchView: async function(newView, forceReload = false) {
-        // Wenn die Ansicht bereits aktiv ist und kein Neuladen erzwungen wird, tue nichts
         if (Game.gameState.currentView === newView && !forceReload) return;
 
         const oldViewEl = document.getElementById(Game.gameState.currentView + '-view');
         let newViewEl = document.getElementById(newView + '-view');
         
-        // Buttons deaktivieren während des Übergangs
-        this.els.charBtn.disabled = true; 
-        this.els.wikiBtn.disabled = true;
-        this.els.mapBtn.disabled = true;
+        // Buttons deaktivieren
+        if(this.els.charBtn) this.els.charBtn.disabled = true; 
+        if(this.els.wikiBtn) this.els.wikiBtn.disabled = true;
+        if(this.els.mapBtn) this.els.mapBtn.disabled = true;
         
-        // Fade Out der alten View
+        // Fade Out
         if (oldViewEl && oldViewEl.classList.contains('active')) {
             oldViewEl.classList.add('transition-out');
             oldViewEl.classList.remove('active');
         }
 
-        // Stoppe den Draw-Loop, wenn die Karte verlassen wird
+        // Stoppe den Draw-Loop
         if (newView !== 'map' && Game.animationFrameId) {
             cancelAnimationFrame(Game.animationFrameId);
             Game.animationFrameId = null;
         }
 
-        // Lade neue View, falls sie noch nicht im DOM ist (oder Neuladen erzwungen)
+        // Lade neue View
         if (!newViewEl || forceReload) {
             const htmlContent = await this.loadView(newView);
             
-            // Entferne alte Instanz, falls vorhanden
             if (newViewEl) {
                 newViewEl.remove();
             }
             
-            // Füge neue View in den DOM ein
             this.els.viewContentArea.insertAdjacentHTML('beforeend', htmlContent);
             newViewEl = document.getElementById(newView + '-view');
             
             if (!newViewEl) {
-                 // Kritischer Fehler: View konnte nicht geladen/eingefügt werden
                  this.log(`KRITISCH: View ${newView} konnte nicht im DOM gefunden werden.`, 'text-red-700');
-                 // Buttons reaktivieren und abbrechen
-                 this.els.charBtn.disabled = false; 
-                 this.els.wikiBtn.disabled = false;
-                 this.els.mapBtn.disabled = false;
+                 if(this.els.charBtn) this.els.charBtn.disabled = false; 
+                 if(this.els.wikiBtn) this.els.wikiBtn.disabled = false;
+                 if(this.els.mapBtn) this.els.mapBtn.disabled = false;
                  return Promise.reject(`View ${newView} not found after insert.`);
             }
         }
@@ -182,22 +176,23 @@ const UI = {
                     oldViewEl.classList.remove('transition-out');
                 }
                 
-                newViewEl.style.display = 'flex';
-                newViewEl.classList.add('active');
+                if (newViewEl) {
+                    newViewEl.style.display = 'flex';
+                    newViewEl.classList.add('active');
+                }
                 
                 Game.gameState.currentView = newView;
                 
-                // Spezialaktionen nach dem Umschalten
+                // Spezialaktionen
                 this.postSwitchActions(newView);
                 
                 // Buttons reaktivieren
                 setTimeout(() => {
-                    this.els.charBtn.disabled = false; 
-                    this.els.wikiBtn.disabled = false;
-                    this.els.mapBtn.disabled = false;
+                    if(this.els.charBtn) this.els.charBtn.disabled = false; 
+                    if(this.els.wikiBtn) this.els.wikiBtn.disabled = false;
+                    if(this.els.mapBtn) this.els.mapBtn.disabled = false;
                 }, 50);
                 
-                // Promise auflösen, sobald der Übergang abgeschlossen ist
                 resolve(); 
             }, 300);
         });
@@ -250,7 +245,6 @@ const UI = {
     
     handleResize: function() {
         if (Game.gameState.currentView === 'map') {
-             // Neustarten des Draw-Loops, um die Skalierung anzupassen
              if (Game.animationFrameId) {
                 cancelAnimationFrame(Game.animationFrameId);
                 Game.animationFrameId = null;
@@ -335,18 +329,16 @@ const UI = {
         `;
     },
     
-    // --- Stat Logic (muss hier sein wegen DOM-Manipulation) ---
+    // --- Stat Logic ---
     increaseTempStat: function(key, buttonElement) {
         if (Game.gameState.statPoints > 0) {
-            // Wenn bereits ein Temp-Stat gesetzt ist, deaktiviere den alten Button
             if (Game.gameState.tempStatIncrease.key && Game.gameState.tempStatIncrease.key !== key) {
-                // Finde den alten Button über das DOM
                 const prevButton = document.querySelector(`[data-stat-key="${Game.gameState.tempStatIncrease.key}"]`);
                 if (prevButton) prevButton.disabled = false;
             }
             
             Game.gameState.tempStatIncrease.key = key;
-            Game.gameState.tempStatIncrease.value = 1; // Wir erlauben nur +1 pro Punkt
+            Game.gameState.tempStatIncrease.value = 1;
             buttonElement.disabled = true;
             this.updateUI();
         } else {
