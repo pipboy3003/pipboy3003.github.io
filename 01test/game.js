@@ -5,18 +5,25 @@ const Game = {
     colors: { 'V':'#39ff14', 'C':'#7a661f', 'X':'#ff3914', 'G':'#00ffff', '.':'#4a3d34', '#':'#8b7d6b', '^':'#5c544d', '~':'#224f80', 'fog':'#000', 'player':'#ff3914' },
 
     monsters: {
-        moleRat: { name: "Maulwurfsratte", hp: 30, dmg: 5, xp: 20, loot: 5, minLvl: 1, desc: "Nervige Nager." },
-        raider: { name: "Raider", hp: 60, dmg: 10, xp: 50, loot: 15, minLvl: 2, desc: "Wahnsinniger." },
-        deathclaw: { name: "Todesklaue", hp: 150, dmg: 30, xp: 200, loot: 50, minLvl: 5, desc: "LAUF!" }
+        moleRat: { name: "Maulwurfsratte", hp: 30, dmg: 10, loot: 10, xp: 50, minLvl: 1, desc: "Nervige Nager." },
+        mutantRose: { name: "Mutanten Rose", hp: 45, dmg: 15, loot: 15, xp: 75, minLvl: 1, desc: "Dornige Pflanze." },
+        raider: { name: "Raider", hp: 70, dmg: 15, loot: 25, xp: 100, minLvl: 2, desc: "Wahnsinniger." },
+        deathclaw: { name: "Todesklaue", hp: 200, dmg: 50, loot: 100, xp: 500, minLvl: 5, desc: "LAUF!" }
     },
 
+    // --- ITEM BALANCE UPDATE ---
+    // baseDmg hinzugefügt für Schadensberechnung
     items: {
-        fists: { name: "Fäuste", slot: 'weapon', bonus: {}, cost: 0, requiredLevel: 0, isRanged: false },
+        fists: { name: "Fäuste", slot: 'weapon', baseDmg: 2, bonus: {}, cost: 0, requiredLevel: 0, isRanged: false },
         vault_suit: { name: "Vault-Anzug", slot: 'body', bonus: { END: 1 }, cost: 0, requiredLevel: 0 },
-        knife: { name: "Messer", slot: 'weapon', bonus: { STR: 1 }, cost: 15, requiredLevel: 1, isRanged: false },
-        pistol: { name: "10mm Pistole", slot: 'weapon', bonus: { AGI: 2 }, cost: 50, requiredLevel: 1, isRanged: true },
+        
+        knife: { name: "Messer", slot: 'weapon', baseDmg: 6, bonus: { STR: 1 }, cost: 15, requiredLevel: 1, isRanged: false },
         leather_armor: { name: "Lederharnisch", slot: 'body', bonus: { END: 2 }, cost: 30, requiredLevel: 1 },
-        laser_rifle: { name: "Laser-Gewehr", slot: 'weapon', bonus: { PER: 3 }, cost: 300, requiredLevel: 5, isRanged: true },
+        
+        pistol: { name: "10mm Pistole", slot: 'weapon', baseDmg: 14, bonus: { AGI: 1 }, cost: 50, requiredLevel: 1, isRanged: true },
+        metal_helmet: { name: "Metallhelm", slot: 'head', bonus: { END: 1 }, cost: 20, requiredLevel: 1 },
+        
+        laser_rifle: { name: "Laser-Gewehr", slot: 'weapon', baseDmg: 25, bonus: { PER: 2 }, cost: 300, requiredLevel: 5, isRanged: true },
         combat_armor: { name: "Kampf-Rüstung", slot: 'body', bonus: { END: 4 }, cost: 150, requiredLevel: 5 }
     },
 
@@ -42,13 +49,11 @@ const Game = {
 
         this.loadSector(5, 5);
         UI.switchView('map').then(() => {
-            // Overlay verstecken falls noch da
             if(UI.els.gameOver) UI.els.gameOver.classList.add('hidden');
             UI.log("System bereit. Vault verlassen.", "text-green-400");
         });
     },
 
-    // --- UTILS ---
     calculateMaxHP: function(end) { return 100 + (end - 5) * 10; },
     
     getStat: function(k) {
@@ -79,7 +84,6 @@ const Game = {
         }
     },
 
-    // --- MAP ---
     loadSector: function(sx, sy) {
         const key = `${sx},${sy}`;
         if(!this.worldData[key]) {
@@ -179,12 +183,10 @@ const Game = {
         UI.log(`Sektor: ${sx},${sy}`, "text-blue-400");
     },
 
-    // --- KAMPF SYSTEM (HIER WAR DAS PROBLEM) ---
     startCombat: function() {
         const templates = Object.values(this.monsters).filter(m => this.state.lvl >= m.minLvl);
         const template = templates[Math.floor(Math.random() * templates.length)];
         
-        // Gegner Klonen
         this.state.enemy = { 
             name: template.name,
             hp: template.hp,
@@ -196,7 +198,6 @@ const Game = {
         
         this.state.inDialog = true;
         UI.switchView('combat').then(() => {
-            // Sobald View geladen ist, Gegner anzeigen
             UI.renderCombat();
         });
         UI.log(`${template.name} greift an!`, "text-red-500");
@@ -207,40 +208,37 @@ const Game = {
         if(!this.state.enemy) return;
 
         if(act === 'attack') {
-            // Munitions Check
             const wpn = this.state.equip.weapon;
             if(wpn.isRanged) {
                 if(this.state.ammo > 0) this.state.ammo--;
                 else {
                     UI.log("Klick! Leer! Nutze Fäuste.", "text-red-500");
                     this.state.equip.weapon = this.items.fists;
-                    this.enemyTurn(); 
-                    return;
+                    this.enemyTurn(); return;
                 }
             }
 
-            // Treffer?
+            // NEUE SCHADENS BERECHNUNG
             if(Math.random() > 0.3) {
-                const bonus = (this.state.equip.weapon.bonus.STR || 0) * 2;
-                const dmg = Math.floor(5 + (this.getStat('STR') * 1.5) + bonus);
+                const baseDmg = wpn.baseDmg || 2; // Basis Schaden
+                const strBonus = this.getStat('STR') * 1.5; // Stärke Einfluss
+                const dmg = Math.floor(baseDmg + strBonus);
                 
                 this.state.enemy.hp -= dmg;
                 UI.log(`Treffer! ${dmg} Schaden.`, "text-green-400");
                 
-                // TOT CHECK
                 if(this.state.enemy.hp <= 0) {
                     this.state.enemy.hp = 0;
                     this.state.caps += this.state.enemy.loot;
                     UI.log(`Sieg! ${this.state.enemy.loot} KK gefunden.`, "text-yellow-400");
                     this.gainExp(this.state.enemy.xp);
                     this.endCombat();
-                    return; // Wichtig: Hier abbrechen, damit Gegner nicht mehr zurückschlägt
+                    return;
                 }
             } else {
                 UI.log("Verfehlt!", "text-gray-500");
             }
             
-            // Wenn Gegner noch lebt -> Gegenschlag
             this.enemyTurn();
 
         } else if (act === 'flee') {
@@ -258,7 +256,7 @@ const Game = {
     },
 
     enemyTurn: function() {
-        if(this.state.enemy.hp <= 0) return; // Sicherheit
+        if(this.state.enemy.hp <= 0) return;
 
         if(Math.random() < 0.8) {
             const armor = (this.getStat('END') * 0.5);
@@ -277,7 +275,8 @@ const Game = {
         if(this.state.hp <= 0) {
             this.state.hp = 0;
             this.state.isGameOver = true;
-            UI.showGameOver(); // Overlay anzeigen
+            UI.update();
+            UI.showGameOver();
         }
     },
 
