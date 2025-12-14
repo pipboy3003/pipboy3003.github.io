@@ -2,6 +2,7 @@ const UI = {
     els: {},
     
     init: function() {
+        // Elemente holen
         this.els = {
             hp: document.getElementById('health-display'),
             hpBar: document.getElementById('hp-bar'),
@@ -14,32 +15,35 @@ const UI = {
             moveContainer: document.getElementById('movement-container'),
             viewContentArea: document.getElementById('view-content-area'),
             
-            // Buttons sicher abrufen
+            // Buttons
             newGameBtn: document.getElementById('new-game-btn'),
             wikiBtn: document.getElementById('wiki-btn'),
             mapBtn: document.getElementById('map-btn'),
             charBtn: document.getElementById('char-btn'),
+            quitBtn: document.getElementById('quit-btn'),
             
             zoneDisplay: document.getElementById('current-zone-display'),
             levelDisplay: document.getElementById('level-display'),
             expCurrentDisplay: document.getElementById('exp-current-display'), 
         };
 
-        // Event Listeners (Sicher)
-        this.els.newGameBtn?.addEventListener('click', () => Game.initNewGame());
-        this.els.wikiBtn?.addEventListener('click', () => this.switchView('wiki'));
-        this.els.mapBtn?.addEventListener('click', () => this.switchView('worldmap'));
-        this.els.charBtn?.addEventListener('click', () => this.switchView('character'));
+        // Event Listener sicher anhängen
+        if(this.els.newGameBtn) this.els.newGameBtn.onclick = () => Game.initNewGame();
+        if(this.els.quitBtn) this.els.quitBtn.onclick = () => Game.quitGame();
+        if(this.els.wikiBtn) this.els.wikiBtn.onclick = () => this.switchView('wiki');
+        if(this.els.mapBtn) this.els.mapBtn.onclick = () => this.switchView('worldmap');
+        if(this.els.charBtn) this.els.charBtn.onclick = () => this.switchView('character');
+        if(this.els.restart) this.els.restart.onclick = () => Game.initNewGame();
 
         window.addEventListener('resize', () => this.handleResize());
         
-        // Globale Hilfsfunktionen für Inline-HTML
-        window.increaseTempStat = this.increaseTempStat.bind(this);
-        window.applyStatPoint = this.applyStatPoint.bind(this);
-        window.enterCity = this.enterCity.bind(this);
-        window.showBuyMenu = this.showBuyMenu.bind(this);
-        window.showWiki = this.showWiki.bind(this);
-        window.showMonsterDetails = this.showMonsterDetails.bind(this);
+        // --- FIX FÜR DEN FEHLER: DIREKTE ZUWEISUNG STATT BIND ---
+        window.increaseTempStat = (k, b) => UI.increaseTempStat(k, b);
+        window.applyStatPoint = () => UI.applyStatPoint();
+        window.enterCity = () => UI.enterCity();
+        window.showBuyMenu = () => UI.showBuyMenu();
+        window.showWiki = () => UI.showWiki();
+        window.showMonsterDetails = (k) => UI.showMonsterDetails(k);
     },
     
     log: function(msg, colorClass = '') {
@@ -64,26 +68,23 @@ const UI = {
         if(this.els.caps) this.els.caps.textContent = `${Game.gameState.caps} KK`;
         if(this.els.zoneDisplay) this.els.zoneDisplay.textContent = Game.gameState.currentZone;
 
-        // View Updates
         if (Game.gameState.currentView === 'character') this.updateCharView(maxHp);
         if (Game.gameState.currentView === 'combat') this.updateCombatView();
 
-        // Sichtbarkeit der Steuerung
         const showControls = !Game.gameState.inDialog && !Game.gameState.isGameOver && Game.gameState.currentView === 'map';
         if (this.els.moveContainer) this.els.moveContainer.style.visibility = showControls ? 'visible' : 'hidden';
         if (this.els.btns) this.els.btns.style.display = Game.gameState.inDialog ? 'flex' : 'none';
     },
     
     loadView: async function(viewName) {
-        // Pfad: ./views/name.html
-        const path = `./views/${viewName}.html`; 
+        const path = `views/${viewName}.html`; 
         try {
             const response = await fetch(path);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             return await response.text();
         } catch (error) {
-            this.log(`Fehler beim Laden von ${path}: ${error.message}`, 'text-red-500');
-            return `<div class="p-4 text-red-500">Konnte View '${viewName}' nicht laden.<br>Pfad: ${path}<br>Fehler: ${error.message}</div>`;
+            this.log(`Fehler bei ${path}: ${error.message}`, 'text-red-500');
+            return `<div class="p-4 text-red-500">Fehler beim Laden von View: ${viewName}</div>`;
         }
     },
 
@@ -91,7 +92,6 @@ const UI = {
         if (!this.els.viewContentArea) return;
         if (Game.gameState.currentView === newView && !forceReload) return;
 
-        // Stoppe Loop wenn wir Map verlassen
         if (newView !== 'map' && Game.animationFrameId) {
             cancelAnimationFrame(Game.animationFrameId);
             Game.animationFrameId = null;
@@ -100,13 +100,6 @@ const UI = {
         const html = await this.loadView(newView);
         this.els.viewContentArea.innerHTML = html;
         
-        // Element muss im DOM sein, bevor wir Klasse setzen
-        const newEl = document.getElementById(newView + '-view');
-        if (newEl) {
-            newEl.style.display = 'flex'; // Sicherstellen, dass es angezeigt wird
-            setTimeout(() => newEl.classList.add('active'), 10);
-        }
-
         Game.gameState.currentView = newView;
         this.postSwitchActions(newView);
     },
@@ -117,7 +110,7 @@ const UI = {
         if (newView === 'map') {
             if(this.els.text) this.els.text.textContent = "Ödland Ebene.";
             this.clearDialog();
-            Game.draw(); // Loop starten
+            Game.draw();
         } else if (newView === 'worldmap') {
             Game.gameState.currentZone = "WELTKARTE";
             this.showWorldMap();
@@ -131,19 +124,11 @@ const UI = {
             Game.gameState.currentZone = "Datenbank";
             this.showWiki();
         } else if (newView === 'combat') {
-            Game.gameState.inDialog = true; // Wichtig: D-Pad ausblenden
+            Game.gameState.inDialog = true;
         }
         this.updateUI();
     },
-
-    setDialogButtons: function(html) {
-        if(this.els.btns) {
-            this.els.btns.innerHTML = html;
-            Game.gameState.inDialog = true;
-            this.updateUI();
-        }
-    },
-
+    
     clearDialog: function() {
         if(this.els.btns) this.els.btns.innerHTML = '';
         const cityHeader = document.querySelector('.city-header');
@@ -157,7 +142,6 @@ const UI = {
         this.updateUI();
     },
 
-    // --- SUB-VIEWS ---
     updateCombatView: function() {
         const nameEl = document.getElementById('enemy-name-center');
         const hpEl = document.getElementById('enemy-hp-display-center');
@@ -176,7 +160,6 @@ const UI = {
         document.getElementById('exp-needed-char').textContent = Game.expToNextLevel(Game.gameState.level);
         document.getElementById('stat-points-display').textContent = Game.gameState.statPoints;
         
-        // Stats rendern
         statsEl.innerHTML = Object.keys(Game.gameState.stats).map(k => {
             const val = Game.getStat(k);
             let btn = '';
@@ -186,11 +169,9 @@ const UI = {
             return `<div class="flex justify-between items-center"><span>${k}: <span class="text-white">${val}</span></span> ${btn}</div>`;
         }).join('');
         
-        // Button Logik
         const applyBtn = document.getElementById('apply-stat-btn');
         if(applyBtn) applyBtn.disabled = !(Game.gameState.statPoints > 0 && Game.gameState.tempStatIncrease.key);
         
-        // Equip
         document.getElementById('equipment-display').innerHTML = 
             `Waffe: <span class="text-white">${Game.gameState.equipment.weapon.name}</span>`;
     },
@@ -210,14 +191,6 @@ const UI = {
         }
     },
 
-    enterCity: function() {
-        const dialog = [
-            { text: "Heilen (25 KK)", cost: 25, action: () => { Game.gameState.health = Game.calculateMaxHP(Game.getStat('END')); this.log("Geheilt.", "text-green-400"); this.enterCity(); } },
-            { text: "Verlassen", action: () => this.switchView('map') }
-        ];
-        this.showCityDialog(dialog);
-    },
-
     showCityDialog: function(opts) {
         const container = document.getElementById('city-options');
         if(!container) return;
@@ -233,6 +206,26 @@ const UI = {
             container.appendChild(btn);
         });
         this.updateUI();
+    },
+
+    enterCity: function() {
+        const dialog = [
+            { text: "Heilen (25 KK)", cost: 25, action: () => { Game.gameState.health = Game.calculateMaxHP(Game.getStat('END')); this.log("Geheilt.", "text-green-400"); this.enterCity(); } },
+            { text: "Verlassen", action: () => this.switchView('map') }
+        ];
+        this.showCityDialog(dialog);
+    },
+    
+    showBuyMenu: function() {
+        const dialog = Object.values(Game.items)
+            .filter(i => i.cost > 0 && Game.gameState.level >= i.requiredLevel - 5)
+            .map(item => ({
+                text: `${item.name} (${item.cost} KK)`,
+                cost: item.cost,
+                action: () => { Game.gameState.equipment[item.slot] = item; this.log("Gekauft!", "text-green-400"); }
+            }));
+        dialog.push({ text: "Zurück", action: () => this.enterCity() });
+        this.showCityDialog(dialog);
     },
 
     showWorldMap: function() {
@@ -268,3 +261,4 @@ const UI = {
         c.innerHTML = `<h2 class="text-xl font-bold">${m.name}</h2><p>${m.description}</p><p>TP: ${m.hp}</p><button class="action-button mt-4 w-full" onclick="showWiki()">Zurück</button>`;
     }
 };
+window.UI = UI;
