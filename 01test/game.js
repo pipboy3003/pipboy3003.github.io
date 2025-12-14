@@ -15,7 +15,6 @@ const Game = {
         fists: { name: "Fäuste", slot: 'weapon', bonus: {}, cost: 0, requiredLevel: 0 },
         vault_suit: { name: "Vault-Anzug", slot: 'body', bonus: { END: 1 }, cost: 0, requiredLevel: 0 },
         knife: { name: "Messer", slot: 'weapon', bonus: { STR: 1 }, cost: 15, requiredLevel: 1 },
-        // Pistole ist jetzt Ranged (Fernkampf)
         pistol: { name: "10mm Pistole", slot: 'weapon', bonus: { AGI: 2 }, cost: 50, requiredLevel: 1, isRanged: true },
         leather_armor: { name: "Lederharnisch", slot: 'body', bonus: { END: 2 }, cost: 30, requiredLevel: 1 },
         metal_helmet: { name: "Metallhelm", slot: 'head', bonus: { END: 1 }, cost: 20, requiredLevel: 1 },
@@ -148,10 +147,9 @@ const Game = {
         this.state.player.y = ny;
         this.reveal(nx, ny);
         
-        // Interaktionen
         if(tile === 'G') this.changeSector(nx, ny);
         else if(tile === 'C') UI.switchView('city');
-        else if(tile === 'V') UI.enterVault(); // NEU: Vault Event
+        else if(tile === 'V') UI.enterVault(); 
         else if(Math.random()<0.1 && tile === '.') this.startCombat();
         UI.update();
     },
@@ -192,7 +190,6 @@ const Game = {
         if(this.state.isGameOver) return;
 
         if(act === 'attack') {
-            // Check Ammo für Fernkampfwaffen
             const weapon = this.state.equip.weapon;
             if(weapon.isRanged) {
                 if(this.state.ammo > 0) {
@@ -201,13 +198,11 @@ const Game = {
                     UI.log("Klick! Keine Munition!", "text-red-500");
                     UI.log("Du wechselst auf Fäuste.", "text-yellow-500");
                     this.state.equip.weapon = this.items.fists;
-                    // Angriff fällt diese Runde aus
                     this.enemyTurn();
                     return;
                 }
             }
 
-            // Spieler Angriff
             if(Math.random() > 0.3) {
                 const weaponDmg = (this.state.equip.weapon.bonus.STR || 0) * 2; 
                 const dmg = 5 + (this.getStat('STR') * 1.5) + weaponDmg;
@@ -258,7 +253,7 @@ const Game = {
         if(this.state.hp <= 0) {
             this.state.hp = 0;
             this.state.isGameOver = true;
-            UI.showGameOver(); // NEU: Ruft das Overlay auf
+            UI.showGameOver();
         }
     },
 
@@ -271,21 +266,19 @@ const Game = {
     heal: function() {
         if(this.state.caps >= 25) {
             this.state.caps -= 25;
-            this.rest(); // Benutze Rest Logik für Full Heal
+            this.rest();
             UI.log("Vollständig geheilt.", "text-green-500");
         } else {
             UI.log("Nicht genug Kronenkorken.", "text-red-500");
         }
     },
 
-    // NEU: Ausruhen (Gratis Full Heal)
     rest: function() {
         this.state.hp = this.state.maxHp;
         UI.log("Du fühlst dich wie neu geboren.", "text-blue-400 font-bold");
         UI.update();
     },
 
-    // NEU: Munition kaufen
     buyAmmo: function() {
         if(this.state.caps >= 10) {
             this.state.caps -= 10;
