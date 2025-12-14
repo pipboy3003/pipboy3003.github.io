@@ -1,8 +1,12 @@
-To-Do return to Old:
-- bei 0 TP stirbt man nicht
-- besigte monster bringen weder XP noch Geld
-- händler schläft?
-- Bei Flucht kommt kein Text wie : "Erfolgreich geflohen" oder "Flucht fehlgeschlagen" - Chance auf Flucht soll durch AGI wird geregelt werden
+To-Do's
+- Zur Vault zurück (auf sie drauf) öffnet ein ergeinis fenster. "Ausruhen" oder "Weiter geht's" als Möglichkeiten. Ausruhen fült die TP komplett auf mit dem Kommentar "Du fühlst dich wie neu gebohren"
+- Ausrüsten der 10mm Pistole verbraucht Muniton - Diese muss auch beim Händler gekauft werden können. 10er Pack für 10 KK.
+- Großes "Game Over" Fenster in Rot und blinkend bei Tot
+- EXP Anzeige Balken fehlt im CHAR Menü + auf dem Overlay rechts vn der TP, ist aufgeführt aber kein Balken.
+- Benötige EXP steigt mit den Leveln an
+- Monster bringen je nach schwierigkeit andere EXP Punkte. 
+- Wir wollen also ein richtig ausgeklügeltes LVL / EXP System integrieren. 
+- Button "Neu" oben rechts gleiche größe, aber in ROT, wie Wiki + umbenennen in "Neues Spiel starten"
 
 Vorgeschlagen von Gemini : 
 Hier sind 3 Vorschläge für den nächsten Schritt. Sag mir, worauf du Lust hast, und ich liefere dir den Code:
