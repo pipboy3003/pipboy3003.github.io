@@ -31,8 +31,9 @@ const UI = {
 
         this.els.btnNew.onclick = () => Game.init();
         
+        // --- FIX: TOGGLE AUCH FÜR MAP ---
         this.els.btnWiki.onclick = () => this.toggleView('wiki');
-        this.els.btnMap.onclick = () => this.switchView('worldmap'); 
+        this.els.btnMap.onclick = () => this.toggleView('worldmap'); // War vorher switchView
         this.els.btnChar.onclick = () => this.toggleView('char');
 
         this.els.btnUp.onclick = () => Game.move(0, -1);
@@ -211,7 +212,6 @@ const UI = {
         if(!content) return;
         content.innerHTML = Object.keys(Game.monsters).map(k => {
             const m = Game.monsters[k];
-            // XP Anzeige als Range wenn Array
             const xpText = Array.isArray(m.xp) ? `${m.xp[0]}-${m.xp[1]}` : m.xp;
             return `<div class="border-b border-green-900 pb-1">
                 <div class="font-bold text-yellow-400">${m.name}</div>
@@ -297,7 +297,6 @@ const UI = {
         const nameEl = document.getElementById('enemy-name');
         nameEl.textContent = enemy.name;
         
-        // --- OPTIK FÜR LEGENDÄRE ---
         if (enemy.isLegendary) {
             nameEl.className = "text-3xl font-extrabold mb-2 text-yellow-400 animate-pulse";
         } else {
