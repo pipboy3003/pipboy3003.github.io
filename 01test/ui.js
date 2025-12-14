@@ -16,35 +16,29 @@ const UI = {
             dialog: document.getElementById('dialog-buttons'),
             text: document.getElementById('encounter-text'),
             
-            // Header Buttons
             btnNew: document.getElementById('btn-new'),
             btnWiki: document.getElementById('btn-wiki'),
             btnMap: document.getElementById('btn-map'),
             btnChar: document.getElementById('btn-char'),
             
-            // Movement Buttons
             btnUp: document.getElementById('btn-up'),
             btnDown: document.getElementById('btn-down'),
             btnLeft: document.getElementById('btn-left'),
             btnRight: document.getElementById('btn-right'),
             
-            // Game Over Screen
             gameOver: document.getElementById('game-over-screen')
         };
 
-        // Header
         this.els.btnNew.onclick = () => Game.init();
         this.els.btnWiki.onclick = () => this.switchView('wiki');
         this.els.btnMap.onclick = () => this.switchView('worldmap');
         this.els.btnChar.onclick = () => this.switchView('char');
 
-        // Movement
         this.els.btnUp.onclick = () => Game.move(0, -1);
         this.els.btnDown.onclick = () => Game.move(0, 1);
         this.els.btnLeft.onclick = () => Game.move(-1, 0);
         this.els.btnRight.onclick = () => Game.move(1, 0);
 
-        // Keys
         window.addEventListener('keydown', (e) => {
             if (Game.state.view === 'map' && !Game.state.inDialog && !Game.state.isGameOver) {
                 if(e.key === 'w' || e.key === 'ArrowUp') Game.move(0, -1);
@@ -59,7 +53,10 @@ const UI = {
     },
 
     switchView: async function(name) {
-        const path = `views/${name}.html?v=${Date.now()}`;
+        const verDisplay = document.getElementById('version-display');
+        const ver = verDisplay ? verDisplay.textContent.trim() : Date.now();
+        const path = `views/${name}.html?v=${ver}`;
+        
         try {
             const res = await fetch(path);
             if (!res.ok) throw new Error("404");
@@ -97,12 +94,12 @@ const UI = {
         this.els.caps.textContent = `${Game.state.caps} KK`;
         this.els.zone.textContent = Game.state.zone;
         
-        const maxHp = 100 + (Game.state.stats.END - 5) * 10;
+        const maxHp = Game.state.maxHp || 100;
         this.els.hp.textContent = `${Math.round(Game.state.hp)}/${maxHp}`;
         this.els.hpBar.style.width = `${Math.max(0, (Game.state.hp / maxHp) * 100)}%`;
         
         if(Game.state.view === 'map') {
-            const show = !Game.state.inDialog;
+            const show = !Game.state.inDialog && !Game.state.isGameOver;
             this.els.dpad.style.visibility = show ? 'visible' : 'hidden';
             this.els.dialog.style.display = Game.state.inDialog ? 'flex' : 'none';
         }
@@ -120,9 +117,34 @@ const UI = {
         if (!show) this.els.dialog.innerHTML = '';
     },
     
-    // NEU: GAME OVER ANZEIGEN
     showGameOver: function() {
-        this.els.gameOver.classList.remove('hidden');
+        if(this.els.gameOver) this.els.gameOver.classList.remove('hidden');
+        this.toggleControls(false);
+    },
+    
+    enterVault: function() {
+        Game.state.inDialog = true;
+        this.els.dialog.innerHTML = '';
+        
+        const restBtn = document.createElement('button');
+        restBtn.className = "action-button w-full mb-1 border-blue-500 text-blue-300";
+        restBtn.textContent = "Ausruhen (Gratis)";
+        restBtn.onclick = () => { Game.rest(); this.leaveDialog(); };
+        
+        const leaveBtn = document.createElement('button');
+        leaveBtn.className = "action-button w-full";
+        leaveBtn.textContent = "Weiter geht's";
+        leaveBtn.onclick = () => this.leaveDialog();
+
+        this.els.dialog.appendChild(restBtn);
+        this.els.dialog.appendChild(leaveBtn);
+        this.els.dialog.style.display = 'block';
+    },
+
+    leaveDialog: function() {
+        Game.state.inDialog = false;
+        this.els.dialog.innerHTML = '';
+        this.update();
     },
 
     // --- RENDERERS ---
@@ -131,7 +153,7 @@ const UI = {
         const grid = document.getElementById('stat-grid');
         if(!grid) return;
         grid.innerHTML = Object.keys(Game.state.stats).map(k => {
-            const val = Game.state.stats[k];
+            const val = Game.getStat(k);
             const btn = Game.state.statPoints > 0 ? `<button class="border border-green-500 px-1 ml-2" onclick="Game.upgradeStat('${k}')">+</button>` : '';
             return `<div class="flex justify-between"><span>${k}: ${val}</span>${btn}</div>`;
         }).join('');
@@ -182,7 +204,7 @@ const UI = {
         const addBtn = (txt, cb, disabled=false) => {
             const b = document.createElement('button');
             b.className = "action-button w-full mb-2 text-left p-3 flex justify-between";
-            b.innerHTML = txt; // Allow HTML
+            b.innerHTML = txt; 
             b.onclick = cb;
             if(disabled) { b.disabled = true; b.style.opacity = 0.5; }
             con.appendChild(b);
@@ -195,7 +217,7 @@ const UI = {
     },
 
     renderShop: function(container) {
-        container.innerHTML = '';
+        container.innerHTML = ''; 
         const backBtn = document.createElement('button');
         backBtn.className = "action-button w-full mb-4 text-center border-yellow-400 text-yellow-400";
         backBtn.textContent = "ZURÜCK ZUM PLATZ";
@@ -229,8 +251,14 @@ const UI = {
     renderCombat: function() {
         const enemy = Game.state.enemy;
         if(!enemy) return;
-        document.getElementById('enemy-name').textContent = enemy.name;
-        document.getElementById('enemy-hp-text').textContent = `${Math.max(0, enemy.hp)}/${enemy.maxHp} TP`;
-        document.getElementById('enemy-hp-bar').style.width = `${Math.max(0, (enemy.hp/enemy.maxHp)*100)}%`;
+        
+        // Element Check (Wichtig falls View noch nicht geladen)
+        const nameEl = document.getElementById('enemy-name');
+        const hpTextEl = document.getElementById('enemy-hp-text');
+        const hpBarEl = document.getElementById('enemy-hp-bar');
+        
+        if (nameEl) nameEl.textContent = enemy.name;
+        if (hpTextEl) hpTextEl.textContent = `${Math.max(0, enemy.hp)}/${enemy.maxHp} TP`;
+        if (hpBarEl) hpBarEl.style.width = `${Math.max(0, (enemy.hp/enemy.maxHp)*100)}%`;
     }
 };
