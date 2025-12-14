@@ -1,23 +1,21 @@
 const Game = {
-    // Config
     TILE: 30, MAP_W: 20, MAP_H: 12,
-    
     colors: { 'V':'#39ff14', 'C':'#7a661f', 'X':'#ff3914', 'G':'#00ffff', '.':'#4a3d34', '#':'#8b7d6b', '^':'#5c544d', '~':'#224f80', 'fog':'#000', 'player':'#ff3914' },
 
     monsters: {
-        moleRat: { name: "Maulwurfsratte", hp: 30, dmg: 5, xp: [20, 30], loot: 5, minLvl: 1, desc: "Nervige Nager." },
-        mutantRose: { name: "Mutanten Rose", hp: 45, dmg: 15, loot: 15, xp: [45, 60], minLvl: 1, desc: "Dornige Pflanze." },
-        raider: { name: "Raider", hp: 70, dmg: 15, loot: 25, xp: [70, 90], minLvl: 2, desc: "Wahnsinniger." },
-        deathclaw: { name: "Todesklaue", hp: 200, dmg: 50, loot: 100, xp: [450, 550], minLvl: 5, desc: "LAUF!" }
+        moleRat: { name: "Maulwurfsratte", hp: 30, dmg: 5, xp: [20, 30], loot: 5, minLvl: 1 },
+        mutantRose: { name: "Mutanten Rose", hp: 45, dmg: 15, loot: 15, xp: [45, 60], minLvl: 1 },
+        raider: { name: "Raider", hp: 70, dmg: 15, loot: 25, xp: [70, 90], minLvl: 2 },
+        deathclaw: { name: "Todesklaue", hp: 200, dmg: 50, loot: 100, xp: [450, 550], minLvl: 5 }
     },
 
     items: {
-        fists: { name: "Fäuste", slot: 'weapon', bonus: {}, cost: 0, requiredLevel: 0, isRanged: false },
+        fists: { name: "Fäuste", slot: 'weapon', baseDmg: 2, bonus: {}, cost: 0, requiredLevel: 0, isRanged: false },
         vault_suit: { name: "Vault-Anzug", slot: 'body', bonus: { END: 1 }, cost: 0, requiredLevel: 0 },
-        knife: { name: "Messer", slot: 'weapon', bonus: { STR: 1 }, cost: 15, requiredLevel: 1, isRanged: false },
-        pistol: { name: "10mm Pistole", slot: 'weapon', bonus: { AGI: 2 }, cost: 50, requiredLevel: 1, isRanged: true },
+        knife: { name: "Messer", slot: 'weapon', baseDmg: 6, bonus: { STR: 1 }, cost: 15, requiredLevel: 1, isRanged: false },
+        pistol: { name: "10mm Pistole", slot: 'weapon', baseDmg: 14, bonus: { AGI: 1 }, cost: 50, requiredLevel: 1, isRanged: true },
         leather_armor: { name: "Lederharnisch", slot: 'body', bonus: { END: 2 }, cost: 30, requiredLevel: 1 },
-        laser_rifle: { name: "Laser-Gewehr", slot: 'weapon', bonus: { PER: 3 }, cost: 300, requiredLevel: 5, isRanged: true },
+        laser_rifle: { name: "Laser-Gewehr", slot: 'weapon', baseDmg: 25, bonus: { PER: 2 }, cost: 300, requiredLevel: 5, isRanged: true },
         combat_armor: { name: "Kampf-Rüstung", slot: 'body', bonus: { END: 4 }, cost: 150, requiredLevel: 5 }
     },
 
@@ -25,16 +23,29 @@ const Game = {
 
     init: function() {
         this.worldData = {};
+        
+        // ZUFÄLLIGE STARTPOSITION (Sichere Zone 1-18, 1-10)
+        const startX = Math.floor(Math.random() * (this.MAP_W - 2)) + 1;
+        const startY = Math.floor(Math.random() * (this.MAP_H - 2)) + 1;
+
         this.state = {
-            sector: {x: 5, y: 5}, player: {x: 10, y: 6},
+            sector: {x: 5, y: 5}, 
+            player: {x: startX, y: startY},
             stats: { STR: 5, PER: 5, END: 5, INT: 5, AGI: 5, LUC: 5 },
-            equip: { weapon: this.items.fists, body: this.items.vault_suit, head: null, feet: null },
+            equip: { weapon: this.items.fists, body: this.items.vault_suit },
             hp: 100, maxHp: 100, xp: 0, lvl: 1, caps: 50, ammo: 10, statPoints: 0,
-            view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, explored: {},
-            tempStatIncrease: {}
+            view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, explored: {}, 
+            tempStatIncrease: {},
+            
+            // NEU: AUFGABEN LISTE
+            quests: [
+                { id: "q1", title: "Der Weg nach Hause", text: "Willkommen im einsamen Ödland einer längst vergessenen Zeit.\n\nDeine Aufgabe in der freien Wildbahn ist es, den Weg nach Hause zu finden!\n\nViel Erfolg!!!" }
+            ]
         };
+        
         this.state.hp = this.calculateMaxHP(this.getStat('END'));
         this.state.maxHp = this.state.hp;
+        
         this.loadSector(5, 5);
         UI.switchView('map').then(() => {
             if(UI.els.gameOver) UI.els.gameOver.classList.add('hidden');
@@ -43,32 +54,24 @@ const Game = {
     },
 
     calculateMaxHP: function(end) { return 100 + (end - 5) * 10; },
-    
     getStat: function(k) {
         let val = this.state.stats[k] || 0;
-        for(let slot in this.state.equip) {
-            if(this.state.equip[slot] && this.state.equip[slot].bonus[k]) val += this.state.equip[slot].bonus[k];
-        }
+        for(let slot in this.state.equip) if(this.state.equip[slot]?.bonus[k]) val += this.state.equip[slot].bonus[k];
         if(this.state.tempStatIncrease.key === k) val += 1;
         return val;
     },
-
     expToNextLevel: function(l) { return 100 * l; },
 
     gainExp: function(amount) {
-        if (this.state.isGameOver) return;
         this.state.xp += amount;
-        UI.log(`+${amount} EXP erhalten.`, 'text-blue-400');
-        
+        UI.log(`+${amount} EXP.`, 'text-blue-400');
         let need = this.expToNextLevel(this.state.lvl);
         while(this.state.xp >= need) {
-            this.state.lvl++;
-            this.state.statPoints++;
-            this.state.xp -= need;
+            this.state.lvl++; this.state.statPoints++; this.state.xp -= need;
             need = this.expToNextLevel(this.state.lvl);
             this.state.maxHp = this.calculateMaxHP(this.getStat('END'));
             this.state.hp = this.state.maxHp;
-            UI.log(`LEVEL UP! LVL ${this.state.lvl}. +1 Stat-Punkt!`, 'text-yellow-400 font-bold');
+            UI.log(`LEVEL UP! LVL ${this.state.lvl}`, 'text-yellow-400 font-bold');
         }
     },
 
@@ -80,7 +83,15 @@ const Game = {
             for(let i=0; i<this.MAP_H; i++) { map[i][0] = '^'; map[i][this.MAP_W-1] = '^'; }
             if(sy>0) map[0][10]='G'; if(sy<9) map[this.MAP_H-1][10]='G';
             if(sx>0) map[6][0]='G'; if(sx<9) map[6][this.MAP_W-1]='G';
-            if(sx===5 && sy===5) map[5][10]='V'; else if(Math.random()>0.7) map[5][10]='C';
+            
+            // Random Start: Nur wenn wir im Startsektor sind, setzen wir kein V an eine feste Stelle
+            if(sx===5 && sy===5) {
+                // Vault unter dem Spieler platzieren
+                map[this.state.player.y][this.state.player.x] = 'V';
+            } else if(Math.random() < 0.3) { // 30% CHANCE FÜR STADT
+                map[5][10]='C'; 
+            }
+            
             this.worldData[key] = { layout: map, explored: {} };
         }
         this.state.currentMap = this.worldData[key].layout;
@@ -165,51 +176,13 @@ const Game = {
         UI.log(`Sektor: ${sx},${sy}`, "text-blue-400");
     },
 
-    // --- KAMPF MIT LEGENDÄREN MOBS ---
     startCombat: function() {
         const templates = Object.values(this.monsters).filter(m => this.state.lvl >= m.minLvl);
         const template = templates[Math.floor(Math.random() * templates.length)];
-        
-        // Gegner-Kopie erstellen
-        let enemy = { ...template };
-        
-        // 10% Chance auf Legendär
-        const isLegendary = Math.random() < 0.1;
-        
-        if(isLegendary) {
-            enemy.isLegendary = true;
-            enemy.name = "Legendäre " + enemy.name;
-            enemy.hp = Math.floor(enemy.hp * 2.0); // 2x Leben
-            enemy.maxHp = enemy.hp;
-            enemy.dmg = Math.floor(enemy.dmg * 1.5); // 1.5x Schaden
-            enemy.loot = Math.floor(enemy.loot * 3.0); // 3x Loot
-            // XP skalieren
-            if(Array.isArray(enemy.xp)) {
-                enemy.xp = [enemy.xp[0]*3, enemy.xp[1]*3]; // 3x XP
-            } else {
-                enemy.xp = enemy.xp * 3;
-            }
-        } else {
-            enemy.maxHp = enemy.hp;
-        }
-        
-        this.state.enemy = enemy;
+        this.state.enemy = { name: template.name, hp: template.hp, maxHp: template.hp, dmg: template.dmg, xp: template.xp, loot: template.loot };
         this.state.inDialog = true;
-        
         UI.switchView('combat').then(() => UI.renderCombat());
-        
-        if(isLegendary) {
-            UI.log("ACHTUNG: LEGENDÄRE PRÄSENZ!", "text-yellow-400 font-bold");
-        } else {
-            UI.log(`${enemy.name} greift an!`, "text-red-500");
-        }
-    },
-
-    getRandomXP: function(xpData) {
-        if (Array.isArray(xpData)) {
-            return Math.floor(Math.random() * (xpData[1] - xpData[0] + 1)) + xpData[0];
-        }
-        return xpData;
+        UI.log(`${template.name} greift an!`, "text-red-500");
     },
 
     combatAction: function(act) {
@@ -228,18 +201,15 @@ const Game = {
             }
 
             if(Math.random() > 0.3) {
-                const baseDmg = wpn.baseDmg || 2;
-                const strBonus = this.getStat('STR') * 1.5;
-                const dmg = Math.floor(baseDmg + strBonus);
+                const bonus = (this.state.equip.weapon.bonus.STR || 0) * 2;
+                const dmg = Math.floor(5 + (this.getStat('STR') * 1.5) + bonus);
                 this.state.enemy.hp -= dmg;
                 UI.log(`Treffer! ${dmg} Schaden.`, "text-green-400");
-                
                 if(this.state.enemy.hp <= 0) {
                     this.state.enemy.hp = 0;
                     this.state.caps += this.state.enemy.loot;
                     UI.log(`Sieg! ${this.state.enemy.loot} KK.`, "text-yellow-400");
-                    const randomXp = this.getRandomXP(this.state.enemy.xp);
-                    this.gainExp(randomXp);
+                    this.gainExp(this.state.enemy.xp[0]); // Einfachheitshalber min XP
                     this.endCombat();
                     return;
                 }
@@ -306,9 +276,8 @@ const Game = {
         if(this.state.caps >= item.cost) {
             this.state.caps -= item.cost;
             this.state.equip[item.slot] = item;
-            const max = this.calculateMaxHP(this.getStat('END'));
-            this.state.maxHp = max;
-            if(this.state.hp > this.state.maxHp) this.state.hp = max;
+            this.state.maxHp = this.calculateMaxHP(this.getStat('END'));
+            if(this.state.hp > this.state.maxHp) this.state.hp = this.state.maxHp;
             UI.log(`Gekauft: ${item.name}`, "text-green-400");
             UI.renderCity();
             UI.update();
