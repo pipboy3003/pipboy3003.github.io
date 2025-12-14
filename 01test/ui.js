@@ -38,7 +38,7 @@ const UI = {
         this.els.btnRight.onclick = () => Game.move(1, 0);
 
         window.addEventListener('keydown', (e) => {
-            if (Game.state.view === 'map' && !Game.state.inDialog && !Game.state.isGameOver) {
+            if (Game.state.view === 'map' && !Game.state.inDialog) {
                 if(e.key === 'w' || e.key === 'ArrowUp') Game.move(0, -1);
                 if(e.key === 's' || e.key === 'ArrowDown') Game.move(0, 1);
                 if(e.key === 'a' || e.key === 'ArrowLeft') Game.move(-1, 0);
@@ -94,7 +94,7 @@ const UI = {
         this.els.hpBar.style.width = `${Math.max(0, (Game.state.hp / maxHp) * 100)}%`;
         
         if(Game.state.view === 'map') {
-            const show = !Game.state.inDialog && !Game.state.isGameOver;
+            const show = !Game.state.inDialog;
             this.els.dpad.style.visibility = show ? 'visible' : 'hidden';
             this.els.dialog.style.display = Game.state.inDialog ? 'flex' : 'none';
         }
@@ -110,41 +110,6 @@ const UI = {
     toggleControls: function(show) {
         this.els.dpad.style.visibility = show ? 'visible' : 'hidden';
         if (!show) this.els.dialog.innerHTML = '';
-    },
-
-    // --- NEUE FUNKTIONEN ---
-
-    // Vault Dialog auf der Map
-    enterVault: function() {
-        Game.state.inDialog = true;
-        this.els.dialog.innerHTML = '';
-        
-        const restBtn = document.createElement('button');
-        restBtn.className = "action-button w-full mb-1 border-blue-500 text-blue-300";
-        restBtn.textContent = "Ausruhen (Gratis)";
-        restBtn.onclick = () => { Game.rest(); this.leaveDialog(); };
-        
-        const leaveBtn = document.createElement('button');
-        leaveBtn.className = "action-button w-full";
-        leaveBtn.textContent = "Weiter geht's";
-        leaveBtn.onclick = () => this.leaveDialog();
-
-        this.els.dialog.appendChild(restBtn);
-        this.els.dialog.appendChild(leaveBtn);
-        this.els.dialog.style.display = 'block';
-    },
-
-    leaveDialog: function() {
-        Game.state.inDialog = false;
-        this.els.dialog.innerHTML = '';
-        this.update();
-    },
-
-    // Game Over Overlay anzeigen
-    showGameOver: function() {
-        const screen = document.getElementById('game-over-screen');
-        if(screen) screen.classList.remove('hidden');
-        this.toggleControls(false);
     },
 
     // --- RENDERERS ---
@@ -211,7 +176,6 @@ const UI = {
         };
 
         addBtn("Heilen (25 KK)", () => Game.heal(), Game.state.caps < 25 || Game.state.hp >= Game.state.maxHp);
-        // NEU: Munition kaufen
         addBtn("Munition (10 Stk / 10 KK)", () => Game.buyAmmo(), Game.state.caps < 10);
         addBtn("Händler / Waffen & Rüstung", () => this.renderShop(con));
         addBtn("Stadt verlassen", () => this.switchView('map'));
