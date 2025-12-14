@@ -16,32 +16,27 @@ const UI = {
             dialog: document.getElementById('dialog-buttons'),
             text: document.getElementById('encounter-text'),
             
-            // Header Buttons
             btnNew: document.getElementById('btn-new'),
             btnWiki: document.getElementById('btn-wiki'),
             btnMap: document.getElementById('btn-map'),
             btnChar: document.getElementById('btn-char'),
             
-            // Movement Buttons
             btnUp: document.getElementById('btn-up'),
             btnDown: document.getElementById('btn-down'),
             btnLeft: document.getElementById('btn-left'),
             btnRight: document.getElementById('btn-right')
         };
 
-        // Header
         this.els.btnNew.onclick = () => Game.init();
         this.els.btnWiki.onclick = () => this.switchView('wiki');
         this.els.btnMap.onclick = () => this.switchView('worldmap');
         this.els.btnChar.onclick = () => this.switchView('char');
 
-        // Movement
         this.els.btnUp.onclick = () => Game.move(0, -1);
         this.els.btnDown.onclick = () => Game.move(0, 1);
         this.els.btnLeft.onclick = () => Game.move(-1, 0);
         this.els.btnRight.onclick = () => Game.move(1, 0);
 
-        // Keys
         window.addEventListener('keydown', (e) => {
             if (Game.state.view === 'map' && !Game.state.inDialog && !Game.state.isGameOver) {
                 if(e.key === 'w' || e.key === 'ArrowUp') Game.move(0, -1);
@@ -51,7 +46,6 @@ const UI = {
             }
         });
         
-        // Globale Exports
         window.Game = Game; 
         window.UI = this;
     },
@@ -76,7 +70,7 @@ const UI = {
             if (name === 'char') this.renderChar();
             if (name === 'wiki') this.renderWiki();
             if (name === 'worldmap') this.renderWorldMap();
-            if (name === 'city') this.renderCity(); // Startseite City
+            if (name === 'city') this.renderCity();
             if (name === 'combat') this.renderCombat();
 
             this.update();
@@ -100,7 +94,7 @@ const UI = {
         this.els.hpBar.style.width = `${Math.max(0, (Game.state.hp / maxHp) * 100)}%`;
         
         if(Game.state.view === 'map') {
-            const show = !Game.state.inDialog;
+            const show = !Game.state.inDialog && !Game.state.isGameOver;
             this.els.dpad.style.visibility = show ? 'visible' : 'hidden';
             this.els.dialog.style.display = Game.state.inDialog ? 'flex' : 'none';
         }
@@ -118,26 +112,53 @@ const UI = {
         if (!show) this.els.dialog.innerHTML = '';
     },
 
+    // --- NEUE FUNKTIONEN ---
+
+    // Vault Dialog auf der Map
+    enterVault: function() {
+        Game.state.inDialog = true;
+        this.els.dialog.innerHTML = '';
+        
+        const restBtn = document.createElement('button');
+        restBtn.className = "action-button w-full mb-1 border-blue-500 text-blue-300";
+        restBtn.textContent = "Ausruhen (Gratis)";
+        restBtn.onclick = () => { Game.rest(); this.leaveDialog(); };
+        
+        const leaveBtn = document.createElement('button');
+        leaveBtn.className = "action-button w-full";
+        leaveBtn.textContent = "Weiter geht's";
+        leaveBtn.onclick = () => this.leaveDialog();
+
+        this.els.dialog.appendChild(restBtn);
+        this.els.dialog.appendChild(leaveBtn);
+        this.els.dialog.style.display = 'block';
+    },
+
+    leaveDialog: function() {
+        Game.state.inDialog = false;
+        this.els.dialog.innerHTML = '';
+        this.update();
+    },
+
+    // Game Over Overlay anzeigen
+    showGameOver: function() {
+        const screen = document.getElementById('game-over-screen');
+        if(screen) screen.classList.remove('hidden');
+        this.toggleControls(false);
+    },
+
     // --- RENDERERS ---
 
     renderChar: function() {
         const grid = document.getElementById('stat-grid');
         if(!grid) return;
         grid.innerHTML = Object.keys(Game.state.stats).map(k => {
-            const val = Game.getStat(k); // Echte Stats inkl. Equip holen
-            const baseVal = Game.state.stats[k];
-            // Zeige Bonus an (z.B. 5 + 1)
-            const diff = val - baseVal;
-            const display = diff > 0 ? `${val} (${baseVal}+${diff})` : val;
-            
-            const btn = Game.state.statPoints > 0 
-                ? `<button class="border border-green-500 px-1 ml-2" onclick="Game.upgradeStat('${k}')">+</button>` 
-                : '';
-            return `<div class="flex justify-between"><span>${k}: ${display}</span>${btn}</div>`;
+            const val = Game.getStat(k);
+            const btn = Game.state.statPoints > 0 ? `<button class="border border-green-500 px-1 ml-2" onclick="Game.upgradeStat('${k}')">+</button>` : '';
+            return `<div class="flex justify-between"><span>${k}: ${val}</span>${btn}</div>`;
         }).join('');
         
         document.getElementById('char-exp').textContent = Game.state.exp;
-        document.getElementById('char-next').textContent = Game.expToNextLevel(Game.state.lvl);
         document.getElementById('char-points').textContent = Game.state.statPoints;
         const btn = document.getElementById('btn-assign');
         if(btn) btn.disabled = Game.state.statPoints <= 0;
@@ -152,7 +173,7 @@ const UI = {
             const m = Game.monsters[k];
             return `<div class="border-b border-green-900 pb-1">
                 <div class="font-bold text-yellow-400">${m.name}</div>
-                <div class="text-xs opacity-70">${m.desc} (HP: ~${m.hp}, LVL: ${m.minLvl}+)</div>
+                <div class="text-xs opacity-70">${m.desc} (HP: ~${m.hp})</div>
             </div>`;
         }).join('');
     },
@@ -175,7 +196,6 @@ const UI = {
         }
     },
 
-    // --- CITY & SHOP LOGIK ---
     renderCity: function() {
         const con = document.getElementById('city-options');
         if(!con) return;
@@ -184,36 +204,29 @@ const UI = {
         const addBtn = (txt, cb, disabled=false) => {
             const b = document.createElement('button');
             b.className = "action-button w-full mb-2 text-left p-3 flex justify-between";
-            b.innerHTML = txt; // Allow HTML
+            b.innerHTML = txt; 
             b.onclick = cb;
-            if(disabled) {
-                b.disabled = true;
-                b.style.opacity = 0.5;
-            }
+            if(disabled) { b.disabled = true; b.style.opacity = 0.5; }
             con.appendChild(b);
         };
 
         addBtn("Heilen (25 KK)", () => Game.heal(), Game.state.caps < 25 || Game.state.hp >= Game.state.maxHp);
-        
-        // Händler Button öffnet Shop-Ansicht
+        // NEU: Munition kaufen
+        addBtn("Munition (10 Stk / 10 KK)", () => Game.buyAmmo(), Game.state.caps < 10);
         addBtn("Händler / Waffen & Rüstung", () => this.renderShop(con));
-        
         addBtn("Stadt verlassen", () => this.switchView('map'));
     },
 
     renderShop: function(container) {
-        container.innerHTML = ''; // Liste leeren
+        container.innerHTML = ''; 
         const backBtn = document.createElement('button');
         backBtn.className = "action-button w-full mb-4 text-center border-yellow-400 text-yellow-400";
         backBtn.textContent = "ZURÜCK ZUM PLATZ";
         backBtn.onclick = () => this.renderCity();
         container.appendChild(backBtn);
 
-        // Items auflisten
         Object.keys(Game.items).forEach(key => {
             const item = Game.items[key];
-            
-            // Nur Items mit Kosten und passendem Level anzeigen
             if(item.cost > 0 && Game.state.lvl >= (item.requiredLevel || 0) - 2) {
                 const canAfford = Game.state.caps >= item.cost;
                 const isEquipped = (Game.state.equip[item.slot] && Game.state.equip[item.slot].name === item.name);
@@ -231,7 +244,6 @@ const UI = {
                 } else {
                     btn.onclick = () => Game.buyItem(key);
                 }
-                
                 container.appendChild(btn);
             }
         });
