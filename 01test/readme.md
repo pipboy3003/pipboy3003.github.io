@@ -1,4 +1,6 @@
 - Grafiken verbessern
+- Überall soll Kronkorken stehen und nicht mehr KK, ganzer Code kontrollieren.
+Rechts von der Schrift log soll ein Spielzeit Timer ab jedem neustart mitlaufen.
 
 
 Vorgeschlagen von Gemini : 
