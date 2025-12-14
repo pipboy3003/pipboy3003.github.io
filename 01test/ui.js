@@ -20,6 +20,7 @@ const UI = {
             btnWiki: document.getElementById('btn-wiki'),
             btnMap: document.getElementById('btn-map'),
             btnChar: document.getElementById('btn-char'),
+            btnQuests: document.getElementById('btn-quests'), // NEU
             
             btnUp: document.getElementById('btn-up'),
             btnDown: document.getElementById('btn-down'),
@@ -31,10 +32,11 @@ const UI = {
 
         this.els.btnNew.onclick = () => Game.init();
         
-        // --- FIX: TOGGLE AUCH FÜR MAP ---
+        // Button Logic
         this.els.btnWiki.onclick = () => this.toggleView('wiki');
-        this.els.btnMap.onclick = () => this.toggleView('worldmap'); // War vorher switchView
+        this.els.btnMap.onclick = () => this.toggleView('worldmap');
         this.els.btnChar.onclick = () => this.toggleView('char');
+        this.els.btnQuests.onclick = () => this.toggleView('quests'); // NEU
 
         this.els.btnUp.onclick = () => Game.move(0, -1);
         this.els.btnDown.onclick = () => Game.move(0, 1);
@@ -87,6 +89,7 @@ const UI = {
             if (name === 'worldmap') this.renderWorldMap();
             if (name === 'city') this.renderCity();
             if (name === 'combat') this.renderCombat();
+            if (name === 'quests') this.renderQuests(); // NEU
 
             this.update();
 
@@ -111,16 +114,17 @@ const UI = {
         const expPct = Math.min(100, (Game.state.xp / nextXp) * 100);
         if(this.els.expBarTop) this.els.expBarTop.style.width = `${expPct}%`;
         
-        // Buttons Highlighting
+        // --- BUTTON HIGHLIGHTING ---
         this.els.btnWiki.classList.remove('active');
         this.els.btnMap.classList.remove('active');
         this.els.btnChar.classList.remove('active');
+        this.els.btnQuests.classList.remove('active'); // NEU
 
         if (Game.state.view === 'wiki') this.els.btnWiki.classList.add('active');
         if (Game.state.view === 'worldmap') this.els.btnMap.classList.add('active');
         if (Game.state.view === 'char') this.els.btnChar.classList.add('active');
+        if (Game.state.view === 'quests') this.els.btnQuests.classList.add('active'); // NEU
 
-        // Level Up Alert
         if(Game.state.statPoints > 0) {
             this.els.btnChar.classList.add('level-up-alert');
             this.els.btnChar.innerHTML = "CHAR <span class='text-yellow-400'>!</span>";
@@ -133,6 +137,7 @@ const UI = {
         this.els.btnWiki.disabled = inCombat;
         this.els.btnMap.disabled = inCombat;
         this.els.btnChar.disabled = inCombat;
+        this.els.btnQuests.disabled = inCombat; // NEU
         this.els.btnNew.disabled = inCombat;
 
         if(Game.state.view === 'map') {
@@ -182,6 +187,46 @@ const UI = {
         Game.state.inDialog = false;
         this.els.dialog.innerHTML = '';
         this.update();
+    },
+
+    // --- RENDERERS ---
+
+    renderQuests: function() {
+        const list = document.getElementById('quest-list');
+        if(!list) return;
+        
+        // Liste rendern
+        list.innerHTML = Game.state.quests.map(q => `
+            <div class="border border-green-900 bg-green-900/10 p-2 flex items-center gap-3 cursor-pointer hover:bg-green-900/30 transition-all" onclick="UI.showQuestDetail('${q.id}')">
+                <div class="text-3xl">✉️</div>
+                <div>
+                    <div class="font-bold text-lg text-yellow-400">${q.title}</div>
+                    <div class="text-xs opacity-70">Zum Lesen klicken</div>
+                </div>
+            </div>
+        `).join('');
+    },
+
+    showQuestDetail: function(id) {
+        const quest = Game.state.quests.find(q => q.id === id);
+        if(!quest) return;
+
+        const list = document.getElementById('quest-list');
+        const detail = document.getElementById('quest-detail');
+        const content = document.getElementById('quest-content');
+        
+        list.classList.add('hidden');
+        detail.classList.remove('hidden');
+        
+        content.innerHTML = `
+            <h2 class="text-2xl font-bold text-yellow-400 border-b border-green-500 mb-4">${quest.title}</h2>
+            <div class="font-mono text-lg leading-relaxed whitespace-pre-wrap">${quest.text}</div>
+        `;
+    },
+
+    closeQuestDetail: function() {
+        document.getElementById('quest-detail').classList.add('hidden');
+        document.getElementById('quest-list').classList.remove('hidden');
     },
 
     renderChar: function() {
@@ -293,16 +338,7 @@ const UI = {
     renderCombat: function() {
         const enemy = Game.state.enemy;
         if(!enemy) return;
-        
-        const nameEl = document.getElementById('enemy-name');
-        nameEl.textContent = enemy.name;
-        
-        if (enemy.isLegendary) {
-            nameEl.className = "text-3xl font-extrabold mb-2 text-yellow-400 animate-pulse";
-        } else {
-            nameEl.className = "text-3xl font-extrabold text-white mb-2";
-        }
-
+        document.getElementById('enemy-name').textContent = enemy.name;
         document.getElementById('enemy-hp-text').textContent = `${Math.max(0, enemy.hp)}/${enemy.maxHp} TP`;
         document.getElementById('enemy-hp-bar').style.width = `${Math.max(0, (enemy.hp/enemy.maxHp)*100)}%`;
     }
