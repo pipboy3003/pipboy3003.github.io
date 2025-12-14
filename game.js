@@ -68,6 +68,7 @@ const Game = {
     monsters: monsters,
     items: items,
     mapColors: mapColors,
+    animationFrameId: animationFrameId,
     
     // Hilfsfunktionen (ausgelagert aus der Hauptdatei)
     calculateMaxHP: function(endurance) {
@@ -222,9 +223,9 @@ const Game = {
     // --- DRAW LOOP ---
     draw: function() {
         if (Game.gameState.currentView !== 'map' || Game.gameState.isGameOver || !ctx) {
-             if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
+             if (Game.animationFrameId) {
+                cancelAnimationFrame(Game.animationFrameId);
+                Game.animationFrameId = null;
             }
             return;
         }
@@ -280,7 +281,7 @@ const Game = {
         );
         ctx.fill();
 
-        animationFrameId = requestAnimationFrame(Game.draw); 
+        Game.animationFrameId = requestAnimationFrame(Game.draw); 
     },
     
     // --- MOVEMENT & ENCOUNTERS ---
@@ -576,12 +577,15 @@ const Game = {
         }
 
         Game.gameState.currentEnemy = null;
-        Game.gameState.inDialog = false;
+        Game.gameState.inDialog = false; 
         UI.clearDialogButtons();
         UI.els.text.textContent = "Ödland Ebene.";
         
         if(Game.gameState.currentView === 'combat') {
-            UI.switchView('map');
+            // WICHTIG: Auf Umschalten warten, BEVOR UI aktualisiert wird, um D-Pad zu zeigen
+            UI.switchView('map').then(() => { 
+                 UI.updateUI(); 
+            });
         } else {
             UI.updateUI();
         }
@@ -656,26 +660,31 @@ const Game = {
         };
         
         // 4. Initialisiere Canvas
-        // WICHTIG: Die Elemente müssen jetzt im DOM sein!
         canvas = document.getElementById('game-canvas');
         if (!canvas) {
-             // Warte, bis die Map View geladen wurde
+             // WICHTIG: Wenn Canvas nicht gefunden, lade View und rufe initNewGame erneut auf.
+             // Die `UI.switchView` wartet, bis die View im DOM ist, und löst DANN das Promise auf.
              UI.switchView('map', true).then(() => {
-                 // Führe die Initialisierung erneut aus, sobald die View geladen ist
                  Game.initNewGame(); 
-             });
+             }).catch(err => UI.log(`Initialisierungsfehler beim Canvas: ${err}`, "text-red-700"));
              return;
         }
-
+        
+        // Jetzt, da Canvas im DOM ist, initialisiere den Kontext
         ctx = canvas.getContext('2d');
+        if (!ctx) {
+            UI.log("FEHLER: Konnte 2D-Context des Canvas nicht erstellen.", "text-red-700");
+            return;
+        }
+
         canvas.width = MAP_WIDTH * TILE_SIZE;
         canvas.height = MAP_HEIGHT * TILE_SIZE;
         
         // 5. Spiel starten
         Game.revealMap(Game.gameState.player.x, Game.gameState.player.y);
         
-        if (animationFrameId) {
-             cancelAnimationFrame(animationFrameId);
+        if (Game.animationFrameId) {
+             cancelAnimationFrame(Game.animationFrameId);
         }
         Game.draw(); 
         
