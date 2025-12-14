@@ -51,7 +51,6 @@
             transition: transform 0.05s ease-in-out; 
         }
         
-        /* Animation für Screen Shake */
         .screen-shake {
             animation: shake 0.2s cubic-bezier(.36,.07,.19,.97) both;
             transform: translate3d(0, 0, 0);
@@ -77,7 +76,6 @@
             overflow: hidden;
         }
         
-        /* Animation für Schaden */
         .damage-flash {
             animation: flash-red 0.1s;
         }
@@ -87,7 +85,6 @@
             100% { box-shadow: inset 0 0 20px rgba(57, 255, 20, 0.1); }
         }
 
-        /* Scanline Effekt Overlay */
         #game-screen::after {
             content: " ";
             display: block;
@@ -102,7 +99,6 @@
             pointer-events: none;
         }
         
-        /* SYSTEM STATUS BAR */
         #system-status-bar {
             border-bottom: 2px solid var(--pip-green);
             padding: 0.5rem 1rem;
@@ -110,7 +106,6 @@
             flex-shrink: 0;
         }
 
-        /* VIEW CONTAINER (Enthält Map, City, Character) */
         #view-container {
             width: 100%;
             flex-grow: 1;
@@ -118,7 +113,6 @@
             justify-content: center;
             align-items: center;
             background-color: var(--pip-bg);
-            /* border-bottom bleibt, um es von encounter-text zu trennen */
             border-bottom: 2px solid var(--pip-green); 
             position: relative;
             overflow: hidden;
@@ -142,18 +136,16 @@
             filter: blur(5px);
         }
 
-        /* Map Canvas */
         #game-canvas {
             image-rendering: pixelated; 
             box-shadow: 0 0 10px rgba(57, 255, 20, 0.1);
             position: absolute;
         }
 
-        /* LOG - Styling für den neuen Side Panel (oder Bottom Panel auf Mobile) */
         #log-panel {
             background-color: rgba(0,0,0,0.5);
             font-size: 0.9rem;
-            min-height: 100px; /* Mindesthöhe für Mobile-Ansicht */
+            min-height: 100px; 
         }
         
         #log-area {
@@ -161,10 +153,10 @@
             padding: 5px;
             font-size: 0.9rem;
             display: flex;
-            flex-direction: column-reverse; /* Neue Einträge oben */
+            flex-direction: column-reverse; 
             animation: fadeInLog 0.3s ease-out;
             flex-grow: 1;
-            min-height: 0; /* Wichtig für flexibles Wachstum in der Seitenleiste */
+            min-height: 0; 
         }
 
         @keyframes fadeInLog {
@@ -172,8 +164,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
         
-        /* --- RESPONSIVE LAYOUT --- */
-
         #main-content { 
             display: flex; 
             flex-direction: row; 
@@ -189,7 +179,6 @@
             overflow: hidden;
         }
 
-        /* Wiederkehrende Pip-Boy Styles */
         .header-bar {
             display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 1rem;
             border-bottom: 2px solid var(--pip-green); background: rgba(57, 255, 20, 0.05); flex-shrink: 0;
@@ -208,7 +197,6 @@
         .action-button:hover { background-color: var(--pip-dim); }
         .action-button:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        /* Combat Display Styling - for the central element */
         #combat-view {
             border: 4px solid #ff3914; 
             background-color: rgba(255, 0, 0, 0.15);
@@ -221,7 +209,6 @@
             text-align: center;
         }
 
-        /* Character View Custom Styles */
         #char-display-area {
             display: flex;
             flex-direction: column;
@@ -259,7 +246,6 @@
             transition: width 0.5s ease;
         }
 
-        /* SCROLLBAR STYLING */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background: var(--pip-green); border-radius: 3px; }
         ::-webkit-scrollbar-track { background: var(--pip-dark); }
@@ -268,63 +254,25 @@
 </head>
 <body>
 
-<!-- Firebase Imports -->
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    // Setze Firebase Logging (hilfreich bei der Entwicklung)
-    setLogLevel('Debug');
-
-    // Globale Variablen für Firebase (werden im Skript unten verwendet)
-    window.initializeApp = initializeApp;
-    window.getAuth = getAuth;
-    window.signInAnonymously = signInAnonymously;
-    window.signInWithCustomToken = signInWithCustomToken;
-    window.onAuthStateChanged = onAuthStateChanged;
-    window.getFirestore = getFirestore;
-    window.doc = doc;
-    window.getDoc = getDoc;
-    window.setDoc = setDoc;
-
-    // Startet die Hauptinitialisierung, sobald die Imports geladen sind
-    document.addEventListener('DOMContentLoaded', () => {
-        if (window.initFirebaseAndGame) {
-            window.initFirebaseAndGame();
-        }
-    });
-</script>
-
-
 <div id="pipboy-case">
     <div id="game-screen">
         
-        <!-- MAIN HEADER: Enthält jetzt alle wichtigen Buttons -->
         <header class="header-bar">
-            <!-- Title and Zone Display on the Left -->
             <div class="flex flex-col sm:flex-row sm:items-baseline gap-1">
                 <div class="font-bold tracking-widest text-lg sm:text-xl leading-none">PIP-BOY 3000 <span class="text-xs align-top opacity-70">MK-V</span></div>
-                <!-- Zone Display wurde hierher verschoben -->
                 <div id="current-zone-display" class="text-xs sm:text-lg opacity-80 leading-none">Ödland</div>
             </div>
             
-            <!-- Buttons on the Right -->
             <div class="flex items-center gap-1 sm:gap-2">
-                <button id="save-btn" class="action-button px-2 py-1 text-xs leading-none" onclick="saveGame()">SPEICHERN</button>
                 <button id="new-game-btn" class="action-button px-2 py-1 text-xs leading-none bg-red-900 border-red-500" onclick="initNewGame()">NEUES SPIEL</button>
                 <button id="quit-btn" class="action-button px-2 py-1 text-xs leading-none bg-gray-700 border-gray-500" onclick="quitGame()">BEENDEN</button>
-                <!-- NEU: Wiki Button -->
                 <button id="wiki-btn" class="action-button px-2 py-1 text-sm leading-none" onclick="switchView('wiki')">WIKI</button>
                 <button id="char-btn" class="action-button px-2 py-1 text-sm leading-none" onclick="switchView('character')">CHAR</button>
             </div>
         </header>
 
-        <!-- FIXED SYSTEM STATUS BAR -->
         <div id="system-status-bar" class="flex flex-row justify-between items-center text-sm md:text-base">
             <div id="health-ammo-group" class="flex items-center gap-4">
-                
-                <!-- Health -->
                 <div class="flex items-center gap-1">
                     <span class="font-bold">TP:</span>
                     <span id="health-display" class="pip-stat-value">100/100</span>
@@ -333,7 +281,6 @@
                     </div>
                 </div>
 
-                <!-- Level & EXP -->
                 <div class="flex items-center gap-1">
                     <span class="font-bold">LVL:</span>
                     <span id="level-display" class="pip-stat-value">1</span>
@@ -342,14 +289,12 @@
                     <span class="font-bold">EXP:</span>
                     <span id="exp-current-display" class="pip-stat-value">0</span>
                 </div>
-                <!-- Ammo -->
                 <div class="flex items-center gap-1">
                     <span class="font-bold">MUN:</span>
                     <span id="ammo-display" class="pip-stat-value">10</span>
                 </div>
             </div>
 
-            <!-- Caps -->
             <div id="caps-group" class="text-yellow-400 font-bold text-lg">
                 <span id="caps-display">0 Kronenkorken</span>
             </div>
@@ -358,16 +303,12 @@
 
         <div id="main-content" class="flex flex-grow overflow-hidden">
             
-            <!-- MAIN PANEL: Map, City, Character View, Controls & Log -->
             <div id="main-panel" class="flex flex-col flex-grow overflow-hidden">
                 
-                <!-- START: TOP PANEL AREA (View + Log Side-by-Side on Desktop, Stacked on Mobile) -->
                 <div id="top-panel-area" class="flex flex-col md:flex-row flex-grow overflow-hidden">
 
-                    <!-- VIEW CONTAINER (Map, City, Character - Left/Top - Nimmt 2/3 des Platzes ein auf MD+) -->
                     <div id="view-container" class="flex-grow md:w-2/3">
                         
-                        <!-- Map View -->
                         <div id="map-view" class="view">
                             <canvas id="game-canvas"></canvas>
                             <div id="wasteland-display" class="text-xl text-center p-4" style="display: none;">
@@ -377,20 +318,16 @@
                             </div>
                         </div>
 
-                        <!-- City View -->
                         <div id="city-view" class="view justify-start items-start p-2 sm:p-6" style="display: none; overflow-y: auto;">
                             <div id="city-view-content" class="w-full flex flex-col items-center">
                                 <h1 class="city-header">RUSTY SPRINGS</h1>
                                 <p class="pip-text text-lg">Ein rostiges Handelszentrum. Du riechst Schießpulver und gebratenes Geckofleisch.</p>
                                 
-                                <!-- City Options werden hier als Grid platziert und sind scrollbar -->
                                 <div class="city-options grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 w-full max-h-[70vh] overflow-y-auto p-2" id="city-options">
-                                    <!-- Dynamische Stadt-Buttons hier -->
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Character View - NEUES LAYOUT -->
                         <div id="character-view" class="view justify-start items-start p-2 sm:p-6" style="display: none; overflow-y: auto;">
                             <div id="char-display-area">
                                 <h1 class="city-header text-center text-3xl mb-4">CHARACTER STATUS</h1>
@@ -415,14 +352,12 @@
                                 <div class="char-section">
                                     <h2 class="section-header">S.P.E.C.I.A.L.</h2>
                                     <div class="stat-grid" id="stat-display">
-                                        <!-- Dynamische Stat-Buttons hier -->
                                     </div>
                                 </div>
                                 
                                 <div class="char-section">
                                     <h2 class="section-header">AUSRÜSTUNG</h2>
                                     <div class="pip-text text-lg leading-tight" id="equipment-display">
-                                        <!-- Dynamische Ausrüstung hier -->
                                     </div>
                                 </div>
                                 
@@ -430,18 +365,15 @@
                             </div>
                         </div>
                         
-                        <!-- WIKI VIEW - NEU -->
                         <div id="wiki-view" class="view justify-start items-start p-2 sm:p-6" style="display: none; overflow-y: auto;">
                             <div id="wiki-display-area" class="w-full">
                                 <h1 class="city-header text-center text-3xl mb-4">ÖDLAND WIKI</h1>
                                 <div id="wiki-content" class="w-full">
-                                    <!-- Dynamischer Inhalt hier -->
                                 </div>
                                 <button class="action-button mt-4 mb-2 w-full" onclick="switchView('map')">Zurück zur Karte</button>
                             </div>
                         </div>
                         
-                        <!-- Combat View (Zentrale Anzeige) -->
                         <div id="combat-view" class="view" style="display: none;">
                             <div class="bg-red-900/10 border-4 border-red-500 rounded-lg p-8 flex flex-col gap-4 w-11/12 max-w-sm">
                                 <h1 class="text-3xl font-bold text-red-500 tracking-wider">GEFAHR!</h1>
@@ -454,25 +386,20 @@
 
                     </div>
                     
-                    <!-- Log Panel (Right/Bottom - Nimmt 1/3 des Platzes auf MD+ ein) -->
                     <div id="log-panel" class="flex flex-col flex-shrink-0 border-t-2 md:border-t-0 md:border-l-2 border-[#39ff14] md:w-1/3 min-h-[100px] md:min-h-0 bg-gray-800">
                         <h2 class="section-header p-1">MELDUNGS LOG</h2>
                         <div id="log-area" class="flex-grow overflow-y-auto"></div>
                     </div>
 
                 </div>
-                <!-- END: TOP PANEL AREA -->
                 
-                <!-- Kontext Text (Below Map/Log) -->
                 <div class="px-4 pt-2 flex-shrink-0">
                      <div class="pip-text min-h-[1.5em] italic text-center text-sm md:text-base" id="encounter-text">
                         System initialisiert...
                     </div>
                 </div>
 
-                <!-- Steuerung & Aktionen (Ganz unten) -->
                 <div id="action-area" class="flex gap-4 p-2 flex-shrink-0"> 
-                     <!-- D-Pad - Wird in der Stadt oder im Kampf ausgeblendet -->
                     <div id="movement-container" class="flex-shrink-0">
                         <div id="movement-buttons" class="grid grid-cols-3 gap-1 w-32">
                              <div></div>
@@ -489,7 +416,6 @@
                         </div>
                     </div>
                     
-                    <!-- Buttons (Im Dialog sichtbar) -->
                     <div id="action-buttons" class="flex flex-wrap flex-grow justify-end"></div>
                 </div>
                 
@@ -497,22 +423,13 @@
             </div>
         </div>
         
-        <!-- NEU: Auth/User Info (Unten rechts im Gehäuse) -->
         <footer class="text-xs opacity-50 p-1 flex justify-end">
-            USER: <span id="user-id-display">Authenticating...</span>
+            PIP-BOY 3000 MK-V
         </footer>
     </div>
 </div>
 
 <script>
-    // --- FIREBASE GLOBALS ---
-    let db;
-    let auth;
-    let userId = null;
-    let appId = null;
-    let isAuthReady = false;
-
-    // --- KONFIGURATION & KARTE ---
     const TILE_SIZE = 30; 
     const MAP_WIDTH = 20; 
     const MAP_HEIGHT = 12; 
@@ -523,9 +440,8 @@
     canvas.width = MAP_WIDTH * TILE_SIZE;
     canvas.height = MAP_HEIGHT * TILE_SIZE;
     
-    let mapLayout = []; // Wird von Firestore geladen oder neu generiert
+    let mapLayout = []; 
     
-    // Wasteland Map-Farben (Arid Design)
     const mapColors = {
         'V': '#39ff14', 
         'C': '#39ff14', 
@@ -538,21 +454,16 @@
         'player': '#ff3914' 
     };
 
-    // --- MONSTER DEFINITION (NEU: minLevel & description) ---
-    // minLevel: Todesklaue erst ab Level 5
     const monsters = {
         moleRat: { name: "Maulwurfsratte", hp: 30, damage: 15, loot: 10, key: 'moleRat', exp: 50, minLevel: 1, description: "Eine aggressive Nagerart, die schnell zuschlägt. Häufig im Ödland anzutreffen." }, 
         mutantRose: { name: "Mutanten Rose", hp: 45, damage: 20, loot: 15, key: 'mutantRose', exp: 75, minLevel: 1, description: "Eine durch Strahlung mutierte Pflanze, die mit giftigen Stacheln angreift." },
         deathclaw: { name: "Todesklaue", hp: 120, damage: 45, loot: 50, key: 'deathclaw', exp: 300, minLevel: 5, description: "Eines der furchteinflößendsten Raubtiere des Ödlands. Extrem schnell und tödlich." }
     };
 
-    // --- GAME STATE ---
     const BASE_STATS = { STR: 5, PER: 5, END: 5, INT: 5, AGI: 5, LUC: 5 };
     let gameState = {};
 
-    // --- ITEMS mit S.P.E.C.I.A.L. Boni ---
     const items = {
-        // Standard/Level 1 Gear
         none_head: { name: "Kein Helm", slot: 'head', bonus: {}, requiredLevel: 1 },
         none_feet: { name: "Stiefel", slot: 'feet', bonus: {}, requiredLevel: 1 },
         fists: { name: "Fäuste", slot: 'weapon', bonus: {}, requiredLevel: 1, isRanged: false }, 
@@ -562,18 +473,15 @@
         armor_leather: { name: "Lederharnisch", slot: 'body', bonus: { END: 2 }, requiredLevel: 1, cost: 30 },
         helmet_metal: { name: "Metallhelm", slot: 'head', bonus: { END: 1, PER: 1 }, requiredLevel: 1, cost: 20 },
         
-        // Tier 2 (Level 5) Gear
         rifle_laser: { name: "Laser-Gewehr", slot: 'weapon', bonus: { PER: 3, INT: 1 }, requiredLevel: 5, cost: 300, isRanged: true },
         armor_combat: { name: "Kampf-Harnisch", slot: 'body', bonus: { END: 3, STR: 1 }, requiredLevel: 5, cost: 150 },
         helmet_combat: { name: "Kampfhelm", slot: 'head', bonus: { END: 2, PER: 2 }, requiredLevel: 5, cost: 75 },
         
-        // Tier 3 (Level 10) Gear
         rifle_plasma: { name: "Plasma-Gewehr", slot: 'weapon', bonus: { PER: 4, INT: 2, LUC: 1 }, requiredLevel: 10, cost: 600, isRanged: true },
         armor_power: { name: "Power-Rüstung T-60", slot: 'body', bonus: { END: 5, STR: 5, AGI: -2 }, requiredLevel: 10, cost: 1000 },
         helmet_power: { name: "Power-Helm T-60", slot: 'head', bonus: { END: 3, PER: 3 }, requiredLevel: 10, cost: 400 },
     };
 
-    // --- DOM ELEMENTE ---
     const els = {
         stats: document.getElementById('stat-display'), 
         equip: document.getElementById('equipment-display'),
@@ -593,13 +501,12 @@
         cityView: document.getElementById('city-view'),
         charView: document.getElementById('character-view'), 
         charBtn: document.getElementById('char-btn'),
-        wikiBtn: document.getElementById('wiki-btn'), // NEU
-        wikiView: document.getElementById('wiki-view'), // NEU
-        wikiContent: document.getElementById('wiki-content'), // NEU      
+        wikiBtn: document.getElementById('wiki-btn'),
+        wikiView: document.getElementById('wiki-view'),
+        wikiContent: document.getElementById('wiki-content'),      
         cityOptions: document.getElementById('city-options'),
         zoneDisplay: document.getElementById('current-zone-display'),
         
-        // NEUE ELEMENTE FÜR LEVEL/EXP
         levelDisplay: document.getElementById('level-display'),
         expCurrentDisplay: document.getElementById('exp-current-display'), 
         levelDisplayChar: document.getElementById('level-display-char'),
@@ -609,32 +516,15 @@
         statPointsDisplay: document.getElementById('stat-points-display'),
         applyStatBtn: document.getElementById('apply-stat-btn'),
         
-        // NEUE ELEMENTE FÜR DIE ZENTRALE KAMPF-ANSICHT
         combatView: document.getElementById('combat-view'),
         enemyName: document.getElementById('enemy-name-center'),
-        enemyHpDisplay: document.getElementById('enemy-hp-display-center'), 
-        
-        userIdDisplay: document.getElementById('user-id-display'), 
-        saveBtn: document.getElementById('save-btn'), 
-        newGameBtn: document.getElementById('new-game-btn'),
-        quitBtn: document.getElementById('quit-btn')
+        enemyHpDisplay: document.getElementById('enemy-hp-display-center')
     };
 
-    // --- CORE FUNKTIONEN ---
-    
-    /**
-     * Berechnet die benötigte EXP für das nächste Level.
-     * @param {number} level - Das aktuelle Level.
-     * @returns {number} Benötigte EXP.
-     */
     function expToNextLevel(level) {
         return 100 + level * 50; 
     }
 
-    /**
-     * Fügt EXP hinzu und prüft auf Level-Up.
-     * @param {number} amount - Die hinzuzufügende EXP-Menge.
-     */
     function gainExp(amount) {
         if (gameState.isGameOver) return;
         
@@ -647,80 +537,50 @@
             gameState.level++;
             gameState.statPoints++;
             gameState.exp -= expNeeded;
-            expNeeded = expToNextLevel(gameState.level); // Aktualisiere benötigte EXP für das neue Level
-            // Heile bei Level-Up etwas
+            expNeeded = expToNextLevel(gameState.level);
             gameState.health = Math.min(100, gameState.health + 20); 
             log(`LEVEL UP! Du bist jetzt Level ${gameState.level}! +1 Stat-Punkt.`, 'text-red-500 bg-yellow-400/20');
         }
         updateUI();
     }
     
-    /**
-     * Wendet einen verfügbaren Stat-Punkt auf einen temporär erhöhten Stat an.
-     * @param {string} statKey - Der Stat, der permanent erhöht werden soll.
-     */
     function commitStatPoint(statKey) {
         if (gameState.statPoints > 0) {
             gameState.stats[statKey]++; 
             gameState.statPoints--; 
-            
-            // Setze den temporären Stat zurück, da der Punkt angewendet wurde
             gameState.tempStatIncrease = {}; 
-            
             log(`${statKey} permanent auf ${gameState.stats[statKey]} erhöht.`, 'text-yellow-400');
             updateUI();
         }
     }
     
-    /**
-     * Erhöht temporär einen Stat. Dieser muss anschließend mit applyStatPoint bestätigt werden.
-     * @param {string} key - Der Stat-Schlüssel.
-     * @param {HTMLElement} buttonElement - Das HTML-Button-Element.
-     */
     function increaseTempStat(key, buttonElement) {
-        // Nur erhöhen, wenn Punkte verfügbar sind
         if (gameState.statPoints > 0) {
-            // Setze den temporären Stat der vorherigen Wahl zurück
             if (gameState.tempStatIncrease.key && gameState.tempStatIncrease.key !== key) {
-                // Finde und reaktiviere den vorherigen Button
                 const prevButton = document.querySelector(`[data-stat-key="${gameState.tempStatIncrease.key}"]`);
                 if (prevButton) prevButton.disabled = false;
             }
             
             gameState.tempStatIncrease.key = key;
             gameState.tempStatIncrease.value = (gameState.tempStatIncrease.value || 0) + 1;
-            
-            buttonElement.disabled = true; // Deaktiviere den Button nach der Wahl
-            
+            buttonElement.disabled = true;
             updateUI();
         } else {
             log("Keine Stat-Punkte verfügbar.", 'text-gray-500');
         }
     }
 
-    /**
-     * Bestätigt die Stat-Erhöhung nach der Auswahl.
-     */
     function applyStatPoint() {
         if (gameState.statPoints > 0 && gameState.tempStatIncrease.key) {
             commitStatPoint(gameState.tempStatIncrease.key);
         }
     }
     
-    /**
-     * Berechnet den aktuellen Wert eines SPECIAL-Stats, inklusive Ausrüstungsboni.
-     * @param {string} key - Der Name des Stats (z.B. 'AGI').
-     * @returns {number} Der endgültige Stat-Wert.
-     */
     function getStat(key) {
         let val = gameState.stats[key];
-        
-        // Füge temporären Bonus hinzu
         if (gameState.tempStatIncrease.key === key) {
             val += gameState.tempStatIncrease.value;
         }
-
-        // Summiere Boni von ausgerüsteten Gegenständen
         for (const slot in gameState.equipment) {
             const item = gameState.equipment[slot];
             if (item && item.bonus[key]) {
@@ -730,11 +590,6 @@
         return val;
     }
 
-    /**
-     * Fügt eine Nachricht zum Log-Bereich hinzu.
-     * @param {string} msg - Die Nachricht.
-     * @param {string} colorClass - Optionale Tailwind-Klasse für die Farbe.
-     */
     function log(msg, colorClass = '') {
         const div = document.createElement('div');
         div.className = `mb-1 ${colorClass} pip-text`;
@@ -742,15 +597,10 @@
         els.log.insertBefore(div, els.log.firstChild); 
     }
 
-    /**
-     * Aktualisiert alle dynamischen UI-Elemente.
-     */
     function updateUI() {
-        // --- LEVEL/EXP STATUS BAR ---
         els.levelDisplay.textContent = gameState.level;
-        els.expCurrentDisplay.textContent = gameState.exp; // EXP Anzeige in Statusbar
+        els.expCurrentDisplay.textContent = gameState.exp;
         
-        // --- CHARACTER VIEW SPEZIFISCH ---
         els.levelDisplayChar.textContent = gameState.level;
         els.expDisplayChar.textContent = gameState.exp;
         
@@ -763,15 +613,11 @@
         els.statPointsDisplay.textContent = gameState.statPoints;
         els.applyStatBtn.disabled = !(gameState.statPoints > 0 && gameState.tempStatIncrease.key);
 
-        // Stats Display (NEUES LAYOUT)
         els.stats.innerHTML = Object.keys(BASE_STATS).map(k => {
             const baseVal = gameState.stats[k];
             const finalVal = getStat(k);
-            
-            // Finde den Button für diesen Stat, um den Klick-Handler anzuhängen
             const isTempIncreased = gameState.tempStatIncrease.key === k;
             
-            // Text für den Wert
             let displayVal = finalVal;
             if (finalVal !== baseVal) {
                 const diff = finalVal - baseVal;
@@ -782,7 +628,6 @@
             if (gameState.statPoints > 0 && !isTempIncreased) {
                  btn = `<button class="action-button p-0 h-6 w-6 text-base leading-none" data-stat-key="${k}" onclick="increaseTempStat('${k}', this)">+</button>`;
             } else if (isTempIncreased) {
-                 // Zeige temporären Status
                  btn = `<span class="pip-stat-value text-red-500">[+TEMP]</span>`; 
             }
 
@@ -794,8 +639,6 @@
             `;
         }).join('');
 
-
-        // Gear Liste
         els.equip.innerHTML = `
             <div>Helm: <span class="pip-stat-value">${gameState.equipment.head.name}</span></div>
             <div>Körper: <span class="pip-stat-value">${gameState.equipment.body.name}</span></div>
@@ -803,7 +646,6 @@
             <div>Waffe: <span class="pip-stat-value">${gameState.equipment.weapon.name}</span></div>
         `;
 
-        // HP / Ammo / Kronenkorken
         els.hp.textContent = `${gameState.health}/100`;
         const hpPercent = Math.max(0, gameState.health); 
         els.hpBar.style.width = `${hpPercent}%`;
@@ -812,11 +654,7 @@
         els.ammo.textContent = gameState.ammo;
         els.caps.textContent = `${gameState.caps} Kronenkorken`;
         els.zoneDisplay.textContent = gameState.currentZone;
-        
-        // User ID
-        els.userIdDisplay.textContent = userId || 'Anonym';
 
-        // NEU: Combat Stat Update (für die zentrale Anzeige)
         if (gameState.currentEnemy) {
             els.enemyName.textContent = gameState.currentEnemy.name.toUpperCase();
             els.enemyHpDisplay.textContent = `TP: ${gameState.currentEnemy.hp}/${gameState.currentEnemy.maxHp}`;
@@ -825,20 +663,15 @@
         const isControlHidden = gameState.inDialog || gameState.isGameOver || gameState.currentView !== 'map';
         els.moveContainer.style.visibility = isControlHidden ? 'hidden' : 'visible';
         
-        // Buttons (für Stadt-Dialoge ODER Kampf-Aktionen)
         els.btns.style.display = gameState.inDialog ? 'flex' : 'none'; 
 
         if (gameState.isGameOver) els.restart.style.display = 'block';
         else els.restart.style.display = 'none';
     }
 
-    /**
-     * Erzeugt eine zufällige Karte mit Start (V), Stadt (C) und Ziel (X).
-     */
     function generateRandomMap() {
         let newMap = Array(MAP_HEIGHT).fill(0).map(() => Array(MAP_WIDTH).fill('.'));
 
-        // Umrandung mit Bergen (Boundary)
         for (let y = 0; y < MAP_HEIGHT; y++) {
             newMap[y][0] = '^';
             newMap[y][MAP_WIDTH - 1] = '^';
@@ -848,7 +681,6 @@
             newMap[MAP_HEIGHT - 1][x] = '^';
         }
 
-        // Platziere Wasserfläche (mindestens 2x2)
         const waterSize = Math.floor(Math.random() * 2) + 2; 
         const waterStart = { x: Math.floor(Math.random() * (MAP_WIDTH - waterSize - 1)) + 1, 
                              y: Math.floor(Math.random() * (MAP_HEIGHT - waterSize - 1)) + 1 };
@@ -859,7 +691,6 @@
             }
         }
 
-        // 2. Platziere Schlüssel-POIs: V (Vault), C (City), X (Goal)
         const spots = [];
         const minDistance = 5; 
 
@@ -889,7 +720,6 @@
             }
         }
 
-        // 3. Erstelle einen Pfad ('#') zwischen den POIs
         if (spots.length >= 2) {
             spots.sort((a, b) => a.y !== b.y ? a.y - b.y : a.x - b.x); 
 
@@ -980,7 +810,6 @@
     
     function switchView(newView) {
         if (gameState.currentView === newView) {
-            // Spezieller Toggle für Character/Wiki View
             if (newView === 'character' || newView === 'wiki') {
                 switchView('map');
                 return;
@@ -996,7 +825,6 @@
         
         if (oldViewEl) {
             oldViewEl.classList.add('transition-out');
-            els.gameScreen.classList.add('transition-out'); 
         }
 
         setTimeout(() => {
@@ -1008,9 +836,6 @@
             gameState.currentView = newView;
             
             setTimeout(() => {
-                newViewEl.classList.remove('transition-out');
-                els.gameScreen.classList.remove('transition-out');
-                
                 els.charBtn.disabled = false; 
                 els.wikiBtn.disabled = false;
 
@@ -1027,13 +852,12 @@
                     els.text.textContent = "Charakter Status überprüft.";
                     gameState.currentZone = "Status";
                     gameState.inDialog = false; 
-                } else if (newView === 'wiki') { // NEU
+                } else if (newView === 'wiki') {
                     els.text.textContent = "Ödland Wiki aufgerufen.";
                     gameState.currentZone = "WIKI";
                     showWiki();
                     gameState.inDialog = false;
                 } else if (newView === 'combat') {
-                    // Kampf Ansicht ist aktiv, Dialog ist gesetzt
                     gameState.currentZone = "Kampf!";
                     gameState.inDialog = true;
                 }
@@ -1057,7 +881,6 @@
         
         html += '</ul>';
         els.wikiContent.innerHTML = html;
-        els.text.textContent = "Ödland Wiki: Liste der Kreaturen.";
     }
 
     function showMonsterDetails(key) {
@@ -1076,15 +899,11 @@
             <button class="action-button mt-4 w-full" onclick="showWiki()">Zurück zur Liste</button>
         `;
         els.wikiContent.innerHTML = html;
-        els.text.textContent = `Ödland Wiki: Details zu ${monster.name}.`;
     }
 
     function showCityDialog(options) {
         gameState.inDialog = true;
         els.cityOptions.innerHTML = '';
-        
-        // Stellt sicher, dass das Layout-Raster innerhalb des scrollbaren Containers verwendet wird
-        els.cityOptions.className = 'city-options grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 w-full max-h-[70vh] overflow-y-auto p-2';
         
         options.forEach(opt => {
             const btn = document.createElement('button');
@@ -1093,15 +912,12 @@
             
             let isDisabled = false;
             
-            // NEU: Handle Level/Other disables
             if (opt.isDisabled) {
                 isDisabled = true;
             }
 
-            // Handle Cost Disable
             if (opt.cost && gameState.caps < opt.cost) {
                 isDisabled = true;
-                // Zeige fehlende Kapseln nur, wenn nicht schon wegen Level disabled
                 if (!opt.isDisabled) { 
                     btn.innerHTML += `<br> (Fehlt ${opt.cost-gameState.caps} KK)`;
                 }
@@ -1126,7 +942,6 @@
         els.cityOptions.innerHTML = '';
         const cityHeader = document.getElementById('city-view-content').querySelector('.city-header');
         if (cityHeader) cityHeader.textContent = "RUSTY SPRINGS";
-        els.cityOptions.className = 'city-options grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 w-full max-h-[70vh] overflow-y-auto p-2';
         updateUI();
     }
 
@@ -1158,7 +973,6 @@
             els.text.innerHTML = "Möchtest du Rusty Springs betreten? Die Zeit steht still.";
             gameState.inDialog = true;
             
-            // HIER WIRD DIE REIHENFOLGE UND GRÖSSE GETAUSCHT
             els.btns.innerHTML = `
                 <button class="action-button w-1/3 text-base" onclick="confirmCityEntry(false)">Weiter geht's!</button>
                 <button class="action-button w-2/3 text-lg font-extrabold bg-green-900 border-green-500" onclick="confirmCityEntry(true)">Betreten</button>
@@ -1202,7 +1016,6 @@
         if (tile === 'X') { victory(); return; }
 
         if (tile === '.' || tile === '#') {
-            // Chance auf Kampf 
             if (Math.random() < 0.15) triggerRandomEncounter(); 
             else if (tile === '#') els.text.textContent = "Sicherer Handelsweg. Schneller voran.";
             else els.text.textContent = "Karges Ödland. Vorsicht geboten.";
@@ -1218,7 +1031,7 @@
                 gameState.ammo += 5; log("+5 Munition gekauft.", "text-green-400"); enterCity();
             }},
             { text: "Ausrüstung kaufen/ansehen", action: () => showBuyMenu() },
-            { text: "Stat Punkte Zuweisen", action: () => switchView('character') }, // Direkter Link zur Char-Ansicht
+            { text: "Stat Punkte Zuweisen", action: () => switchView('character') },
             { text: "Stadt verlassen", action: () => switchView('map') }
         ]);
     }
@@ -1227,7 +1040,6 @@
         const cityHeader = document.getElementById('city-view-content').querySelector('.city-header');
         if (cityHeader) cityHeader.textContent = "HÄNDLER";
         
-        // Liste aller Gegenstände, die einen Preis haben
         const allPricedItems = Object.values(items).filter(item => item.cost > 0);
 
         const dialogOptions = allPricedItems.map(opt => {
@@ -1235,10 +1047,9 @@
             const isEquipped = currentItem.name === opt.name;
             const isLevelTooLow = gameState.level < opt.requiredLevel;
 
-            // Zeige nur Items, deren Level der Spieler erreichen kann
             if (gameState.level < opt.requiredLevel - 5) return null;
 
-            if (isEquipped) return null; // Nicht anzeigen, wenn bereits ausgerüstet
+            if (isEquipped) return null;
 
             const statBonus = Object.entries(opt.bonus).map(([k, v]) => `[${k}${v > 0 ? '+' : ''}${v}]`).join(' ');
             
@@ -1254,7 +1065,7 @@
                 text: text,
                 cost: opt.cost,
                 item: opt,
-                isDisabled: isDisabled, // Markiere, ob der Button wegen Level disabled sein muss
+                isDisabled: isDisabled,
                 action: () => {
                     gameState.equipment[opt.slot] = opt; 
                     log(`${opt.name} ausgerüstet und gekauft.`, 'text-yellow-400');
@@ -1269,7 +1080,6 @@
     }
 
     function triggerRandomEncounter() {
-        // NEU: Filter Monster basierend auf dem aktuellen Level des Spielers
         const availableMonsters = Object.values(monsters).filter(m => gameState.level >= m.minLevel);
 
         if (availableMonsters.length === 0) {
@@ -1282,7 +1092,6 @@
         
         gameState.currentEnemy = { ...enemyTemplate, maxHp: enemyTemplate.hp }; 
 
-        // NEU: Sofort in die Kampf-Ansicht wechseln
         switchView('combat'); 
 
         els.pipBoyCase.classList.add('screen-shake');
@@ -1312,32 +1121,25 @@
         let currentWeapon = gameState.equipment.weapon;
         const isRanged = currentWeapon.isRanged;
         
-        // 1. Munitions-Check und Fallback auf Fäuste
         if (isRanged && gameState.ammo <= 0) {
             if (currentWeapon.name !== 'Fäuste') {
-                // Nur temporäre Waffe setzen, wenn sie noch nicht Fäuste ist
                 gameState.originalWeaponDuringCombat = currentWeapon;
                 gameState.equipment.weapon = items.fists;
                 currentWeapon = items.fists;
-                log("Keine Munition! Automatisch auf Fäuste gewechselt (Fäuste).", "text-yellow-500");
-            } else {
-                log("Keine Munition. Kämpfe mit Fäusten.", "text-yellow-500");
+                log("Keine Munition! Automatisch auf Fäuste gewechselt.", "text-yellow-500");
             }
         } 
         
-        // 2. Munitionsverbrauch (nur wenn noch eine Fernkampfwaffe aktiv ist UND Munition > 0)
         if (isRanged && gameState.ammo > 0 && currentWeapon.name !== 'Fäuste') {
             gameState.ammo--;
         }
 
-        // 3. Spieler greift an (Schaden basiert auf AGI/STR und Waffe)
         const weaponBonusDamage = currentWeapon.bonus.STR || currentWeapon.bonus.AGI || 0;
-        const playerDamage = getStat('AGI') * 3 + Math.floor(Math.random() * getStat('STR')) + weaponBonusDamage * 5; // Erhöhter Waffenschaden
+        const playerDamage = getStat('AGI') * 3 + Math.floor(Math.random() * getStat('STR')) + weaponBonusDamage * 5;
         
         if (Math.random() > 0.3) { 
             gameState.currentEnemy.hp -= playerDamage;
             
-            // Log-Nachricht basierend auf der Waffe anpassen
             let attackVerb = currentWeapon.name === 'Fäuste' ? 'Du schlägst' : currentWeapon.name === 'Messer' ? 'Du stichst' : 'Du feuerst';
 
             log(`${attackVerb} mit ${currentWeapon.name} die ${gameState.currentEnemy.name} für ${playerDamage} Schaden!`, "text-green-400");
@@ -1345,7 +1147,6 @@
             log("Du verfehlst das Ziel!", "text-yellow-400");
         }
         
-        // 4. Gegner Check
         if (gameState.currentEnemy.hp <= 0) {
             const loot = gameState.currentEnemy.loot + Math.floor(Math.random()*getStat('LUC'));
             const exp = gameState.currentEnemy.exp; 
@@ -1358,7 +1159,6 @@
             return;
         }
 
-        // 5. Gegner greift an (Verteidigung basiert auf END)
         const defense = getStat('END') * 2;
         const rawEnemyDamage = gameState.currentEnemy.damage;
         const actualDamage = Math.max(1, rawEnemyDamage - defense); 
@@ -1381,7 +1181,6 @@
 
         if (!forced) log("Fluchtversuch...", "text-yellow-400");
         
-        // Fluchtwahrscheinlichkeit basierend auf AGI
         const fleeChance = 0.4 + (getStat('AGI') * 0.05); 
         
         if (Math.random() < fleeChance || forced) { 
@@ -1402,10 +1201,9 @@
     }
     
     function endCombat() {
-        // 1. Waffe zurücksetzen, wenn der Fallback aktiv war
         if (gameState.originalWeaponDuringCombat) {
             gameState.equipment.weapon = gameState.originalWeaponDuringCombat;
-            gameState.originalWeaponDuringCombat = null; // Speicher leeren
+            gameState.originalWeaponDuringCombat = null;
             log(`Zurück zur Waffe: ${gameState.equipment.weapon.name}.`, 'text-green-500');
         }
 
@@ -1414,7 +1212,6 @@
         els.btns.innerHTML = '';
         els.text.textContent = "Ödland Ebene.";
         
-        // NEU: Zurück zur Karte wechseln, wenn Kampf beendet ist
         if(gameState.currentView === 'combat') {
             switchView('map');
         } else {
@@ -1428,15 +1225,11 @@
         }
     }
     
-    /**
-     * Beendet das Spiel und löst den Game Over Zustand aus.
-     * @param {boolean} isDeath - Wurde das Spiel durch Tod beendet?
-     */
     function quitGame(isDeath = false) {
         if (gameState.isGameOver) return;
         
         gameState.isGameOver = true;
-        gameState.health = Math.max(0, gameState.health); // Setze TP auf 0, falls nicht schon geschehen
+        gameState.health = Math.max(0, gameState.health);
         
         if (isDeath) {
             els.text.innerHTML = "<b>STATUS: KRITISCH</b>";
@@ -1456,95 +1249,43 @@
         log("Die Vault ist gerettet. Du hast überlebt!", "text-green-400");
         updateUI();
     }
-    
-    // --- FIREBASE / PERSISTENZ LOGIK ---
 
-    /**
-     * Speichert den aktuellen Spielstand in Firestore.
-     */
-    async function saveGame() {
-        // *** DIESE ZEILE HINZUFÜGEN, UM FIREBASE ZU ÜBERSPRINGEN ***
-        log("Speichern in der Cloud deaktiviert. Nur lokales Speichern verfügbar.", "text-yellow-500");
-        // return; // <-- Wenn Sie die Cloud-Logik komplett überspringen wollen
-
-        // ... (Der gesamte Firebase-Code kann bleiben oder auskommentiert werden)
-
-        // Unabhängig von Firebase: Lokales Speichern in localStorage
-        try {
-            localStorage.setItem('pipboy_save_01', JSON.stringify(gameState));
-            log("Spiel erfolgreich lokal gespeichert.", "text-green-500");
-        } catch(e) {
-            log("FEHLER: Lokales Speichern fehlgeschlagen: " + e.message, "text-red-500");
-        }
+    function handleResize() {
+        draw(); 
+        updateUI();
     }
 
-    /**
-     * Lädt den Spielstand von Firestore oder startet ein neues Spiel.
-     */
-    async function loadGame() {
-        if (!isAuthReady || !userId) {
-            log("Fehler: Authentifizierung nicht bereit.", "text-red-500");
-            return;
-        }
+    window.increaseTempStat = increaseTempStat;
+    window.applyStatPoint = applyStatPoint;
+    window.movePlayer = movePlayer;
+    window.confirmCityEntry = confirmCityEntry;
+    window.resolveCombat = resolveCombat;
+    window.resolveFlee = resolveFlee;
+    window.switchView = switchView;
+    window.initNewGame = initNewGame;
+    window.quitGame = quitGame;
+    window.showBuyMenu = showBuyMenu; 
+    window.showWiki = showWiki;
+    window.showMonsterDetails = showMonsterDetails;
 
-        const savePath = `artifacts/${appId}/users/${userId}/pipboy_saves`;
-        const saveDocRef = doc(db, savePath, 'save_slot_01');
-        
-        try {
-            const docSnap = await getDoc(saveDocRef);
-
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                
-                // 1. Map laden
-                mapLayout = data.mapLayout;
-                
-                // 2. Game State laden
-                const loadedGameState = data.gameState;
-                
-                // Mappe vereinfachte Item-Namen zurück zu den komplexen Item-Objekten
-                const allItems = Object.values(items);
-                for (const slot in loadedGameState.equipment) {
-                    const itemName = loadedGameState.equipment[slot].name;
-                    const foundItem = allItems.find(i => i.name === itemName);
-                    if (foundItem) {
-                        loadedGameState.equipment[slot] = foundItem;
-                    } else {
-                        // FALLBACK: Wenn Waffe/Item nicht gefunden wird, wird auf Fäuste/None gesetzt.
-                        console.warn(`Item ${itemName} not found. Defaulting to Fists/None.`);
-                        loadedGameState.equipment[slot] = items.fists; 
-                    }
-                }
-                
-                gameState = loadedGameState;
-                log("Spielstand geladen!", "text-green-400");
-                
-            } else {
-                log("Kein gespeicherter Spielstand gefunden. Neues Spiel gestartet.", "text-yellow-400");
-                initNewGame();
-                return; 
-            }
-        } catch (error) {
-            console.error("Fehler beim Laden:", error);
-            log("FEHLER: Laden fehlgeschlagen. Starte neues Spiel.", "text-red-500");
-            initNewGame();
-            return;
-        }
-        
-        // Finales UI Update nach dem Laden
-        handleResize();
-        updateUI(); 
-        requestAnimationFrame(draw); 
-    }
+    els.restart.onclick = initNewGame;
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
     
-    /**
-     * Initialisiert einen neuen Spielstand und setzt alles zurück.
-     */
+    window.addEventListener('keydown', (e) => {
+        if(gameState.currentView !== 'map' || gameState.inDialog || gameState.isGameOver) return;
+        
+        if(e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') movePlayer(0, -1);
+        else if(e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') movePlayer(0, 1);
+        else if(e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') movePlayer(-1, 0);
+        else if(e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') movePlayer(1, 0);
+    });
+
     function initNewGame() {
         els.log.innerHTML = '';
         
         const { layout, startX, startY } = generateRandomMap();
-        mapLayout = layout;
+        mapLayout = layout.map(row => row.split(''));
 
         gameState = {
             player: { x: startX, y: startY },
@@ -1553,7 +1294,7 @@
                 head: items.none_head, 
                 body: items.armor_vault, 
                 feet: items.none_feet,
-                weapon: items.fists // Standardmäßig Fäuste ausgerüstet
+                weapon: items.fists
             },
             health: 100,
             ammo: 10,
@@ -1564,18 +1305,13 @@
             currentView: 'map', 
             currentZone: "Ödland",
             currentEnemy: null,
-            
-            // Level/EXP Stats
             level: 1,
             exp: 0,
             statPoints: 0,
-            tempStatIncrease: {}, // Für temporäre Stat-Erhöhung vor Zuweisung
-            
-            // NEU: Temporäre Waffe für Ammo-Fallback
+            tempStatIncrease: {},
             originalWeaponDuringCombat: null 
         };
         
-        // Setze Views zurück und starte neu
         els.cityView.style.display = 'none';
         els.charView.style.display = 'none';
         els.wikiView.style.display = 'none';
@@ -1592,94 +1328,7 @@
         draw();
     }
 
-
-    /**
-     * Initialisiert Firebase und startet den Authentifizierungsprozess.
-     */
-    window.initFirebaseAndGame = async function() {
-        try {
-            // Hole globale Variablen
-            appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-            if (Object.keys(firebaseConfig).length === 0) {
-                 log("FEHLER: Firebase Konfiguration fehlt.", "text-red-500");
-                 return;
-            }
-
-            // Initialisiere Dienste
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            
-            // Authentifizierung
-            if (initialAuthToken) {
-                await signInWithCustomToken(auth, initialAuthToken);
-            } else {
-                await signInAnonymously(auth);
-            }
-
-            // Warte auf Auth State
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    userId = user.uid;
-                    isAuthReady = true;
-                    log(`Authentifiziert als User: ${userId.substring(0, 8)}...`, "text-green-500");
-                    loadGame(); // Starte Spiel, nachdem Auth bereit ist
-                } else {
-                    userId = null;
-                    isAuthReady = true; // Auch wenn anonym, die Auth ist stabil
-                    log("Anonyme Sitzung gestartet.", "text-yellow-500");
-                    loadGame();
-                }
-            });
-
-        } catch (error) {
-            console.error("Firebase Initialisierungsfehler:", error);
-            log("KRITISCHER FEHLER: Firebase konnte nicht initialisiert werden.", "text-red-700");
-            initNewGame(); // Startet ohne Speichern/Laden
-        }
-    }
-
-    // --- INITIALISIERUNG & RESIZE HANDLER ---
-
-    function handleResize() {
-        // Stellt sicher, dass das Canvas im Container skaliert wird
-        draw(); 
-        updateUI();
-    }
-    
-    // Mache die Funktionen global zugänglich für die Inline-Klicks
-    window.increaseTempStat = increaseTempStat;
-    window.applyStatPoint = applyStatPoint;
-    window.movePlayer = movePlayer;
-    window.confirmCityEntry = confirmCityEntry;
-    window.resolveCombat = resolveCombat;
-    window.resolveFlee = resolveFlee;
-    window.switchView = switchView;
-    window.saveGame = saveGame;
-    window.initNewGame = initNewGame;
-    window.quitGame = quitGame;
-    window.showBuyMenu = showBuyMenu; 
-    window.showWiki = showWiki;
-    window.showMonsterDetails = showMonsterDetails;
-
-    els.restart.onclick = initNewGame;
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', handleResize);
-    
-    // Tastatur Support (WASD und Pfeiltasten)
-    window.addEventListener('keydown', (e) => {
-        if(gameState.currentView !== 'map' || gameState.inDialog || gameState.isGameOver) return;
-        
-        if(e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') movePlayer(0, -1);
-        else if(e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') movePlayer(0, 1);
-        else if(e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') movePlayer(-1, 0);
-        else if(e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') movePlayer(1, 0);
-    });
-
-    // Das Spiel wird in initFirebaseAndGame über loadGame() gestartet
+    initNewGame();
 </script>
 </body>
 </html>
