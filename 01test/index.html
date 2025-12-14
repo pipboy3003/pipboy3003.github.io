@@ -32,15 +32,11 @@
         .blink-red { animation: blink-red-anim 1s infinite; }
         @keyframes blink-red-anim { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-        /* NEU: LEVEL UP ANIMATION (GOLD BLINKEN) */
         @keyframes flash-gold {
             0%, 100% { color: var(--pip-green); border-color: var(--pip-green); }
             50% { color: #ffd700; border-color: #ffd700; box-shadow: 0 0 8px #ffd700; }
         }
-        .level-up-alert {
-            animation: flash-gold 1s infinite;
-            font-weight: bold;
-        }
+        .level-up-alert { animation: flash-gold 1s infinite; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -74,11 +70,20 @@
         </header>
 
         <div id="system-status-bar" class="flex justify-between items-center px-4 py-2 border-b-2 border-[#39ff14] bg-[#39ff14]/10">
-            <div class="flex items-center gap-4">
-                <span>TP: <span id="val-hp">--/--</span></span>
-                <div class="w-24 bg-gray-900 h-3 border border-[#1a4d1a]"><div id="bar-hp" class="bg-[#39ff14] h-full" style="width: 100%"></div></div>
+            <div class="flex items-center gap-4 text-sm md:text-base">
+                <div class="flex items-center gap-1">
+                    <span>TP:</span>
+                    <span id="val-hp">--/--</span>
+                    <div class="w-16 md:w-24 bg-gray-900 h-3 border border-[#1a4d1a]"><div id="bar-hp" class="bg-[#39ff14] h-full" style="width: 100%"></div></div>
+                </div>
+                
                 <span>LVL: <span id="val-lvl">-</span></span>
-                <span>EXP: <span id="val-exp">-</span></span>
+                
+                <div class="flex items-center gap-1">
+                    <span>XP:</span>
+                    <div class="w-16 md:w-24 bg-gray-900 h-3 border border-yellow-900"><div id="bar-exp-top" class="bg-yellow-500 h-full" style="width: 0%"></div></div>
+                </div>
+
                 <span>MUN: <span id="val-ammo">-</span></span>
             </div>
             <span id="val-caps" class="text-yellow-400 font-bold">--- KK</span>
@@ -136,7 +141,6 @@
                 const ver = versionText.trim();
                 verDisplay.textContent = ver;
                 verDisplay.classList.remove('animate-pulse');
-                console.log("Lade Version:", ver);
                 return loadScript('ui.js?v=' + ver).then(() => loadScript('game.js?v=' + ver));
             })
             .then(() => {
