@@ -1,4 +1,13 @@
 <div id="map-view" class="w-full h-full flex justify-center items-center bg-black relative">
     <canvas id="game-canvas" class="border border-green-900 shadow-[0_0_10px_#39ff14]"></canvas>
-    <div id="map-overlay" class="absolute top-10 text-center text-red-500 font-bold hidden"></div>
+    
+    <div id="game-over-screen" class="absolute inset-0 bg-black/90 flex flex-col justify-center items-center z-50 hidden">
+        <h1 class="text-6xl font-bold text-red-600 tracking-widest animate-pulse border-4 border-red-600 p-4 bg-red-900/20 mb-4">
+            GAME OVER
+        </h1>
+        <p class="text-red-500 text-xl mb-8">STATUS: GEFALLEN IM ÖDLAND</p>
+        <button class="action-button border-red-500 text-red-500 hover:bg-red-900" onclick="location.reload()">
+            SYSTEM NEUSTART
+        </button>
+    </div>
 </div>
