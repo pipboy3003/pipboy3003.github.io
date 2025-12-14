@@ -58,7 +58,7 @@ const Game = {
     startDrawLoop: function() {
         const canvas = document.getElementById('game-canvas');
         if (!canvas) {
-            UI.log("CANVAS FEHLT - Versuche neustart...", "text-red-500");
+            UI.log("CANVAS NICHT GEFUNDEN!", "text-red-500");
             return;
         }
         canvas.width = MAP_WIDTH * TILE_SIZE;
@@ -81,8 +81,11 @@ const Game = {
         this.ctx.canvas.style.transform = `translate(${ox}px, ${oy}px) scale(${scale})`;
         this.ctx.canvas.style.transformOrigin = "top left";
         
-        this.ctx.clearRect(0, 0, MAP_WIDTH*TILE_SIZE, MAP_HEIGHT*TILE_SIZE);
+        // HINTERGRUND SCHWARZ FÜLLEN (gegen roten Bildschirm)
+        this.ctx.fillStyle = '#000000';
+        this.ctx.fillRect(0, 0, MAP_WIDTH*TILE_SIZE, MAP_HEIGHT*TILE_SIZE);
 
+        // Map zeichnen
         for(let y=0; y<MAP_HEIGHT; y++) {
             for(let x=0; x<MAP_WIDTH; x++) {
                 const t = this.mapLayout[y][x];
@@ -98,6 +101,7 @@ const Game = {
             }
         }
 
+        // Spieler
         this.ctx.fillStyle = '#ff3914';
         this.ctx.beginPath();
         this.ctx.arc(this.gameState.player.x*TILE_SIZE + 15, this.gameState.player.y*TILE_SIZE + 15, 10, 0, Math.PI*2);
