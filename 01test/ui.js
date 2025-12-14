@@ -7,8 +7,8 @@ const UI = {
             log: document.getElementById('log-area'),
             hp: document.getElementById('val-hp'),
             hpBar: document.getElementById('bar-hp'),
+            expBarTop: document.getElementById('bar-exp-top'), // NEU
             lvl: document.getElementById('val-lvl'),
-            exp: document.getElementById('val-exp'),
             ammo: document.getElementById('val-ammo'),
             caps: document.getElementById('val-caps'),
             zone: document.getElementById('current-zone-display'),
@@ -89,16 +89,21 @@ const UI = {
         if (!Game.state) return;
         
         this.els.lvl.textContent = Game.state.lvl;
-        this.els.exp.textContent = Game.state.exp;
         this.els.ammo.textContent = Game.state.ammo;
         this.els.caps.textContent = `${Game.state.caps} KK`;
         this.els.zone.textContent = Game.state.zone;
         
+        // HP Balken
         const maxHp = 100 + (Game.state.stats.END - 5) * 10;
         this.els.hp.textContent = `${Math.round(Game.state.hp)}/${maxHp}`;
         this.els.hpBar.style.width = `${Math.max(0, (Game.state.hp / maxHp) * 100)}%`;
+
+        // EXP Balken (Header)
+        const nextXp = Game.expToNextLevel(Game.state.lvl);
+        const expPct = Math.min(100, (Game.state.xp / nextXp) * 100);
+        if(this.els.expBarTop) this.els.expBarTop.style.width = `${expPct}%`;
         
-        // --- LEVEL UP INDICATOR ---
+        // Level Up Indicator
         if(Game.state.statPoints > 0) {
             this.els.btnChar.classList.add('level-up-alert');
             this.els.btnChar.innerHTML = "CHAR <span class='text-yellow-400'>!</span>";
@@ -107,7 +112,7 @@ const UI = {
             this.els.btnChar.textContent = "CHAR";
         }
 
-        // --- BUTTONS SPERREN IM KAMPF ---
+        // Buttons Sperren
         const inCombat = Game.state.view === 'combat';
         this.els.btnWiki.disabled = inCombat;
         this.els.btnMap.disabled = inCombat;
@@ -163,18 +168,25 @@ const UI = {
         this.update();
     },
 
-    // --- RENDERERS ---
-
     renderChar: function() {
         const grid = document.getElementById('stat-grid');
         if(!grid) return;
+        
+        // Stats
         grid.innerHTML = Object.keys(Game.state.stats).map(k => {
             const val = Game.getStat(k);
             const btn = Game.state.statPoints > 0 ? `<button class="border border-green-500 px-1 ml-2" onclick="Game.upgradeStat('${k}')">+</button>` : '';
             return `<div class="flex justify-between"><span>${k}: ${val}</span>${btn}</div>`;
         }).join('');
         
-        document.getElementById('char-exp').textContent = Game.state.exp;
+        // EXP im Char Screen (FIXED)
+        const nextXp = Game.expToNextLevel(Game.state.lvl);
+        const expPct = Math.min(100, (Game.state.xp / nextXp) * 100);
+        
+        document.getElementById('char-exp').textContent = Game.state.xp;
+        document.getElementById('char-next').textContent = nextXp;
+        document.getElementById('char-exp-bar').style.width = `${expPct}%`; // Hier war der Fehler!
+        
         document.getElementById('char-points').textContent = Game.state.statPoints;
         const btn = document.getElementById('btn-assign');
         if(btn) btn.disabled = Game.state.statPoints <= 0;
