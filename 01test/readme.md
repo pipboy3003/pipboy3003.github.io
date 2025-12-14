@@ -2,6 +2,9 @@
 - Überall soll Kronkorken stehen und nicht mehr KK, ganzer Code kontrollieren.
 Rechts von der Schrift log soll ein Spielzeit Timer ab jedem neustart mitlaufen.
 
+für Tablet & Laptop funktioniert soweit alles. 
+Das gesamt Overlay ist aber auf Mobiltelefonen zu klein. Idee wäre es das D Pay als "Overlay" reinzumachen links unten und somit den Karten abschnitt zu vergrößern. Desweiteren ist der Logbereich scheinbar nicht Fixiert, er wird varriabel bei mehr und mehr tätigkeiten immer größer bis er den ganzen bildschirm ausfüllt.
+
 
 Vorgeschlagen von Gemini : 
 Hier sind 3 Vorschläge für den nächsten Schritt. Sag mir, worauf du Lust hast, und ich liefere dir den Code:
