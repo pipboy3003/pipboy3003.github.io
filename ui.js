@@ -90,8 +90,15 @@ const UI = {
         }
 
         // Steuerung und Game Over
-        const isControlHidden = Game.gameState.inDialog || Game.gameState.isGameOver || (Game.gameState.currentView !== 'map' && Game.gameState.currentView !== 'city');
-        this.els.moveContainer.style.visibility = isControlHidden ? 'hidden' : 'visible';
+        // Steuerung ist nur sichtbar auf der MAP, wenn kein Dialog läuft und das Spiel nicht vorbei ist.
+        const isControlHidden = Game.gameState.inDialog || Game.gameState.isGameOver || Game.gameState.currentView !== 'map';
+        
+        // Anzeigen/Verstecken der Bewegungssteuerung
+        if (this.els.moveContainer) {
+            this.els.moveContainer.style.visibility = isControlHidden ? 'hidden' : 'visible';
+        }
+        
+        // Anzeigen/Verstecken der Dialog-Buttons
         this.els.btns.style.display = Game.gameState.inDialog ? 'flex' : 'none'; 
         this.els.restart.style.display = Game.gameState.isGameOver ? 'block' : 'none';
 
@@ -106,18 +113,21 @@ const UI = {
     
     // Asynchrones Laden von HTML-Views
     loadView: async function(viewName) {
-        const path = `views/${viewName}.html`;
+        // Pfad zur View-Datei im Unterordner 'views'
+        const path = `views/${viewName}.html`; 
         try {
             const response = await fetch(path);
-            if (!response.ok) throw new Error(`View ${path} not found.`);
+            if (!response.ok) throw new Error(`View ${path} not found. Status: ${response.status}`);
             return await response.text();
         } catch (error) {
             this.log(`FEHLER beim Laden der View ${viewName}: ${error.message}`, 'text-red-500');
-            return `<div id="${viewName}-view" class="view justify-center items-center text-red-500">View ${viewName} konnte nicht geladen werden.</div>`;
+            // Zeigt eine Fehlermeldung, wenn das Laden fehlschlägt
+            return `<div id="${viewName}-view" class="view justify-center items-center text-red-500" style="display: flex;">FEHLER: View ${viewName} konnte nicht geladen werden. Prüfen Sie den views/-Ordner und die Pfade.</div>`;
         }
     },
 
     switchView: async function(newView, forceReload = false) {
+        // Wenn die Ansicht bereits aktiv ist und kein Neuladen erzwungen wird, tue nichts
         if (Game.gameState.currentView === newView && !forceReload) return;
 
         const oldViewEl = document.getElementById(Game.gameState.currentView + '-view');
@@ -140,49 +150,57 @@ const UI = {
             Game.animationFrameId = null;
         }
 
-        // Lade neue View, falls sie noch nicht im DOM ist
+        // Lade neue View, falls sie noch nicht im DOM ist (oder Neuladen erzwungen)
         if (!newViewEl || forceReload) {
             const htmlContent = await this.loadView(newView);
-            // Entferne alte Inhalte, falls es ein erzwungenes Reload ist oder die Map neu geladen werden muss
-            if (forceReload) {
-                 this.els.viewContentArea.innerHTML = '';
-            } else if (newViewEl) {
+            
+            // Entferne alte Instanz, falls vorhanden
+            if (newViewEl) {
                 newViewEl.remove();
             }
+            
+            // Füge neue View in den DOM ein
             this.els.viewContentArea.insertAdjacentHTML('beforeend', htmlContent);
             newViewEl = document.getElementById(newView + '-view');
             
-            // Wenn die Map View neu geladen wird, initialisiere Game.js neu
-            if (newView === 'map' && Game.gameState.level) {
-                Game.initNewGame(); 
+            if (!newViewEl) {
+                 // Kritischer Fehler: View konnte nicht geladen/eingefügt werden
+                 this.log(`KRITISCH: View ${newView} konnte nicht im DOM gefunden werden.`, 'text-red-700');
+                 // Buttons reaktivieren und abbrechen
+                 this.els.charBtn.disabled = false; 
+                 this.els.wikiBtn.disabled = false;
+                 this.els.mapBtn.disabled = false;
+                 return Promise.reject(`View ${newView} not found after insert.`);
             }
         }
         
         // Nach der Transition
-        setTimeout(() => {
-            if (oldViewEl) {
-                oldViewEl.style.display = 'none';
-                oldViewEl.classList.remove('transition-out');
-            }
-            
-            newViewEl.style.display = 'flex';
-            newViewEl.classList.add('active');
-            
-            Game.gameState.currentView = newView;
-            
-            // Spezialaktionen nach dem Umschalten
-            this.postSwitchActions(newView);
-            
-            // Buttons reaktivieren
+        return new Promise(resolve => {
             setTimeout(() => {
-                this.els.charBtn.disabled = false; 
-                this.els.wikiBtn.disabled = false;
-                this.els.mapBtn.disabled = false;
-            }, 50);
-        }, 300);
-        
-        // Gibt ein Promise zurück, falls die Initialisierung wartet (siehe Game.initNewGame)
-        return new Promise(resolve => setTimeout(resolve, 350));
+                if (oldViewEl) {
+                    oldViewEl.style.display = 'none';
+                    oldViewEl.classList.remove('transition-out');
+                }
+                
+                newViewEl.style.display = 'flex';
+                newViewEl.classList.add('active');
+                
+                Game.gameState.currentView = newView;
+                
+                // Spezialaktionen nach dem Umschalten
+                this.postSwitchActions(newView);
+                
+                // Buttons reaktivieren
+                setTimeout(() => {
+                    this.els.charBtn.disabled = false; 
+                    this.els.wikiBtn.disabled = false;
+                    this.els.mapBtn.disabled = false;
+                }, 50);
+                
+                // Promise auflösen, sobald der Übergang abgeschlossen ist
+                resolve(); 
+            }, 300);
+        });
     },
 
     postSwitchActions: function(newView) {
