@@ -1,6 +1,13 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 ==============================
 
+[v0.0.10a] - 2025-12-15 (Savegame System)
+-----------------------------------------
+- SYSTEM: Login-Screen implementiert. Spieler müssen nun eine "Survivor-ID" wählen.
+- NETWORK: Permanente Spielstände (Savegames) in der Cloud. Dein Fortschritt (XP, Items, Position) wird gespeichert und beim Login mit derselben ID wiederhergestellt.
+- GAMEPLAY: Automatisches Speichern bei wichtigen Events (Level-Up, Sektorwechsel, Kampfende).
+- UI: Manueller "SPEICHERN" Button hinzugefügt.
+
 [v0.0.9e] - 2025-12-15 (Global Visibility)
 ------------------------------------------
 - UI: Die "Weltkarte" (Taste: WELT) zeigt nun türkise Punkte in Sektoren an, in denen sich andere Spieler befinden.
