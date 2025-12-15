@@ -1,0 +1,41 @@
+CHANGE LOG - PIP-BOY 3000 Mk-V
+==============================
+
+[v0.0.5c] - 2025-12-15
+----------------------
+- DOKUMENTATION: Aufsplittung in readme.md und change.log.
+- STRUKTUR: Versionierungssystem gefestigt.
+
+[v0.0.5b] - 2025-12-15 (Hotfix)
+-------------------------------
+- FIX: Das Würfel-Overlay (Dice) verdeckt nicht mehr den Startbildschirm (display: flex entfernt).
+- FIX: Kampfbildschirm bleibt sichtbar, bis das Würfeln abgeschlossen ist.
+- UI: Würfel-Logik robuster gestaltet.
+
+[v0.0.5a] - 2025-12-15 (Legendary Update)
+-----------------------------------------
+- NEU: Legendäre Gegner (15% Spawn-Rate) mit erhöhtem Schwierigkeitsgrad (HP x2, DMG x1.5).
+- NEU: Loot-Würfel-System (Dice Overlay) nach Sieg über legendäre Gegner.
+- NEU: Zeitbasierter Buff "Overdrive" (Erhöht Stats für 5 Minuten massiv).
+- UPDATE: Startpunkt-Logik überarbeitet. Zufälliger Sektor, aber Spieler startet immer sicher auf dem Vault-Feld (20,20).
+- GRAFIK: Verbesserter Kontrast für Bodenfliesen (dunkler) und Steine (heller).
+- GRAFIK: Pulsierende/Schimmernde Effekte für wichtige Orte (Vault, Stadt, Tor) auf der Karte.
+
+[v0.0.4c] - 2025-12-15 (Layout & Mobile)
+----------------------------------------
+- LAYOUT: Tausch der Hauptbereiche -> Log jetzt Links, Karte Rechts.
+- MOBILE: D-Pad Overlay hinzugefügt.
+- UI: Log-Bereich fixiert (kein unendliches Wachsen mehr, scrollt jetzt).
+- ENGINE: Umstellung auf Canvas-Rendering für die Karte statt DOM-Grid (Performance Boost).
+
+[v0.0.4b] - 2025-12-15
+----------------------
+- GAMEPLAY: Einführung des Buff-Systems für den nächsten Kampf.
+- GAMEPLAY: Erste Iteration der legendären Drop-Chancen.
+
+[v0.0.1 - v0.0.3] - Initial Phase
+---------------------------------
+- Grundgerüst (HTML/JS/Tailwind).
+- Erstes Kampfsystem.
+- Inventar- und Händler-Basislogik.
+- Implementierung der Views-Struktur.
