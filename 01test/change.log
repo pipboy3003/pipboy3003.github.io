@@ -1,10 +1,15 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 ==============================
+
+[v0.0.9d] - 2025-12-15 (Critical Crash Fix)
+-------------------------------------------
+- FIX: "Initializing..." Hänger (Race Condition) behoben. Das Spiel wartet nun zuverlässig, bis alle Skripte geladen sind.
+- SYSTEM: Globaler Error-Watchdog implementiert. Abstürze werden nun rot im Log angezeigt, statt das Spiel kommentarlos einzufrieren.
+- NETZWERK: Fallback-Mechanismus: Wenn Firebase geblockt wird, startet das Spiel trotzdem im Offline-Modus (Rescue Mode).
+
 [v0.0.9c] - 2025-12-15 (Boot Fix)
 ---------------------------------
-- FIX: Spielstart-Logik ("Boot-Loop") repariert. Das Spiel startet nun auch, wenn das Netzwerk verzögert ist oder fehlschlägt.
-- FIX: "Initializing..." Hänger behoben durch robustere Lade-Reihenfolge in index.html.
-- NETWORK: Sicherheitsabfragen eingebaut, damit sendMove nicht crasht, wenn Firebase offline ist.
+- FIX: Spielstart-Logik robuster gegen Netzwerkverzögerungen.
 
 [v0.0.9b] - 2025-12-15 (Visuals Update)
 ---------------------------------------
