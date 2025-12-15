@@ -7,113 +7,175 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
-        :root { --pip-green: #39ff14; --pip-dim: #1a4d1a; --pip-dark: #0a0f0a; --pip-bg: #050505; }
-        body { background-color: #000; color: var(--pip-green); font-family: 'VT323', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; overflow: hidden; user-select: none; }
+        :root { 
+            --pip-green: #1aff1a; 
+            --pip-glow: #2bff2b;
+            --pip-dim: #0d330d; 
+            --pip-bg: #051105; 
+            --scan-color: rgba(0, 20, 0, 0.5);
+        }
         
-        #pipboy-case { background-color: #1a1a1a; padding: 10px; border-radius: 20px; box-shadow: inset 0 0 20px #000, 0 0 15px #333; width: 100%; max-width: 1200px; height: 98vh; display: flex; flex-direction: column; position: relative; }
-        #game-screen { background-color: var(--pip-dark); border: 2px solid var(--pip-green); border-radius: 10px; flex-grow: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        body { 
+            background-color: #000; 
+            color: var(--pip-green); 
+            font-family: 'VT323', monospace; 
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; margin: 0; overflow: hidden; user-select: none; 
+        }
         
+        /* Das Gehäuse */
+        #pipboy-case { 
+            background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
+            padding: 15px; 
+            border-radius: 30px; 
+            box-shadow: 
+                inset 0 0 20px #000, 
+                0 0 0 5px #2a2a2a,
+                0 0 30px rgba(0,0,0,0.8); 
+            width: 100%; max-width: 1200px; height: 98vh; 
+            display: flex; flex-direction: column; position: relative; 
+        }
+
+        /* Der Bildschirm selbst */
+        #game-screen { 
+            background-color: var(--pip-bg); 
+            border: 2px solid var(--pip-dim); 
+            border-radius: 60px / 15px; /* Leichte Röhrenform */
+            flex-grow: 1; display: flex; flex-direction: column; 
+            position: relative; overflow: hidden; 
+            box-shadow: inset 0 0 80px rgba(0,0,0,0.9);
+        }
+
+        /* CRT SCANLINES & FLICKER EFFEKT (Das Wichtigste!) */
+        #game-screen::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 99;
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+        }
+        
+        #game-screen::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: rgba(18, 16, 16, 0.1);
+            opacity: 0;
+            z-index: 99;
+            pointer-events: none;
+            animation: flicker 0.15s infinite;
+        }
+
+        /* GLOW TEXT */
+        .glow-text { text-shadow: 0 0 5px var(--pip-glow); }
+        button, span, div { text-shadow: 0 0 3px var(--pip-dim); }
+
+        /* LAYOUT & REST */
         #main-content { flex-grow: 1; display: flex; overflow: hidden; min-height: 0; }
         #main-panel { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
-        
-        /* LAYOUT: Standard Flex (Map Links, Log Rechts) */
         #layout-split { display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; min-height: 0; }
         @media (min-width: 768px) { #layout-split { flex-direction: row; } }
 
-        /* KARTE (LINKS) */
+        /* KARTE LINKS */
         #view-container { 
             position: relative; flex-grow: 1; display: flex; justify-content: center; align-items: center; 
-            background-color: var(--pip-bg); overflow: hidden; height: 60%; 
+            overflow: hidden; height: 60%; 
+            border-right: 2px solid var(--pip-green);
         }
         @media (min-width: 768px) { 
-            #view-container { width: 70%; height: 100%; border-right: 2px solid var(--pip-green); border-bottom: none; } 
+            #view-container { width: 70%; height: 100%; border-bottom: none; } 
         }
 
-        /* LOG (RECHTS) */
+        /* LOG RECHTS */
         #log-panel { 
-            display: flex; flex-direction: column; background-color: var(--pip-dark); flex-shrink: 0; 
+            display: flex; flex-direction: column; flex-shrink: 0; 
             border-top: 2px solid var(--pip-green); height: 40%; min-height: 150px; 
+            background: rgba(0, 20, 0, 0.3);
         }
         @media (min-width: 768px) { 
             #log-panel { width: 30%; height: 100%; border-top: none; border-left: none; } 
         }
 
         .header-bar { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 1rem; border-bottom: 2px solid var(--pip-green); background: rgba(57, 255, 20, 0.05); flex-shrink: 0; }
-        .action-button { background-color: #0f150f; color: var(--pip-green); border: 1px solid var(--pip-green); padding: 5px 10px; margin: 2px; cursor: pointer; text-transform: uppercase; font-size: 1.1rem; transition: all 0.1s; }
-        .action-button:hover { background-color: var(--pip-dim); color: white; }
+        .action-button { background-color: rgba(0,20,0,0.8); color: var(--pip-green); border: 1px solid var(--pip-green); padding: 5px 10px; margin: 2px; cursor: pointer; text-transform: uppercase; font-size: 1.1rem; transition: all 0.1s; box-shadow: 0 0 5px var(--pip-dim); }
+        .action-button:hover { background-color: var(--pip-green); color: black; box-shadow: 0 0 15px var(--pip-green); }
         .action-button:active { transform: scale(0.95); }
-        .action-button:disabled { opacity: 0.3; cursor: not-allowed; }
-        .action-button.active { background-color: var(--pip-green); color: #000; font-weight: bold; box-shadow: 0 0 10px var(--pip-green); }
+        .action-button:disabled { opacity: 0.3; cursor: not-allowed; border-color: #333; color: #555; box-shadow: none; }
+        .action-button.active { background-color: var(--pip-green); color: #000; font-weight: bold; box-shadow: 0 0 15px var(--pip-green); }
         
         #btn-toggle-dpad {
-            position: absolute; bottom: 20px; left: 20px; z-index: 60;
+            position: absolute; bottom: 20px; left: 20px; z-index: 100;
             width: 50px; height: 50px; border-radius: 50%;
             background: rgba(0, 0, 0, 0.8); border: 2px solid var(--pip-green); color: var(--pip-green);
             font-size: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer;
-            box-shadow: 0 0 10px #000;
+            box-shadow: 0 0 10px var(--pip-glow);
         }
         
         #dice-overlay {
-            position: absolute; inset: 0; z-index: 70; background: rgba(0,0,0,0.9);
+            position: absolute; inset: 0; z-index: 80; background: rgba(0,0,0,0.95);
             flex-direction: column; justify-content: center; align-items: center;
         }
         .dice-box {
-            width: 60px; height: 60px; border: 4px solid var(--pip-green); 
+            width: 80px; height: 80px; border: 4px solid var(--pip-green); border-radius: 10px;
             display: flex; justify-content: center; align-items: center; 
-            font-size: 40px; font-weight: bold; background: #000; color: var(--pip-green);
-            box-shadow: 0 0 15px var(--pip-green);
+            font-size: 50px; font-weight: bold; background: #000; color: var(--pip-green);
+            box-shadow: 0 0 20px var(--pip-glow), inset 0 0 20px var(--pip-dim);
+            text-shadow: 0 0 10px var(--pip-green);
         }
 
+        /* Animations */
+        @keyframes flicker { 0% { opacity: 0.02; } 5% { opacity: 0.05; } 10% { opacity: 0.01; } 15% { opacity: 0.06; } 100% { opacity: 0.02; } }
         ::-webkit-scrollbar { width: 6px; } 
         ::-webkit-scrollbar-thumb { background: var(--pip-green); border-radius: 3px; }
-        ::-webkit-scrollbar-track { background: var(--pip-dark); }
+        ::-webkit-scrollbar-track { background: #000; }
         .blink-red { animation: blink-red-anim 1s infinite; }
-        @keyframes blink-red-anim { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        @keyframes flash-gold { 0%, 100% { color: var(--pip-green); border-color: var(--pip-green); } 50% { color: #ffd700; border-color: #ffd700; box-shadow: 0 0 8px #ffd700; } }
-        .level-up-alert { animation: flash-gold 1s infinite; font-weight: bold; }
-        @keyframes flash-cyan { 0%, 100% { color: var(--pip-green); border-color: var(--pip-green); } 50% { color: #00ffff; border-color: #00ffff; box-shadow: 0 0 8px #00ffff; } }
+        @keyframes blink-red-anim { 0%, 100% { opacity: 1; text-shadow: 0 0 5px red; color: red; } 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
 
 <div id="pipboy-case">
-    <div id="game-over-screen" class="absolute inset-0 z-50 bg-black/90 flex flex-col justify-center items-center hidden">
-        <h1 class="text-6xl text-red-600 font-bold border-4 border-red-600 p-6 mb-6 blink-red bg-red-900/20 tracking-widest">GAME OVER</h1>
-        <button onclick="location.reload()" class="border-2 border-red-500 text-red-500 px-8 py-3 hover:bg-red-900 text-xl font-bold uppercase cursor-pointer">NEUSTART</button>
+    <div id="game-over-screen" class="absolute inset-0 z-50 bg-black/95 flex flex-col justify-center items-center hidden">
+        <h1 class="text-6xl text-red-600 font-bold border-4 border-red-600 p-6 mb-6 blink-red tracking-widest" style="box-shadow: 0 0 30px red;">CRITICAL FAILURE</h1>
+        <button onclick="location.reload()" class="border-2 border-red-500 text-red-500 px-8 py-3 hover:bg-red-900 text-xl font-bold uppercase cursor-pointer shadow-lg shadow-red-900/50">SYSTEM REBOOT</button>
     </div>
 
     <div id="game-screen">
         <header class="header-bar">
             <div class="flex flex-col sm:flex-row gap-1 w-1/4">
-                <div class="font-bold text-xl leading-none">PIP-BOY 3000 <span class="text-xs opacity-70">MK-V</span></div>
-                <div id="current-zone-display" class="text-xs sm:text-lg opacity-80 leading-none">Booting...</div>
+                <div class="font-bold text-xl leading-none glow-text">PIP-BOY 3000 <span class="text-xs opacity-70">MK-V</span></div>
+                <div id="current-zone-display" class="text-xs sm:text-lg opacity-80 leading-none text-[#aaffaa]">Initializing...</div>
             </div>
             <div class="w-1/4 flex justify-center">
-                <span id="version-display" class="text-yellow-400 font-bold tracking-widest animate-pulse">CONNECTING...</span>
+                <span id="version-display" class="text-yellow-400 font-bold tracking-widest animate-pulse" style="text-shadow: 0 0 5px yellow;">...</span>
             </div>
             <div class="flex items-center justify-end gap-1 w-1/2">
-                <button id="btn-new" class="action-button px-2 py-1 text-sm bg-red-900 border-red-500 text-white font-bold whitespace-nowrap">RESET</button>
+                <button id="btn-new" class="action-button px-2 py-1 text-sm bg-red-900/50 border-red-500 text-white font-bold whitespace-nowrap">RESET</button>
                 <button id="btn-wiki" class="action-button px-2 py-1 text-sm">WIKI</button>
                 <button id="btn-map" class="action-button px-2 py-1 text-sm">WELT</button>
                 <button id="btn-char" class="action-button px-2 py-1 text-sm">CHAR</button>
-                <button id="btn-quests" class="action-button px-2 py-1 text-sm">AUFGABEN</button>
+                <button id="btn-quests" class="action-button px-2 py-1 text-sm">QUEST</button>
             </div>
         </header>
 
-        <div id="system-status-bar" class="flex justify-between items-center px-4 py-2 border-b-2 border-[#39ff14] bg-[#39ff14]/10">
+        <div id="system-status-bar" class="flex justify-between items-center px-4 py-2 border-b-2 border-[#1aff1a] bg-[#1aff1a]/10">
             <div class="flex items-center gap-4 text-sm md:text-base">
                 <div class="flex items-center gap-1">
                     <span>TP:</span><span id="val-hp">--/--</span>
-                    <div class="w-16 md:w-24 bg-gray-900 h-3 border border-[#1a4d1a]"><div id="bar-hp" class="bg-[#39ff14] h-full" style="width: 100%"></div></div>
+                    <div class="w-16 md:w-24 bg-black h-3 border border-[#1a4d1a]"><div id="bar-hp" class="bg-[#1aff1a] h-full shadow-[0_0_5px_#1aff1a]" style="width: 100%"></div></div>
                 </div>
                 <span>LVL: <span id="val-lvl">-</span></span>
                 <div class="flex items-center gap-1">
                     <span>XP:</span>
-                    <div class="w-16 md:w-24 bg-gray-900 h-3 border border-yellow-900"><div id="bar-exp-top" class="bg-yellow-500 h-full" style="width: 0%"></div></div>
+                    <div class="w-16 md:w-24 bg-black h-3 border border-yellow-900"><div id="bar-exp-top" class="bg-yellow-500 h-full shadow-[0_0_5px_yellow]" style="width: 0%"></div></div>
                 </div>
                 <span>MUN: <span id="val-ammo">-</span></span>
             </div>
-            <span id="val-caps" class="text-yellow-400 font-bold">--- Caps</span>
+            <span id="val-caps" class="text-yellow-400 font-bold glow-text">--- Caps</span>
         </div>
 
         <div id="main-content">
@@ -123,44 +185,44 @@
                     <div id="view-container">
                         <button id="btn-toggle-dpad">🎮</button>
 
-                        <div id="overlay-controls" style="display:none; position: absolute; bottom: 80px; left: 20px; z-index: 50; grid-template-columns: repeat(3, 1fr); gap: 5px;">
-                             <div></div><button class="dpad-btn" id="btn-up" style="width: 50px; height: 50px; background: rgba(0,0,0,0.8); border: 2px solid #39ff14; color: #39ff14; font-size: 24px; display: flex; justify-content: center; align-items: center; border-radius: 8px;">▲</button><div></div>
-                             <button class="dpad-btn" id="btn-left" style="width: 50px; height: 50px; background: rgba(0,0,0,0.8); border: 2px solid #39ff14; color: #39ff14; font-size: 24px; display: flex; justify-content: center; align-items: center; border-radius: 8px;">◀</button><div class="flex items-center justify-center text-[#39ff14]">●</div><button class="dpad-btn" id="btn-right" style="width: 50px; height: 50px; background: rgba(0,0,0,0.8); border: 2px solid #39ff14; color: #39ff14; font-size: 24px; display: flex; justify-content: center; align-items: center; border-radius: 8px;">▶</button>
-                             <div></div><button class="dpad-btn" id="btn-down" style="width: 50px; height: 50px; background: rgba(0,0,0,0.8); border: 2px solid #39ff14; color: #39ff14; font-size: 24px; display: flex; justify-content: center; align-items: center; border-radius: 8px;">▼</button><div></div>
+                        <div id="overlay-controls" style="display:none; position: absolute; bottom: 80px; left: 20px; z-index: 60; grid-template-columns: repeat(3, 1fr); gap: 5px;">
+                             <div></div><button class="dpad-btn" id="btn-up" style="width: 50px; height: 50px; background: rgba(0,20,0,0.9); border: 2px solid #1aff1a; color: #1aff1a; font-size: 24px; display: flex; justify-content: center; align-items: center; border-radius: 8px; box-shadow: 0 0 10px #1aff1a;">▲</button><div></div>
+                             <button class="dpad-btn" id="btn-left" style="width: 50px; height: 50px; background: rgba(0,20,0,0.9); border: 2px solid #1aff1a; color: #1aff1a; font-size: 24px; display: flex; justify-content: center; align-items: center; border-radius: 8px; box-shadow: 0 0 10px #1aff1a;">◀</button><div class="flex items-center justify-center text-[#1aff1a]">●</div><button class="dpad-btn" id="btn-right" style="width: 50px; height: 50px; background: rgba(0,20,0,0.9); border: 2px solid #1aff1a; color: #1aff1a; font-size: 24px; display: flex; justify-content: center; align-items: center; border-radius: 8px; box-shadow: 0 0 10px #1aff1a;">▶</button>
+                             <div></div><button class="dpad-btn" id="btn-down" style="width: 50px; height: 50px; background: rgba(0,20,0,0.9); border: 2px solid #1aff1a; color: #1aff1a; font-size: 24px; display: flex; justify-content: center; align-items: center; border-radius: 8px; box-shadow: 0 0 10px #1aff1a;">▼</button><div></div>
                         </div>
 
                         <div id="dialog-overlay"></div>
                         
                         <div id="dice-overlay" class="hidden">
-                            <h2 class="text-4xl text-yellow-400 mb-8 font-bold animate-pulse">LEGENDÄRER FUND!</h2>
-                            <div class="flex gap-4 mb-8">
+                            <h2 class="text-5xl text-yellow-400 mb-8 font-bold animate-pulse glow-text">LEGENDÄR!</h2>
+                            <div class="flex gap-6 mb-8">
                                 <div id="dice-1" class="dice-box">?</div>
                                 <div id="dice-2" class="dice-box">?</div>
                                 <div id="dice-3" class="dice-box">?</div>
                             </div>
-                            <div class="text-xl mb-4 text-center">
-                                <div class="text-cyan-400">3-7: KRONKORKEN</div>
-                                <div class="text-cyan-400">8-12: MUNITION</div>
-                                <div class="text-yellow-400 font-bold">13-18: OVERDRIVE BUFF</div>
+                            <div class="text-2xl mb-6 text-center font-bold">
+                                <div class="text-cyan-400" style="text-shadow: 0 0 5px cyan;">3-7: KRONKORKEN</div>
+                                <div class="text-cyan-400" style="text-shadow: 0 0 5px cyan;">8-12: MUNITION</div>
+                                <div class="text-yellow-400" style="text-shadow: 0 0 5px yellow;">13-18: OVERDRIVE</div>
                             </div>
-                            <button id="btn-roll" class="action-button px-8 py-4 text-2xl border-yellow-400 text-yellow-400 hover:bg-yellow-900" onclick="UI.rollDiceAnim()">WÜRFELN</button>
+                            <button id="btn-roll" class="action-button px-10 py-4 text-3xl border-yellow-400 text-yellow-400 hover:bg-yellow-900" style="box-shadow: 0 0 20px yellow;" onclick="UI.rollDiceAnim()">WÜRFELN</button>
                         </div>
 
-                        <div class="p-10 text-green-500 font-mono text-center">
+                        <div class="p-10 text-[#1aff1a] font-mono text-center opacity-80">
                             > SYSTEM CHECK... OK<br>> LADE MODUL...
                         </div>
                     </div>
 
                     <div id="log-panel">
-                        <div class="bg-[#39ff14] text-black font-bold px-2 flex justify-between items-center flex-shrink-0">
+                        <div class="bg-[#1aff1a] text-black font-bold px-2 flex justify-between items-center flex-shrink-0" style="box-shadow: 0 0 10px #1aff1a;">
                             <h2>LOG</h2>
                             <span id="game-timer" class="font-mono text-sm">00:00:00</span>
                         </div>
-                        <div id="log-area" class="flex-grow overflow-y-auto p-2 text-sm flex flex-col-reverse font-mono"></div>
+                        <div id="log-area" class="flex-grow overflow-y-auto p-2 text-sm flex flex-col-reverse font-mono leading-relaxed" style="text-shadow: 0 0 2px #1aff1a;"></div>
                     </div>
 
                 </div>
-                <div class="px-4 pt-1 pb-1 text-center italic min-h-[1.5em] flex-shrink-0 bg-black border-t border-[#1a4d1a]" id="encounter-text">...</div>
+                <div class="px-4 pt-1 pb-1 text-center italic min-h-[1.5em] flex-shrink-0 bg-black border-t border-[#1aff1a] text-[#aaffaa]" id="encounter-text" style="text-shadow: 0 0 3px #1aff1a;">...</div>
             </div>
         </div>
     </div>
