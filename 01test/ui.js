@@ -13,8 +13,11 @@ const UI = {
             ammo: document.getElementById('val-ammo'),
             caps: document.getElementById('val-caps'),
             zone: document.getElementById('current-zone-display'),
-            dpad: document.getElementById('dpad'),
-            dialog: document.getElementById('dialog-buttons'),
+            
+            // NEUE IDs
+            dpad: document.getElementById('overlay-controls'),
+            dialog: document.getElementById('dialog-overlay'),
+            
             text: document.getElementById('encounter-text'),
             timer: document.getElementById('game-timer'),
             
@@ -56,7 +59,6 @@ const UI = {
         window.Game = Game; 
         window.UI = this;
         
-        // Start UI Timer Loop
         if(this.timerInterval) clearInterval(this.timerInterval);
         this.timerInterval = setInterval(() => this.updateTimer(), 1000);
     },
@@ -178,7 +180,8 @@ const UI = {
 
     toggleControls: function(show) {
         this.els.dpad.style.visibility = show ? 'visible' : 'hidden';
-        if (!show) this.els.dialog.innerHTML = '';
+        // Dialog nicht leeren, nur ausblenden, sonst sind Buttons weg wenn wir zurückkehren
+        if (!show) this.els.dialog.style.display = 'none';
     },
     
     showGameOver: function() {
@@ -229,7 +232,7 @@ const UI = {
 
     leaveDialog: function() {
         Game.state.inDialog = false;
-        this.els.dialog.innerHTML = '';
+        this.els.dialog.style.display = 'none';
         this.update();
     },
 
