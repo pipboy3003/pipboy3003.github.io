@@ -1,6 +1,12 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 ==============================
 
+[v0.0.9e] - 2025-12-15 (Global Visibility)
+------------------------------------------
+- UI: Die "Weltkarte" (Taste: WELT) zeigt nun türkise Punkte in Sektoren an, in denen sich andere Spieler befinden.
+- LOGIK: Verbesserte Synchronisation bei Spielstart ("Global Scan").
+- FIX: `network.js` sendet jetzt zuverlässiger Updates.
+
 [v0.0.9d] - 2025-12-15 (Critical Crash Fix)
 -------------------------------------------
 - FIX: "Initializing..." Hänger (Race Condition) behoben. Das Spiel wartet nun zuverlässig, bis alle Skripte geladen sind.
