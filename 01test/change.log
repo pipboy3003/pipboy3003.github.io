@@ -1,11 +1,21 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 ==============================
 
+[v0.0.8b] - 2025-12-15 (Firebase Integration)
+---------------------------------------------
+- NETWORK: Echtzeit-Datenbank Anbindung (Firebase) erfolgreich implementiert.
+- CONFIG: API-Keys und Projekt-IDs für "pipboy-rpg" eingepflegt.
+- SYSTEM: Automatisches Verbinden beim Starten. Position wird in Echtzeit an die Datenbank gesendet.
+- SYSTEM: Spieler sehen sich gegenseitig im selben Sektor.
+
+[v0.0.8a] - 2025-12-15 (Multiplayer Vorbereitung)
+-------------------------------------------------
+- CODE: Struktur für `network.js` geschaffen.
+
 [v0.0.7b] - 2025-12-15 (Readability Update)
 -------------------------------------------
-- UI: CRT-Effekte (Scanlines/Flimmern) wurden vom globalen Bildschirm auf das Karten-Fenster beschränkt. Log, Stats und Buttons sind jetzt klar und ohne Störungen lesbar.
-- UI: Kontrast im Log-Bereich durch dunkleren Hintergrund erhöht.
-- GRAFIK: Scanline-Intensität auf der Karte leicht reduziert, um die neuen Vektor-Symbole nicht zu verschlucken.
+- UI: CRT-Effekte auf Kartenfenster beschränkt.
+- GRAFIK: Verbesserte Lesbarkeit von Log und Buttons.
 
 [v0.0.7a] - 2025-12-15 (Graphics Overhaul & CRT Effect)
 -------------------------------------------------------
