@@ -1,9 +1,9 @@
-- Grafiken verbessern
+- Grafiken verbessern, sieht wieder grausam aus. Liegt am Perofrmance modus? Vielleicht andere Engine überlegen?!
 
 für Tablet & Laptop funktioniert soweit alles. 
 Das gesamt Overlay ist aber auf Mobiltelefonen zu klein. Idee wäre es das D Pay als "Overlay" reinzumachen links unten und somit den Karten abschnitt zu vergrößern. Desweiteren ist der Logbereich scheinbar nicht Fixiert, er wird varriabel bei mehr und mehr tätigkeiten immer größer bis er den ganzen bildschirm ausfüllt.
 
-Legende für die Karte unter "MAP" anfertigen. Es soll sichtbar sein und farblich hervorgehoben (bei den bereichen die bereits entdecktwurden) um was für ein gebtiet es sich handelt.
+Legende soll links von der Karte sein
 
 
 Vorgeschlagen von Gemini : 
