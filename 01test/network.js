@@ -1,4 +1,4 @@
-// network.js - v0.0.9c
+// network.js - v0.0.9e
 const Network = {
     db: null,
     myId: null,
@@ -44,6 +44,7 @@ const Network = {
                         if(el) el.textContent = `${count} ONLINE`;
                     }
 
+                    // INITIAL JUMP (Automatisch zum ersten Freund springen)
                     if (!this.initialJoinDone && count > 1) {
                         this.initialJoinDone = true;
                         const ids = Object.keys(data);
@@ -53,7 +54,6 @@ const Network = {
                                 if(buddy.sector && buddy.x) {
                                     UI.log(`>> Signal gefunden! Teleportiere zu ${id}...`, "text-cyan-400");
                                     if(typeof Game !== 'undefined') {
-                                        // Timeout, damit Game sicher geladen ist
                                         setTimeout(() => Game.teleportTo(buddy.sector, buddy.x, buddy.y), 500);
                                     }
                                     break;
@@ -72,7 +72,7 @@ const Network = {
             } catch (e) {
                 console.error("Firebase Error:", e);
                 if(typeof UI !== 'undefined') UI.setConnectionState('offline');
-                this.active = false; // Sicherstellen dass es aus ist
+                this.active = false;
             }
         } else {
             if(typeof UI !== 'undefined') UI.setConnectionState('offline');
@@ -80,7 +80,7 @@ const Network = {
     },
 
     sendMove: function(x, y, level, sector) {
-        if (!this.active || !this.db) return; // Sicherung!
+        if (!this.active || !this.db) return;
         this.db.ref('players/' + this.myId).set({
             x: x,
             y: y,
