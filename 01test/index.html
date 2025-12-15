@@ -38,7 +38,6 @@
         .blink-red { animation: blink-red-anim 1s infinite; }
         @keyframes blink-red-anim { 0%, 100% { opacity: 1; color: red; } 50% { opacity: 0.5; } }
         
-        /* LOGIN OVERLAY STYLES */
         #login-screen { position: absolute; inset: 0; z-index: 999; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .login-box { border: 2px solid var(--pip-green); padding: 40px; text-align: center; box-shadow: 0 0 20px var(--pip-dim); max-width: 90%; }
         #survivor-id-input { background: #000; border: 2px solid var(--pip-green); color: var(--pip-green); font-family: inherit; font-size: 24px; padding: 10px; margin: 20px 0; text-align: center; text-transform: uppercase; outline: none; }
@@ -49,15 +48,17 @@
 <body>
 <div id="pipboy-case">
     <div id="login-screen">
-        <div class="login-box crt-effect-container">
+        <div class="login-box crt-effect-container" style="position: relative; min-width: 300px;">
             <h1 class="text-6xl font-bold glow-text mb-2">PIP-BOY 3000</h1>
             <div class="text-xl mb-8 opacity-80">AUTHENTICATION REQUIRED</div>
-            
             <div class="text-lg">BITTE SURVIVOR-ID EINGEBEN:</div>
-            <input type="text" id="survivor-id-input" placeholder="Z.B. MAX_POWER" maxlength="15">
+            <input type="text" id="survivor-id-input" placeholder="Z.B. MAX_POWER" maxlength="15" autofocus>
             <br>
-            <button id="btn-login" class="action-button px-8 py-3 text-2xl font-bold" onclick="UI.attemptLogin()">VERBINDEN</button>
-            <div id="login-status" class="mt-4 text-yellow-400 min-h-[1.5em]"></div>
+            <button id="btn-login" class="action-button px-8 py-3 text-2xl font-bold mt-4" onclick="UI.attemptLogin()">VERBINDEN</button>
+            <div id="login-status" class="mt-4 text-yellow-400 min-h-[1.5em] text-sm font-mono"></div>
+            <div class="mt-8 text-xs text-[#1aff1a] opacity-50 border-t border-[#1aff1a]/30 pt-2 w-full">
+                SYSTEM VERSION <span id="login-version-display">LOADING...</span>
+            </div>
         </div>
     </div>
 
@@ -66,7 +67,8 @@
         <button onclick="location.reload()" class="border-2 border-red-500 text-red-500 px-8 py-3 hover:bg-red-900 text-xl font-bold uppercase cursor-pointer">SYSTEM REBOOT</button>
     </div>
     
-    <div id="game-screen" class="hidden opacity-0 transition-opacity duration-1000"> <header class="header-bar">
+    <div id="game-screen" class="hidden opacity-0 transition-opacity duration-1000">
+        <header class="header-bar">
             <div class="flex flex-col sm:flex-row gap-1 w-1/4">
                 <div class="font-bold text-xl leading-none" style="text-shadow: 0 0 5px var(--pip-green);">PIP-BOY 3000 <span class="text-xs opacity-70">MK-V</span></div>
                 <div id="current-zone-display" class="text-xs sm:text-lg opacity-90 leading-none text-[#aaffaa]">Initializing...</div>
@@ -125,15 +127,23 @@
     function loadScript(src) { return new Promise((resolve, reject) => { const s = document.createElement('script'); s.src = src; s.onload = resolve; s.onerror = reject; document.body.appendChild(s); }); }
     window.onload = function() {
         const verDisplay = document.getElementById('version-display');
+        const loginVerDisplay = document.getElementById('login-version-display'); // NEU
+        
         fetch('Version?t=' + Date.now()).then(res => res.text()).then(v => {
             const ver = v.trim();
-            // Lade die Skripte, aber STARTE das Spiel noch nicht (das macht jetzt UI.attemptLogin)
+            // Automatische Versionseintragung (Header & Login)
+            if(verDisplay) { 
+                verDisplay.textContent = ver; 
+                verDisplay.classList.remove('animate-pulse'); 
+            }
+            if(loginVerDisplay) {
+                loginVerDisplay.textContent = ver;
+            }
+            console.log("Loading V:", ver);
+
             loadScript('network.js?v=' + ver).then(() => loadScript('ui.js?v=' + ver)).then(() => loadScript('game.js?v=' + ver)).then(() => {
-                if(typeof UI !== 'undefined') UI.init(); // UI init für Event Listener
-                // Game.init() wird jetzt erst NACH Login aufgerufen!
+                if(typeof UI !== 'undefined') UI.init();
                 console.log("System bereit für Login.");
-                verDisplay.textContent = ver;
-                verDisplay.classList.remove('animate-pulse');
             });
         });
     };
