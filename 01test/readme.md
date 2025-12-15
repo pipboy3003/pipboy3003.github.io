@@ -1,22 +1,47 @@
-- Grafiken verbessern, sieht wieder grausam aus. Liegt am Perofrmance modus? Vielleicht andere Engine überlegen?!
+# ☢️ PIP-BOY 3000 Mk-V Web-RPG
 
-für Tablet & Laptop funktioniert soweit alles. 
-Das gesamt Overlay ist aber auf Mobiltelefonen zu klein. Idee wäre es das D Pay als "Overlay" reinzumachen links unten und somit den Karten abschnitt zu vergrößern. Desweiteren ist der Logbereich scheinbar nicht Fixiert, er wird varriabel bei mehr und mehr tätigkeiten immer größer bis er den ganzen bildschirm ausfüllt.
+Ein browserbasiertes Retro-RPG im Fallout-Stil. Erkunde das Ödland, kämpfe gegen Mutanten, sammle Loot und verbessere deine S.P.E.C.I.A.L.-Attribute – alles verpackt in einem nostalgischen grünen Terminal-Interface.
 
-- Legende soll links von der Karte sein
-- Legendäre Mobs geben einem ein coolen Boni, nächster Kampf mehr Agi (prozentual zu dem jeweiligen Level aktuell), oder Muniton?, verhältnismäßig halt, ordentlich Kronkorken?
-- Startpunkt ist IMMER die Vault, man solte eine möglichkeit der Heilung am Anfang haben, sost ist man sehr schnell frustriert.... Glaub mir!!!
-Gelber Punkt ist was? Das sollte die Legende bei der Karte vielleicht auch beinhalten, was auf den Karten an Interaktiven Punkten rumfährt. Jedenfalls hat der Gelbe punkt nichts gemacht, er hat das Spiel angehalten und es ging ncht mehr weiter ohne neu start.
-Die symbole und Bilder sollten wir alle nochmal irgendwie überarbeiten. Der Boden und die Steine sind auch nicht leicht auseinander zu halten, man läuft oft dagegen. Evtl Schwarzer Rand als kontrast um die Sachen?
+---
 
+## ⭐ Key Features
 
-Vorgeschlagen von Gemini : 
-Hier sind 3 Vorschläge für den nächsten Schritt. Sag mir, worauf du Lust hast, und ich liefere dir den Code:
+### 🖥️ UI & Design
+* **CRT-Retro-Look:** Scanlines, grünes Phosphor-Design und flackernde Bildschirmeffekte.
+* **Split-Screen Layout:**
+    * **Links:** Interaktives Log & Status-Meldungen.
+    * **Rechts:** Canvas-basierte Karte oder Kampfbildschirm.
+* **Mobile Optimierung:** Responsives Design mit einem ein/ausblendbaren D-Pad Overlay für Touch-Steuerung.
+* **Dynamische Views:** Nahtloses Umschalten zwischen Karte, Inventar, Wiki und Quest-Log ohne Neuladen der Seite.
 
-    Das Inventar-System: Aktuell hast du nur feste Slots. Wir könnten ein echtes Inventar ("Backpack") bauen, in dem man Items (Stimpacks, Schrott, bessere Waffen) sammeln, ansehen und benutzen kann.
-    stimpacks zum heilen sind wichtig.
-    schrott für späteres crafting
+### 🌍 Welt & Erkundung
+* **Prozedurale Generierung:** Unendliche Weltkarte unterteilt in Sektoren (8x8 Grid global).
+* **Biome:** Unterscheidung zwischen Ödland, Wüste (Sand), Dschungel (Grün) und Ruinenstädten.
+* **Fog of War:** Erkundete Gebiete werden gespeichert, unbekannte sind schwarz.
+* **Interaktive Orte:**
+    * **Vault:** Startpunkt und sicherer Hafen (Gratis Heilung).
+    * **Städte:** Händler für Waffen, Rüstung und Munition.
+    * **Dungeons:** (z.B. Supermarkt) mit erhöhtem Risiko.
+* **Visuelle Hinweise:** Pulsierende Marker für wichtige Orte (Vaults, Tore, Städte).
 
-    V.A.T.S. Kampf-System: Der Kampf ist aktuell reines Glück. Wir könnten ein System einbauen, bei dem man Körperteile anvisiert (Kopf, Torso, Beine) mit unterschiedlichen Trefferchancen.
+### ⚔️ Kampf & Gegner
+* **Rundenbasiertes System:** Klassisches Angreifen oder Fliehen.
+* **Gegner-Vielfalt:** Von Maulwurfsratten bis zu Todeskrallen, abhängig vom Biom und Level.
+* **Legendäres System:**
+    * **15% Chance:** Gegner können als "Legendär" erscheinen (stärker, besserer Loot).
+    * **Würfel-Minigame:** Nach dem Sieg über einen legendären Gegner erscheint ein 3-Würfel-Overlay.
+    * **Belohnungen:** Kronkorken, Munition oder der mächtige "Overdrive"-Buff.
 
-    Speichern & Laden: Damit dein Fortschritt (Level, Position) erhalten bleibt, wenn du den Browser schließt (via localStorage).
+### 📈 RPG-Mechaniken
+* **S.P.E.C.I.A.L. Stats:** Stärke, Wahrnehmung, Ausdauer etc. beeinflussen Kampfwerte und HP.
+* **Leveling:** XP-System mit Level-Ups, die Skill-Punkte gewähren.
+* **Wirtschaft:** Kronkorken (Caps) als Währung für Heilung und Ausrüstung.
+* **Buffs:** Zeitbasierte Effekte (z.B. Overdrive), die in Echtzeit ablaufen.
+
+---
+
+## 🚀 Installation & Start
+1. Alle Dateien in einen Ordner laden.
+2. `index.html` im Browser öffnen.
+3. (Optional) Für korrekte Darstellung der `views` sollte ein lokaler Server verwendet werden (z.B. VS Code Live Server), da manche Browser lokale Fetch-Requests blockieren.
+
