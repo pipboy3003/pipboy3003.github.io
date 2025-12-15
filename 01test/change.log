@@ -1,11 +1,17 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 ==============================
 
+[v0.0.9a] - 2025-12-15 (Online Features)
+----------------------------------------
+- NETZWERK: "Jump-to-Buddy" Feature. Beim Starten wird man nun automatisch zum ersten gefundenen Spieler teleportiert, statt zufällig zu spawnen.
+- UI: "ONLINE" Anzeige oben rechts hinzugefügt (zählt aktive Spieler).
+- NETZWERK: Positions-Update ist nun Event-basiert (Echtzeit).
+- BUGFIX: Man sieht sich nicht mehr selbst als Ghost, sondern nur die anderen.
+
 [v0.0.8c] - 2025-12-15 (Network UI & Fixes)
 -------------------------------------------
-- NETZWERK UI: Statusanzeige im Header zeigt nun "ONLINE" (Grün), "CONNECTING..." (Gelb) oder "OFFLINE" (Red) an.
-- NETZWERK UI: Erfolgreiche Verbindung wird explizit im Log-Bereich bestätigt ("TERMINAL LINK ESTABLISHED").
-- BUGFIX: Charakter-Level wird nun korrekt im "Charakter"-Screen aktualisiert (vorher immer auf 1 fixiert).
+- NETZWERK UI: Statusanzeige & Log-Feedback.
+- BUGFIX: Charakter-Level Anzeige.
 
 [v0.0.8b] - 2025-12-15 (Firebase Integration)
 ---------------------------------------------
