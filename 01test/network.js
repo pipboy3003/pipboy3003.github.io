@@ -1,11 +1,10 @@
-// network.js - v0.0.8b
+// network.js - v0.0.8c
 const Network = {
     db: null,
     myId: null,
     otherPlayers: {},
     active: false,
 
-    // DEINE ECHTE CONFIG
     config: {
         apiKey: "AIzaSyCgSK4nJ3QOVMBd7m9RSmURflSRWN4ejBY",
         authDomain: "pipboy-rpg.firebaseapp.com",
@@ -18,10 +17,8 @@ const Network = {
     },
 
     init: function() {
-        // Prüfen, ob die Firebase-Bibliothek in index.html geladen wurde
         if (typeof firebase !== 'undefined') {
             try {
-                // Nur initialisieren, wenn noch keine App läuft
                 if (!firebase.apps.length) {
                     firebase.initializeApp(this.config);
                 }
@@ -29,46 +26,45 @@ const Network = {
                 this.db = firebase.database();
                 this.active = true;
                 
-                // Zufällige ID für diese Sitzung erstellen
-                // Später könnten wir hier feste User-Namen nutzen
-                this.myId = 'vault_survivor_' + Math.floor(Math.random() * 9999);
+                this.myId = 'survivor_' + Math.floor(Math.random() * 9999);
                 
-                UI.log("NETZWERK: Verbunden! ID: " + this.myId, "text-cyan-400");
+                // VISUELLES FEEDBACK (UI)
+                if(typeof UI !== 'undefined') {
+                    UI.setConnectionState('online');
+                    UI.log(`TERMINAL LINK ESTABLISHED: ID ${this.myId}`, "text-green-400 font-bold");
+                }
 
-                // AUTOMATISCH AUFRÄUMEN:
-                // Wenn wir das Fenster schließen, lösche unseren Charakter aus der DB
                 this.db.ref('players/' + this.myId).onDisconnect().remove();
                 
-                // HÖREN: Was machen die anderen?
                 this.db.ref('players').on('value', (snapshot) => {
                     const data = snapshot.val() || {};
-                    // Mich selbst aus den Daten filtern, damit ich mich nicht doppelt sehe
                     delete data[this.myId]; 
                     this.otherPlayers = data;
-                    
-                    // Trigger für UI Update, falls wir uns gerade nicht bewegen
                     if(Game && Game.draw) Game.draw(); 
                 });
                 
             } catch (e) {
                 console.error("Firebase Error:", e);
-                UI.log("NETZWERK FEHLER: Siehe Konsole.", "text-red-500");
+                if(typeof UI !== 'undefined') {
+                    UI.log("NETZWERK ERROR: Verbindung fehlgeschlagen.", "text-red-500");
+                    UI.setConnectionState('offline');
+                }
             }
         } else {
-            UI.log("NETZWERK: Offline (Bibliothek fehlt).", "text-gray-500");
+            if(typeof UI !== 'undefined') {
+                UI.log("NETZWERK: Bibliotheken nicht geladen.", "text-gray-500");
+                UI.setConnectionState('offline');
+            }
         }
     },
 
-    // Position senden (wird von game.js aufgerufen wenn wir laufen)
     sendMove: function(x, y, level, sector) {
         if (!this.active) return;
-        
-        // Wir schreiben unsere Position in die Datenbank
         this.db.ref('players/' + this.myId).set({
             x: x,
             y: y,
             lvl: level,
-            sector: sector, // Wichtig: Damit wir nur Spieler im selben Sektor sehen
+            sector: sector,
             lastSeen: Date.now()
         });
     }
