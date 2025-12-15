@@ -1,5 +1,6 @@
 const UI = {
     els: {},
+    timerInterval: null,
 
     init: function() {
         this.els = {
@@ -15,6 +16,7 @@ const UI = {
             dpad: document.getElementById('dpad'),
             dialog: document.getElementById('dialog-buttons'),
             text: document.getElementById('encounter-text'),
+            timer: document.getElementById('game-timer'),
             
             btnNew: document.getElementById('btn-new'),
             btnWiki: document.getElementById('btn-wiki'),
@@ -53,6 +55,10 @@ const UI = {
         
         window.Game = Game; 
         window.UI = this;
+        
+        // Start UI Timer Loop
+        if(this.timerInterval) clearInterval(this.timerInterval);
+        this.timerInterval = setInterval(() => this.updateTimer(), 1000);
     },
 
     toggleView: function(name) {
@@ -61,6 +67,15 @@ const UI = {
         } else {
             this.switchView(name);
         }
+    },
+
+    updateTimer: function() {
+        if(!Game.state || !Game.state.startTime) return;
+        const diff = Math.floor((Date.now() - Game.state.startTime) / 1000);
+        const h = Math.floor(diff / 3600).toString().padStart(2,'0');
+        const m = Math.floor((diff % 3600) / 60).toString().padStart(2,'0');
+        const s = (diff % 60).toString().padStart(2,'0');
+        this.els.timer.textContent = `${h}:${m}:${s}`;
     },
 
     switchView: async function(name) {
@@ -102,7 +117,7 @@ const UI = {
         
         this.els.lvl.textContent = Game.state.lvl;
         this.els.ammo.textContent = Game.state.ammo;
-        this.els.caps.textContent = `${Game.state.caps} KK`;
+        this.els.caps.textContent = `${Game.state.caps} Kronkorken`;
         this.els.zone.textContent = Game.state.zone;
         
         const maxHp = 100 + (Game.state.stats.END - 5) * 10;
@@ -113,7 +128,6 @@ const UI = {
         const expPct = Math.min(100, (Game.state.xp / nextXp) * 100);
         if(this.els.expBarTop) this.els.expBarTop.style.width = `${expPct}%`;
         
-        // Highlighting
         this.els.btnWiki.classList.remove('active');
         this.els.btnMap.classList.remove('active');
         this.els.btnChar.classList.remove('active');
@@ -124,7 +138,6 @@ const UI = {
         if (Game.state.view === 'char') this.els.btnChar.classList.add('active');
         if (Game.state.view === 'quests') this.els.btnQuests.classList.add('active');
 
-        // Level Up Alert
         if(Game.state.statPoints > 0) {
             this.els.btnChar.classList.add('level-up-alert');
             this.els.btnChar.innerHTML = "CHAR <span class='text-yellow-400'>!</span>";
@@ -133,7 +146,6 @@ const UI = {
             this.els.btnChar.textContent = "CHARAKTER";
         }
 
-        // Quest Alert
         const unreadQuests = Game.state.quests.some(q => !q.read);
         if(unreadQuests) {
             this.els.btnQuests.classList.add('quest-alert');
@@ -193,7 +205,6 @@ const UI = {
         this.els.dialog.style.display = 'block';
     },
 
-    // NEU: Supermarkt Dialog
     enterSupermarket: function() {
         Game.state.inDialog = true;
         this.els.dialog.innerHTML = '';
@@ -202,7 +213,7 @@ const UI = {
         enterBtn.className = "action-button w-full mb-1 border-red-500 text-red-300";
         enterBtn.textContent = "Betreten (Gefahr!)";
         enterBtn.onclick = () => { 
-            Game.loadSector(0, 0, true); // true = Interior
+            Game.loadSector(0, 0, true); 
             this.leaveDialog();
         };
         
@@ -222,12 +233,9 @@ const UI = {
         this.update();
     },
 
-    // --- RENDERERS ---
-
     renderQuests: function() {
         const list = document.getElementById('quest-list');
         if(!list) return;
-        
         list.innerHTML = Game.state.quests.map(q => `
             <div class="border border-green-900 bg-green-900/10 p-2 flex items-center gap-3 cursor-pointer hover:bg-green-900/30 transition-all" onclick="UI.showQuestDetail('${q.id}')">
                 <div class="text-3xl">✉️</div>
@@ -242,21 +250,14 @@ const UI = {
     showQuestDetail: function(id) {
         const quest = Game.state.quests.find(q => q.id === id);
         if(!quest) return;
-
         quest.read = true;
         this.update();
-
         const list = document.getElementById('quest-list');
         const detail = document.getElementById('quest-detail');
         const content = document.getElementById('quest-content');
-        
         list.classList.add('hidden');
         detail.classList.remove('hidden');
-        
-        content.innerHTML = `
-            <h2 class="text-2xl font-bold text-yellow-400 border-b border-green-500 mb-4">${quest.title}</h2>
-            <div class="font-mono text-lg leading-relaxed whitespace-pre-wrap">${quest.text}</div>
-        `;
+        content.innerHTML = `<h2 class="text-2xl font-bold text-yellow-400 border-b border-green-500 mb-4">${quest.title}</h2><div class="font-mono text-lg leading-relaxed whitespace-pre-wrap">${quest.text}</div>`;
     },
 
     closeQuestDetail: function() {
@@ -273,18 +274,14 @@ const UI = {
             const btn = Game.state.statPoints > 0 ? `<button class="border border-green-500 px-1 ml-2" onclick="Game.upgradeStat('${k}')">+</button>` : '';
             return `<div class="flex justify-between"><span>${k}: ${val}</span>${btn}</div>`;
         }).join('');
-        
         const nextXp = Game.expToNextLevel(Game.state.lvl);
         const expPct = Math.min(100, (Game.state.xp / nextXp) * 100);
-        
         document.getElementById('char-exp').textContent = Game.state.xp;
         document.getElementById('char-next').textContent = nextXp;
         document.getElementById('char-exp-bar').style.width = `${expPct}%`;
-        
         document.getElementById('char-points').textContent = Game.state.statPoints;
         const btn = document.getElementById('btn-assign');
         if(btn) btn.disabled = Game.state.statPoints <= 0;
-        
         document.getElementById('char-equip').innerHTML = `Waffe: ${Game.state.equip.weapon.name}<br>Rüstung: ${Game.state.equip.body.name}`;
     },
 
@@ -294,10 +291,7 @@ const UI = {
         content.innerHTML = Object.keys(Game.monsters).map(k => {
             const m = Game.monsters[k];
             const xpText = Array.isArray(m.xp) ? `${m.xp[0]}-${m.xp[1]}` : m.xp;
-            return `<div class="border-b border-green-900 pb-1">
-                <div class="font-bold text-yellow-400">${m.name}</div>
-                <div class="text-xs opacity-70">${m.desc} (HP: ~${m.hp}, XP: ${xpText})</div>
-            </div>`;
+            return `<div class="border-b border-green-900 pb-1"><div class="font-bold text-yellow-400">${m.name}</div><div class="text-xs opacity-70">${m.desc} (HP: ~${m.hp}, XP: ${xpText})</div></div>`;
         }).join('');
     },
 
@@ -305,19 +299,15 @@ const UI = {
         const grid = document.getElementById('world-grid');
         if(!grid) return;
         grid.innerHTML = '';
-        for(let y=0; y<8; y++) { // 8x8 Grid angepasst
+        for(let y=0; y<8; y++) {
             for(let x=0; x<8; x++) {
                 const d = document.createElement('div');
                 d.className = "border border-green-900/50 flex justify-center items-center text-xs";
-                if(x===Game.state.sector.x && y===Game.state.sector.y) {
-                    d.style.backgroundColor = "#39ff14"; d.style.color = "black"; d.textContent = "YOU";
-                } else if(Game.worldData[`${x},${y}`]) {
-                    d.style.backgroundColor = "#4a3d34";
-                }
+                if(x===Game.state.sector.x && y===Game.state.sector.y) { d.style.backgroundColor = "#39ff14"; d.style.color = "black"; d.textContent = "YOU"; } 
+                else if(Game.worldData[`${x},${y}`]) { d.style.backgroundColor = "#4a3d34"; }
                 grid.appendChild(d);
             }
         }
-        // Grid Style anpassen für 8x8
         grid.style.gridTemplateColumns = "repeat(8, 1fr)";
     },
 
@@ -325,18 +315,15 @@ const UI = {
         const con = document.getElementById('city-options');
         if(!con) return;
         con.innerHTML = '';
-
         const addBtn = (txt, cb, disabled=false) => {
             const b = document.createElement('button');
             b.className = "action-button w-full mb-2 text-left p-3 flex justify-between";
-            b.innerHTML = txt; 
-            b.onclick = cb;
+            b.innerHTML = txt; b.onclick = cb;
             if(disabled) { b.disabled = true; b.style.opacity = 0.5; }
             con.appendChild(b);
         };
-
-        addBtn("Heilen (25 KK)", () => Game.heal(), Game.state.caps < 25 || Game.state.hp >= Game.state.maxHp);
-        addBtn("Munition (10 Stk / 10 KK)", () => Game.buyAmmo(), Game.state.caps < 10);
+        addBtn("Heilen (25 Kronkorken)", () => Game.heal(), Game.state.caps < 25 || Game.state.hp >= Game.state.maxHp);
+        addBtn("Munition (10 Stk / 10 Kronkorken)", () => Game.buyAmmo(), Game.state.caps < 10);
         addBtn("Händler / Waffen & Rüstung", () => this.renderShop(con));
         addBtn("Stadt verlassen", () => this.switchView('map'));
     },
@@ -348,26 +335,18 @@ const UI = {
         backBtn.textContent = "ZURÜCK ZUM PLATZ";
         backBtn.onclick = () => this.renderCity();
         container.appendChild(backBtn);
-
         Object.keys(Game.items).forEach(key => {
             const item = Game.items[key];
             if(item.cost > 0 && Game.state.lvl >= (item.requiredLevel || 0) - 2) {
                 const canAfford = Game.state.caps >= item.cost;
                 const isEquipped = (Game.state.equip[item.slot] && Game.state.equip[item.slot].name === item.name);
-                
-                let label = `<span>${item.name}</span> <span>${item.cost} KK</span>`;
+                let label = `<span>${item.name}</span> <span>${item.cost} Kronkorken</span>`;
                 if(isEquipped) label = `<span class="text-green-500">[AUSGERÜSTET]</span>`;
-                
                 const btn = document.createElement('button');
                 btn.className = "action-button w-full mb-2 flex justify-between text-sm";
                 btn.innerHTML = label;
-                
-                if(!canAfford || isEquipped) {
-                    btn.disabled = true;
-                    btn.style.opacity = 0.5;
-                } else {
-                    btn.onclick = () => Game.buyItem(key);
-                }
+                if(!canAfford || isEquipped) { btn.disabled = true; btn.style.opacity = 0.5; } 
+                else { btn.onclick = () => Game.buyItem(key); }
                 container.appendChild(btn);
             }
         });
