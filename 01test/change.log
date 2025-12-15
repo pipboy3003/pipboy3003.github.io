@@ -1,6 +1,11 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 ==============================
 
+[v0.0.5f] - 2025-12-15 (Interactive Bugfix)
+-------------------------------------------
+- FIX: Kritischer Fehler im `update()`-Loop behoben, der Dialogfenster (z.B. beim Betreten der Vault) sofort wieder geschlossen hat. Die Steuerung bleibt nicht mehr hängen ("Game freezes").
+- LOGIK: Dialog-Sichtbarkeit wird nun strikt durch Event-Trigger gesteuert, nicht mehr durch den Update-Zyklus überschrieben.
+
 [v0.0.5e] - 2025-12-15 (Restoration & Polish)
 ---------------------------------------------
 - LAYOUT: Zurückgesetzt auf klassisches Design: Karte LINKS, Log RECHTS (entsprechend v0.0.4c).
