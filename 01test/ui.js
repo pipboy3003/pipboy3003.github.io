@@ -1,7 +1,6 @@
 const UI = {
     els: {},
     timerInterval: null,
-    
     biomeColors: { 'wasteland': '#5d5345', 'desert': '#eecfa1', 'jungle': '#1a3300', 'city': '#555555' },
 
     init: function() {
@@ -15,26 +14,21 @@ const UI = {
             ammo: document.getElementById('val-ammo'),
             caps: document.getElementById('val-caps'),
             zone: document.getElementById('current-zone-display'),
-            
             dpad: document.getElementById('overlay-controls'),
             dpadToggle: document.getElementById('btn-toggle-dpad'),
             dialog: document.getElementById('dialog-overlay'),
             diceOverlay: document.getElementById('dice-overlay'),
-            
             text: document.getElementById('encounter-text'),
             timer: document.getElementById('game-timer'),
-            
             btnNew: document.getElementById('btn-new'),
             btnWiki: document.getElementById('btn-wiki'),
             btnMap: document.getElementById('btn-map'),
             btnChar: document.getElementById('btn-char'),
             btnQuests: document.getElementById('btn-quests'),
-            
             btnUp: document.getElementById('btn-up'),
             btnDown: document.getElementById('btn-down'),
             btnLeft: document.getElementById('btn-left'),
             btnRight: document.getElementById('btn-right'),
-            
             gameOver: document.getElementById('game-over-screen')
         };
 
@@ -84,7 +78,6 @@ const UI = {
         const m = Math.floor((diff % 3600) / 60).toString().padStart(2,'0');
         const s = (diff % 60).toString().padStart(2,'0');
         if(this.els.timer) this.els.timer.textContent = `${h}:${m}:${s}`;
-        
         if(Game.state.view === 'map') this.update(); 
     },
 
@@ -125,7 +118,6 @@ const UI = {
         if(this.els.diceOverlay) {
             this.els.diceOverlay.classList.remove('hidden');
             this.els.diceOverlay.classList.add('flex'); 
-            
             document.getElementById('dice-1').textContent = "?";
             document.getElementById('dice-2').textContent = "?";
             document.getElementById('dice-3').textContent = "?";
@@ -137,7 +129,6 @@ const UI = {
     rollDiceAnim: function() {
         const btn = document.getElementById('btn-roll');
         if(btn) btn.disabled = true;
-        
         let count = 0;
         const interval = setInterval(() => {
             document.getElementById('dice-1').textContent = Math.floor(Math.random()*6)+1;
@@ -153,19 +144,15 @@ const UI = {
 
     finishRoll: function() {
         const result = Game.rollLegendaryLoot();
-        
         let v1 = Math.floor(result.val / 3);
         let v2 = Math.floor(result.val / 3);
         let v3 = result.val - v1 - v2;
         while(v3 > 6) { v3--; v2++; }
         while(v2 > 6) { v2--; v1++; }
-        
         document.getElementById('dice-1').textContent = v1;
         document.getElementById('dice-2').textContent = v2;
         document.getElementById('dice-3').textContent = v3;
-
         this.log(result.msg, "text-yellow-400 font-bold");
-        
         setTimeout(() => {
             if(this.els.diceOverlay) {
                 this.els.diceOverlay.classList.remove('flex');
@@ -178,14 +165,12 @@ const UI = {
     restoreOverlay: function() {
         const overlayHTML = `
         <button id="btn-toggle-dpad" style="position: absolute; bottom: 20px; left: 20px; z-index: 60; width: 50px; height: 50px; border-radius: 50%; background: rgba(0, 0, 0, 0.8); border: 2px solid #39ff14; color: #39ff14; font-size: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 0 10px #000;">🎮</button>
-        
         <div id="overlay-controls" class="grid grid-cols-3 gap-1" style="position: absolute; bottom: 80px; left: 20px; z-index: 50; display: none;">
              <div></div><button class="dpad-btn" id="btn-up" style="width: 50px; height: 50px; background: rgba(0,0,0,0.8); border: 2px solid #39ff14; color: #39ff14; font-size: 24px; display: flex; justify-content: center; align-items: center; border-radius: 8px;">▲</button><div></div>
              <button class="dpad-btn" id="btn-left" style="width: 50px; height: 50px; background: rgba(0,0,0,0.8); border: 2px solid #39ff14; color: #39ff14; font-size: 24px; display: flex; justify-content: center; align-items: center; border-radius: 8px;">◀</button><div class="flex items-center justify-center text-[#39ff14]">●</div><button class="dpad-btn" id="btn-right" style="width: 50px; height: 50px; background: rgba(0,0,0,0.8); border: 2px solid #39ff14; color: #39ff14; font-size: 24px; display: flex; justify-content: center; align-items: center; border-radius: 8px;">▶</button>
              <div></div><button class="dpad-btn" id="btn-down" style="width: 50px; height: 50px; background: rgba(0,0,0,0.8); border: 2px solid #39ff14; color: #39ff14; font-size: 24px; display: flex; justify-content: center; align-items: center; border-radius: 8px;">▼</button><div></div>
         </div>
         <div id="dialog-overlay" style="position: absolute; bottom: 20px; right: 20px; z-index: 50; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; max-width: 50%;"></div>
-        
         <div id="dice-overlay" class="hidden absolute inset-0 z-70 bg-black/95 flex-col justify-center items-center">
             <h2 class="text-4xl text-yellow-400 mb-8 font-bold animate-pulse">LEGENDÄRER FUND!</h2>
             <div class="flex gap-4 mb-8">
@@ -203,7 +188,6 @@ const UI = {
         `;
         
         this.els.view.insertAdjacentHTML('beforeend', overlayHTML);
-        
         this.els.dpad = document.getElementById('overlay-controls');
         this.els.dpadToggle = document.getElementById('btn-toggle-dpad');
         this.els.dialog = document.getElementById('dialog-overlay');
@@ -215,7 +199,6 @@ const UI = {
                 this.els.dpad.style.display = (current === 'none' || current === '') ? 'grid' : 'none';
             };
         }
-        
         document.getElementById('btn-up').onclick = () => Game.move(0, -1);
         document.getElementById('btn-down').onclick = () => Game.move(0, 1);
         document.getElementById('btn-left').onclick = () => Game.move(-1, 0);
@@ -241,7 +224,6 @@ const UI = {
         const maxHp = Game.state.maxHp; 
         this.els.hp.textContent = `${Math.round(Game.state.hp)}/${maxHp}`;
         this.els.hpBar.style.width = `${Math.max(0, (Game.state.hp / maxHp) * 100)}%`;
-
         const nextXp = Game.expToNextLevel(Game.state.lvl);
         const expPct = Math.min(100, (Game.state.xp / nextXp) * 100);
         if(this.els.expBarTop) this.els.expBarTop.style.width = `${expPct}%`;
@@ -250,7 +232,6 @@ const UI = {
         this.els.btnMap.classList.remove('active');
         this.els.btnChar.classList.remove('active');
         this.els.btnQuests.classList.remove('active');
-
         if (Game.state.view === 'wiki') this.els.btnWiki.classList.add('active');
         if (Game.state.view === 'worldmap') this.els.btnMap.classList.add('active');
         if (Game.state.view === 'char') this.els.btnChar.classList.add('active');
@@ -283,18 +264,8 @@ const UI = {
         if(buffActive) this.els.lvl.classList.add('blink-red');
         else this.els.lvl.classList.remove('blink-red');
 
-        // FIX: Hier lag der Fehler!
-        // Dialog-Overlay Management:
-        // Wir verstecken es NUR, wenn wir sicher wissen, dass wir NICHT in einem Dialog sind.
-        // Wenn Game.state.inDialog == true ist, muss es sichtbar bleiben.
-        
         if(Game.state.view === 'map') {
             if(this.els.dpadToggle) this.els.dpadToggle.style.display = 'flex';
-            
-            // WICHTIG: Die Zeile, die das Dialogfeld fälschlicherweise versteckt hat, ist weg.
-            // Die Sichtbarkeit wird jetzt ausschließlich über enterVault/leaveDialog gesteuert.
-            
-            // Zur Sicherheit: Wenn wir NICHT im Dialog sind, und der Dialog aber noch offen ist (z.B. durch Fehler), schließen wir ihn.
             if(!Game.state.inDialog && this.els.dialog && this.els.dialog.innerHTML === '') {
                  this.els.dialog.style.display = 'none';
             }
@@ -326,17 +297,14 @@ const UI = {
     enterVault: function() {
         Game.state.inDialog = true;
         this.els.dialog.innerHTML = '';
-        
         const restBtn = document.createElement('button');
         restBtn.className = "action-button w-full mb-1 border-blue-500 text-blue-300";
         restBtn.textContent = "Ausruhen (Gratis)";
         restBtn.onclick = () => { Game.rest(); this.leaveDialog(); };
-        
         const leaveBtn = document.createElement('button');
         leaveBtn.className = "action-button w-full";
         leaveBtn.textContent = "Weiter geht's";
         leaveBtn.onclick = () => this.leaveDialog();
-
         this.els.dialog.appendChild(restBtn);
         this.els.dialog.appendChild(leaveBtn);
         this.els.dialog.style.display = 'flex';
@@ -345,20 +313,37 @@ const UI = {
     enterSupermarket: function() {
         Game.state.inDialog = true;
         this.els.dialog.innerHTML = '';
-        
         const enterBtn = document.createElement('button');
         enterBtn.className = "action-button w-full mb-1 border-red-500 text-red-300";
-        enterBtn.textContent = "Betreten (Gefahr!)";
+        enterBtn.textContent = "Ruine betreten (Gefahr!)";
         enterBtn.onclick = () => { 
-            Game.loadSector(0, 0, true); 
+            Game.loadSector(0, 0, true, "market"); 
             this.leaveDialog();
         };
-        
         const leaveBtn = document.createElement('button');
         leaveBtn.className = "action-button w-full";
         leaveBtn.textContent = "Weitergehen";
         leaveBtn.onclick = () => this.leaveDialog();
+        this.els.dialog.appendChild(enterBtn);
+        this.els.dialog.appendChild(leaveBtn);
+        this.els.dialog.style.display = 'block';
+    },
 
+    // NEU: HÖHLEN DIALOG
+    enterCave: function() {
+        Game.state.inDialog = true;
+        this.els.dialog.innerHTML = '';
+        const enterBtn = document.createElement('button');
+        enterBtn.className = "action-button w-full mb-1 border-gray-500 text-gray-300";
+        enterBtn.textContent = "In die Tiefe (Dungeon)";
+        enterBtn.onclick = () => { 
+            Game.loadSector(0, 0, true, "cave"); 
+            this.leaveDialog();
+        };
+        const leaveBtn = document.createElement('button');
+        leaveBtn.className = "action-button w-full";
+        leaveBtn.textContent = "Weitergehen";
+        leaveBtn.onclick = () => this.leaveDialog();
         this.els.dialog.appendChild(enterBtn);
         this.els.dialog.appendChild(leaveBtn);
         this.els.dialog.style.display = 'block';
