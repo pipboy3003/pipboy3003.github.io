@@ -1,7 +1,31 @@
-<div class="w-full h-full flex flex-col items-center justify-center p-4">
-    <h1 class="text-2xl font-bold mb-4">GLOBALER SCAN (10x10)</h1>
-    <div id="world-grid" class="grid grid-cols-10 gap-1 bg-black border border-green-500 p-1 mb-4" style="width: 300px; height: 300px;">
+<div class="w-full h-full flex flex-col items-center justify-center p-4 overflow-y-auto">
+    <h1 class="text-2xl font-bold mb-4 border-b border-green-500 pb-1 w-full text-center">GLOBALER SCAN (8x8)</h1>
+    
+    <div id="world-grid" class="grid gap-1 bg-black border border-green-500 p-1 mb-4 w-full max-w-[400px] aspect-square">
         </div>
-    <div class="text-xs text-center mb-4 opacity-70">Grün = Aktuell | Braun = Erkundet</div>
-    <button class="action-button w-full max-w-xs" onclick="UI.switchView('map')">ZURÜCK</button>
+    
+    <div class="w-full max-w-[400px] grid grid-cols-2 gap-2 text-xs mb-4 p-2 border border-green-900 bg-green-900/10">
+        <div class="flex items-center gap-2">
+            <div class="w-4 h-4 bg-[#39ff14]"></div>
+            <span>Aktuelle Position</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="w-4 h-4 bg-[#5d5345]"></div>
+            <span>Ödland</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="w-4 h-4 bg-[#eecfa1]"></div>
+            <span>Wüste</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="w-4 h-4 bg-[#1a3300]"></div>
+            <span>Jungle / Wald</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="w-4 h-4 bg-[#555555]"></div>
+            <span>Ruinenstadt</span>
+        </div>
+    </div>
+
+    <button class="action-button w-full max-w-xs" onclick="UI.switchView('map')">SCHLIESSEN</button>
 </div>
