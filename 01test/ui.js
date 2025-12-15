@@ -20,7 +20,6 @@ const UI = {
             line.textContent = errText;
             this.els.log.prepend(line);
         }
-        // Zeige Fehler auch im Login-Status, falls wir dort hängen
         const loginStat = document.getElementById('login-status');
         if(loginStat && document.getElementById('login-screen').style.display !== 'none') {
             loginStat.textContent = msg;
@@ -46,11 +45,19 @@ const UI = {
             diceOverlay: document.getElementById('dice-overlay'),
             text: document.getElementById('encounter-text'),
             timer: document.getElementById('game-timer'),
+            
+            // Buttons
             btnNew: document.getElementById('btn-new'),
+            btnSave: document.getElementById('btn-save'),
             btnWiki: document.getElementById('btn-wiki'),
             btnMap: document.getElementById('btn-map'),
             btnChar: document.getElementById('btn-char'),
             btnQuests: document.getElementById('btn-quests'),
+            
+            // NEU: Menü
+            btnMenu: document.getElementById('btn-menu-toggle'),
+            navMenu: document.getElementById('main-nav'),
+
             btnUp: document.getElementById('btn-up'),
             btnDown: document.getElementById('btn-down'),
             btnLeft: document.getElementById('btn-left'),
@@ -66,6 +73,16 @@ const UI = {
             this.els.loginInput.addEventListener("keyup", (e) => {
                 if (e.key === "Enter") this.attemptLogin();
             });
+        }
+
+        // --- NEU: HAMBURGER MENÜ LOGIK ---
+        if(this.els.btnMenu) {
+            this.els.btnMenu.onclick = () => {
+                // Toggle 'hidden' Klasse
+                this.els.navMenu.classList.toggle('hidden');
+                // Auf Mobile ist es standardmäßig hidden, toggle macht es sichtbar.
+                // Auf Desktop greift 'md:flex', was 'hidden' überschreibt, also passiert dort nichts (gut so).
+            };
         }
 
         if(this.els.btnNew) this.els.btnNew.onclick = () => { if(confirm("Neustart? Nicht gespeicherter Fortschritt geht verloren.")) location.reload(); };
@@ -117,15 +134,11 @@ const UI = {
         try {
             if(typeof Network === 'undefined') throw new Error("Netzwerk Modul fehlt");
             Network.init(); 
-            
             const saveData = await Network.login(id);
-            
             this.els.loginScreen.style.display = 'none';
             this.els.gameScreen.classList.remove('hidden');
             this.els.gameScreen.classList.remove('opacity-0');
-            
             Game.init(saveData); 
-            
         } catch(e) {
             this.error("LOGIN FEHLGESCHLAGEN: " + e.message);
         }
@@ -135,7 +148,7 @@ const UI = {
         const v = this.els.version;
         if(!v) return;
         if(status === 'online') {
-            v.textContent = "ONLINE (v0.0.10d)"; 
+            v.textContent = "ONLINE (v0.0.10f)"; // VERSION UPDATE
             v.className = "text-[#39ff14] font-bold tracking-widest"; v.style.textShadow = "0 0 5px #39ff14";
         } else if (status === 'offline') {
             v.textContent = "OFFLINE"; v.className = "text-red-500 font-bold tracking-widest"; v.style.textShadow = "0 0 5px red";
@@ -156,25 +169,26 @@ const UI = {
         if(Game.state.view === 'map') this.update(); 
     },
 
-    // --- FIX: INTEGRATED MAP VIEW (KEIN 404 MEHR) ---
     switchView: async function(name) { 
+        // --- NEU: Menü auf Mobile einklappen bei Klick ---
+        if(this.els.navMenu && window.innerWidth < 768) { // 768px ist der md Breakpoint
+            this.els.navMenu.classList.add('hidden');
+        }
+
         const verDisplay = document.getElementById('version-display'); 
         const ver = verDisplay ? verDisplay.textContent.trim() : Date.now(); 
         
-        // SPEZIALFALL MAP: Direkt im Code erzeugen, keine Datei laden!
         if (name === 'map') {
             this.els.view.innerHTML = '<canvas id="game-canvas" class="w-full h-full object-contain" style="image-rendering: pixelated;"></canvas>';
             Game.state.view = name;
             Game.initCanvas();
             this.restoreOverlay();
             this.toggleControls(true);
-            // Buttons updaten
             this.updateButtonStates(name);
             this.update();
-            return;
+            return; 
         }
 
-        // Andere Views (Wiki, Char etc.) laden
         const path = `views/${name}.html?v=${ver}`; 
         try { 
             const res = await fetch(path); 
@@ -208,10 +222,9 @@ const UI = {
     update: function() { 
         if (!Game.state) return; 
         
-        // Safe Updates (Null Checks)
         if(this.els.lvl) this.els.lvl.textContent = Game.state.lvl; 
         if(this.els.ammo) this.els.ammo.textContent = Game.state.ammo; 
-        if(this.els.caps) this.els.caps.textContent = `${Game.state.caps} Kronkorken`; 
+        if(this.els.caps) this.els.caps.textContent = `${Game.state.caps} Caps`; 
         if(this.els.zone) this.els.zone.textContent = Game.state.zone; 
         
         const buffActive = Date.now() < Game.state.buffEndTime; 
@@ -228,14 +241,14 @@ const UI = {
         const expPct = Math.min(100, (Game.state.xp / nextXp) * 100); 
         if(this.els.expBarTop) this.els.expBarTop.style.width = `${expPct}%`; 
         
-        // Notifications
+        // Notifications & Active States für Nav Menu
         if(this.els.btnChar) {
             if(Game.state.statPoints > 0) { 
                 this.els.btnChar.classList.add('level-up-alert'); 
                 this.els.btnChar.innerHTML = "CHAR <span class='text-yellow-400'>!</span>"; 
             } else { 
                 this.els.btnChar.classList.remove('level-up-alert'); 
-                this.els.btnChar.textContent = "CHARAKTER"; 
+                this.els.btnChar.textContent = "CHAR"; 
             }
         } 
         
@@ -243,20 +256,18 @@ const UI = {
         if(this.els.btnQuests) {
             if(unreadQuests) { 
                 this.els.btnQuests.classList.add('quest-alert'); 
-                this.els.btnQuests.innerHTML = "AUFGABEN <span class='text-cyan-400'>!</span>"; 
+                this.els.btnQuests.innerHTML = "QUEST <span class='text-cyan-400'>!</span>"; 
             } else { 
                 this.els.btnQuests.classList.remove('quest-alert'); 
-                this.els.btnQuests.textContent = "AUFGABEN"; 
+                this.els.btnQuests.textContent = "QUEST"; 
             }
         } 
         
-        // SAFETY FIX: Prüfen ob Buttons existieren bevor disabled gesetzt wird
         const inCombat = Game.state.view === 'combat'; 
-        if(this.els.btnWiki) this.els.btnWiki.disabled = inCombat; 
-        if(this.els.btnMap) this.els.btnMap.disabled = inCombat; 
-        if(this.els.btnChar) this.els.btnChar.disabled = inCombat; 
-        if(this.els.btnQuests) this.els.btnQuests.disabled = inCombat; 
-        if(this.els.btnNew) this.els.btnNew.disabled = inCombat; 
+        // Alle Nav Buttons disablen wenn im Kampf
+        [this.els.btnWiki, this.els.btnMap, this.els.btnChar, this.els.btnQuests, this.els.btnSave].forEach(btn => {
+            if(btn) btn.disabled = inCombat;
+        });
         
         if(this.els.lvl) {
             if(buffActive) this.els.lvl.classList.add('blink-red'); 
@@ -278,9 +289,7 @@ const UI = {
     finishRoll: function() { const result = Game.rollLegendaryLoot(); let v1 = Math.floor(result.val / 3); let v2 = Math.floor(result.val / 3); let v3 = result.val - v1 - v2; while(v3 > 6) { v3--; v2++; } while(v2 > 6) { v2--; v1++; } document.getElementById('dice-1').textContent = v1; document.getElementById('dice-2').textContent = v2; document.getElementById('dice-3').textContent = v3; this.log(result.msg, "text-yellow-400 font-bold"); setTimeout(() => { if(this.els.diceOverlay) { this.els.diceOverlay.classList.remove('flex'); this.els.diceOverlay.classList.add('hidden'); } Game.endCombat(); }, 2000); },
     
     restoreOverlay: function() { 
-        // Verhindern, dass Overlay mehrfach hinzugefügt wird
         if(document.getElementById('btn-toggle-dpad')) return;
-
         const overlayHTML = ` <button id="btn-toggle-dpad" style="position: absolute; bottom: 20px; left: 20px; z-index: 60; width: 50px; height: 50px; border-radius: 50%; background: rgba(0, 0, 0, 0.8); border: 2px solid #39ff14; color: #39ff14; font-size: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 0 10px #000;">🎮</button> <div id="overlay-controls" class="grid grid-cols-3 gap-1" style="position: absolute; bottom: 80px; left: 20px; z-index: 50; display: none;"> <div></div><button class="dpad-btn" id="btn-up" style="width: 50px; height: 50px; background: rgba(0,0,0,0.8); border: 2px solid #39ff14; color: #39ff14; font-size: 24px; display: flex; justify-content: center; align-items: center; border-radius: 8px;">▲</button><div></div> <button class="dpad-btn" id="btn-left" style="width: 50px; height: 50px; background: rgba(0,0,0,0.8); border: 2px solid #39ff14; color: #39ff14; font-size: 24px; display: flex; justify-content: center; align-items: center; border-radius: 8px;">◀</button><div class="flex items-center justify-center text-[#39ff14]">●</div><button class="dpad-btn" id="btn-right" style="width: 50px; height: 50px; background: rgba(0,0,0,0.8); border: 2px solid #39ff14; color: #39ff14; font-size: 24px; display: flex; justify-content: center; align-items: center; border-radius: 8px;">▶</button> <div></div><button class="dpad-btn" id="btn-down" style="width: 50px; height: 50px; background: rgba(0,0,0,0.8); border: 2px solid #39ff14; color: #39ff14; font-size: 24px; display: flex; justify-content: center; align-items: center; border-radius: 8px;">▼</button><div></div> </div> <div id="dialog-overlay" style="position: absolute; bottom: 20px; right: 20px; z-index: 50; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; max-width: 50%;"></div> <div id="dice-overlay" class="hidden absolute inset-0 z-70 bg-black/95 flex-col justify-center items-center"> <h2 class="text-4xl text-yellow-400 mb-8 font-bold animate-pulse">LEGENDÄRER FUND!</h2> <div class="flex gap-4 mb-8"> <div id="dice-1" class="dice-box" style="width: 60px; height: 60px; border: 4px solid #39ff14; display: flex; justify-content: center; align-items: center; font-size: 40px; font-weight: bold; background: #000; color: #39ff14;">?</div> <div id="dice-2" class="dice-box" style="width: 60px; height: 60px; border: 4px solid #39ff14; display: flex; justify-content: center; align-items: center; font-size: 40px; font-weight: bold; background: #000; color: #39ff14;">?</div> <div id="dice-3" class="dice-box" style="width: 60px; height: 60px; border: 4px solid #39ff14; display: flex; justify-content: center; align-items: center; font-size: 40px; font-weight: bold; background: #000; color: #39ff14;">?</div> </div> <div class="text-xl mb-4 text-center"> <div class="text-cyan-400">3-7: KRONKORKEN</div> <div class="text-cyan-400">8-12: MUNITION</div> <div class="text-yellow-400 font-bold">13-18: OVERDRIVE BUFF</div> </div> <button id="btn-roll" class="action-button px-8 py-4 text-2xl border-yellow-400 text-yellow-400 hover:bg-yellow-900" onclick="UI.rollDiceAnim()">WÜRFELN</button> </div> `; 
         this.els.view.insertAdjacentHTML('beforeend', overlayHTML); 
         this.els.dpad = document.getElementById('overlay-controls'); 
@@ -294,13 +303,6 @@ const UI = {
         document.getElementById('btn-right').onclick = () => Game.move(1, 0); 
     },
 
-    toggleControls: function(show) { if (!show && this.els.dialog) this.els.dialog.innerHTML = ''; if (this.els.diceOverlay && !show) { this.els.diceOverlay.classList.remove('flex'); this.els.diceOverlay.classList.add('hidden'); } },
-    showGameOver: function() { if(this.els.gameOver) this.els.gameOver.classList.remove('hidden'); this.toggleControls(false); },
-    enterVault: function() { Game.state.inDialog = true; this.els.dialog.innerHTML = ''; const restBtn = document.createElement('button'); restBtn.className = "action-button w-full mb-1 border-blue-500 text-blue-300"; restBtn.textContent = "Ausruhen (Gratis)"; restBtn.onclick = () => { Game.rest(); this.leaveDialog(); }; const leaveBtn = document.createElement('button'); leaveBtn.className = "action-button w-full"; leaveBtn.textContent = "Weiter geht's"; leaveBtn.onclick = () => this.leaveDialog(); this.els.dialog.appendChild(restBtn); this.els.dialog.appendChild(leaveBtn); this.els.dialog.style.display = 'flex'; },
-    enterSupermarket: function() { Game.state.inDialog = true; this.els.dialog.innerHTML = ''; const enterBtn = document.createElement('button'); enterBtn.className = "action-button w-full mb-1 border-red-500 text-red-300"; enterBtn.textContent = "Ruine betreten (Gefahr!)"; enterBtn.onclick = () => { Game.loadSector(0, 0, true, "market"); this.leaveDialog(); }; const leaveBtn = document.createElement('button'); leaveBtn.className = "action-button w-full"; leaveBtn.textContent = "Weitergehen"; leaveBtn.onclick = () => this.leaveDialog(); this.els.dialog.appendChild(enterBtn); this.els.dialog.appendChild(leaveBtn); this.els.dialog.style.display = 'block'; },
-    enterCave: function() { Game.state.inDialog = true; this.els.dialog.innerHTML = ''; const enterBtn = document.createElement('button'); enterBtn.className = "action-button w-full mb-1 border-gray-500 text-gray-300"; enterBtn.textContent = "In die Tiefe (Dungeon)"; enterBtn.onclick = () => { Game.loadSector(0, 0, true, "cave"); this.leaveDialog(); }; const leaveBtn = document.createElement('button'); leaveBtn.className = "action-button w-full"; leaveBtn.textContent = "Weitergehen"; leaveBtn.onclick = () => this.leaveDialog(); this.els.dialog.appendChild(enterBtn); this.els.dialog.appendChild(leaveBtn); this.els.dialog.style.display = 'block'; },
-    leaveDialog: function() { Game.state.inDialog = false; this.els.dialog.style.display = 'none'; this.update(); },
-    
     renderQuests: function() { const list = document.getElementById('quest-list'); if(!list) return; list.innerHTML = Game.state.quests.map(q => ` <div class="border border-green-900 bg-green-900/10 p-2 flex items-center gap-3 cursor-pointer hover:bg-green-900/30 transition-all" onclick="UI.showQuestDetail('${q.id}')"> <div class="text-3xl">✉️</div> <div> <div class="font-bold text-lg text-yellow-400">${q.read ? '' : '<span class="text-cyan-400">[NEU]</span> '}${q.title}</div> <div class="text-xs opacity-70">Zum Lesen klicken</div> </div> </div> `).join(''); },
     showQuestDetail: function(id) { const quest = Game.state.quests.find(q => q.id === id); if(!quest) return; quest.read = true; this.update(); const list = document.getElementById('quest-list'); const detail = document.getElementById('quest-detail'); const content = document.getElementById('quest-content'); list.classList.add('hidden'); detail.classList.remove('hidden'); content.innerHTML = `<h2 class="text-2xl font-bold text-yellow-400 border-b border-green-500 mb-4">${quest.title}</h2><div class="font-mono text-lg leading-relaxed whitespace-pre-wrap">${quest.text}</div>`; },
     closeQuestDetail: function() { document.getElementById('quest-detail').classList.add('hidden'); document.getElementById('quest-list').classList.remove('hidden'); this.renderQuests(); },
