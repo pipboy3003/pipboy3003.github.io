@@ -38,6 +38,30 @@
         .blink-red { animation: blink-red-anim 1s infinite; }
         @keyframes blink-red-anim { 0%, 100% { opacity: 1; color: red; } 50% { opacity: 0.5; } }
     </style>
+    
+    <script>
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            const errorMsg = `SYSTEM ERROR: ${msg} (Line ${lineNo})`;
+            console.error("WATCHDOG CAUGHT:", errorMsg);
+            
+            // Versuch, es ins UI Log zu schreiben, wenn UI schon geladen ist
+            if(typeof UI !== 'undefined' && UI.error) {
+                UI.error(errorMsg);
+            } else {
+                // Fallback: Ins HTML schreiben falls UI tot ist
+                setTimeout(() => {
+                    const logArea = document.getElementById('log-area');
+                    if(logArea) {
+                        const div = document.createElement('div');
+                        div.className = "text-red-500 font-bold blink-red";
+                        div.textContent = "> CRITICAL: " + msg;
+                        logArea.prepend(div);
+                    }
+                }, 1000);
+            }
+            return false;
+        };
+    </script>
 </head>
 <body>
 <div id="pipboy-case">
@@ -105,39 +129,25 @@
     function loadScript(src) { return new Promise((resolve, reject) => { const s = document.createElement('script'); s.src = src; s.onload = resolve; s.onerror = reject; document.body.appendChild(s); }); }
     window.onload = function() {
         const verDisplay = document.getElementById('version-display');
-        
-        // FIX: Startet das Spiel IMMER, auch wenn Firebase hakt
         function startGame(ver) {
             console.log("Starte Spiel...", ver);
-            verDisplay.textContent = ver; 
-            verDisplay.classList.remove('animate-pulse');
+            verDisplay.textContent = ver; verDisplay.classList.remove('animate-pulse');
             if(typeof UI !== 'undefined') { 
-                UI.init(); 
-                Game.init(); 
-                // Versuch Netzwerk zu starten, falls geladen
-                if(typeof Network !== 'undefined') Network.init();
+                try {
+                    UI.init(); 
+                    Game.init(); 
+                    if(typeof Network !== 'undefined') Network.init();
+                } catch(e) {
+                    // Fang Fehler beim Init ab
+                    console.error("FATAL INIT ERROR:", e);
+                    if(UI.error) UI.error("CRITICAL INIT FAIL: " + e.message);
+                }
             }
         }
-
-        fetch('Version?t=' + Date.now()).then(res => res.text())
-        .then(v => {
+        fetch('Version?t=' + Date.now()).then(res => res.text()).then(v => {
             const ver = v.trim();
-            // Lade Skripte sequenziell
-            loadScript('network.js?v=' + ver)
-                .then(() => loadScript('ui.js?v=' + ver))
-                .then(() => loadScript('game.js?v=' + ver))
-                .then(() => startGame(ver))
-                .catch(e => {
-                    console.error("Ladefehler:", e);
-                    // Notfall Start
-                    startGame("OFFLINE (Rescue)");
-                });
-        })
-        .catch(err => { 
-            console.warn("Versionscheck fehlgeschlagen:", err); 
-            // Fallback ohne Version Cache-Busting
-            loadScript('network.js').then(()=>loadScript('ui.js')).then(()=>loadScript('game.js')).then(() => startGame("OFFLINE"));
-        });
+            loadScript('network.js?v=' + ver).then(() => loadScript('ui.js?v=' + ver)).then(() => loadScript('game.js?v=' + ver)).then(() => startGame(ver)).catch(e => { console.error("Script Load Error:", e); startGame("OFFLINE (Rescue Mode)"); });
+        }).catch(err => { console.warn("Ver Check Fail", err); loadScript('network.js').then(()=>loadScript('ui.js')).then(()=>loadScript('game.js')).then(() => startGame("OFFLINE")); });
     };
 </script>
 </body>
