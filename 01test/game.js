@@ -20,13 +20,11 @@ const Game = {
     },
 
     state: null, worldData: {}, ctx: null, loopId: null, camera: { x: 0, y: 0 },
-    
-    // NEU: Performance Cache
     cacheCanvas: null, cacheCtx: null,
 
     init: function() {
         this.worldData = {};
-        this.initCache(); // Cache vorbereiten
+        this.initCache();
 
         const startSecX = Math.floor(Math.random() * 4) + 3;
         const startSecY = Math.floor(Math.random() * 4) + 3;
@@ -55,7 +53,6 @@ const Game = {
         });
     },
 
-    // Erstellt den unsichtbaren Canvas für Prerendering
     initCache: function() {
         this.cacheCanvas = document.createElement('canvas');
         this.cacheCanvas.width = this.MAP_W * this.TILE;
@@ -88,7 +85,7 @@ const Game = {
     findSafeSpawn: function() {
         let safe = false;
         let attempts = 0;
-        while(!safe && attempts < 100) { // Safety Break
+        while(!safe && attempts < 100) { 
             attempts++;
             const tile = this.state.currentMap[this.state.player.y][this.state.player.x];
             if(['.', '_', ',', '='].includes(tile)) safe = true;
@@ -104,7 +101,7 @@ const Game = {
         if (isInterior) {
             this.generateDungeon();
             this.state.zone = "Supermarkt (Gefahr!)";
-            this.renderStaticMap(); // Cache neu zeichnen
+            this.renderStaticMap(); 
             return;
         }
         if(!this.worldData[key]) {
@@ -146,15 +143,12 @@ const Game = {
         if(data.biome === 'jungle') zn = "Überwucherte Zone";
         this.state.zone = `${zn} (${sx},${sy})`;
         
-        // WICHTIG: Nach dem Laden einmalig in den Cache malen!
         this.renderStaticMap();
     },
 
-    // Malt die ganze Map EINMAL in den Cache
     renderStaticMap: function() {
         const ctx = this.cacheCtx;
         const ts = this.TILE;
-        // Reset
         ctx.fillStyle = "#000";
         ctx.fillRect(0, 0, this.cacheCanvas.width, this.cacheCanvas.height);
 
@@ -235,7 +229,6 @@ const Game = {
         this.loopId = requestAnimationFrame(() => this.drawLoop());
     },
 
-    // --- RENDER ENGINE V3 (OPTIMIERT) ---
     draw: function() {
         if(!this.ctx || !this.cacheCanvas) return;
         const ctx = this.ctx; const cvs = ctx.canvas;
@@ -247,28 +240,22 @@ const Game = {
         this.camera.x = Math.max(0, Math.min(targetCamX, maxCamX));
         this.camera.y = Math.max(0, Math.min(targetCamY, maxCamY));
 
-        // 1. Hintergrund löschen
         ctx.fillStyle = "#000"; 
         ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-        // 2. Statische Map aus Cache kopieren (NUR der sichtbare Bereich!)
-        // sourceImage, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight
         ctx.drawImage(
             this.cacheCanvas, 
-            this.camera.x, this.camera.y, cvs.width, cvs.height, // Quelle (Ausschnitt aus Cache)
-            0, 0, cvs.width, cvs.height // Ziel (Auf Screen)
+            this.camera.x, this.camera.y, cvs.width, cvs.height, 
+            0, 0, cvs.width, cvs.height 
         );
 
-        // 3. Transformation für dynamische Objekte
         ctx.save(); 
         ctx.translate(-this.camera.x, -this.camera.y);
 
-        // Spieler zeichnen (Ohne aufwendigen Shadow Blur für Performance)
         const px = this.state.player.x * this.TILE + this.TILE/2;
         const py = this.state.player.y * this.TILE + this.TILE/2;
         ctx.fillStyle = "#ff3914"; 
         ctx.beginPath(); ctx.arc(px, py, this.TILE/3, 0, Math.PI*2); ctx.fill();
-        // Optional: Kleiner Rand statt Shadow
         ctx.strokeStyle = "#000"; ctx.lineWidth = 2; ctx.stroke();
 
         ctx.restore();
