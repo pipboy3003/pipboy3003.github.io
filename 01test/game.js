@@ -40,6 +40,18 @@ const Game = {
         const startSecX = Math.floor(Math.random() * 8);
         const startSecY = Math.floor(Math.random() * 8);
 
+        // ... in game.js, nach init: function() ...
+    teleportTo: function(targetSector, tx, ty) {
+        this.state.sector = targetSector;
+        this.loadSector(targetSector.x, targetSector.y);
+        this.state.player.x = tx;
+        this.state.player.y = ty;
+        this.reveal(tx, ty);
+        if(typeof Network !== 'undefined') Network.sendMove(tx, ty, this.state.lvl, this.state.sector);
+        UI.update();
+        UI.log(`Teleport erfolgreich.`, "text-green-400");
+     },    
+        
         this.state = {
             sector: {x: startSecX, y: startSecY}, 
             startSector: {x: startSecX, y: startSecY},
