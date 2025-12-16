@@ -1,4 +1,3 @@
-// network.js - v0.0.10a
 const Network = {
     db: null,
     myId: null,
@@ -17,7 +16,6 @@ const Network = {
         measurementId: "G-DYGLZTMWWT"
     },
 
-    // Initialisiert nur Firebase, verbindet aber noch nicht den Spieler
     init: function() {
         if (typeof firebase !== 'undefined' && !this.db) {
             try {
@@ -31,21 +29,14 @@ const Network = {
         }
     },
 
-    // Der eigentliche Login Prozess
     login: async function(userId) {
         if (!this.active) return null;
-        
         this.myId = userId;
-        
         try {
-            // Versuche Savegame zu laden
             const snapshot = await this.db.ref('saves/' + this.myId).once('value');
             const saveData = snapshot.val();
-            
-            // Starte Presence System (Bewegung sichtbar machen)
             this.startPresence();
-            
-            return saveData; // Gibt null zurück wenn kein Save existiert
+            return saveData; 
         } catch(e) {
             console.error("Login Error:", e);
             throw e;
@@ -53,20 +44,16 @@ const Network = {
     },
 
     startPresence: function() {
-        // Beim Schließen löschen (nur die Position, nicht das Savegame!)
         this.db.ref('players/' + this.myId).onDisconnect().remove();
         
-        // Andere Spieler hören
         this.db.ref('players').on('value', (snapshot) => {
             const data = snapshot.val() || {};
             
-            // UI Counter
             if(typeof UI !== 'undefined') {
                 const el = document.getElementById('val-players');
                 if(el) el.textContent = `${Object.keys(data).length} ONLINE`;
             }
 
-            // Auto-Teleport (Jump to Buddy) beim ersten Start
             if (!this.initialJoinDone && Object.keys(data).length > 1) {
                 this.initialJoinDone = true;
                 const ids = Object.keys(data);
@@ -96,7 +83,6 @@ const Network = {
         }
     },
 
-    // Spielstand speichern (dauerhaft)
     save: function(gameState) {
         if(!this.active || !this.myId) return;
         this.db.ref('saves/' + this.myId).set(gameState)
@@ -104,7 +90,17 @@ const Network = {
             .catch(e => console.error("Save Error:", e));
     },
 
-    // Position senden (flüchtig)
+    // NEU: PERMADEATH FUNKTION
+    deleteSave: function() {
+        if(!this.active || !this.myId) return;
+        console.log("LÖSCHE SPIELSTAND FÜR", this.myId);
+        this.db.ref('saves/' + this.myId).remove()
+            .then(() => console.log("Save deleted."))
+            .catch(e => console.error("Delete Error:", e));
+        // Auch aus der Player-Liste entfernen
+        this.db.ref('players/' + this.myId).remove();
+    },
+
     sendMove: function(x, y, level, sector) {
         if (!this.active || !this.myId) return;
         this.db.ref('players/' + this.myId).set({
