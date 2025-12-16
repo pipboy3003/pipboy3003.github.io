@@ -1,6 +1,12 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 ==============================
 
+[v0.0.11a] - 2025-12-16 09:30 (Restoration Update)
+--------------------------------------------------
+- FIX: Kritischer Fehler behoben, bei dem Interaktions-Funktionen (`enterVault`, `toggleControls` etc.) in `ui.js` fehlten, was zu Abstürzen und fehlerhaftem Speichern führte.
+- UI: Schriftgröße der Buttons erhöht (von 1.1rem auf 1.25rem) für bessere Lesbarkeit.
+- DEBUG: Zusätzliches Logging beim Laden von Spielständen hinzugefügt, um "New Character Loop" Fehler besser diagnostizieren zu können.
+
 [v0.0.10l] - 2025-12-16 08:35 (UI Alert System)
 ----------------------------------------------
 - UI: Notification Bubbling implementiert. Wenn es neue Aufgaben oder Stat-Punkte gibt, blinkt der Haupt-Menü-Button (☰) jetzt rot, um den Spieler darauf hinzuweisen, das Menü zu öffnen.
