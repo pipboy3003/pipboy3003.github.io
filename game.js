@@ -77,7 +77,6 @@ const Game = {
         return 3 + (seed % (max - 6)); 
     },
 
-    // WICHTIG: renderStaticMap MUSS VOR loadSector kommen
     renderStaticMap: function() { const ctx = this.cacheCtx; const ts = this.TILE; ctx.fillStyle = "#000"; ctx.fillRect(0, 0, this.cacheCanvas.width, this.cacheCanvas.height); for(let y=0; y<this.MAP_H; y++) for(let x=0; x<this.MAP_W; x++) this.drawTile(ctx, x, y, this.state.currentMap[y][x]); },
 
     init: function(saveData, spawnTarget=null) {
@@ -126,9 +125,7 @@ const Game = {
                 if(!spawnTarget) UI.log(">> Neuer Charakter erstellt.", "text-green-400");
                 this.saveGame(); 
             }
-            // Hier wird loadSector aufgerufen, das wiederum renderStaticMap braucht
             this.loadSector(this.state.sector.x, this.state.sector.y);
-            
             UI.switchView('map').then(() => { 
                 if(UI.els.gameOver) UI.els.gameOver.classList.add('hidden'); 
                 if(typeof Network !== 'undefined') Network.sendMove(this.state.player.x, this.state.player.y, this.state.lvl, this.state.sector);
@@ -232,7 +229,6 @@ const Game = {
                 this.worldData[key] = { layout: map, explored: {}, biome: biome };
             } else {
                 console.error("WorldGen missing!");
-                // Fallback
                 let map = Array(this.MAP_H).fill().map(() => Array(this.MAP_W).fill('.'));
                 this.worldData[key] = { layout: map, explored: {}, biome: biome };
             }
@@ -311,7 +307,6 @@ const Game = {
         if(blockers.includes(tile)) { UI.log("Weg blockiert.", "text-gray-500"); return; }
         
         this.state.player.x = nx; this.state.player.y = ny; this.reveal(nx, ny);
-        
         if(typeof Network !== 'undefined') Network.sendMove(nx, ny, this.state.lvl, this.state.sector);
         
         if(tile === 'G') {
