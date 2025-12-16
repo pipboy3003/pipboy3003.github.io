@@ -119,14 +119,13 @@ const UI = {
         if(this.els.btnLeft) this.els.btnLeft.onclick = () => Game.move(-1, 0);
         if(this.els.btnRight) this.els.btnRight.onclick = () => Game.move(1, 0);
 
-        // VEREINFACHTE TASTATUR STEUERUNG
         window.addEventListener('keydown', (e) => {
             if (!Game.state || Game.state.isGameOver) return;
 
             // KAMPF: Space = Angriff, ESC = Flucht
             if (Game.state.view === 'combat') {
                 if (e.key === ' ') {
-                    e.preventDefault(); // Verhindert Scrollen
+                    e.preventDefault(); 
                     Game.combatAction('attack');
                 }
                 if (e.key === 'Escape') {
@@ -265,7 +264,7 @@ const UI = {
         const v = this.els.version;
         if(!v) return;
         if(status === 'online') {
-            v.textContent = "ONLINE (v0.0.12g)"; // VERSION UPDATE
+            v.textContent = "ONLINE (v0.0.13a)"; // VERSION UPDATE
             v.className = "text-[#39ff14] font-bold tracking-widest"; v.style.textShadow = "0 0 5px #39ff14";
         } else if (status === 'offline') {
             v.textContent = "OFFLINE"; v.className = "text-red-500 font-bold tracking-widest"; v.style.textShadow = "0 0 5px red";
@@ -466,8 +465,6 @@ const UI = {
         document.getElementById('enemy-name').textContent = enemy.name; 
         document.getElementById('enemy-hp-text').textContent = `${Math.max(0, enemy.hp)}/${enemy.maxHp} TP`; 
         document.getElementById('enemy-hp-bar').style.width = `${Math.max(0, (enemy.hp/enemy.maxHp)*100)}%`; 
-        
-        // Buttons sind statisch, keine Highlighting nötig
     },
 
     showDiceOverlay: function() { this.els.diceOverlay = document.getElementById('dice-overlay'); if(this.els.diceOverlay) { this.els.diceOverlay.classList.remove('hidden'); this.els.diceOverlay.classList.add('flex'); document.getElementById('dice-1').textContent = "?"; document.getElementById('dice-2').textContent = "?"; document.getElementById('dice-3').textContent = "?"; const btn = document.getElementById('btn-roll'); if(btn) btn.disabled = false; } },
