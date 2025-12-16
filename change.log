@@ -1,6 +1,12 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 ==============================
 
+[v0.0.13c] - 2025-12-16 23:45 (Final Restoration)
+-------------------------------------------------
+- FIX: `this.draw is not a function` behoben. Die Funktion war versehentlich entfernt worden und ist nun wieder integriert.
+- FIX: `UI.enterVault is not a function` behoben. Die `ui.js` ist nun wieder vollständig und enthält alle Interaktions-Logik.
+- SYSTEM: Der vollständige Code für alle Kerndateien (`game.js`, `ui.js`, `network.js`, `index.html`, `world_gen.js`) wurde bereitgestellt, um Konsistenz zu garantieren.
+
 [v0.0.13b] - 2025-12-16 23:00 (Full Code Repair)
 ------------------------------------------------
 - FIX: Kritischer Absturz im `Game`-Objekt behoben, indem `renderStaticMap` in der `game.js` physisch VOR `init` platziert wurde.
