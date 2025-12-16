@@ -56,6 +56,9 @@ const UI = {
             btnSave: document.getElementById('btn-save'),
             btnLogout: document.getElementById('btn-logout'),
             
+            // NEU: Reset Button
+            btnReset: document.getElementById('btn-reset'),
+            
             btnMenu: document.getElementById('btn-menu-toggle'),
             navMenu: document.getElementById('main-nav'),
             playerCount: document.getElementById('val-players'),
@@ -95,6 +98,7 @@ const UI = {
 
         if(this.els.btnSave) this.els.btnSave.onclick = () => this.handleSaveClick();
         if(this.els.btnLogout) this.els.btnLogout.onclick = () => this.logout('MANUELL AUSGELOGGT');
+        if(this.els.btnReset) this.els.btnReset.onclick = () => this.handleReset();
 
         if(this.els.btnMenu) this.els.btnMenu.onclick = () => this.els.navMenu.classList.toggle('hidden');
         if(this.els.playerCount) this.els.playerCount.onclick = () => this.togglePlayerList();
@@ -144,6 +148,12 @@ const UI = {
         
         if(this.timerInterval) clearInterval(this.timerInterval);
         this.timerInterval = setInterval(() => this.updateTimer(), 1000);
+    },
+    
+    handleReset: function() {
+        if(confirm("WARNUNG: Möchtest du deinen Charakter unwiderruflich löschen und neu starten?")) {
+            Game.hardReset();
+        }
     },
 
     handleSaveClick: function() {
@@ -262,7 +272,7 @@ const UI = {
         const v = this.els.version;
         if(!v) return;
         if(status === 'online') {
-            v.textContent = "ONLINE (v0.0.13d)"; // VERSION UPDATE
+            v.textContent = "ONLINE (v0.0.13h)"; 
             v.className = "text-[#39ff14] font-bold tracking-widest"; v.style.textShadow = "0 0 5px #39ff14";
         } else if (status === 'offline') {
             v.textContent = "OFFLINE"; v.className = "text-red-500 font-bold tracking-widest"; v.style.textShadow = "0 0 5px red";
