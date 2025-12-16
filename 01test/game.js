@@ -1,7 +1,8 @@
 const Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     
-    colors: { '.':'#0a1a0a', '_':'#1a150a', ',':'#051105', '=':'#111', '#':'#000', 'line_default': '#2a5a2a', 'line_wall': '#39ff14', 'line_water': '#224f80', 'V': '#39ff14', 'C': '#eab308', 'S': '#ff0000', 'G': '#00ffff', 'H': '#888888', '^': '#111' },
+    // NEUE SYMBOLE: v, <, > hinzugefügt
+    colors: { '.':'#0a1a0a', '_':'#1a150a', ',':'#051105', '=':'#111', '#':'#000', 'line_default': '#2a5a2a', 'line_wall': '#39ff14', 'line_water': '#224f80', 'V': '#39ff14', 'C': '#eab308', 'S': '#ff0000', 'G': '#00ffff', 'H': '#888888', '^': '#111', 'v':'#111', '<':'#111', '>':'#111' },
     
     monsters: { 
         moleRat: { name: "Maulwurfsratte", hp: 25, dmg: 4, xp: [15, 25], loot: 3, minLvl: 1 }, 
@@ -30,7 +31,6 @@ const Game = {
     init: function(saveData) {
         this.worldData = {};
         this.initCache();
-        
         try {
             if (saveData) {
                 this.state = saveData;
@@ -52,16 +52,12 @@ const Game = {
                     quests: [ { id: "q1", title: "Der Weg nach Hause", text: "Suche Zivilisation.", read: false } ], 
                     startTime: Date.now()
                 };
-                
                 this.state.hp = this.calculateMaxHP(this.getStat('END')); 
                 this.state.maxHp = this.state.hp;
-                
                 UI.log(">> Neuer Charakter erstellt.", "text-green-400");
                 this.saveGame(); 
             }
-
             this.loadSector(this.state.sector.x, this.state.sector.y);
-            
             UI.switchView('map').then(() => { 
                 if(UI.els.gameOver) UI.els.gameOver.classList.add('hidden'); 
                 if(typeof Network !== 'undefined') Network.sendMove(this.state.player.x, this.state.player.y, this.state.lvl, this.state.sector);
@@ -75,33 +71,25 @@ const Game = {
     saveGame: function(manual = false) {
         if(!this.state) return;
         if(manual) UI.log("Speichere...", "text-gray-500");
-        if(typeof Network !== 'undefined') {
-            Network.save(this.state);
-        }
+        if(typeof Network !== 'undefined') Network.save(this.state);
     },
 
     initCache: function() { this.cacheCanvas = document.createElement('canvas'); this.cacheCanvas.width = this.MAP_W * this.TILE; this.cacheCanvas.height = this.MAP_H * this.TILE; this.cacheCtx = this.cacheCanvas.getContext('2d'); },
-    
     calculateMaxHP: function(end) { return 100 + (end - 5) * 10; },
-    
     getStat: function(k) { 
         if(!this.state || !this.state.stats) return 5; 
         let val = this.state.stats[k] || 0; 
         if(this.state.equip) {
             for(let slot in this.state.equip) {
                 const item = this.state.equip[slot];
-                if(item && item.bonus && item.bonus[k]) {
-                    val += item.bonus[k];
-                }
+                if(item && item.bonus && item.bonus[k]) val += item.bonus[k];
             }
         }
         if(this.state.tempStatIncrease && this.state.tempStatIncrease.key === k) val += 1; 
         if(Date.now() < this.state.buffEndTime) val += Math.floor(this.state.lvl * 0.8); 
         return val; 
     },
-
     expToNextLevel: function(l) { return 100 * l; },
-    
     gainExp: function(amount) { 
         this.state.xp += amount; UI.log(`+${amount} EXP.`, 'text-blue-400'); 
         let need = this.expToNextLevel(this.state.lvl); 
@@ -112,9 +100,7 @@ const Game = {
             this.state.hp = this.state.maxHp; 
             UI.log(`LEVEL UP! LVL ${this.state.lvl}`, 'text-yellow-400 font-bold'); 
         }
-        // FIX: Kein Save hier, da meistens CombatEnd folgt, was eh speichert.
     },
-
     teleportTo: function(targetSector, tx, ty) {
         this.state.sector = targetSector;
         this.loadSector(targetSector.x, targetSector.y);
@@ -126,7 +112,7 @@ const Game = {
         UI.log(`Teleport erfolgreich.`, "text-green-400");
     },
 
-    // SPAWN LOGIK MIT MEHR HÄNDLERN
+    // --- FIX: NEUE MAP GENERIERUNG (PFEIL-RICHTUNG) ---
     loadSector: function(sx, sy, isInterior = false, dungeonType = "market") { 
         const key = `${sx},${sy}`; 
         if (isInterior) { 
@@ -135,12 +121,11 @@ const Game = {
             this.renderStaticMap(); 
             return; 
         } 
-        
         if(!this.worldData[key]) { 
             let biome = 'wasteland'; 
             if (sx < 3 && sy < 3) biome = 'jungle'; 
             else if (sx > 5 && sy > 5) biome = 'desert'; 
-            else if (Math.random() < 0.35) biome = 'city'; // 35% Chance auf Stadt (vorher 25%)
+            else if (Math.random() < 0.35) biome = 'city'; 
             
             let gc = '.'; 
             if(biome === 'desert') gc = '_'; 
@@ -149,34 +134,26 @@ const Game = {
             
             let map = Array(this.MAP_H).fill().map(() => Array(this.MAP_W).fill(gc)); 
             
-            // Ränder
-            for(let i=0; i<this.MAP_W; i++) { map[0][i] = '^'; map[this.MAP_H-1][i] = '^'; } 
-            for(let i=0; i<this.MAP_H; i++) { map[i][0] = '^'; map[i][this.MAP_W-1] = '^'; } 
+            // Ränder mit expliziten Richtungen
+            for(let i=0; i<this.MAP_W; i++) { map[0][i] = '^'; map[this.MAP_H-1][i] = 'v'; } // Oben / Unten
+            for(let i=0; i<this.MAP_H; i++) { map[i][0] = '<'; map[i][this.MAP_W-1] = '>'; } // Links / Rechts
             
-            // Objekte verteilen
             if (biome === 'wasteland') { 
                 this.addClusters(map, 'T', 15, 2); this.addClusters(map, 'R', 10, 2); 
-                // NEU: Chance auf einsamen Händler im Ödland
                 if(Math.random() < 0.05) map[Math.floor(this.MAP_H/2)][Math.floor(this.MAP_W/2)] = 'C';
             } 
             else if (biome === 'jungle') { 
                 this.addClusters(map, 'T', 40, 4); this.addClusters(map, '~', 10, 3); 
-                // NEU: Chance auf einsamen Händler im Dschungel
                 if(Math.random() < 0.05) map[Math.floor(this.MAP_H/2)][Math.floor(this.MAP_W/2)] = 'C';
             } 
             else if (biome === 'desert') { 
                 this.addClusters(map, 'R', 20, 1); 
                 if(Math.random() > 0.3) this.addClusters(map, 'H', 2, 0); 
-                // NEU: Chance auf Oase/Händler in der Wüste
                 if(Math.random() < 0.1) map[Math.floor(this.MAP_H/2)][Math.floor(this.MAP_W/2)] = 'C';
             } 
-            else if (biome === 'city') { 
-                this.generateCityLayout(map); 
-            } 
+            else if (biome === 'city') { this.generateCityLayout(map); } 
             
             if(sx === this.state.startSector.x && sy === this.state.startSector.y) map[20][20] = 'V'; 
-            
-            // Tore freimachen
             if(sy>0) this.clearGate(map, Math.floor(this.MAP_W/2), 0, 'G', gc); 
             if(sy<9) this.clearGate(map, Math.floor(this.MAP_W/2), this.MAP_H-1, 'G', gc); 
             if(sx>0) this.clearGate(map, 0, Math.floor(this.MAP_H/2), 'G', gc); 
@@ -184,49 +161,48 @@ const Game = {
             
             this.worldData[key] = { layout: map, explored: {}, biome: biome }; 
         } 
-        
         const data = this.worldData[key]; 
         this.state.currentMap = data.layout; 
         this.state.explored = data.explored; 
-        
-        let zn = "Ödland"; 
-        if(data.biome === 'city') zn = "Ruinenstadt"; 
-        if(data.biome === 'desert') zn = "Glühende Wüste"; 
-        if(data.biome === 'jungle') zn = "Überwucherte Zone"; 
+        let zn = "Ödland"; if(data.biome === 'city') zn = "Ruinenstadt"; if(data.biome === 'desert') zn = "Glühende Wüste"; if(data.biome === 'jungle') zn = "Überwucherte Zone"; 
         this.state.zone = `${zn} (${sx},${sy})`; 
-        
         this.renderStaticMap(); 
     },
 
     renderStaticMap: function() { const ctx = this.cacheCtx; const ts = this.TILE; ctx.fillStyle = "#000"; ctx.fillRect(0, 0, this.cacheCanvas.width, this.cacheCanvas.height); for(let y=0; y<this.MAP_H; y++) for(let x=0; x<this.MAP_W; x++) this.drawTile(ctx, x, y, this.state.currentMap[y][x]); },
     
-    // FIX: DRAW TILE ARROWS
+    // FIX: DRAW TILE MIT EXPLIZITEN PFEIL-CASES
     drawTile: function(ctx, x, y, type, pulse = 1) { 
         const ts = this.TILE; const px = x * ts; const py = y * ts; 
         let bg = this.colors['.']; if(type === '_') bg = this.colors['_']; if(type === ',') bg = this.colors[',']; if(type === '=') bg = this.colors['=']; 
         
-        if (type !== '~' && type !== '^') { ctx.fillStyle = bg; ctx.fillRect(px, py, ts, ts); } 
-        if(type !== '^') { ctx.strokeStyle = "rgba(40, 90, 40, 0.2)"; ctx.lineWidth = 1; ctx.strokeRect(px, py, ts, ts); } 
+        // Exclude Arrow chars from BG fill to prevent artifacts, handled in switch
+        if (type !== '~' && !['^','v','<','>'].includes(type)) { ctx.fillStyle = bg; ctx.fillRect(px, py, ts, ts); } 
+        if(!['^','v','<','>'].includes(type)) { ctx.strokeStyle = "rgba(40, 90, 40, 0.2)"; ctx.lineWidth = 1; ctx.strokeRect(px, py, ts, ts); } 
         
         ctx.beginPath(); 
         switch(type) { 
-            case '^': // GRENZE - PFEILE KORRIGIERT
+            // OBEN
+            case '^': 
                 ctx.fillStyle = "#000"; ctx.fillRect(px, py, ts, ts); ctx.fillStyle = "#222"; 
-                if(y === 0) { // Oben -> Zeigt nach OBEN (Weg vom Zentrum)
-                    ctx.moveTo(px + ts/2, py + 5); ctx.lineTo(px + ts - 5, py + ts - 5); ctx.lineTo(px + 5, py + ts - 5); 
-                } 
-                else if(y === this.MAP_H - 1) { // Unten -> Zeigt nach UNTEN
-                    ctx.moveTo(px + ts/2, py + ts - 5); ctx.lineTo(px + ts - 5, py + 5); ctx.lineTo(px + 5, py + 5); 
-                } 
-                else if(x === 0) { // Links -> Zeigt nach LINKS
-                    ctx.moveTo(px + 5, py + ts/2); ctx.lineTo(px + ts - 5, py + 5); ctx.lineTo(px + ts - 5, py + ts - 5); 
-                } 
-                else if(x === this.MAP_W - 1) { // Rechts -> Zeigt nach RECHTS
-                    ctx.moveTo(px + ts - 5, py + ts/2); ctx.lineTo(px + 5, py + 5); ctx.lineTo(px + 5, py + ts - 5); 
-                } 
-                else { ctx.fillRect(px+5, py+5, ts-10, ts-10); } 
-                ctx.fill(); ctx.strokeStyle = "#333"; ctx.stroke(); 
-                break; 
+                ctx.moveTo(px + ts/2, py + 5); ctx.lineTo(px + ts - 5, py + ts - 5); ctx.lineTo(px + 5, py + ts - 5); 
+                ctx.fill(); ctx.strokeStyle = "#333"; ctx.stroke(); break;
+            // UNTEN
+            case 'v': 
+                ctx.fillStyle = "#000"; ctx.fillRect(px, py, ts, ts); ctx.fillStyle = "#222"; 
+                ctx.moveTo(px + ts/2, py + ts - 5); ctx.lineTo(px + ts - 5, py + 5); ctx.lineTo(px + 5, py + 5); 
+                ctx.fill(); ctx.strokeStyle = "#333"; ctx.stroke(); break;
+            // LINKS
+            case '<': 
+                ctx.fillStyle = "#000"; ctx.fillRect(px, py, ts, ts); ctx.fillStyle = "#222"; 
+                ctx.moveTo(px + 5, py + ts/2); ctx.lineTo(px + ts - 5, py + 5); ctx.lineTo(px + ts - 5, py + ts - 5); 
+                ctx.fill(); ctx.strokeStyle = "#333"; ctx.stroke(); break;
+            // RECHTS
+            case '>': 
+                ctx.fillStyle = "#000"; ctx.fillRect(px, py, ts, ts); ctx.fillStyle = "#222"; 
+                ctx.moveTo(px + ts - 5, py + ts/2); ctx.lineTo(px + 5, py + 5); ctx.lineTo(px + 5, py + ts - 5); 
+                ctx.fill(); ctx.strokeStyle = "#333"; ctx.stroke(); break;
+
             case 'T': ctx.fillStyle = "#1b5e20"; ctx.moveTo(px + ts/2, py + 4); ctx.lineTo(px + ts - 4, py + ts - 4); ctx.lineTo(px + 4, py + ts - 4); ctx.fill(); break; 
             case 'R': ctx.fillStyle = "#444"; ctx.moveTo(px+6, py+10); ctx.lineTo(px+20, py+6); ctx.lineTo(px+24, py+20); ctx.lineTo(px+10, py+24); ctx.fill(); break; 
             case '~': ctx.fillStyle = "#001133"; ctx.fillRect(px, py, ts, ts); ctx.strokeStyle = "#224f80"; ctx.moveTo(px+4, py+15); ctx.lineTo(px+10, py+10); ctx.lineTo(px+16, py+15); ctx.lineTo(px+24, py+10); ctx.stroke(); break; 
@@ -254,8 +230,10 @@ const Game = {
         const startX = Math.floor(this.camera.x / this.TILE); const startY = Math.floor(this.camera.y / this.TILE); 
         const endX = startX + Math.ceil(cvs.width / this.TILE) + 1; const endY = startY + Math.ceil(cvs.height / this.TILE) + 1; 
         
+        // Kollisions-Check beim Zeichnen der Pfeile beachten
         for(let y=startY; y<endY; y++) { for(let x=startX; x<endX; x++) { if(y>=0 && y<this.MAP_H && x>=0 && x<this.MAP_W) { 
             const t = this.state.currentMap[y][x]; 
+            // Zeichne Specials UND Pfeile animiert
             if(['V', 'S', 'C', 'G', 'H'].includes(t)) { this.drawTile(ctx, x, y, t, pulse); } 
         } } } 
         
@@ -282,8 +260,11 @@ const Game = {
         if(dy < 0) this.state.player.rot = 0; else if(dy > 0) this.state.player.rot = Math.PI; else if(dx < 0) this.state.player.rot = -Math.PI/2; else if(dx > 0) this.state.player.rot = Math.PI/2;
         const nx = this.state.player.x + dx; const ny = this.state.player.y + dy;
         if(nx < 0 || nx >= this.MAP_W || ny < 0 || ny >= this.MAP_H) return;
+        
         const tile = this.state.currentMap[ny][nx];
-        if(['^', 'T', '~', 'R', 'B'].includes(tile)) { UI.log("Weg blockiert.", "text-gray-500"); return; }
+        // KORREKTUR: Neue Pfeilsymbole auch als Blocker definieren!
+        if(['^', 'v', '<', '>', 'T', '~', 'R', 'B'].includes(tile)) { UI.log("Weg blockiert.", "text-gray-500"); return; }
+        
         this.state.player.x = nx; this.state.player.y = ny; this.reveal(nx, ny);
         
         if(typeof Network !== 'undefined') Network.sendMove(nx, ny, this.state.lvl, this.state.sector);
@@ -308,6 +289,7 @@ const Game = {
         UI.update();
     },
     
+    // ... [REST BLEIBT GLEICH] ...
     generateCityLayout: function(map) { for(let x=4; x<this.MAP_W; x+=8) for(let y=1; y<this.MAP_H-1; y++) map[y][x] = '='; for(let y=4; y<this.MAP_H; y+=8) for(let x=1; x<this.MAP_W-1; x++) map[y][x] = '='; for(let y=1; y<this.MAP_H-1; y++) { for(let x=1; x<this.MAP_W-1; x++) { if(map[y][x] !== '=') map[y][x] = 'B'; else if(Math.random() < 0.1) map[y][x] = 'R'; } } let placed = false; let attempts = 0; while(!placed && attempts < 100) { attempts++; let rx = Math.floor(Math.random() * (this.MAP_W-4)) + 2; let ry = Math.floor(Math.random() * (this.MAP_H-4)) + 2; if(map[ry][rx] === 'B' && (map[ry+1][rx]==='=' || map[ry-1][rx]==='=')) { map[ry][rx] = 'C'; placed = true; } } if(Math.random() < 0.7) { let placedS = false; let attempts = 0; while(!placedS && attempts < 100) { attempts++; let rx = Math.floor(Math.random() * (this.MAP_W-4)) + 2; let ry = Math.floor(Math.random() * (this.MAP_H-4)) + 2; if(map[ry][rx] === 'B') { map[ry][rx] = 'S'; placedS = true; } } } },
     generateDungeon: function(type) { let map = Array(this.MAP_H).fill().map(() => Array(this.MAP_W).fill('B')); let floorChar = type === "cave" ? '.' : '='; for(let i=0; i<8; i++) { let rx = Math.floor(Math.random() * 20) + 5; let ry = Math.floor(Math.random() * 20) + 5; let w = Math.floor(Math.random() * 8) + 3; let h = Math.floor(Math.random() * 8) + 3; for(let y=ry; y<ry+h; y++) for(let x=rx; x<rx+w; x++) { if(y<this.MAP_H-1 && x<this.MAP_W-1) map[y][x] = floorChar; } } map[35][20] = 'G'; this.state.currentMap = map; this.state.player.x = 20; this.state.player.y = 34; this.state.explored = {}; this.reveal(20, 34); },
     addClusters: function(map, type, count, size) { for(let k=0; k<count; k++) { let cx = Math.floor(Math.random() * (this.MAP_W-4)) + 2; let cy = Math.floor(Math.random() * (this.MAP_H-4)) + 2; if (size === 0) { if(['.', '_', ','].includes(map[cy][cx])) map[cy][cx] = type; } else { for(let y=cy-size; y<=cy+size; y++) { for(let x=cx-size; x<=cx+size; x++) { if(x>1 && x<this.MAP_W-2 && y>1 && y<this.MAP_H-2) { if(Math.random() > 0.4 && Math.hypot(x-cx, y-cy) <= size) { if(['.', '_', ','].includes(map[y][x])) map[y][x] = type; } } } } } } },
@@ -322,7 +304,21 @@ const Game = {
     combatAction: function(act) { if(this.state.isGameOver) return; if(!this.state.enemy) return; if(act === 'attack') { const wpn = this.state.equip.weapon; if(wpn.isRanged) { if(this.state.ammo > 0) this.state.ammo--; else { UI.log("Keine Munition! Fäuste.", "text-red-500"); this.state.equip.weapon = this.items.fists; this.enemyTurn(); return; } } if(Math.random() > 0.3) { const baseDmg = wpn.baseDmg || 2; const dmg = Math.floor(baseDmg + (this.getStat('STR') * 1.5)); this.state.enemy.hp -= dmg; UI.log(`Treffer: ${dmg} Schaden.`, "text-green-400"); if(this.state.enemy.hp <= 0) { this.state.caps += this.state.enemy.loot; UI.log(`Sieg! ${this.state.enemy.loot} Kronkorken.`, "text-yellow-400"); this.gainExp(this.getRandomXP(this.state.enemy.xp)); if(this.state.enemy.isLegendary) { UI.showDiceOverlay(); } else { this.endCombat(); } return; } } else UI.log("Verfehlt!", "text-gray-500"); this.enemyTurn(); } else if (act === 'flee') { if(Math.random() < 0.4 + (this.getStat('AGI')*0.05)) { UI.log("Geflohen.", "text-green-400"); this.endCombat(); } else { UI.log("Flucht gescheitert!", "text-red-500"); this.enemyTurn(); } } UI.update(); if(this.state.view === 'combat') UI.renderCombat(); },
     rollLegendaryLoot: function() { const result = Math.floor(Math.random() * 16) + 3; let msg = "", type = ""; if(result <= 7) { type = "CAPS"; const amt = this.state.lvl * 80; this.state.caps += amt; msg = `KRONKORKEN REGEN: +${amt} Caps!`; } else if (result <= 12) { type = "AMMO"; const amt = this.state.lvl * 25; this.state.ammo += amt; msg = `MUNITIONS JACKPOT: +${amt} Schuss!`; } else { type = "BUFF"; this.state.buffEndTime = Date.now() + 300000; msg = `S.P.E.C.I.A.L. OVERDRIVE! (5 Min)`; } return { val: result, msg: msg, type: type }; },
     enemyTurn: function() { if(this.state.enemy.hp <= 0) return; if(Math.random() < 0.8) { const armor = (this.getStat('END') * 0.5); const dmg = Math.max(1, Math.floor(this.state.enemy.dmg - armor)); this.state.hp -= dmg; UI.log(`Schaden erhalten: ${dmg}`, "text-red-400"); this.checkDeath(); } else UI.log("Gegner verfehlt.", "text-gray-500"); },
-    checkDeath: function() { if(this.state.hp <= 0) { this.state.hp = 0; this.state.isGameOver = true; UI.update(); UI.showGameOver(); } },
+    
+    // FIX: PERMADEATH LOGIK
+    checkDeath: function() { 
+        if(this.state.hp <= 0) { 
+            this.state.hp = 0; 
+            this.state.isGameOver = true; 
+            
+            // Sofort Spielstand löschen!
+            if(typeof Network !== 'undefined') Network.deleteSave();
+            
+            UI.update(); 
+            UI.showGameOver(); 
+        } 
+    },
+    
     endCombat: function() { this.state.enemy = null; this.state.inDialog = false; UI.switchView('map'); this.saveGame(); },
     rest: function() { this.state.hp = this.state.maxHp; UI.log("Ausgeruht. HP voll.", "text-blue-400"); UI.update(); this.saveGame(); },
     heal: function() { if(this.state.caps >= 25) { this.state.caps -= 25; this.rest(); } else UI.log("Zu wenig Kronkorken.", "text-red-500"); },
