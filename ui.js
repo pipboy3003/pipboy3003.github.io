@@ -55,9 +55,7 @@ const UI = {
             btnQuests: document.getElementById('btn-quests'),
             btnSave: document.getElementById('btn-save'),
             btnLogout: document.getElementById('btn-logout'),
-            
-            // NEU: Reset Button
-            btnReset: document.getElementById('btn-reset'),
+            btnReset: document.getElementById('btn-reset'), // Reset Button
             
             btnMenu: document.getElementById('btn-menu-toggle'),
             navMenu: document.getElementById('main-nav'),
@@ -71,6 +69,11 @@ const UI = {
             spawnMsg: document.getElementById('spawn-msg'),
             spawnList: document.getElementById('spawn-list'),
             btnSpawnRandom: document.getElementById('btn-spawn-random'),
+            
+            // RESET OVERLAY
+            resetOverlay: document.getElementById('reset-overlay'),
+            btnConfirmReset: document.getElementById('btn-confirm-reset'),
+            btnCancelReset: document.getElementById('btn-cancel-reset'),
             
             gameScreen: document.getElementById('game-screen'),
             loginInput: document.getElementById('survivor-id-input'),
@@ -93,12 +96,17 @@ const UI = {
             });
         }
         
+        // BUTTON BINDINGS
         const btnLogin = document.getElementById('btn-login');
         if(btnLogin) btnLogin.onclick = () => this.attemptLogin();
 
         if(this.els.btnSave) this.els.btnSave.onclick = () => this.handleSaveClick();
         if(this.els.btnLogout) this.els.btnLogout.onclick = () => this.logout('MANUELL AUSGELOGGT');
         if(this.els.btnReset) this.els.btnReset.onclick = () => this.handleReset();
+
+        // Overlay Bindings
+        if(this.els.btnConfirmReset) this.els.btnConfirmReset.onclick = () => this.confirmReset();
+        if(this.els.btnCancelReset) this.els.btnCancelReset.onclick = () => this.cancelReset();
 
         if(this.els.btnMenu) this.els.btnMenu.onclick = () => this.els.navMenu.classList.toggle('hidden');
         if(this.els.playerCount) this.els.playerCount.onclick = () => this.togglePlayerList();
@@ -150,9 +158,24 @@ const UI = {
         this.timerInterval = setInterval(() => this.updateTimer(), 1000);
     },
     
+    // NEW RESET LOGIC
     handleReset: function() {
-        if(confirm("WARNUNG: Möchtest du deinen Charakter unwiderruflich löschen und neu starten?")) {
+        // Overlay anzeigen, Menü verstecken
+        this.els.navMenu.classList.add('hidden');
+        if(this.els.resetOverlay) {
+            this.els.resetOverlay.style.display = 'flex';
+        }
+    },
+    
+    confirmReset: function() {
+        if(typeof Game !== 'undefined') {
             Game.hardReset();
+        }
+    },
+    
+    cancelReset: function() {
+        if(this.els.resetOverlay) {
+            this.els.resetOverlay.style.display = 'none';
         }
     },
 
@@ -272,7 +295,7 @@ const UI = {
         const v = this.els.version;
         if(!v) return;
         if(status === 'online') {
-            v.textContent = "ONLINE (v0.0.13h)"; 
+            v.textContent = "ONLINE (v0.0.13i)"; 
             v.className = "text-[#39ff14] font-bold tracking-widest"; v.style.textShadow = "0 0 5px #39ff14";
         } else if (status === 'offline') {
             v.textContent = "OFFLINE"; v.className = "text-red-500 font-bold tracking-widest"; v.style.textShadow = "0 0 5px red";
