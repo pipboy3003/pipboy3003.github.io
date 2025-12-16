@@ -1,7 +1,7 @@
 const UI = {
     els: {},
     timerInterval: null,
-    lastInputTime: Date.now(), // Für AFK Check
+    lastInputTime: Date.now(), 
     biomeColors: { 'wasteland': '#5d5345', 'desert': '#eecfa1', 'jungle': '#1a3300', 'city': '#555555' },
 
     log: function(msg, color="text-green-500") { 
@@ -47,8 +47,7 @@ const UI = {
             text: document.getElementById('encounter-text'),
             timer: document.getElementById('game-timer'),
             
-            // Buttons NEU
-            btnNew: document.getElementById('btn-new'), // Evtl nicht mehr da, aber egal
+            btnNew: document.getElementById('btn-new'),
             btnWiki: document.getElementById('btn-wiki'),
             btnMap: document.getElementById('btn-map'),
             btnChar: document.getElementById('btn-char'),
@@ -56,7 +55,6 @@ const UI = {
             btnSave: document.getElementById('btn-save'),
             btnLogout: document.getElementById('btn-logout'),
             
-            // Menü
             btnMenu: document.getElementById('btn-menu-toggle'),
             navMenu: document.getElementById('main-nav'),
 
@@ -71,7 +69,6 @@ const UI = {
             loginStatus: document.getElementById('login-status')
         };
 
-        // Input Listener für AFK Reset
         ['mousemove', 'keydown', 'click', 'touchstart'].forEach(evt => {
             document.body.addEventListener(evt, () => this.lastInputTime = Date.now());
         });
@@ -82,7 +79,6 @@ const UI = {
             });
         }
 
-        // MENÜ LOGIK
         if(this.els.btnMenu) {
             this.els.btnMenu.onclick = () => {
                 this.els.navMenu.classList.toggle('hidden');
@@ -133,31 +129,25 @@ const UI = {
         
         this.els.loginStatus.textContent = "VERBINDE MIT VAULT-TEC NETZWERK...";
         this.els.loginStatus.className = "mt-4 text-yellow-400 animate-pulse";
-        this.lastInputTime = Date.now(); // Reset Timer bei Login
+        this.lastInputTime = Date.now(); 
         
         try {
             if(typeof Network === 'undefined') throw new Error("Netzwerk Modul fehlt");
             Network.init(); 
-            
             const saveData = await Network.login(id);
-            
             this.els.loginScreen.style.display = 'none';
             this.els.gameScreen.classList.remove('hidden');
             this.els.gameScreen.classList.remove('opacity-0');
-            
             Game.init(saveData); 
-            
         } catch(e) {
             this.error("LOGIN FEHLGESCHLAGEN: " + e.message);
         }
     },
 
-    // NEU: LOGOUT FUNKTION
     logout: function(reason="AUSGELOGGT") {
         if(typeof Game !== 'undefined') Game.saveGame(true);
         if(typeof Network !== 'undefined') Network.disconnect();
         
-        // UI Reset
         this.els.gameScreen.classList.add('hidden');
         this.els.gameScreen.classList.add('opacity-0');
         this.els.loginScreen.style.display = 'flex';
@@ -170,14 +160,14 @@ const UI = {
             this.els.loginInput.value = "";
             this.els.loginInput.focus();
         }
-        this.els.navMenu.classList.add('hidden'); // Menü zu
+        if(this.els.navMenu) this.els.navMenu.classList.add('hidden');
     },
 
     setConnectionState: function(status) {
         const v = this.els.version;
         if(!v) return;
         if(status === 'online') {
-            v.textContent = "ONLINE (v0.0.10k)"; 
+            v.textContent = "ONLINE (v0.0.10l)"; // VERSION UPDATE
             v.className = "text-[#39ff14] font-bold tracking-widest"; v.style.textShadow = "0 0 5px #39ff14";
         } else if (status === 'offline') {
             v.textContent = "OFFLINE"; v.className = "text-red-500 font-bold tracking-widest"; v.style.textShadow = "0 0 5px red";
@@ -189,14 +179,12 @@ const UI = {
     toggleView: function(name) { if (Game.state.view === name) this.switchView('map'); else this.switchView(name); },
     
     updateTimer: function() { 
-        // AFK CHECK (5 Min = 300000ms)
         if(Game.state && this.els.gameScreen && !this.els.gameScreen.classList.contains('hidden')) {
             if(Date.now() - this.lastInputTime > 300000) {
                 this.logout("AFK: ZEITÜBERSCHREITUNG");
                 return;
             }
         }
-
         if(!Game.state || !Game.state.startTime) return; 
         const diff = Math.floor((Date.now() - Game.state.startTime) / 1000); 
         const h = Math.floor(diff / 3600).toString().padStart(2,'0'); 
@@ -207,7 +195,6 @@ const UI = {
     },
 
     switchView: async function(name) { 
-        // Menü schließen bei Klick
         if(this.els.navMenu) this.els.navMenu.classList.add('hidden');
 
         const verDisplay = document.getElementById('version-display'); 
@@ -276,12 +263,14 @@ const UI = {
         const expPct = Math.min(100, (Game.state.xp / nextXp) * 100); 
         if(this.els.expBarTop) this.els.expBarTop.style.width = `${expPct}%`; 
         
+        // --- NEU: ALARM TRACKING FÜR HAUPTMENÜ ---
+        let hasAlert = false;
+
         if(this.els.btnChar) {
             if(Game.state.statPoints > 0) { 
-                this.els.btnChar.classList.add('level-up-alert'); 
                 this.els.btnChar.innerHTML = "CHAR <span class='text-yellow-400'>!</span>"; 
+                hasAlert = true;
             } else { 
-                this.els.btnChar.classList.remove('level-up-alert'); 
                 this.els.btnChar.textContent = "CHARAKTER"; 
             }
         } 
@@ -289,16 +278,28 @@ const UI = {
         const unreadQuests = Game.state.quests.some(q => !q.read); 
         if(this.els.btnQuests) {
             if(unreadQuests) { 
-                this.els.btnQuests.classList.add('quest-alert'); 
                 this.els.btnQuests.innerHTML = "AUFGABEN <span class='text-cyan-400'>!</span>"; 
+                hasAlert = true;
             } else { 
-                this.els.btnQuests.classList.remove('quest-alert'); 
                 this.els.btnQuests.textContent = "AUFGABEN"; 
             }
         } 
+
+        // MENÜ-BUTTON UPDATEN
+        if(this.els.btnMenu) {
+            if(hasAlert) {
+                // Rot färben und ! statt Symbol anzeigen
+                this.els.btnMenu.classList.add('border-red-500', 'text-red-500');
+                this.els.btnMenu.innerHTML = 'MENÜ <span class="text-xl font-bold animate-pulse">!</span>';
+            } else {
+                // Normalzustand
+                this.els.btnMenu.classList.remove('border-red-500', 'text-red-500');
+                this.els.btnMenu.innerHTML = 'MENÜ <span class="text-xl">☰</span>';
+            }
+        }
+        // ----------------------------------------
         
         const inCombat = Game.state.view === 'combat'; 
-        // Alle Nav Buttons disablen wenn im Kampf
         [this.els.btnWiki, this.els.btnMap, this.els.btnChar, this.els.btnQuests, this.els.btnSave, this.els.btnLogout].forEach(btn => {
             if(btn) btn.disabled = inCombat;
         });
@@ -342,37 +343,7 @@ const UI = {
     closeQuestDetail: function() { document.getElementById('quest-detail').classList.add('hidden'); document.getElementById('quest-list').classList.remove('hidden'); this.renderQuests(); },
     renderChar: function() { const grid = document.getElementById('stat-grid'); if(!grid) return; const lvlDisplay = document.getElementById('char-lvl'); if(lvlDisplay) lvlDisplay.textContent = Game.state.lvl; grid.innerHTML = Object.keys(Game.state.stats).map(k => { const val = Game.getStat(k); const btn = Game.state.statPoints > 0 ? `<button class="border border-green-500 px-1 ml-2" onclick="Game.upgradeStat('${k}')">+</button>` : ''; return `<div class="flex justify-between"><span>${k}: ${val}</span>${btn}</div>`; }).join(''); const nextXp = Game.expToNextLevel(Game.state.lvl); const expPct = Math.min(100, (Game.state.xp / nextXp) * 100); document.getElementById('char-exp').textContent = Game.state.xp; document.getElementById('char-next').textContent = nextXp; document.getElementById('char-exp-bar').style.width = `${expPct}%`; document.getElementById('char-points').textContent = Game.state.statPoints; const btn = document.getElementById('btn-assign'); if(btn) btn.disabled = Game.state.statPoints <= 0; document.getElementById('char-equip').innerHTML = `Waffe: ${Game.state.equip.weapon.name}<br>Rüstung: ${Game.state.equip.body.name}`; },
     renderWiki: function() { const content = document.getElementById('wiki-content'); if(!content) return; content.innerHTML = Object.keys(Game.monsters).map(k => { const m = Game.monsters[k]; const xpText = Array.isArray(m.xp) ? `${m.xp[0]}-${m.xp[1]}` : m.xp; return `<div class="border-b border-green-900 pb-1"><div class="font-bold text-yellow-400">${m.name}</div><div class="text-xs opacity-70">HP: ~${m.hp}, XP: ${xpText}</div></div>`; }).join(''); },
-    
-    renderWorldMap: function() {
-        const grid = document.getElementById('world-grid');
-        if(!grid) return;
-        grid.innerHTML = '';
-        for(let y=0; y<8; y++) {
-            for(let x=0; x<8; x++) {
-                const d = document.createElement('div');
-                d.className = "border border-green-900/30 flex justify-center items-center text-xs relative";
-                if(x === Game.state.sector.x && y === Game.state.sector.y) {
-                    d.style.backgroundColor = "#39ff14"; d.style.color = "black"; d.style.fontWeight = "bold"; d.textContent = "YOU"; 
-                } 
-                else if(Game.worldData[`${x},${y}`]) {
-                    const biome = Game.worldData[`${x},${y}`].biome;
-                    d.style.backgroundColor = this.biomeColors[biome] || '#4a3d34';
-                }
-                if(typeof Network !== 'undefined' && Network.otherPlayers) {
-                    const playersHere = Object.values(Network.otherPlayers).filter(p => p.sector && p.sector.x === x && p.sector.y === y);
-                    if(playersHere.length > 0) {
-                        const dot = document.createElement('div');
-                        dot.className = "absolute w-2 h-2 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_5px_cyan]";
-                        if(x === Game.state.sector.x && y === Game.state.sector.y) { dot.style.top = "2px"; dot.style.right = "2px"; }
-                        d.appendChild(dot);
-                    }
-                }
-                grid.appendChild(d);
-            }
-        }
-        grid.style.gridTemplateColumns = "repeat(8, 1fr)";
-    },
-
+    renderWorldMap: function() { const grid = document.getElementById('world-grid'); if(!grid) return; grid.innerHTML = ''; for(let y=0; y<8; y++) { for(let x=0; x<8; x++) { const d = document.createElement('div'); d.className = "border border-green-900/30 flex justify-center items-center text-xs relative"; if(x === Game.state.sector.x && y === Game.state.sector.y) { d.style.backgroundColor = "#39ff14"; d.style.color = "black"; d.style.fontWeight = "bold"; d.textContent = "YOU"; } else if(Game.worldData[`${x},${y}`]) { const biome = Game.worldData[`${x},${y}`].biome; d.style.backgroundColor = this.biomeColors[biome] || '#4a3d34'; } if(typeof Network !== 'undefined' && Network.otherPlayers) { const playersHere = Object.values(Network.otherPlayers).filter(p => p.sector && p.sector.x === x && p.sector.y === y); if(playersHere.length > 0) { const dot = document.createElement('div'); dot.className = "absolute w-2 h-2 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_5px_cyan]"; if(x === Game.state.sector.x && y === Game.state.sector.y) { dot.style.top = "2px"; dot.style.right = "2px"; } d.appendChild(dot); } } grid.appendChild(d); } } grid.style.gridTemplateColumns = "repeat(8, 1fr)"; },
     renderCity: function() { const con = document.getElementById('city-options'); if(!con) return; con.innerHTML = ''; const addBtn = (txt, cb, disabled=false) => { const b = document.createElement('button'); b.className = "action-button w-full mb-2 text-left p-3 flex justify-between"; b.innerHTML = txt; b.onclick = cb; if(disabled) { b.disabled = true; b.style.opacity = 0.5; } con.appendChild(b); }; addBtn("Heilen (25 Kronkorken)", () => Game.heal(), Game.state.caps < 25 || Game.state.hp >= Game.state.maxHp); addBtn("Munition (10 Stk / 10 Kronkorken)", () => Game.buyAmmo(), Game.state.caps < 10); addBtn("Händler / Waffen & Rüstung", () => this.renderShop(con)); addBtn("Stadt verlassen", () => this.switchView('map')); },
     renderShop: function(container) { container.innerHTML = ''; const backBtn = document.createElement('button'); backBtn.className = "action-button w-full mb-4 text-center border-yellow-400 text-yellow-400"; backBtn.textContent = "ZURÜCK ZUM PLATZ"; backBtn.onclick = () => this.renderCity(); container.appendChild(backBtn); Object.keys(Game.items).forEach(key => { const item = Game.items[key]; if(item.cost > 0 && Game.state.lvl >= (item.requiredLevel || 0) - 2) { const canAfford = Game.state.caps >= item.cost; const isEquipped = (Game.state.equip[item.slot] && Game.state.equip[item.slot].name === item.name); let label = `<span>${item.name}</span> <span>${item.cost} Kronkorken</span>`; if(isEquipped) label = `<span class="text-green-500">[AUSGERÜSTET]</span>`; const btn = document.createElement('button'); btn.className = "action-button w-full mb-2 flex justify-between text-sm"; btn.innerHTML = label; if(!canAfford || isEquipped) { btn.disabled = true; btn.style.opacity = 0.5; } else { btn.onclick = () => Game.buyItem(key); } container.appendChild(btn); } }); },
     renderCombat: function() { const enemy = Game.state.enemy; if(!enemy) return; document.getElementById('enemy-name').textContent = enemy.name; document.getElementById('enemy-hp-text').textContent = `${Math.max(0, enemy.hp)}/${enemy.maxHp} TP`; document.getElementById('enemy-hp-bar').style.width = `${Math.max(0, (enemy.hp/enemy.maxHp)*100)}%`; }
