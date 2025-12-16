@@ -57,6 +57,9 @@ const UI = {
             
             btnMenu: document.getElementById('btn-menu-toggle'),
             navMenu: document.getElementById('main-nav'),
+            playerCount: document.getElementById('val-players'), // NEU
+            playerList: document.getElementById('player-list-overlay'), // NEU
+            playerListContent: document.getElementById('player-list-content'), // NEU
 
             btnUp: document.getElementById('btn-up'),
             btnDown: document.getElementById('btn-down'),
@@ -83,6 +86,11 @@ const UI = {
             this.els.btnMenu.onclick = () => {
                 this.els.navMenu.classList.toggle('hidden');
             };
+        }
+        
+        // Player List Listener
+        if(this.els.playerCount) {
+            this.els.playerCount.onclick = () => this.togglePlayerList();
         }
 
         if(this.els.btnWiki) this.els.btnWiki.onclick = () => this.toggleView('wiki');
@@ -161,13 +169,39 @@ const UI = {
             this.els.loginInput.focus();
         }
         if(this.els.navMenu) this.els.navMenu.classList.add('hidden');
+        if(this.els.playerList) this.els.playerList.style.display = 'none';
+    },
+
+    // NEU: PLAYER LIST TOGGLE
+    togglePlayerList: function() {
+        if(this.els.playerList.style.display === 'flex') {
+            this.els.playerList.style.display = 'none';
+        } else {
+            this.updatePlayerList();
+            this.els.playerList.style.display = 'flex';
+        }
+    },
+
+    updatePlayerList: function() {
+        if(!this.els.playerListContent || typeof Network === 'undefined') return;
+        
+        let html = `<div class="text-green-400">> ${Network.myId} (DU)</div>`;
+        
+        if(Network.otherPlayers) {
+            for(let id in Network.otherPlayers) {
+                const p = Network.otherPlayers[id];
+                const loc = (p.sector) ? `[${p.sector.x},${p.sector.y}]` : '[?]';
+                html += `<div class="text-cyan-400">> ${id} ${loc}</div>`;
+            }
+        }
+        this.els.playerListContent.innerHTML = html;
     },
 
     setConnectionState: function(status) {
         const v = this.els.version;
         if(!v) return;
         if(status === 'online') {
-            v.textContent = "ONLINE (v0.0.11a)"; 
+            v.textContent = "ONLINE (v0.0.11c)"; 
             v.className = "text-[#39ff14] font-bold tracking-widest"; v.style.textShadow = "0 0 5px #39ff14";
         } else if (status === 'offline') {
             v.textContent = "OFFLINE"; v.className = "text-red-500 font-bold tracking-widest"; v.style.textShadow = "0 0 5px red";
@@ -196,6 +230,7 @@ const UI = {
 
     switchView: async function(name) { 
         if(this.els.navMenu) this.els.navMenu.classList.add('hidden');
+        if(this.els.playerList) this.els.playerList.style.display = 'none';
 
         const verDisplay = document.getElementById('version-display'); 
         const ver = verDisplay ? verDisplay.textContent.trim() : Date.now(); 
