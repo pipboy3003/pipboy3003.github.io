@@ -48,7 +48,7 @@ const UI = {
             timer: document.getElementById('game-timer'),
             
             btnNew: document.getElementById('btn-new'),
-            btnInv: document.getElementById('btn-inv'), // NEU
+            btnInv: document.getElementById('btn-inv'),
             btnWiki: document.getElementById('btn-wiki'),
             btnMap: document.getElementById('btn-map'),
             btnChar: document.getElementById('btn-char'),
@@ -62,15 +62,21 @@ const UI = {
             playerList: document.getElementById('player-list-overlay'),
             playerListContent: document.getElementById('player-list-content'),
 
+            // Spawn Screen
+            loginScreen: document.getElementById('login-screen'),
+            spawnScreen: document.getElementById('spawn-screen'),
+            spawnList: document.getElementById('spawn-list'),
+            btnSpawnRandom: document.getElementById('btn-spawn-random'),
+            
+            gameScreen: document.getElementById('game-screen'),
+            loginInput: document.getElementById('survivor-id-input'),
+            loginStatus: document.getElementById('login-status'),
+            gameOver: document.getElementById('game-over-screen'),
+
             btnUp: document.getElementById('btn-up'),
             btnDown: document.getElementById('btn-down'),
             btnLeft: document.getElementById('btn-left'),
-            btnRight: document.getElementById('btn-right'),
-            gameOver: document.getElementById('game-over-screen'),
-            loginScreen: document.getElementById('login-screen'),
-            gameScreen: document.getElementById('game-screen'),
-            loginInput: document.getElementById('survivor-id-input'),
-            loginStatus: document.getElementById('login-status')
+            btnRight: document.getElementById('btn-right')
         };
 
         ['mousemove', 'keydown', 'click', 'touchstart'].forEach(evt => {
@@ -82,22 +88,24 @@ const UI = {
                 if (e.key === "Enter") this.attemptLogin();
             });
         }
-
-        if(this.els.btnMenu) {
-            this.els.btnMenu.onclick = () => {
-                this.els.navMenu.classList.toggle('hidden');
-            };
-        }
         
-        if(this.els.playerCount) {
-            this.els.playerCount.onclick = () => this.togglePlayerList();
-        }
+        // BUTTON BINDINGS (Wichtig!)
+        const btnLogin = document.getElementById('btn-login');
+        if(btnLogin) btnLogin.onclick = () => this.attemptLogin();
+
+        if(this.els.btnSave) this.els.btnSave.onclick = () => Game.saveGame(true);
+        if(this.els.btnLogout) this.els.btnLogout.onclick = () => this.logout('MANUELL AUSGELOGGT');
+
+        if(this.els.btnMenu) this.els.btnMenu.onclick = () => this.els.navMenu.classList.toggle('hidden');
+        if(this.els.playerCount) this.els.playerCount.onclick = () => this.togglePlayerList();
 
         if(this.els.btnInv) this.els.btnInv.onclick = () => this.toggleView('inventory');
         if(this.els.btnWiki) this.els.btnWiki.onclick = () => this.toggleView('wiki');
         if(this.els.btnMap) this.els.btnMap.onclick = () => this.toggleView('worldmap');
         if(this.els.btnChar) this.els.btnChar.onclick = () => this.toggleView('char');
         if(this.els.btnQuests) this.els.btnQuests.onclick = () => this.toggleView('quests');
+
+        if(this.els.btnSpawnRandom) this.els.btnSpawnRandom.onclick = () => this.selectSpawn(null);
 
         if(this.els.dpadToggle) {
             this.els.dpadToggle.onclick = () => {
@@ -135,28 +143,81 @@ const UI = {
             this.els.loginStatus.className = "mt-4 text-red-500 font-bold";
             return;
         }
+        
         this.els.loginStatus.textContent = "VERBINDE MIT VAULT-TEC NETZWERK...";
         this.els.loginStatus.className = "mt-4 text-yellow-400 animate-pulse";
         this.lastInputTime = Date.now(); 
+        
         try {
             if(typeof Network === 'undefined') throw new Error("Netzwerk Modul fehlt");
             Network.init(); 
+            
             const saveData = await Network.login(id);
-            this.els.loginScreen.style.display = 'none';
-            this.els.gameScreen.classList.remove('hidden');
-            this.els.gameScreen.classList.remove('opacity-0');
-            Game.init(saveData); 
+            
+            if (saveData) {
+                // Spielstand gefunden -> Direkt laden
+                this.els.loginScreen.style.display = 'none';
+                this.els.gameScreen.classList.remove('hidden');
+                this.els.gameScreen.classList.remove('opacity-0');
+                Game.init(saveData); 
+            } else {
+                // Kein Spielstand -> Spawn Screen zeigen
+                this.els.loginScreen.style.display = 'none';
+                this.els.spawnScreen.classList.remove('hidden');
+            }
+            
         } catch(e) {
             this.error("LOGIN FEHLGESCHLAGEN: " + e.message);
         }
     },
 
+    // NEU: SPAWN UI
+    renderSpawnList: function(players) {
+        if(!this.els.spawnList) return;
+        this.els.spawnList.innerHTML = '';
+        
+        let count = 0;
+        for(let id in players) {
+            if(id === Network.myId) continue;
+            const p = players[id];
+            const btn = document.createElement('button');
+            btn.className = "action-button w-full text-left p-2 flex justify-between";
+            const sec = p.sector ? `${p.sector.x},${p.sector.y}` : "?,?";
+            btn.innerHTML = `<span>${id}</span> <span class="text-cyan-400">Sektor ${sec}</span>`;
+            
+            // WICHTIG: Click Handler für Spawn
+            btn.onclick = () => this.selectSpawn(p);
+            
+            this.els.spawnList.appendChild(btn);
+            count++;
+        }
+        
+        if(count === 0) {
+            this.els.spawnList.innerHTML = '<div class="text-center italic opacity-50 p-2">Keine Signale. Starte Solo.</div>';
+        }
+    },
+
+    selectSpawn: function(targetPlayer) {
+        this.els.spawnScreen.classList.add('hidden');
+        this.els.gameScreen.classList.remove('hidden');
+        this.els.gameScreen.classList.remove('opacity-0');
+        
+        // Game Init ohne Save, aber mit Target
+        Game.init(null, targetPlayer);
+    },
+
     logout: function(reason="AUSGELOGGT") {
         if(typeof Game !== 'undefined') Game.saveGame(true);
         if(typeof Network !== 'undefined') Network.disconnect();
+        
         this.els.gameScreen.classList.add('hidden');
         this.els.gameScreen.classList.add('opacity-0');
+        
+        // Spawn Screen auch verstecken
+        if(this.els.spawnScreen) this.els.spawnScreen.classList.add('hidden');
+        
         this.els.loginScreen.style.display = 'flex';
+        
         if(this.els.loginStatus) {
             this.els.loginStatus.textContent = reason;
             this.els.loginStatus.className = "mt-4 text-red-500 font-bold blink-red";
@@ -195,7 +256,7 @@ const UI = {
         const v = this.els.version;
         if(!v) return;
         if(status === 'online') {
-            v.textContent = "ONLINE (v0.0.12a)"; // VERSION UPDATE
+            v.textContent = "ONLINE (v0.0.12b)"; 
             v.className = "text-[#39ff14] font-bold tracking-widest"; v.style.textShadow = "0 0 5px #39ff14";
         } else if (status === 'offline') {
             v.textContent = "OFFLINE"; v.className = "text-red-500 font-bold tracking-widest"; v.style.textShadow = "0 0 5px red";
@@ -252,7 +313,7 @@ const UI = {
             else { this.toggleControls(false); } 
             
             if (name === 'char') this.renderChar(); 
-            if (name === 'inventory') this.renderInventory(); // NEU
+            if (name === 'inventory') this.renderInventory(); 
             if (name === 'wiki') this.renderWiki(); 
             if (name === 'worldmap') this.renderWorldMap(); 
             if (name === 'city') this.renderCity(); 
@@ -265,10 +326,10 @@ const UI = {
     },
 
     updateButtonStates: function(activeName) {
-        if(this.els.btnInv) this.els.btnInv.classList.toggle('active', activeName === 'inventory');
         if(this.els.btnWiki) this.els.btnWiki.classList.toggle('active', activeName === 'wiki');
         if(this.els.btnMap) this.els.btnMap.classList.toggle('active', activeName === 'worldmap');
         if(this.els.btnChar) this.els.btnChar.classList.toggle('active', activeName === 'char');
+        if(this.els.btnInv) this.els.btnInv.classList.toggle('active', activeName === 'inventory');
         if(this.els.btnQuests) this.els.btnQuests.classList.toggle('active', activeName === 'quests');
     },
 
@@ -323,7 +384,7 @@ const UI = {
         }
         
         const inCombat = Game.state.view === 'combat'; 
-        [this.els.btnWiki, this.els.btnMap, this.els.btnChar, this.els.btnQuests, this.els.btnSave, this.els.btnLogout].forEach(btn => {
+        [this.els.btnWiki, this.els.btnMap, this.els.btnChar, this.els.btnQuests, this.els.btnSave, this.els.btnLogout, this.els.btnInv].forEach(btn => {
             if(btn) btn.disabled = inCombat;
         });
         
@@ -342,7 +403,6 @@ const UI = {
         } 
     },
 
-    // NEU: RENDER INVENTORY
     renderInventory: function() {
         const list = document.getElementById('inventory-list');
         const countDisplay = document.getElementById('inv-count');
