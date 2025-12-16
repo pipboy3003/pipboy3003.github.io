@@ -1,6 +1,14 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 ==============================
 
+[v0.0.12a] - 2025-12-16 11:30 (Inventory System)
+------------------------------------------------
+- FEATURE: Inventar-System (Backpack) hinzugefügt. Gekaufte Items landen nun im Inventar und können dort angesehen, ausgerüstet oder benutzt werden.
+- ITEMS: Neue Item-Typen "consumable" (Verbrauchsgüter) und "junk" (Schrott) eingeführt.
+- ITEMS: "Stimpack" hinzugefügt (Heilt 50 HP).
+- UI: Neue Ansicht "INVENTAR" im Menü.
+- GAMEPLAY: Waffen/Rüstung werden beim Kauf nicht mehr automatisch angelegt, sondern müssen im Inventar ausgerüstet werden. Das alte Item wandert zurück in den Rucksack.
+
 [v0.0.11c] - 2025-12-16 10:15 (Savegame Restoration Fix)
 -------------------------------------------------------
 - FIX: `UI.enterVault is not a function` behoben. Die Interaktions-Logik war im letzten UI-Refactoring verloren gegangen und ist nun wiederhergestellt.
