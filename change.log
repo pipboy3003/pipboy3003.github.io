@@ -1,6 +1,15 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 ==============================
 
+[v0.0.13] - 2025-12-16 19:30 (World Gen & Terrain Update)
+---------------------------------------------------------
+- CORE: Neues Modul `world_gen.js` für prozedurale Landschaftsgenerierung.
+- WORLD: Terrain-Typen hinzugefügt: Wasser (W), Berge (M), Wälder (t), Straßen (#).
+- INFRASTRUKTUR: Automatische Brücken (=) über Wasser und Tunnel (U) durch Berge generiert.
+- GAMEPLAY: Spieler kann Wasser und Berge nicht mehr ohne Pfad betreten.
+- VISUAL: Erweiterte Farben und Symbole für das neue Terrain im Pip-Boy-Stil.
+- SYSTEM: `WorldGen` Script in `index.html` eingebunden.
+
 [v0.0.12h] - 2025-12-16 17:45 (Gate Logic & Border Fix)
 ------------------------------------------------------
 - LOGIK: `fixMapBorders` Funktion korrigiert. Sie überschreibt nun keine Tore ('G') oder Vaults ('V') mehr, sondern füllt nur fehlende Pfeile auf.
