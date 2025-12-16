@@ -5,6 +5,8 @@ Offen?
 Wir könnten ein System einbauen, bei dem man Körperteile anvisiert (Kopf, Torso, Beine) mit unterschiedlichen Trefferchancen.
 
 
+--------- Levelanzeige im Hauptbildschirm Blinkt rot?! Warum
+
 #Speicherlogik nicht sauber. Es steht Spiel gespeichert, bei erneutem Login mit selbem Namen wird aber ein neuer Char generiert. 
 Speichern im Menü oben gibt im Log nur Spiel wird gespeichert wieder, aber es passiert nichts mehr.
 
