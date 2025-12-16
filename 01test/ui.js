@@ -167,7 +167,7 @@ const UI = {
         const v = this.els.version;
         if(!v) return;
         if(status === 'online') {
-            v.textContent = "ONLINE (v0.0.10l)"; // VERSION UPDATE
+            v.textContent = "ONLINE (v0.0.11a)"; 
             v.className = "text-[#39ff14] font-bold tracking-widest"; v.style.textShadow = "0 0 5px #39ff14";
         } else if (status === 'offline') {
             v.textContent = "OFFLINE"; v.className = "text-red-500 font-bold tracking-widest"; v.style.textShadow = "0 0 5px red";
@@ -263,9 +263,7 @@ const UI = {
         const expPct = Math.min(100, (Game.state.xp / nextXp) * 100); 
         if(this.els.expBarTop) this.els.expBarTop.style.width = `${expPct}%`; 
         
-        // --- NEU: ALARM TRACKING FÜR HAUPTMENÜ ---
         let hasAlert = false;
-
         if(this.els.btnChar) {
             if(Game.state.statPoints > 0) { 
                 this.els.btnChar.innerHTML = "CHAR <span class='text-yellow-400'>!</span>"; 
@@ -274,7 +272,6 @@ const UI = {
                 this.els.btnChar.textContent = "CHARAKTER"; 
             }
         } 
-        
         const unreadQuests = Game.state.quests.some(q => !q.read); 
         if(this.els.btnQuests) {
             if(unreadQuests) { 
@@ -284,20 +281,15 @@ const UI = {
                 this.els.btnQuests.textContent = "AUFGABEN"; 
             }
         } 
-
-        // MENÜ-BUTTON UPDATEN
         if(this.els.btnMenu) {
             if(hasAlert) {
-                // Rot färben und ! statt Symbol anzeigen
                 this.els.btnMenu.classList.add('border-red-500', 'text-red-500');
                 this.els.btnMenu.innerHTML = 'MENÜ <span class="text-xl font-bold animate-pulse">!</span>';
             } else {
-                // Normalzustand
                 this.els.btnMenu.classList.remove('border-red-500', 'text-red-500');
                 this.els.btnMenu.innerHTML = 'MENÜ <span class="text-xl">☰</span>';
             }
         }
-        // ----------------------------------------
         
         const inCombat = Game.state.view === 'combat'; 
         [this.els.btnWiki, this.els.btnMap, this.els.btnChar, this.els.btnQuests, this.els.btnSave, this.els.btnLogout].forEach(btn => {
@@ -338,6 +330,13 @@ const UI = {
         document.getElementById('btn-right').onclick = () => Game.move(1, 0); 
     },
 
+    toggleControls: function(show) { if (!show && this.els.dialog) this.els.dialog.innerHTML = ''; if (this.els.diceOverlay && !show) { this.els.diceOverlay.classList.remove('flex'); this.els.diceOverlay.classList.add('hidden'); } },
+    showGameOver: function() { if(this.els.gameOver) this.els.gameOver.classList.remove('hidden'); this.toggleControls(false); },
+    enterVault: function() { Game.state.inDialog = true; this.els.dialog.innerHTML = ''; const restBtn = document.createElement('button'); restBtn.className = "action-button w-full mb-1 border-blue-500 text-blue-300"; restBtn.textContent = "Ausruhen (Gratis)"; restBtn.onclick = () => { Game.rest(); this.leaveDialog(); }; const leaveBtn = document.createElement('button'); leaveBtn.className = "action-button w-full"; leaveBtn.textContent = "Weiter geht's"; leaveBtn.onclick = () => this.leaveDialog(); this.els.dialog.appendChild(restBtn); this.els.dialog.appendChild(leaveBtn); this.els.dialog.style.display = 'flex'; },
+    enterSupermarket: function() { Game.state.inDialog = true; this.els.dialog.innerHTML = ''; const enterBtn = document.createElement('button'); enterBtn.className = "action-button w-full mb-1 border-red-500 text-red-300"; enterBtn.textContent = "Ruine betreten (Gefahr!)"; enterBtn.onclick = () => { Game.loadSector(0, 0, true, "market"); this.leaveDialog(); }; const leaveBtn = document.createElement('button'); leaveBtn.className = "action-button w-full"; leaveBtn.textContent = "Weitergehen"; leaveBtn.onclick = () => this.leaveDialog(); this.els.dialog.appendChild(enterBtn); this.els.dialog.appendChild(leaveBtn); this.els.dialog.style.display = 'block'; },
+    enterCave: function() { Game.state.inDialog = true; this.els.dialog.innerHTML = ''; const enterBtn = document.createElement('button'); enterBtn.className = "action-button w-full mb-1 border-gray-500 text-gray-300"; enterBtn.textContent = "In die Tiefe (Dungeon)"; enterBtn.onclick = () => { Game.loadSector(0, 0, true, "cave"); this.leaveDialog(); }; const leaveBtn = document.createElement('button'); leaveBtn.className = "action-button w-full"; leaveBtn.textContent = "Weitergehen"; leaveBtn.onclick = () => this.leaveDialog(); this.els.dialog.appendChild(enterBtn); this.els.dialog.appendChild(leaveBtn); this.els.dialog.style.display = 'block'; },
+    leaveDialog: function() { Game.state.inDialog = false; this.els.dialog.style.display = 'none'; this.update(); },
+    
     renderQuests: function() { const list = document.getElementById('quest-list'); if(!list) return; list.innerHTML = Game.state.quests.map(q => ` <div class="border border-green-900 bg-green-900/10 p-2 flex items-center gap-3 cursor-pointer hover:bg-green-900/30 transition-all" onclick="UI.showQuestDetail('${q.id}')"> <div class="text-3xl">✉️</div> <div> <div class="font-bold text-lg text-yellow-400">${q.read ? '' : '<span class="text-cyan-400">[NEU]</span> '}${q.title}</div> <div class="text-xs opacity-70">Zum Lesen klicken</div> </div> </div> `).join(''); },
     showQuestDetail: function(id) { const quest = Game.state.quests.find(q => q.id === id); if(!quest) return; quest.read = true; this.update(); const list = document.getElementById('quest-list'); const detail = document.getElementById('quest-detail'); const content = document.getElementById('quest-content'); list.classList.add('hidden'); detail.classList.remove('hidden'); content.innerHTML = `<h2 class="text-2xl font-bold text-yellow-400 border-b border-green-500 mb-4">${quest.title}</h2><div class="font-mono text-lg leading-relaxed whitespace-pre-wrap">${quest.text}</div>`; },
     closeQuestDetail: function() { document.getElementById('quest-detail').classList.add('hidden'); document.getElementById('quest-list').classList.remove('hidden'); this.renderQuests(); },
