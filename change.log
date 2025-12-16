@@ -1,6 +1,12 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 ==============================
 
+[v0.0.13i] - 2025-12-17 01:15 (Final Syntax & UI Fix)
+-----------------------------------------------------
+- FIX: `Game`-Objekt in `game.js` vollständig validiert. Alle fehlenden Kommas und Klammern wurden korrigiert. `this.drawTile is not a function` sollte endgültig behoben sein.
+- UI: Das "Reset Charakter" Bestätigungsfenster ist nun ein schickes, rot blinkendes In-Game Overlay im Pip-Boy-Stil, statt eines langweiligen Browser-Alerts.
+- SYSTEM: Code vollständig und ohne Platzhalter bereitgestellt.
+
 [v0.0.13g] - 2025-12-17 00:45 (Combat & Syntax Fix)
 ---------------------------------------------------
 - FIX: Kritischer Syntax-Fehler in `game.js` behoben (`Game.move is not a function`). Die Funktionen im `Game`-Objekt sind nun korrekt durch Kommata getrennt.
