@@ -14,10 +14,7 @@ Wir könnten ein System einbauen, bei dem man Körperteile anvisiert (Kopf, Tors
 Nur bei Neuerstellung eines Charakters wird die Karte geladen.
 Die Nachkommenden Spieler sollten die selbe Map zum laufen & benutzen haben wie der Spieler bei dem sie erstellt wurde
 
-
-    - Pfeile am Rand passen noch immer nicht, was den da los? jetzt schauen alle nach OBEN
-    - Angriff und flucht sollen durch die Pfeiltasten auswählbar und durch Entfer und Leertaste betätigbar sein. 
-    - Flucht wird immer über ESC und BACKSPACE realisiert. 
+. 
     - es soll nicht nach jedem Legendary ein Würfelspiel kommen. Setzte die Rate auf 15% 
     - Plus bei Stat Points vergrößern
     
