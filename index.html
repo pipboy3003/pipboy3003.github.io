@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pip-Boy 3000 Mk-V</title>
+    <title>Pip-Boy 3003</title>
+    
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23000%22/><text x=%2250%25%22 y=%2250%25%22 font-size=%2280%22 font-family=%22monospace%22 font-weight=%22bold%22 fill=%22%231aff1a%22 dy=%22.35em%22 text-anchor=%22middle%22>P</text></svg>">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -52,7 +54,7 @@
 <div id="pipboy-case">
     <div id="login-screen">
         <div class="login-box crt-effect-container" style="position: relative; min-width: 300px;">
-            <h1 class="text-6xl font-bold glow-text mb-2">PIP-BOY 3000</h1>
+            <h1 class="text-6xl font-bold glow-text mb-2">PIP-BOY 3003</h1>
             <div class="text-xl mb-8 opacity-80">AUTHENTICATION REQUIRED</div>
             <div class="text-lg">BITTE SURVIVOR-ID EINGEBEN:</div>
             <input type="text" id="survivor-id-input" placeholder="Z.B. MAX_POWER" maxlength="15" autofocus>
@@ -95,7 +97,7 @@
         <header class="header-bar flex-wrap md:flex-nowrap gap-2 py-2 relative">
             <div class="flex flex-row items-center w-1/2 md:w-1/4 justify-start">
                 <div class="font-bold text-lg md:text-xl leading-none whitespace-nowrap" style="text-shadow: 0 0 5px var(--pip-green);">
-                    PIP-BOY <span class="text-xs opacity-70 hidden md:inline">MK-V</span>
+                    PIP-BOY <span class="text-xs opacity-70 hidden md:inline">3003</span>
                 </div>
                 <div id="current-zone-display" class="text-xs opacity-90 leading-none text-[#aaffaa] ml-2 truncate max-w-[120px]">Init...</div>
             </div>
@@ -170,7 +172,6 @@
             if(verDisplay) { verDisplay.textContent = ver; verDisplay.classList.remove('animate-pulse'); }
             if(loginVerDisplay) { loginVerDisplay.textContent = ver; }
             console.log("Loading V:", ver);
-            // HIER IST DIE ÄNDERUNG: WorldGen wird zuerst geladen!
             loadScript('world_gen.js?v=' + ver).then(() => 
                 loadScript('network.js?v=' + ver).then(() => 
                     loadScript('ui.js?v=' + ver).then(() => 
