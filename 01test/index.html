@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pip-Boy 3000 Mk-V</title>
-    
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23000%22/><text x=%2250%25%22 y=%2250%25%22 font-size=%2280%22 font-family=%22monospace%22 font-weight=%22bold%22 fill=%22%231aff1a%22 dy=%22.35em%22 text-anchor=%22middle%22>P</text></svg>">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -41,7 +39,7 @@
         .blink-red { animation: blink-red-anim 1s infinite; }
         @keyframes blink-red-anim { 0%, 100% { opacity: 1; color: red; } 50% { opacity: 0.5; } }
         
-        #login-screen { position: absolute; inset: 0; z-index: 999; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        #login-screen, #spawn-screen { position: absolute; inset: 0; z-index: 999; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .login-box { border: 2px solid var(--pip-green); padding: 40px; text-align: center; box-shadow: 0 0 20px var(--pip-dim); max-width: 90%; }
         #survivor-id-input { background: #000; border: 2px solid var(--pip-green); color: var(--pip-green); font-family: inherit; font-size: 24px; padding: 10px; margin: 20px 0; text-align: center; text-transform: uppercase; outline: none; }
         #survivor-id-input:focus { box-shadow: 0 0 15px var(--pip-green); }
@@ -59,11 +57,25 @@
             <div class="text-lg">BITTE SURVIVOR-ID EINGEBEN:</div>
             <input type="text" id="survivor-id-input" placeholder="Z.B. MAX_POWER" maxlength="15" autofocus>
             <br>
-            <button id="btn-login" class="action-button px-8 py-3 text-2xl font-bold mt-4" onclick="UI.attemptLogin()">VERBINDEN</button>
+            <button id="btn-login" class="action-button px-8 py-3 text-2xl font-bold mt-4">VERBINDEN</button>
             <div id="login-status" class="mt-4 text-yellow-400 min-h-[1.5em] text-sm font-mono"></div>
             <div class="mt-8 text-xs text-[#1aff1a] opacity-50 border-t border-[#1aff1a]/30 pt-2 w-full">
                 SYSTEM VERSION <span id="login-version-display">LOADING...</span>
             </div>
+        </div>
+    </div>
+
+    <div id="spawn-screen" class="hidden">
+        <div class="login-box crt-effect-container" style="min-width: 350px;">
+            <h1 class="text-4xl font-bold glow-text mb-4">NEUER CHARAKTER</h1>
+            <div class="text-lg mb-4 text-cyan-400">WO MÖCHTEST DU STARTEN?</div>
+            
+            <div id="spawn-list" class="flex flex-col gap-2 max-h-[300px] overflow-y-auto mb-4 border border-green-900 p-2">
+                <div class="text-center italic opacity-50">Scanne Netzwerk...</div>
+            </div>
+
+            <button id="btn-spawn-random" class="action-button w-full mb-2">ZUFALL IM ÖDLAND</button>
+            <button class="action-button w-full border-red-500 text-red-500" onclick="location.reload()">ABBRUCH</button>
         </div>
     </div>
 
@@ -86,16 +98,13 @@
                 </div>
                 <div id="current-zone-display" class="text-xs opacity-90 leading-none text-[#aaffaa] ml-2 truncate max-w-[120px]">Init...</div>
             </div>
-
             <div class="hidden md:flex w-1/4 justify-center">
                 <span id="version-display" class="text-yellow-400 font-bold tracking-widest text-xs animate-pulse">...</span>
             </div>
-
             <div class="flex items-center justify-end gap-2 w-1/2 md:w-1/2">
-                <button id="btn-logout" class="action-button px-3 py-1 text-sm md:text-base border-red-500 text-red-400" onclick="UI.logout('MANUELL AUSGELOGGT')">LOGOUT</button>
-                <button id="btn-save" class="action-button px-3 py-1 text-sm md:text-base border-blue-500 text-blue-400 font-bold" onclick="Game.saveGame(true)">SAVE</button>
+                <button id="btn-logout" class="action-button px-3 py-1 text-sm md:text-base border-red-500 text-red-400">LOGOUT</button>
+                <button id="btn-save" class="action-button px-3 py-1 text-sm md:text-base border-blue-500 text-blue-400 font-bold">SAVE</button>
                 <button id="btn-menu-toggle" class="action-button px-3 py-1 text-base font-bold flex items-center gap-1">MENÜ <span class="text-xl leading-none">☰</span></button>
-
                 <div id="main-nav" class="hidden absolute top-full right-0 z-50 flex-col bg-black border-2 border-[#1aff1a] p-2 gap-2 shadow-[0_0_15px_#0d330d] min-w-[160px]">
                     <button id="btn-inv" class="action-button w-full text-left px-2 py-2 text-base font-bold text-yellow-400 border-yellow-400">INVENTAR</button>
                     <button id="btn-wiki" class="action-button w-full text-left px-2 py-2 text-base">WIKI</button>
@@ -105,7 +114,6 @@
                 </div>
             </div>
         </header>
-
         <div id="system-status-bar" class="flex justify-between items-center px-4 py-2 border-b-2 border-[#1aff1a] bg-[#0a1f0a]">
             <div class="flex items-center gap-4 text-sm md:text-base">
                 <div class="flex items-center gap-1"><span>TP:</span><span id="val-hp">--/--</span><div class="w-16 md:w-24 bg-black h-3 border border-[#1a4d1a]"><div id="bar-hp" class="bg-[#1aff1a] h-full" style="width: 100%"></div></div></div>
@@ -152,13 +160,11 @@
     window.onload = function() {
         const verDisplay = document.getElementById('version-display');
         const loginVerDisplay = document.getElementById('login-version-display'); 
-        
         fetch('Version?t=' + Date.now()).then(res => res.text()).then(v => {
             const ver = v.trim();
             if(verDisplay) { verDisplay.textContent = ver; verDisplay.classList.remove('animate-pulse'); }
             if(loginVerDisplay) { loginVerDisplay.textContent = ver; }
             console.log("Loading V:", ver);
-
             loadScript('network.js?v=' + ver).then(() => loadScript('ui.js?v=' + ver)).then(() => loadScript('game.js?v=' + ver)).then(() => {
                 if(typeof UI !== 'undefined') UI.init();
                 console.log("System bereit für Login.");
