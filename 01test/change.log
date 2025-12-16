@@ -1,6 +1,13 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 ==============================
 
+[v0.0.10j] - 2025-12-16 07:45 (Permadeath & Visual Fix)
+-----------------------------------------------------
+- GRAFIK: Richtungspfeile an Kartenrändern werden nun durch explizite Symbole (^, v, <, >) fehlerfrei dargestellt.
+- GAMEPLAY: Permadeath implementiert. Beim Tod wird der Spielstand unwiderruflich aus der Datenbank gelöscht.
+- NETWORK: Neue Funktion `deleteSave` zum Bereinigen der Datenbank bei Game Over.
+- LOGIK: Kollisionsabfrage angepasst, um auch die neuen Randsymbole als Hindernis zu erkennen.
+
 [v0.0.10i] - 2025-12-16 07:35 (Gameplay & Visual Polish)
 -------------------------------------------------------
 - GRAFIK: Richtungspfeile an den Kartenrändern zeigen nun korrekt in die Himmelsrichtung (nach außen).
