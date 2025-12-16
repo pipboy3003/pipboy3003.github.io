@@ -7,6 +7,8 @@
     - Hamburger Menü, zu viele Optionen mitlerweile. Name "Menü mit den 3 Strichen (hamburger symbol) daneben, Funktion als
     Dropdown menü mit den bisherigen Buttons.
 
+Schriftgröße bei den Buttons n tick größer
+Es wird aktuell jedesmal ein neuer Charakter erstellt und nicht der alte geladen. egal ob vorher safe gedrückt wurde oder ausgeloggt
 
 
 
