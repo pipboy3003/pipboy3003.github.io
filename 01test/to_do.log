@@ -6,12 +6,9 @@ Wir könnten ein System einbauen, bei dem man Körperteile anvisiert (Kopf, Tors
 
 
 --------- Levelanzeige im Hauptbildschirm Blinkt rot?! Warum
-
-#Speicherlogik nicht sauber. Es steht Spiel gespeichert, bei erneutem Login mit selbem Namen wird aber ein neuer Char generiert. 
-Speichern im Menü oben gibt im Log nur Spiel wird gespeichert wieder, aber es passiert nichts mehr.
-
-Spawnen IM Baum etc passiert nicht mehr, aber man wird noch eingesperrt. Logischerweise sollte mindestens ein Weg aus so einem Wald sein.
-Siehe screenshot
+-----------Spawnen IM Baum etc passiert nicht mehr, aber man wird noch eingesperrt.
+         Logischerweise sollte mindestens ein Weg aus so einem Wald sein.
+         Siehe screenshot
 
     - Pfeile am Rand passen noch immer nicht, was den da los? jetzt schauen alle nach OBEN
     - Angriff und flucht sollen durch die Pfeiltasten auswählbar und durch Entfer und Leertaste betätigbar sein. 
