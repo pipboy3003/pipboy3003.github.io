@@ -51,6 +51,9 @@ const Game = {
         try {
             if (saveData) {
                 this.state = saveData;
+                // FIX: Softlock verhindern durch Zurücksetzen des Dialog-Status
+                this.state.inDialog = false; 
+                
                 if(!this.state.equip) this.state.equip = { weapon: this.items.fists, body: this.items.vault_suit };
                 if(!this.state.equip.weapon) this.state.equip.weapon = this.items.fists;
                 if(!this.state.equip.body) this.state.equip.body = this.items.vault_suit;
@@ -111,6 +114,7 @@ const Game = {
 
         const tile = this.state.currentMap[ny][nx];
         
+        // FIX: # ist eine Wand, aber isValidSpawn erlaubt es ggf.
         if(['M', 'W', '#', 'U', 't'].includes(tile)) { 
             UI.log("Weg blockiert.", "text-gray-500");
             return; 
@@ -119,11 +123,11 @@ const Game = {
         this.state.player.x = nx;
         this.state.player.y = ny;
         
-        // FIX: Rotation korrigiert für Dreieck das nach OBEN zeigt
-        if(dx === 1) this.state.player.rot = Math.PI / 2;  // Rechts
+        // FIX: Rotation Logik (Canvas 0 Grad = Nach Oben in unserer Zeichnung)
+        if(dx === 1) this.state.player.rot = Math.PI / 2;   // Rechts
         if(dx === -1) this.state.player.rot = -Math.PI / 2; // Links
-        if(dy === 1) this.state.player.rot = Math.PI;      // Unten
-        if(dy === -1) this.state.player.rot = 0;           // Oben
+        if(dy === 1) this.state.player.rot = Math.PI;       // Unten
+        if(dy === -1) this.state.player.rot = 0;            // Oben
 
         this.reveal(nx, ny);
         
@@ -228,7 +232,8 @@ const Game = {
     isValidSpawn: function(x, y) {
         if(x < 1 || x >= this.MAP_W-1 || y < 1 || y >= this.MAP_H-1) return false;
         const t = this.state.currentMap[y][x];
-        return ['.', '_', ',', '=', '#'].includes(t);
+        // FIX: '#' (Wand) entfernt aus validen Spawns, damit man nicht in Mauern feststeckt
+        return ['.', '_', ',', '='].includes(t);
     },
 
     fixMapBorders: function(map) {
@@ -265,7 +270,6 @@ const Game = {
         if (type !== '~' && !['^','v','<','>'].includes(type)) { ctx.fillStyle = bg; ctx.fillRect(px, py, ts, ts); } 
         if(!['^','v','<','>','M','W'].includes(type)) { ctx.strokeStyle = "rgba(40, 90, 40, 0.1)"; ctx.lineWidth = 1; ctx.strokeRect(px, py, ts, ts); } 
         
-        // FIX: Ränder Pfeile korrigiert
         if(['^', 'v', '<', '>'].includes(type)) { 
             ctx.fillStyle = "#000"; ctx.fillRect(px, py, ts, ts); 
             ctx.fillStyle = "#1aff1a"; ctx.strokeStyle = "#000"; ctx.beginPath(); 
@@ -283,7 +287,29 @@ const Game = {
             case 'W': ctx.strokeStyle = "#4fc3f7"; ctx.lineWidth = 2; ctx.moveTo(px+5, py+15); ctx.lineTo(px+15, py+10); ctx.lineTo(px+25, py+15); ctx.stroke(); break;
             case '=': ctx.strokeStyle = "#5d4037"; ctx.lineWidth = 2; ctx.moveTo(px, py+5); ctx.lineTo(px+ts, py+5); ctx.moveTo(px, py+25); ctx.lineTo(px+ts, py+25); ctx.stroke(); break;
             case 'U': ctx.fillStyle = "#000"; ctx.arc(px+ts/2, py+ts/2, ts/3, 0, Math.PI, true); ctx.fill(); break;
-            case 'G': ctx.globalAlpha = pulse; ctx.strokeStyle = this.colors['G']; ctx.lineWidth = 3; ctx.moveTo(px+ts/2, py+4); ctx.lineTo(px+ts/2, py+26); ctx.moveTo(px+10, py+10); ctx.lineTo(px+ts/2, py+4); ctx.lineTo(px+20, py+10); ctx.stroke(); break;
+            
+            // FIX: Dynamische Gate-Richtung
+            case 'G': 
+                ctx.globalAlpha = pulse; 
+                ctx.strokeStyle = this.colors['G']; 
+                ctx.lineWidth = 3; 
+                ctx.beginPath();
+                if (y === 0) { // TOP -> Point UP
+                    ctx.moveTo(px+ts/2, py+26); ctx.lineTo(px+ts/2, py+4);
+                    ctx.lineTo(px+10, py+14); ctx.moveTo(px+ts/2, py+4); ctx.lineTo(px+20, py+14);
+                } else if (y === this.MAP_H - 1) { // BOTTOM -> Point DOWN
+                    ctx.moveTo(px+ts/2, py+4); ctx.lineTo(px+ts/2, py+26);
+                    ctx.lineTo(px+10, py+16); ctx.moveTo(px+ts/2, py+26); ctx.lineTo(px+20, py+16);
+                } else if (x === 0) { // LEFT -> Point LEFT
+                    ctx.moveTo(px+26, py+ts/2); ctx.lineTo(px+4, py+ts/2);
+                    ctx.lineTo(px+14, py+10); ctx.moveTo(px+4, py+ts/2); ctx.lineTo(px+14, py+20);
+                } else { // RIGHT -> Point RIGHT
+                    ctx.moveTo(px+4, py+ts/2); ctx.lineTo(px+26, py+ts/2);
+                    ctx.lineTo(px+16, py+10); ctx.moveTo(px+26, py+ts/2); ctx.lineTo(px+16, py+20);
+                }
+                ctx.stroke(); 
+                break;
+                
             case 'V': ctx.globalAlpha = pulse; ctx.fillStyle = this.colors['V']; ctx.arc(px+ts/2, py+ts/2, ts/3, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = "#000"; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = "#000"; ctx.font="bold 12px monospace"; ctx.fillText("101", px+5, py+20); break; 
             case 'C': ctx.globalAlpha = pulse; ctx.fillStyle = this.colors['C']; ctx.fillRect(px+6, py+14, 18, 12); ctx.beginPath(); ctx.moveTo(px+4, py+14); ctx.lineTo(px+15, py+4); ctx.lineTo(px+26, py+14); ctx.fill(); break; 
             case 'S': ctx.globalAlpha = pulse; ctx.fillStyle = this.colors['S']; ctx.arc(px+ts/2, py+12, 6, 0, Math.PI*2); ctx.fill(); ctx.fillRect(px+10, py+18, 10, 6); break; 
