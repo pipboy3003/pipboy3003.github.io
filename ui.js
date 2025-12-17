@@ -2,7 +2,8 @@ const UI = {
     els: {},
     timerInterval: null,
     lastInputTime: Date.now(), 
-    biomeColors: { 'wasteland': '#5d5345', 'desert': '#eecfa1', 'jungle': '#1a3300', 'city': '#555555' },
+    // NEU: Swamp Farbe hinzugefügt
+    biomeColors: { 'wasteland': '#5d5345', 'desert': '#eecfa1', 'jungle': '#1a3300', 'city': '#555555', 'swamp': '#1e1e11' },
 
     log: function(msg, color="text-green-500") { 
         if(!this.els.log) return;
