@@ -98,6 +98,58 @@ const Game = {
         }
     },
 
+    // BEWEGUNGSLOGIK WIEDER EINGEFÜGT
+    move: function(dx, dy) {
+        if(this.state.isGameOver || this.state.view !== 'map' || this.state.inDialog) return;
+        
+        const nx = this.state.player.x + dx;
+        const ny = this.state.player.y + dy;
+        
+        // Map Boundaries / Sector Change Check
+        if(nx < 0 || nx >= this.MAP_W || ny < 0 || ny >= this.MAP_H) {
+            this.changeSector(nx, ny);
+            return;
+        }
+
+        const tile = this.state.currentMap[ny][nx];
+        
+        // Collision
+        if(['M', 'W', '#', 'U'].includes(tile)) { 
+            UI.log("Weg blockiert.", "text-gray-500");
+            return; 
+        }
+        
+        // Update Position
+        this.state.player.x = nx;
+        this.state.player.y = ny;
+        
+        // Rotation setzen
+        if(dx === 1) this.state.player.rot = 0;
+        if(dx === -1) this.state.player.rot = Math.PI;
+        if(dy === 1) this.state.player.rot = Math.PI/2;
+        if(dy === -1) this.state.player.rot = -Math.PI/2;
+
+        this.reveal(nx, ny);
+        
+        if(typeof Network !== 'undefined') Network.sendMove(nx, ny, this.state.lvl, this.state.sector);
+
+        // Events auslösen NACH Bewegung
+        if(tile === 'V') { UI.enterVault(); return; }
+        if(tile === 'S') { UI.enterSupermarket(); return; }
+        if(tile === 'H') { UI.enterCave(); return; }
+        if(tile === 'C') { UI.switchView('city'); return; } 
+        
+        // Random Encounter (nur im Freien)
+        if(['.', ',', '_'].includes(tile)) {
+            if(Math.random() < 0.04) { 
+                this.startCombat();
+                return;
+            }
+        }
+        
+        UI.update();
+    },
+
     addToInventory: function(id, count=1) { if(!this.state.inventory) this.state.inventory = []; const existing = this.state.inventory.find(i => i.id === id); if(existing) existing.count += count; else this.state.inventory.push({id: id, count: count}); UI.log(`Erhalten: ${this.items[id].name} (${count})`, "text-green-400"); }, 
     useItem: function(id) { const itemDef = this.items[id]; const invItem = this.state.inventory.find(i => i.id === id); if(!invItem || invItem.count <= 0) return; if(itemDef.type === 'consumable') { if(itemDef.effect === 'heal') { const healAmt = itemDef.val; if(this.state.hp >= this.state.maxHp) { UI.log("Gesundheit bereits voll.", "text-gray-500"); return; } this.state.hp = Math.min(this.state.maxHp, this.state.hp + healAmt); UI.log(`Verwendet: ${itemDef.name}. +${healAmt} HP.`, "text-blue-400"); invItem.count--; } } else if (itemDef.type === 'weapon' || itemDef.type === 'body') { const oldItemName = this.state.equip[itemDef.slot].name; const oldItemKey = Object.keys(this.items).find(key => this.items[key].name === oldItemName); if(oldItemKey && oldItemKey !== 'fists' && oldItemKey !== 'vault_suit') { this.addToInventory(oldItemKey, 1); } this.state.equip[itemDef.slot] = itemDef; invItem.count--; UI.log(`Ausgerüstet: ${itemDef.name}`, "text-yellow-400"); if(itemDef.slot === 'body') { const oldMax = this.state.maxHp; this.state.maxHp = this.calculateMaxHP(this.getStat('END')); this.state.hp += (this.state.maxHp - oldMax); } } if(invItem.count <= 0) { this.state.inventory = this.state.inventory.filter(i => i.id !== id); } UI.update(); if(this.state.view === 'inventory') UI.renderInventory(); this.saveGame(); }, 
     saveGame: function(manual = false) { if(!this.state) return; if(manual) UI.log("Speichere...", "text-gray-500"); if(typeof Network !== 'undefined') Network.save(this.state); }, 
