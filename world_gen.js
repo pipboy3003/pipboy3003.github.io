@@ -23,49 +23,45 @@ const WorldGen = {
         const conf = this.biomes[biomeType] || this.biomes['wasteland'];
 
         // 1. BASIS TERRAIN
-        for(let y = 1; y < height - 1; y++) {
-            for(let x = 1; x < width - 1; x++) {
-                const roll = this.rand();
-                if(roll < conf.water) map[y][x] = 'W'; 
-                else if(roll < conf.water + conf.mountain) map[y][x] = 'M'; 
-                else if(roll < conf.water + conf.mountain + conf.trees) map[y][x] = 't'; 
+        for(let y = 0; y < height; y++) {
+            for(let x = 0; x < width; x++) {
+                const r = this.rand();
+                if(r < conf.water) map[y][x] = 'W';
+                else if(r < conf.water + conf.mountain) map[y][x] = 'M';
+                else if(r < conf.water + conf.mountain + conf.trees) map[y][x] = 't';
                 else map[y][x] = conf.ground;
             }
         }
 
-        // 2. POIs PLATZIEREN & FREIRÄUMEN
-        poiList.forEach(p => {
-            // Aggressiveres Freiräumen um Gates und POIs
-            let radius = (p.type === 'G') ? 3 : 2; 
-            
-            for(let dy = -radius; dy <= radius; dy++) {
-                for(let dx = -radius; dx <= radius; dx++) {
-                    const ny = p.y + dy, nx = p.x + dx;
-                    if(ny > 0 && ny < height-1 && nx > 0 && nx < width-1) {
-                        // Mache den Boden sicher begehbar
-                        map[ny][nx] = conf.ground;
-                    }
-                }
-            }
-            map[p.y][p.x] = p.type;
-        });
+        // 2. POIs PLATZIEREN & STRASSEN BAUEN
+        let gates = [];
+        let center = {x: Math.floor(width/2), y: Math.floor(height/2)};
 
-        // 3. WEGNETZWERK
-        const points = [...poiList];
-        for(let i=0; i<3; i++) {
-            points.push({
-                x: Math.floor(this.rand()*(width-4))+2, 
-                y: Math.floor(this.rand()*(height-4))+2, 
-                type: 'nav'
+        if(poiList) {
+            poiList.forEach(poi => {
+                if(poi.x >= 0 && poi.x < width && poi.y >= 0 && poi.y < height) {
+                    map[poi.y][poi.x] = poi.type;
+                    
+                    // Schutzzone um POI
+                    for(let dy=-1; dy<=1; dy++) {
+                        for(let dx=-1; dx<=1; dx++) {
+                            const ny = poi.y+dy, nx = poi.x+dx;
+                            if(ny>=0 && ny<height && nx>=0 && nx<width && map[ny][nx] !== poi.type) {
+                                map[ny][nx] = conf.ground; 
+                            }
+                        }
+                    }
+
+                    if(poi.type === 'G') gates.push(poi);
+                    if(poi.type === 'V' || poi.type === 'C' || poi.type === 'S') center = poi;
+                }
             });
         }
 
-        for(let i = 0; i < points.length - 1; i++) {
-            this.buildRoad(map, points[i], points[i+1], conf.ground);
-        }
-        if(points.length > 1) {
-            this.buildRoad(map, points[points.length-1], points[0], conf.ground);
-        }
+        // 3. STRASSEN VERBINDEN
+        gates.forEach(gate => {
+            this.buildRoad(map, gate, center, conf.ground);
+        });
 
         return map;
     },
@@ -93,21 +89,13 @@ const WorldGen = {
             
             if (['V', 'C', 'S', 'H', 'G'].includes(current)) continue; 
 
+            // FIX: Straßen sind nun '=' (Asphalt/Weg) statt '#' (Wand)
             if (current === 'W') {
-                map[y][x] = '='; 
+                map[y][x] = '='; // Brücke
             } else if (current === 'M') {
-                map[y][x] = 'U'; 
+                map[y][x] = 'U'; // Tunnel / Pass
             } else {
-                map[y][x] = '#'; 
-            }
-            
-            if(this.rand() < 0.1) {
-                for(let dy=-1; dy<=1; dy++) for(let dx=-1; dx<=1; dx++) {
-                    const ny = y+dy, nx = x+dx;
-                    if(map[ny] && map[ny][nx] && !['W','M','V','C','S','H','G','=','U'].includes(map[ny][nx])) {
-                        map[ny][nx] = '#'; 
-                    }
-                }
+                map[y][x] = '='; // Weg
             }
         }
     }
