@@ -1,6 +1,22 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 ==============================
 
+[v0.0.14f] - 2025-12-17 12:30 (Atmosphere & Detail Update)
+
+WORLDGEN: Detail-Ebenen für Biome hinzugefügt. Jedes Biom hat nun spezifische "Clutter"-Objekte:
+
+Wasteland: Steine (o) und Totholz (x).
+
+City: Mauern (#) und Schutthaufen (+).
+
+Oasis: Große Bäume (T) und hohes Gras (").
+
+BIOME: Neues Biom "Swamp" (Sumpf) im Sektor [6,0] bis [7,1] (Point Lookout Style). Enthält Schlamm, giftiges Wasser (~) und Schilf.
+
+RENDER: drawTile unterstützt nun Kreis-Rendering für Steine, Rechtecke für Schutt und Linien für Pflanzen.
+
+COLORS: Farbpalette überarbeitet (dunklere Erdtöne, modriges Grün für Sumpf), um den Fallout-Vibe zu stärken.
+
 [v0.0.14e] - 2025-12-17 08:30 (Open World Update)
 
 FEATURE: "Offene Welt" Logik implementiert. Sektoren haben keine Innenwände mehr und sind direkt miteinander verbunden.
