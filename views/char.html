@@ -1,27 +1,97 @@
 <div class="p-4 w-full h-full overflow-y-auto flex flex-col items-center">
-    <h1 class="text-3xl font-bold mb-4 text-center border-b border-green-500 w-full">CHARACTER STATUS</h1>
+    <h1 class="text-3xl font-bold mb-4 text-center border-b border-green-500 w-full tracking-wider">STATUS</h1>
     
-    <div class="w-full border border-green-900 p-2 mb-4">
-        <h2 class="bg-green-900 text-black px-1 font-bold mb-2">LEVEL & EXP</h2>
-        <div class="flex justify-between text-lg">
-            <span>Level: <span id="char-lvl" class="text-white">1</span></span>
-            <span>Punkte: <span id="char-points" class="text-yellow-400">0</span></span>
+    <!-- LEVEL & EXP CARD -->
+    <div class="w-full border-2 border-green-900 bg-green-900/10 p-3 mb-6">
+        <div class="flex justify-between items-end mb-2">
+            <span class="text-xl font-bold">LEVEL <span id="char-lvl" class="text-white text-2xl ml-2">1</span></span>
+            <span class="text-sm">SKILL-PUNKTE: <span id="char-points" class="text-yellow-400 font-bold text-xl animate-pulse">0</span></span>
         </div>
-        <div class="text-sm mb-1">EXP: <span id="char-exp">0</span> / <span id="char-next">100</span></div>
-        <div class="w-full bg-green-900 h-2"><div id="char-exp-bar" class="bg-[#39ff14] h-full" style="width: 0%"></div></div>
         
-        <button id="btn-assign" class="action-button w-full mt-2 text-sm" onclick="Game.applyStats()" disabled>PUNKTE ZUWEISEN</button>
+        <div class="w-full bg-black border border-green-900 h-4 mb-1 relative">
+            <div id="char-exp-bar" class="bg-[#39ff14] h-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+        <div class="text-xs text-right opacity-70">EXP: <span id="char-exp">0</span> / <span id="char-next">100</span></div>
     </div>
 
-    <div class="w-full border border-green-900 p-2 mb-4">
-        <h2 class="bg-green-900 text-black px-1 font-bold mb-2">S.P.E.C.I.A.L.</h2>
-        <div id="stat-grid" class="grid grid-cols-3 gap-2 text-lg"></div>
+    <!-- SPECIAL STATS -->
+    <div class="w-full mb-6">
+        <h2 class="bg-green-900 text-black px-2 py-1 font-bold mb-3 tracking-widest text-lg">S.P.E.C.I.A.L.</h2>
+        
+        <div class="space-y-3">
+            <!-- STR -->
+            <div class="flex items-center justify-between border-b border-green-900/50 pb-2">
+                <div class="flex flex-col">
+                    <span class="font-bold text-xl">STRENGTH</span>
+                    <span class="text-xs opacity-70">Nahkampfschaden & Tragekraft</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="val-STR" class="text-2xl font-mono text-white">5</span>
+                    <button id="btn-STR" class="w-12 h-12 flex items-center justify-center border-2 border-green-500 text-2xl font-bold hover:bg-green-500 hover:text-black transition-colors bg-black" onclick="Game.upgradeStat('STR')">+</button>
+                </div>
+            </div>
+
+            <!-- PER -->
+            <div class="flex items-center justify-between border-b border-green-900/50 pb-2">
+                <div class="flex flex-col">
+                    <span class="font-bold text-xl">PERCEPTION</span>
+                    <span class="text-xs opacity-70">Präzision & Loot-Chance</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="val-PER" class="text-2xl font-mono text-white">5</span>
+                    <button id="btn-PER" class="w-12 h-12 flex items-center justify-center border-2 border-green-500 text-2xl font-bold hover:bg-green-500 hover:text-black transition-colors bg-black" onclick="Game.upgradeStat('PER')">+</button>
+                </div>
+            </div>
+
+            <!-- END -->
+            <div class="flex items-center justify-between border-b border-green-900/50 pb-2">
+                <div class="flex flex-col">
+                    <span class="font-bold text-xl">ENDURANCE</span>
+                    <span class="text-xs opacity-70">Max HP & Resistenz</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="val-END" class="text-2xl font-mono text-white">5</span>
+                    <button id="btn-END" class="w-12 h-12 flex items-center justify-center border-2 border-green-500 text-2xl font-bold hover:bg-green-500 hover:text-black transition-colors bg-black" onclick="Game.upgradeStat('END')">+</button>
+                </div>
+            </div>
+
+            <!-- INT -->
+            <div class="flex items-center justify-between border-b border-green-900/50 pb-2">
+                <div class="flex flex-col">
+                    <span class="font-bold text-xl">INTELLIGENCE</span>
+                    <span class="text-xs opacity-70">Hacking & XP-Gewinn</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="val-INT" class="text-2xl font-mono text-white">5</span>
+                    <button id="btn-INT" class="w-12 h-12 flex items-center justify-center border-2 border-green-500 text-2xl font-bold hover:bg-green-500 hover:text-black transition-colors bg-black" onclick="Game.upgradeStat('INT')">+</button>
+                </div>
+            </div>
+
+            <!-- AGI -->
+            <div class="flex items-center justify-between border-b border-green-900/50 pb-2">
+                <div class="flex flex-col">
+                    <span class="font-bold text-xl">AGILITY</span>
+                    <span class="text-xs opacity-70">Fluchtchance & AP</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="val-AGI" class="text-2xl font-mono text-white">5</span>
+                    <button id="btn-AGI" class="w-12 h-12 flex items-center justify-center border-2 border-green-500 text-2xl font-bold hover:bg-green-500 hover:text-black transition-colors bg-black" onclick="Game.upgradeStat('AGI')">+</button>
+                </div>
+            </div>
+
+            <!-- LUC -->
+            <div class="flex items-center justify-between border-b border-green-900/50 pb-2">
+                <div class="flex flex-col">
+                    <span class="font-bold text-xl">LUCK</span>
+                    <span class="text-xs opacity-70">Kritische Treffer & Zufalls-Events</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="val-LUC" class="text-2xl font-mono text-white">5</span>
+                    <button id="btn-LUC" class="w-12 h-12 flex items-center justify-center border-2 border-green-500 text-2xl font-bold hover:bg-green-500 hover:text-black transition-colors bg-black" onclick="Game.upgradeStat('LUC')">+</button>
+                </div>
+            </div>
+        </div>
     </div>
-    
-    <div class="w-full border border-green-900 p-2 mb-4">
-        <h2 class="bg-green-900 text-black px-1 font-bold mb-2">AUSRÜSTUNG</h2>
-        <div id="char-equip" class="text-sm"></div>
-    </div>
-    
-    <button class="action-button w-full" onclick="UI.switchView('map')">ZURÜCK ZUR KARTE</button>
+
+    <button class="action-button w-full mt-auto py-4 text-xl font-bold border-2" onclick="UI.switchView('map')">SCHLIESSEN</button>
 </div>
