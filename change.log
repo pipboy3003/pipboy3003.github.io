@@ -1,6 +1,18 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 ==============================
 
+[v0.0.14e] - 2025-12-17 08:30 (Open World Update)
+
+FEATURE: "Offene Welt" Logik implementiert. Sektoren haben keine Innenwände mehr und sind direkt miteinander verbunden.
+
+LOGIC: move prüft nun, ob der Spieler die Kartengrenze (x<0, x>=MAP_W, etc.) überschreitet, um einen Sektorwechsel auszulösen.
+
+WORLD: createSector erzeugt keine Tore ('G') mehr.
+
+WORLD: fixMapBorders erzeugt nun nur noch Wände am absoluten Rand der Weltkarte (Sektor 0,x bis 7,x), anstatt in jedem Sektor.
+
+FIX: Teleport-Logik korrigiert, damit Spieler beim Wechsel auf der gegenüberliegenden Seite spawnen.
+
 [v0.0.14d] - 2025-12-17 07:35 (Visuals & Anti-Softlock)
 
 FIX (Gate Graphics): Die "Tor"-Grafik (G) ist jetzt nicht mehr statisch. Sie prüft ihre Koordinaten und dreht den Pfeil automatisch nach Außen (Oben, Unten, Links, Rechts), passend zum Kartenrand.
