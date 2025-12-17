@@ -98,14 +98,12 @@ const Game = {
         }
     },
 
-    // BEWEGUNGSLOGIK WIEDER EINGEFÜGT
     move: function(dx, dy) {
         if(this.state.isGameOver || this.state.view !== 'map' || this.state.inDialog) return;
         
         const nx = this.state.player.x + dx;
         const ny = this.state.player.y + dy;
         
-        // Map Boundaries / Sector Change Check
         if(nx < 0 || nx >= this.MAP_W || ny < 0 || ny >= this.MAP_H) {
             this.changeSector(nx, ny);
             return;
@@ -113,17 +111,14 @@ const Game = {
 
         const tile = this.state.currentMap[ny][nx];
         
-        // Collision
         if(['M', 'W', '#', 'U'].includes(tile)) { 
             UI.log("Weg blockiert.", "text-gray-500");
             return; 
         }
         
-        // Update Position
         this.state.player.x = nx;
         this.state.player.y = ny;
         
-        // Rotation setzen
         if(dx === 1) this.state.player.rot = 0;
         if(dx === -1) this.state.player.rot = Math.PI;
         if(dy === 1) this.state.player.rot = Math.PI/2;
@@ -133,13 +128,11 @@ const Game = {
         
         if(typeof Network !== 'undefined') Network.sendMove(nx, ny, this.state.lvl, this.state.sector);
 
-        // Events auslösen NACH Bewegung
         if(tile === 'V') { UI.enterVault(); return; }
         if(tile === 'S') { UI.enterSupermarket(); return; }
         if(tile === 'H') { UI.enterCave(); return; }
         if(tile === 'C') { UI.switchView('city'); return; } 
         
-        // Random Encounter (nur im Freien)
         if(['.', ',', '_'].includes(tile)) {
             if(Math.random() < 0.04) { 
                 this.startCombat();
@@ -295,7 +288,55 @@ const Game = {
     changeSector: function(px, py) { let sx=this.state.sector.x, sy=this.state.sector.y; if(py===0) sy--; else if(py===this.MAP_H-1) sy++; if(px===0) sx--; else if(px===this.MAP_W-1) sx++; if(sx < 0 || sx > 7 || sy < 0 || sy > 7) { UI.log("Ende der Weltkarte.", "text-red-500"); this.state.player.x -= (px===0 ? -1 : 1); return; } this.state.sector = {x: sx, y: sy}; this.loadSector(sx, sy); if(py===0) this.state.player.y=this.MAP_H-2; else if(py===this.MAP_H-1) this.state.player.y=1; if(px===0) this.state.player.x=this.MAP_W-2; else if(px===this.MAP_W-1) this.state.player.x=1; this.findSafeSpawn(); this.reveal(this.state.player.x, this.state.player.y); UI.log(`Sektorwechsel: ${sx},${sy}`, "text-blue-400"); },
     startCombat: function() { let pool = []; let lvl = this.state.lvl; let biome = this.worldData[`${this.state.sector.x},${this.state.sector.y}`]?.biome || 'wasteland'; let zone = this.state.zone; if(zone.includes("Supermarkt")) { pool = [this.monsters.raider, this.monsters.ghoul]; if(lvl >= 4) pool.push(this.monsters.superMutant); } else if (zone.includes("Höhle")) { pool = [this.monsters.moleRat, this.monsters.radScorpion]; if(lvl >= 3) pool.push(this.monsters.ghoul); } else if(biome === 'city') { pool = [this.monsters.raider, this.monsters.ghoul]; if(lvl >= 5) pool.push(this.monsters.superMutant); } else if(biome === 'desert') { pool = [this.monsters.radScorpion, this.monsters.raider]; } else { pool = [this.monsters.moleRat, this.monsters.radRoach]; if(biome === 'jungle') pool.push(this.monsters.mutantRose); if(lvl >= 2) pool.push(this.monsters.raider); } if(lvl >= 8 && Math.random() < 0.1) pool = [this.monsters.deathclaw]; else if (Math.random() < 0.01) pool = [this.monsters.deathclaw]; const template = pool[Math.floor(Math.random()*pool.length)]; let enemy = { ...template }; const isLegendary = Math.random() < 0.15; if(isLegendary) { enemy.isLegendary = true; enemy.name = "Legendäre " + enemy.name; enemy.hp *= 2; enemy.maxHp = enemy.hp; enemy.dmg = Math.floor(enemy.dmg*1.5); enemy.loot *= 3; if(Array.isArray(enemy.xp)) enemy.xp = [enemy.xp[0]*3, enemy.xp[1]*3]; } else enemy.maxHp = enemy.hp; this.state.enemy = enemy; this.state.inDialog = true; if(Date.now() < this.state.buffEndTime) UI.log("⚡ S.P.E.C.I.A.L. OVERDRIVE aktiv!", "text-yellow-400"); UI.switchView('combat').then(() => UI.renderCombat()); UI.log(isLegendary ? "LEGENDÄRER GEGNER!" : "Kampf gestartet!", isLegendary ? "text-yellow-400" : "text-red-500"); },
     getRandomXP: function(xpData) { if (Array.isArray(xpData)) return Math.floor(Math.random() * (xpData[1] - xpData[0] + 1)) + xpData[0]; return xpData; },
-    combatAction: function(act) { if(this.state.isGameOver) return; if(!this.state.enemy) return; if(act === 'attack') { const wpn = this.state.equip.weapon; if(wpn.isRanged) { if(this.state.ammo > 0) this.state.ammo--; else { UI.log("Keine Munition! Fäuste.", "text-red-500"); this.state.equip.weapon = this.items.fists; this.enemyTurn(); return; } } if(Math.random() > 0.3) { const baseDmg = wpn.baseDmg || 2; const dmg = Math.floor(baseDmg + (this.getStat('STR') * 1.5)); this.state.enemy.hp -= dmg; UI.log(`Treffer: ${dmg} Schaden.`, "text-green-400"); if(this.state.enemy.hp <= 0) { this.state.caps += this.state.enemy.loot; UI.log(`Sieg! ${this.state.enemy.loot} Kronkorken.`, "text-yellow-400"); this.gainExp(this.getRandomXP(this.state.enemy.xp)); if(this.state.enemy.isLegendary) { UI.showDiceOverlay(); } else { this.endCombat(); } return; } } else UI.log("Verfehlt!", "text-gray-500"); this.enemyTurn(); } else if (act === 'flee') { if(Math.random() < 0.4 + (this.getStat('AGI')*0.05)) { UI.log("Geflohen.", "text-green-400"); this.endCombat(); } else { UI.log("Flucht gescheitert!", "text-red-500"); this.enemyTurn(); } } UI.update(); if(this.state.view === 'combat') UI.renderCombat(); },
+    
+    // FIX: Combat Exploit fix - check if enemy is already dead
+    combatAction: function(act) { 
+        if(this.state.isGameOver) return; 
+        if(!this.state.enemy) return; 
+        if(this.state.enemy.hp <= 0) return; // <-- HIER IST DER FIX: Keine Aktion mehr, wenn Gegner tot (wartet auf Würfel)
+
+        if(act === 'attack') { 
+            const wpn = this.state.equip.weapon; 
+            if(wpn.isRanged) { 
+                if(this.state.ammo > 0) this.state.ammo--; 
+                else { 
+                    UI.log("Keine Munition! Fäuste.", "text-red-500"); 
+                    this.state.equip.weapon = this.items.fists; 
+                    this.enemyTurn(); 
+                    return; 
+                } 
+            } 
+            if(Math.random() > 0.3) { 
+                const baseDmg = wpn.baseDmg || 2; 
+                const dmg = Math.floor(baseDmg + (this.getStat('STR') * 1.5)); 
+                this.state.enemy.hp -= dmg; 
+                UI.log(`Treffer: ${dmg} Schaden.`, "text-green-400"); 
+                if(this.state.enemy.hp <= 0) { 
+                    this.state.caps += this.state.enemy.loot; 
+                    UI.log(`Sieg! ${this.state.enemy.loot} Kronkorken.`, "text-yellow-400"); 
+                    this.gainExp(this.getRandomXP(this.state.enemy.xp)); 
+                    if(this.state.enemy.isLegendary) { 
+                        UI.showDiceOverlay(); 
+                    } else { 
+                        this.endCombat(); 
+                    } 
+                    return; 
+                } 
+            } else UI.log("Verfehlt!", "text-gray-500"); 
+            this.enemyTurn(); 
+        } else if (act === 'flee') { 
+            if(Math.random() < 0.4 + (this.getStat('AGI')*0.05)) { 
+                UI.log("Geflohen.", "text-green-400"); 
+                this.endCombat(); 
+            } else { 
+                UI.log("Flucht gescheitert!", "text-red-500"); 
+                this.enemyTurn(); 
+            } 
+        } 
+        UI.update(); 
+        if(this.state.view === 'combat') UI.renderCombat(); 
+    },
+    
     rollLegendaryLoot: function() { const result = Math.floor(Math.random() * 16) + 3; let msg = "", type = ""; if(result <= 7) { type = "CAPS"; const amt = this.state.lvl * 80; this.state.caps += amt; msg = `KRONKORKEN REGEN: +${amt} Caps!`; } else if (result <= 12) { type = "AMMO"; const amt = this.state.lvl * 25; this.state.ammo += amt; msg = `MUNITIONS JACKPOT: +${amt} Schuss!`; } else { type = "BUFF"; this.state.buffEndTime = Date.now() + 300000; msg = `S.P.E.C.I.A.L. OVERDRIVE! (5 Min)`; } return { val: result, msg: msg, type: type }; },
     enemyTurn: function() { if(this.state.enemy.hp <= 0) return; if(Math.random() < 0.8) { const armor = (this.getStat('END') * 0.5); const dmg = Math.max(1, Math.floor(this.state.enemy.dmg - armor)); this.state.hp -= dmg; UI.log(`Schaden erhalten: ${dmg}`, "text-red-400"); this.checkDeath(); } else UI.log("Gegner verfehlt.", "text-gray-500"); },
     checkDeath: function() { if(this.state.hp <= 0) { this.state.hp = 0; this.state.isGameOver = true; if(typeof Network !== 'undefined') Network.deleteSave(); UI.update(); UI.showGameOver(); } },
