@@ -1,6 +1,14 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 ==============================
 
+[v0.0.14d] - 2025-12-17 07:35 (Visuals & Anti-Softlock)
+
+FIX (Gate Graphics): Die "Tor"-Grafik (G) ist jetzt nicht mehr statisch. Sie prüft ihre Koordinaten und dreht den Pfeil automatisch nach Außen (Oben, Unten, Links, Rechts), passend zum Kartenrand.
+
+FIX (Movement Lock): Ein Bug, der Spieler im "Dialog-Modus" gefangen hielt und Bewegungen blockierte, wurde behoben. Beim Laden eines Spielstands wird der Status nun automatisch zurückgesetzt.
+
+FIX (Collision): Wände (#) wurden aus der Liste der gültigen Spawnpunkte entfernt, um "in-wall" Spawns zu verhindern.
+
 [v0.0.14c] - 2025-12-17 07:15 (Rotation & Rendering Fix)
 
 FIX (Rotation): Die Berechnung der Spieler-Rotation wurde korrigiert. Der grüne Pfeil zeigt nun in die korrekte Bewegungsrichtung (Rechts, Links, Oben, Unten) und ist nicht mehr um 90 Grad versetzt.
