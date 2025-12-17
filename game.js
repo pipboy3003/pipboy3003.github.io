@@ -1,12 +1,25 @@
 const Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     
+    // ERWEITERTE FARBPALETTE
     colors: { 
-        '.':'#0a1a0a', '_':'#1a150a', ',':'#051105', '=':'#111', '#':'#000', 
-        'line_default': '#2a5a2a', 'line_wall': '#39ff14', 'line_water': '#224f80', 
+        '.':'#2d241b', // Wasteland Dirt (Dunkler)
+        '_':'#4a4036', // Sand/Ash
+        ',':'#1a261a', // Dark Grass
+        ';':'#1e1e11', // Swamp Mud
+        '=':'#333333', // Road/Concrete
+        '#':'#111',    // Wall base
+        
+        'line_default': '#2a5a2a', 
+        'line_wall': '#39ff14', 
+        
         'V': '#39ff14', 'C': '#eab308', 'S': '#ff0000', 'G': '#00ffff', 'H': '#888888', 
         '^': '#111', 'v':'#111', '<':'#111', '>':'#111',
-        'M': '#3e2723', 'W': '#0d47a1', 't': '#1b5e20', '#': '#424242', 'U': '#212121', '~': '#001133'
+        
+        'M': '#3e2723', 'W': '#0d47a1', '~': '#2f4f2f', // Swamp Water
+        't': '#1b5e20', 'T': '#0a3d0a', 'x': '#5c4033', 'o': '#555555',
+        '+': '#666666', '"': '#3cb371', 'Y': '#deb887',
+        'U': '#212121'
     },
     
     monsters: { 
@@ -105,7 +118,6 @@ const Game = {
         const nx = this.state.player.x + dx;
         const ny = this.state.player.y + dy;
         
-        // CHECK SECTOR BOUNDARIES
         if(nx < 0 || nx >= this.MAP_W || ny < 0 || ny >= this.MAP_H) {
             this.changeSector(nx, ny);
             return;
@@ -113,7 +125,10 @@ const Game = {
 
         const tile = this.state.currentMap[ny][nx];
         
-        if(['M', 'W', '#', 'U', 't'].includes(tile)) { 
+        // COLLISION CHECK UPDATE
+        // Blockiere Wände (#), Berge (M), Wasser (W), Große Bäume (T), Steine (o), Kakteen (Y)
+        if(['M', 'W', '#', 'U', 't', 'T', 'o', 'Y'].includes(tile)) { 
+            // Optional: Kleine Bäume 't' blockieren, aber Sträucher 'x' nicht
             UI.log("Weg blockiert.", "text-gray-500");
             return; 
         }
@@ -135,7 +150,7 @@ const Game = {
         if(tile === 'H') { UI.enterCave(); return; }
         if(tile === 'C') { UI.switchView('city'); return; } 
         
-        if(['.', ',', '_'].includes(tile)) {
+        if(['.', ',', '_', ';', '"', '+', 'x'].includes(tile)) {
             if(Math.random() < 0.04) { 
                 this.startCombat();
                 return;
@@ -166,10 +181,12 @@ const Game = {
         } 
         
         if(!this.worldData[key]) { 
+            // BIOME LOGIK VERBESSERT
             let biome = 'wasteland'; 
-            if (sx < 3 && sy < 3) biome = 'jungle'; 
-            else if (sx > 5 && sy > 5) biome = 'desert'; 
-            else if (rng() < 0.35) biome = 'city'; 
+            if (sx < 2 && sy < 2) biome = 'jungle'; // Oasis Corner
+            else if (sx > 5 && sy > 5) biome = 'desert'; // Ashlands
+            else if (sx > 5 && sy < 2) biome = 'swamp'; // NEU: Swamp Corner
+            else if (rng() < 0.30) biome = 'city'; 
             
             let poiList = [];
             
@@ -179,8 +196,6 @@ const Game = {
                 let type = 'C'; const r = rng(); if(r < 0.3) type = 'S'; else if(r < 0.6) type = 'H';
                 poiList.push({x: Math.floor(rng()*(this.MAP_W-6))+3, y: Math.floor(rng()*(this.MAP_H-6))+3, type: type});
             }
-
-            // KEINE TORE MEHR ('G') ERZEUGEN
 
             if(typeof WorldGen !== 'undefined') {
                 const map = WorldGen.createSector(this.MAP_W, this.MAP_H, biome, poiList);
@@ -194,11 +209,15 @@ const Game = {
         const data = this.worldData[key]; 
         this.state.currentMap = data.layout; 
         
-        // FIX: Wände nur noch am Welt-Rand (Global 0-7)
         this.fixMapBorders(this.state.currentMap, sx, sy);
         
         this.state.explored = data.explored; 
-        let zn = "Ödland"; if(data.biome === 'city') zn = "Ruinenstadt"; if(data.biome === 'desert') zn = "Glühende Wüste"; if(data.biome === 'jungle') zn = "Überwucherte Zone"; 
+        let zn = "Ödland"; 
+        if(data.biome === 'city') zn = "D.C. Ruinen"; 
+        if(data.biome === 'desert') zn = "The Pitt / Asche"; 
+        if(data.biome === 'jungle') zn = "Oasis"; 
+        if(data.biome === 'swamp') zn = "Sumpf";
+        
         this.state.zone = `${zn} (${sx},${sy})`; 
         
         this.findSafeSpawn();
@@ -228,25 +247,19 @@ const Game = {
     isValidSpawn: function(x, y) {
         if(x < 0 || x >= this.MAP_W || y < 0 || y >= this.MAP_H) return false;
         const t = this.state.currentMap[y][x];
-        return ['.', '_', ',', '='].includes(t);
+        // Erlaubt: Boden, Sand, Gras, Sumpf, Weg, Brücke, Schutt, Sträucher, Grasbüschel
+        return ['.', '_', ',', ';', '=', '"', '+', 'x'].includes(t);
     },
 
-    // NEU: Wand nur, wenn wirklich "Ende der Welt"
     fixMapBorders: function(map, sx, sy) {
-        // Oben zu?
         if(sy === 0) { for(let i=0; i<this.MAP_W; i++) map[0][i] = '#'; }
-        // Unten zu?
         if(sy === 7) { for(let i=0; i<this.MAP_W; i++) map[this.MAP_H-1][i] = '#'; }
-        // Links zu?
         if(sx === 0) { for(let i=0; i<this.MAP_H; i++) map[i][0] = '#'; }
-        // Rechts zu?
         if(sx === 7) { for(let i=0; i<this.MAP_H; i++) map[i][this.MAP_W-1] = '#'; }
     },
 
     changeSector: function(px, py) { 
         let sx=this.state.sector.x, sy=this.state.sector.y; 
-        
-        // Berechne neuen Sektor und neue Spielerposition
         let newPx = this.state.player.x;
         let newPy = this.state.player.y;
 
@@ -263,12 +276,9 @@ const Game = {
         
         this.state.sector = {x: sx, y: sy}; 
         this.loadSector(sx, sy); 
-        
-        // Spieler Position setzen NACHDEM der Sektor geladen wurde
         this.state.player.x = newPx;
         this.state.player.y = newPy;
-        
-        this.findSafeSpawn(); // Falls wir auf einem Baum landen
+        this.findSafeSpawn();
         this.reveal(this.state.player.x, this.state.player.y); 
         UI.log(`Sektorwechsel: ${sx},${sy}`, "text-blue-400"); 
     },
@@ -292,17 +302,47 @@ const Game = {
 
     drawTile: function(ctx, x, y, type, pulse = 1) { 
         const ts = this.TILE; const px = x * ts; const py = y * ts; 
-        let bg = this.colors['.']; if(type === '_') bg = this.colors['_']; if(type === ',') bg = this.colors[',']; if(type === '=') bg = this.colors['=']; if(type === 'W') bg = this.colors['W']; if(type === 'M') bg = this.colors['M']; if(type === '#') bg = this.colors['#'];
-        if (type !== '~' && !['^','v','<','>'].includes(type)) { ctx.fillStyle = bg; ctx.fillRect(px, py, ts, ts); } 
-        if(!['^','v','<','>','M','W'].includes(type)) { ctx.strokeStyle = "rgba(40, 90, 40, 0.1)"; ctx.lineWidth = 1; ctx.strokeRect(px, py, ts, ts); } 
+        let bg = this.colors['.']; 
+        if(['_', ',', ';', '=', 'W', 'M', '~', '#'].includes(type)) bg = this.colors[type];
         
+        if (!['^','v','<','>'].includes(type)) { ctx.fillStyle = bg; ctx.fillRect(px, py, ts, ts); } 
+        
+        // GRID LINES (Subtle)
+        if(!['^','v','<','>','M','W','~'].includes(type)) { 
+            ctx.strokeStyle = "rgba(40, 90, 40, 0.05)"; ctx.lineWidth = 1; ctx.strokeRect(px, py, ts, ts); 
+        } 
+        
+        if(['^', 'v', '<', '>'].includes(type)) { 
+            ctx.fillStyle = "#000"; ctx.fillRect(px, py, ts, ts); 
+            ctx.fillStyle = "#1aff1a"; ctx.strokeStyle = "#000"; ctx.beginPath(); 
+            if (type === '^') { ctx.moveTo(px + ts/2, py + 5); ctx.lineTo(px + ts - 5, py + ts - 5); ctx.lineTo(px + 5, py + ts - 5); } 
+            else if (type === 'v') { ctx.moveTo(px + ts/2, py + ts - 5); ctx.lineTo(px + ts - 5, py + 5); ctx.lineTo(px + 5, py + 5); } 
+            else if (type === '<') { ctx.moveTo(px + 5, py + ts/2); ctx.lineTo(px + ts - 5, py + 5); ctx.lineTo(px + ts - 5, py + ts - 5); } 
+            else if (type === '>') { ctx.moveTo(px + ts - 5, py + ts/2); ctx.lineTo(px + 5, py + 5); ctx.lineTo(px + 5, py + ts - 5); } 
+            ctx.fill(); ctx.stroke(); return; 
+        }
+
         ctx.beginPath(); 
         switch(type) { 
+            // BÄUME & PFLANZEN
             case 't': ctx.fillStyle = this.colors['t']; ctx.moveTo(px + ts/2, py + 2); ctx.lineTo(px + ts - 4, py + ts - 2); ctx.lineTo(px + 4, py + ts - 2); ctx.fill(); break;
-            case 'M': ctx.fillStyle = "#5d4037"; ctx.moveTo(px + ts/2, py + 2); ctx.lineTo(px + ts, py + ts); ctx.lineTo(px, py + ts); ctx.fill(); break;
+            case 'T': ctx.fillStyle = this.colors['T']; ctx.moveTo(px + ts/2, py + 2); ctx.lineTo(px + ts - 2, py + ts - 2); ctx.lineTo(px + 2, py + ts - 2); ctx.fill(); break;
+            case 'x': ctx.strokeStyle = this.colors['x']; ctx.lineWidth = 2; ctx.moveTo(px+5, py+ts-5); ctx.lineTo(px+ts-5, py+5); ctx.moveTo(px+5, py+5); ctx.lineTo(px+ts-5, py+ts-5); ctx.stroke(); break;
+            case '"': ctx.strokeStyle = this.colors['"']; ctx.lineWidth = 1; ctx.moveTo(px+5, py+ts-5); ctx.lineTo(px+5, py+10); ctx.moveTo(px+15, py+ts-5); ctx.lineTo(px+15, py+5); ctx.moveTo(px+25, py+ts-5); ctx.lineTo(px+25, py+12); ctx.stroke(); break;
+            case 'Y': ctx.strokeStyle = this.colors['Y']; ctx.lineWidth = 3; ctx.moveTo(px+15, py+ts-5); ctx.lineTo(px+15, py+5); ctx.moveTo(px+15, py+15); ctx.lineTo(px+5, py+10); ctx.moveTo(px+15, py+10); ctx.lineTo(px+25, py+5); ctx.stroke(); break;
+
+            // STEINE & SCHUTT
+            case 'o': ctx.fillStyle = this.colors['o']; ctx.arc(px+ts/2, py+ts/2, ts/3, 0, Math.PI*2); ctx.fill(); break;
+            case '+': ctx.fillStyle = this.colors['+']; ctx.fillRect(px+5, py+10, 5, 5); ctx.fillRect(px+15, py+20, 4, 4); ctx.fillRect(px+20, py+5, 6, 6); break;
+
+            // STRUKTUREN
+            case 'M': ctx.fillStyle = "#3e2723"; ctx.moveTo(px + ts/2, py + 2); ctx.lineTo(px + ts, py + ts); ctx.lineTo(px, py + ts); ctx.fill(); break;
             case 'W': ctx.strokeStyle = "#4fc3f7"; ctx.lineWidth = 2; ctx.moveTo(px+5, py+15); ctx.lineTo(px+15, py+10); ctx.lineTo(px+25, py+15); ctx.stroke(); break;
+            case '~': ctx.strokeStyle = "#556b2f"; ctx.lineWidth = 2; ctx.moveTo(px+5, py+15); ctx.lineTo(px+15, py+10); ctx.lineTo(px+25, py+15); ctx.stroke(); break;
             case '=': ctx.strokeStyle = "#5d4037"; ctx.lineWidth = 2; ctx.moveTo(px, py+5); ctx.lineTo(px+ts, py+5); ctx.moveTo(px, py+25); ctx.lineTo(px+ts, py+25); ctx.stroke(); break;
             case 'U': ctx.fillStyle = "#000"; ctx.arc(px+ts/2, py+ts/2, ts/3, 0, Math.PI, true); ctx.fill(); break;
+            
+            // POIS
             case 'V': ctx.globalAlpha = pulse; ctx.fillStyle = this.colors['V']; ctx.arc(px+ts/2, py+ts/2, ts/3, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = "#000"; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = "#000"; ctx.font="bold 12px monospace"; ctx.fillText("101", px+5, py+20); break; 
             case 'C': ctx.globalAlpha = pulse; ctx.fillStyle = this.colors['C']; ctx.fillRect(px+6, py+14, 18, 12); ctx.beginPath(); ctx.moveTo(px+4, py+14); ctx.lineTo(px+15, py+4); ctx.lineTo(px+26, py+14); ctx.fill(); break; 
             case 'S': ctx.globalAlpha = pulse; ctx.fillStyle = this.colors['S']; ctx.arc(px+ts/2, py+12, 6, 0, Math.PI*2); ctx.fill(); ctx.fillRect(px+10, py+18, 10, 6); break; 
