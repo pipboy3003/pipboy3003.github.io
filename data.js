@@ -1,4 +1,4 @@
-const GameData = {
+window.GameData = {
     // --- FARBPALETTE ---
     colors: { 
         '.':'#2d241b', '_':'#4a4036', ',':'#1a261a', ';':'#1e1e11', '=':'#333333', '#':'#111', 
@@ -101,3 +101,4 @@ const GameData = {
         { id: "laser_mod", out: "laser_rifle", count: 1, req: { "rifle_hunting": 1, "circuitry": 2, "nuclear_mat": 1 }, lvl: 6 }
     ]
 };
+console.log("GameData loaded.");
