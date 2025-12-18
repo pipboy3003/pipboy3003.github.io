@@ -1,6 +1,16 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 ==============================
 
+[v0.0.17b] - 2025-12-18 12:45 (Full System Restore)
+
+SYSTEM: Komplette Wiederherstellung aller Kerndateien (data.js, index.html, game.js, ui.js, world_gen.js).
+
+FIX: index.html lädt nun korrekt data.js vor allen anderen Skripten, um "GameData is not defined" Fehler zu beheben.
+
+FIX: world_gen.js nutzt nun zentralisierte Biome-Daten aus GameData.
+
+FIX: ui.js nutzt GameData.colors und enthält die notwendige shakeView Funktion.
+
 [v0.0.17a] - 2025-12-18 12:45 (Walkable City Update)
 
 FEATURE: Städte sind nun begehbare Karten! Betrete "Rusty Springs" und laufe zu Händlern ($), Ärzten (+) und Werkbänken (&), um sie zu nutzen.
