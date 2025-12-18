@@ -2,51 +2,34 @@ window.GameData = {
     // --- FARBPALETTE ---
     colors: { 
         '.':'#2d241b', '_':'#4a4036', ',':'#1a261a', ';':'#1e1e11', '=':'#333333', 
-        '#':'#555', // FIX: Helleres Grau für Wände damit sichtbar
-        'line_default': '#2a5a2a', 'line_wall': '#39ff14', 
+        '#':'#555', // Mauer hellgrau
+        'B':'#111', // Dungeon Boden dunkel
+        'W':'#0d47a1', '~':'#2f4f2f', 
+        
         'V': '#39ff14', 'C': '#eab308', 'S': '#ff0000', 'G': '#00ffff', 'H': '#888888', 
         '^': '#111', 'v':'#111', '<':'#111', '>':'#111',
-        'M': '#3e2723', 'W': '#0d47a1', '~': '#2f4f2f', 
-        't': '#1b5e20', 'T': '#0a3d0a', 'x': '#8b4513', 'o': '#808080', // Steine heller
+        'M': '#3e2723', 
+        't': '#1b5e20', 'T': '#0a3d0a', 'x': '#8b4513', 'o': '#808080',
         '+': '#666666', '"': '#3cb371', 'Y': '#deb887', 'U': '#212121',
-        // City Tiles
+        
+        // City & Dungeon Tiles
         '$': '#ffd700', '&': '#ff8c00', 'P': '#ff3333', 'E': '#39ff14', 'F': '#00bfff', '|': '#777',
+        'X': '#ff00ff', // Truhe (Magenta für Sichtbarkeit)
+        
         // Map Colors
         'wasteland': '#5d5345', 'desert': '#eecfa1', 'jungle': '#1a3300', 'city': '#555555', 'swamp': '#1e1e11'
     },
 
     // --- TEXTE ---
-    statLabels: {
-        'STR': 'STÄRKE',
-        'PER': 'WAHRNEHMUNG',
-        'END': 'AUSDAUER',
-        'INT': 'INTELLIGENZ',
-        'AGI': 'BEWEGLICHKEIT',
-        'LUC': 'GLÜCK'
-    },
+    statLabels: { 'STR': 'STÄRKE', 'PER': 'WAHRNEHMUNG', 'END': 'AUSDAUER', 'INT': 'INTELLIGENZ', 'AGI': 'BEWEGLICHKEIT', 'LUC': 'GLÜCK' },
 
     // --- BIOME ---
     biomes: {
-        'wasteland': { 
-            ground: '.', water: 0.02, mountain: 0.05,
-            features: [ { char: 'o', prob: 0.04, solid: true }, { char: 'x', prob: 0.03, solid: false }, { char: 't', prob: 0.01, solid: true } ]
-        },
-        'jungle': { 
-            ground: ',', water: 0.10, mountain: 0.1,
-            features: [ { char: 'T', prob: 0.10, solid: true }, { char: 't', prob: 0.25, solid: true }, { char: '"', prob: 0.15, solid: false } ]
-        },
-        'desert': { 
-            ground: '_', water: 0.01, mountain: 0.15,
-            features: [ { char: 'o', prob: 0.02, solid: true }, { char: 'Y', prob: 0.03, solid: true } ]
-        },
-        'city': { 
-            ground: '=', water: 0.0, mountain: 0.0,
-            features: [ { char: '#', prob: 0.12, solid: true }, { char: '+', prob: 0.08, solid: false }, { char: 'o', prob: 0.03, solid: true } ]
-        },
-        'swamp': { 
-            ground: ';', water: 0.05, mountain: 0.0,
-            features: [ { char: '~', prob: 0.15, solid: false }, { char: 'x', prob: 0.10, solid: false }, { char: 't', prob: 0.08, solid: true } ]
-        }
+        'wasteland': { ground: '.', water: 0.02, mountain: 0.05, features: [ { char: 'o', prob: 0.04, solid: true }, { char: 'x', prob: 0.03, solid: false }, { char: 't', prob: 0.01, solid: true } ] },
+        'jungle': { ground: ',', water: 0.10, mountain: 0.1, features: [ { char: 'T', prob: 0.10, solid: true }, { char: 't', prob: 0.25, solid: true }, { char: '"', prob: 0.15, solid: false } ] },
+        'desert': { ground: '_', water: 0.01, mountain: 0.15, features: [ { char: 'o', prob: 0.02, solid: true }, { char: 'Y', prob: 0.03, solid: true } ] },
+        'city': { ground: '=', water: 0.0, mountain: 0.0, features: [ { char: '#', prob: 0.12, solid: true }, { char: '+', prob: 0.08, solid: false }, { char: 'o', prob: 0.03, solid: true } ] },
+        'swamp': { ground: ';', water: 0.05, mountain: 0.0, features: [ { char: '~', prob: 0.15, solid: false }, { char: 'x', prob: 0.10, solid: false }, { char: 't', prob: 0.08, solid: true } ] }
     },
 
     // --- ITEMS ---
