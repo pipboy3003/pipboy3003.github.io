@@ -1,5 +1,16 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.0.18a] - 2025-12-18 17:09 (Dungeon Crawler Update)
+
+DUNGEON: Generierung echter, geschlossener Dungeons mit Außenwänden (#), Räumen und Korridoren.
+
+WARNING: Ein rot blinkendes Warn-Overlay erscheint nun vor dem Betreten von Dungeons (Höhle/Ruine).
+
+LOOT: Am Ende jedes Dungeons wartet eine Truhe (X) mit Belohnungen (Caps, Legendary Parts).
+
+DATA: Neue Tile-Definitionen für Dungeon-Elemente in GameData.
+
+
 [v0.0.17h] - 2025-12-18 17:45 (Menu & Readability Update)
 
 FIX: Rücksprung-Buttons in Crafting und Shop führen nun korrekt zur Stadt-Ansicht zurück, statt in eine ungültige Ansicht.
