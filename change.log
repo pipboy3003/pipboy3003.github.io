@@ -1,6 +1,14 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 ==============================
 
+[v0.0.15g] - 2025-12-17 19:40 (Mobile Awareness Update)
+
+FEATURE: Automatische Erkennung von mobilen Geräten (Touchscreen).
+
+UI: Ein Tutorial-Overlay ("Touch Controls") erscheint nach dem Login auf Smartphones, um die Joystick-Steuerung zu erklären.
+
+UX: Das Overlay kann durch einfaches Antippen ausgeblendet werden.
+
 [v0.0.15f] - 2025-12-17 19:40 (Joystick Fix)
 
 BUGFIX: Joystick-Bewegung wird nun zwangsweise gestoppt, sobald ein View-Wechsel stattfindet (z.B. Start eines Kampfes). Dies verhindert, dass der Charakter "unendlich" weiterläuft, weil das touchend Event durch den Overlay-Wechsel verloren ging.
