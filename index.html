@@ -35,7 +35,6 @@
         #layout-split { display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; min-height: 0; }
         @media (min-width: 768px) { #layout-split { flex-direction: row; } }
         
-        /* FIX: Log Width Reduced (25%) */
         #view-container { position: relative; flex-grow: 1; display: flex; justify-content: center; align-items: center; height: 65%; border-right: 2px solid var(--pip-green); overflow-x: hidden; }
         @media (min-width: 768px) { #view-container { width: 75%; height: 100%; border-bottom: none; } }
         
@@ -46,7 +45,6 @@
         .action-button:hover { background-color: var(--pip-green); color: black; }
         .action-button:active { transform: scale(0.95); }
         
-        /* FIX: Rectangular Header Buttons */
         .header-btn { padding: 5px 15px; font-size: 1.25rem; display: flex; align-items: center; justify-content: center; border: 2px solid var(--pip-green); background: rgba(0, 20, 0, 0.8); color: var(--pip-green); text-transform: uppercase; font-weight: bold; min-width: 100px; transition: all 0.2s; }
         .header-btn:hover { background-color: var(--pip-green); color: black; }
         .header-btn:active { transform: scale(0.95); }
@@ -77,6 +75,7 @@
         </div>
     </div>
 
+    <!-- Manual Overlay Fixed -->
     <div id="manual-overlay" class="hidden z-[1000] bg-black/95" style="display: none;">
         <div class="border-2 border-yellow-400 w-full max-w-2xl h-[90vh] bg-[#111] flex flex-col p-4 shadow-[0_0_30px_#aa0]">
             <div class="flex justify-between items-center border-b border-yellow-400 pb-2 mb-2">
@@ -95,16 +94,13 @@
 
     <div id="game-screen" class="hidden opacity-0 transition-opacity duration-1000">
         
-        <!-- NEW HEADER LAYOUT V2 -->
+        <!-- HEADER LAYOUT -->
         <header class="flex items-center justify-between p-2 border-b-2 border-[#39ff14] bg-[#001100] z-30 h-20 shrink-0 relative gap-2">
-            <!-- LEFT: Stats Bars -->
             <div class="flex flex-col justify-center h-full min-w-0 flex-grow leading-tight gap-1">
                 <div class="flex items-baseline gap-2">
                     <span id="val-name" class="text-xl font-bold text-cyan-400 uppercase tracking-wide truncate">PLAYER</span>
                     <span class="text-yellow-400 font-bold text-sm">LVL <span id="val-lvl">1</span></span>
                 </div>
-                
-                <!-- HP Bar -->
                 <div class="flex items-center gap-2 w-full max-w-xs">
                     <span class="text-xs font-bold w-6">HP</span>
                     <div class="flex-grow h-3 bg-gray-900 border border-[#39ff14] relative">
@@ -112,8 +108,6 @@
                         <div id="val-hp" class="absolute inset-0 text-[10px] flex items-center justify-center text-black font-bold leading-none">100/100</div>
                     </div>
                 </div>
-
-                <!-- XP Bar -->
                 <div class="flex items-center gap-2 w-full max-w-xs">
                     <span class="text-xs font-bold w-6 text-yellow-400">XP</span>
                     <div class="flex-grow h-3 bg-gray-900 border border-yellow-500 relative">
@@ -123,7 +117,6 @@
                 </div>
             </div>
 
-            <!-- RIGHT: Buttons (Save & Menu Rectangular) -->
             <div class="flex flex-col sm:flex-row items-center gap-2 shrink-0">
                 <button id="btn-save" class="header-btn border-yellow-400 text-yellow-400 hover:bg-yellow-900" title="Speichern">SPEICHERN</button>
                 <button id="btn-menu-toggle" class="header-btn border-[#39ff14]" title="Menü">MENÜ</button>
@@ -162,6 +155,7 @@
         </div>
     </div>
 </div>
+<!-- SCRIPT LOADER FIX: data.js FIRST -->
 <script>
     function loadScript(src) { return new Promise((resolve, reject) => { const s = document.createElement('script'); s.src = src; s.onload = resolve; s.onerror = reject; document.body.appendChild(s); }); }
     window.onload = function() {
@@ -172,6 +166,7 @@
             if(verDisplay) { verDisplay.textContent = ver; verDisplay.classList.remove('animate-pulse'); }
             if(loginVerDisplay) { loginVerDisplay.textContent = ver; }
             console.log("Loading V:", ver);
+            // LOAD DATA FIRST
             loadScript('data.js?v=' + ver)
                 .then(() => loadScript('world_gen.js?v=' + ver))
                 .then(() => loadScript('network.js?v=' + ver))
