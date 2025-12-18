@@ -1,5 +1,16 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.0.18b] - 2025-12-18 18:30 (Fine Tuning Update)
+
+UI: Währung "Caps" in "Kronkorken (KK)" umbenannt und im gesamten Spiel konsistent ersetzt.
+
+UI: Sektor-Koordinaten (z.B. "[3,4]") werden nun im Header unter dem Spielernamen angezeigt.
+
+UX: world_gen.js optimiert, um breitere Wege zu generieren und Sackgassen zu vermeiden (Anti-Frust).
+
+LOGIK: move prüft nun beim Sektorwechsel, ob der Zielpunkt frei ist, und sucht einen sicheren Spawn, falls nicht.
+
+
 [v0.0.18a] - 2025-12-18 17:09 (Dungeon Crawler Update)
 
 DUNGEON: Generierung echter, geschlossener Dungeons mit Außenwänden (#), Räumen und Korridoren.
