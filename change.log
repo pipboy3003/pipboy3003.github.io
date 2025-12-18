@@ -1,6 +1,14 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 ==============================
 
+[v0.0.16d] - 2025-12-18 09:30 (Black Screen Hotfix)
+
+HOTFIX: #manual-overlay hat nun style="display: none;" im HTML, um zu verhindern, dass es beim Laden kurzzeitig den Bildschirm blockiert (Race-Condition mit CSS).
+
+UI: Mobile Hint Overlay blendet sich nun sanft ein und aus.
+
+UI: Stat-Upgrade Buttons im Charakter-Menü auf 48px vergrößert.
+
 [v0.0.16c] - 2025-12-18 09:15 (Usability & Manual Update)
 
 MOBILE: Header Layout optimiert. Auf Smartphones werden weniger Infos angezeigt, um Überlappungen zu vermeiden.
