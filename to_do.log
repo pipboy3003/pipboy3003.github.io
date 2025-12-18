@@ -1,12 +1,10 @@
-Login screen. Kleine umgestaltung. 
 
-Der Anleitungsbutton soll nun auch so heißen und kein ?Zeichen mehr sein.
-Dazu setzen wir diesen direkt unter Login mit "Anleitung" als Namen, 
-daneben kommt ein "changelog" button, er öffnet ein fenster mit dem inhalt aus "change.log" um sehen zu können was gemacht wurde.
-Die beiden Buttons sollen die identische breite (zusammen)  wie der Loginbutton haben.
+Allgemeine Spielekarte zum rumlaufen. Biome müssen in einanderüber gehen. Man läuft sehr oft in eine Wand voll busch o.Ä
+beim Karten wechsel. 
+Generier das 8x8 Raster am Anfang als gesamt karte.
 
 Wiki - Tabs vorhanden aber leer? Keinerlei Infos und keine Items außer bei Bestarium drin. Hier fehlt wohl noch alles außer die Tabs.
-Welt - Sieht unschön aus, wie können wir das besser machen?
+Weltkarten ansicht - Sieht unschön aus, wie können wir das besser machen? nach dem aufdecken soll sie sichtbar bleiben in der Weltkarte.
 Inventar - Slots mit Ausrüstung als kleine Bilder. Rucksack kann beim Händler in der Stadt erweitert werden an Slots. 
 Beim mit der Maus drüber hovern, oder am handy beim Antippen mit dem Finger, soll ein Fenster kommen mit den Infos.
 
