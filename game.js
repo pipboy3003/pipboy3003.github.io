@@ -52,7 +52,7 @@ const Game = {
             if (saveData) {
                 this.state = saveData;
                 this.state.inDialog = false; 
-                // Restore defaults if missing in old save
+                // Restore defaults
                 if(!this.state.visitedSectors) this.state.visitedSectors = [];
                 if(!this.state.view) this.state.view = 'map';
                 if(!this.state.equip) this.state.equip = { weapon: this.items.fists, body: this.items.vault_suit };
@@ -120,6 +120,7 @@ const Game = {
         if (tile === 'E') { this.leaveCity(); return; }
         if (tile === 'X') { this.openChest(nx, ny); return; } 
 
+        // Hindernisse prüfen
         if(['M', 'W', '#', 'U', 't', 'T', 'o', 'Y', '|', 'F'].includes(tile)) { 
             UI.shakeView();
             return; 
@@ -169,6 +170,35 @@ const Game = {
         if(sx === 7) { for(let i=0; i<this.MAP_H; i++) map[i][this.MAP_W-1] = '#'; }
     },
 
+    findSafeSpawn: function() {
+        if(!this.state || !this.state.currentMap) return;
+        
+        const isSafe = (x, y) => {
+            if(x < 0 || x >= this.MAP_W || y < 0 || y >= this.MAP_H) return false;
+            const t = this.state.currentMap[y][x];
+            return !['M', 'W', '#', 'U', 't', 'T', 'o', 'Y', '|', 'F'].includes(t);
+        };
+
+        if(isSafe(this.state.player.x, this.state.player.y)) return;
+
+        const rMax = 6;
+        for(let r=1; r<=rMax; r++) {
+            for(let dy=-r; dy<=r; dy++) {
+                for(let dx=-r; dx<=r; dx++) {
+                    const tx = this.state.player.x + dx;
+                    const ty = this.state.player.y + dy;
+                    if(isSafe(tx, ty)) {
+                        this.state.player.x = tx;
+                        this.state.player.y = ty;
+                        return;
+                    }
+                }
+            }
+        }
+        this.state.player.x = 20;
+        this.state.player.y = 20;
+    },
+
     changeSector: function(px, py) { 
         let sx=this.state.sector.x, sy=this.state.sector.y; 
         let newPx = px;
@@ -184,7 +214,7 @@ const Game = {
         this.loadSector(sx, sy); 
         this.state.player.x = newPx;
         this.state.player.y = newPy;
-        this.findSafeSpawn();
+        this.findSafeSpawn(); 
         this.reveal(this.state.player.x, this.state.player.y); 
         UI.log(`Sektorwechsel: ${sx},${sy}`, "text-blue-400"); 
     },
@@ -371,12 +401,47 @@ const Game = {
         if(typeof UI !== 'undefined') UI.renderCrafting(); 
     },
 
+    // --- HELPER FUNCTIONS (WICHTIG!) ---
     calculateMaxHP: function(end) { return 100 + (end - 5) * 10; }, 
     
+    getStat: function(key) {
+        if(!this.state) return 5;
+        let val = this.state.stats[key] || 5;
+        if(this.state.equip.body && this.state.equip.body.bonus && this.state.equip.body.bonus[key]) val += this.state.equip.body.bonus[key];
+        if(this.state.equip.weapon && this.state.equip.weapon.bonus && this.state.equip.weapon.bonus[key]) val += this.state.equip.weapon.bonus[key];
+        if(this.state.buffEndTime > Date.now()) val += 2; 
+        return val;
+    },
+
+    expToNextLevel: function(lvl) {
+        return Math.floor(100 * Math.pow(lvl, 1.5));
+    },
+
+    gainExp: function(amount) {
+        this.state.xp += amount;
+        UI.log(`+${amount} XP`, "text-yellow-400");
+        let next = this.expToNextLevel(this.state.lvl);
+        if(this.state.xp >= next) {
+            this.state.lvl++;
+            this.state.xp -= next;
+            this.state.statPoints++;
+            this.state.maxHp = this.calculateMaxHP(this.getStat('END'));
+            this.state.hp = this.state.maxHp;
+            UI.log(`LEVEL UP! Du bist jetzt Level ${this.state.lvl}`, "text-yellow-400 font-bold animate-pulse");
+        }
+    },
+
+    saveGame: function(force=false) {
+        if(typeof Network !== 'undefined') Network.save(this.state);
+        // Backup LocalStorage
+        try { localStorage.setItem('pipboy_save', JSON.stringify(this.state)); } catch(e){}
+    },
+
+    // --- COMBAT & INTERACTIONS ---
     startCombat: function() { let pool = []; let lvl = this.state.lvl; let biome = this.worldData[`${this.state.sector.x},${this.state.sector.y}`]?.biome || 'wasteland'; let zone = this.state.zone; if(zone.includes("Supermarkt")) { pool = [this.monsters.raider, this.monsters.ghoul, this.monsters.wildDog]; if(lvl >= 4) pool.push(this.monsters.superMutant); } else if (zone.includes("Höhle")) { pool = [this.monsters.moleRat, this.monsters.radScorpion, this.monsters.bloatfly]; if(lvl >= 3) pool.push(this.monsters.ghoul); } else if(biome === 'city') { pool = [this.monsters.raider, this.monsters.ghoul, this.monsters.protectron]; if(lvl >= 5) pool.push(this.monsters.superMutant); if(lvl >= 7) pool.push(this.monsters.sentryBot); } else if(biome === 'desert') { pool = [this.monsters.radScorpion, this.monsters.raider, this.monsters.moleRat]; } else if(biome === 'jungle') { pool = [this.monsters.bloatfly, this.monsters.mutantRose, this.monsters.yaoGuai]; } else if(biome === 'swamp') { pool = [this.monsters.mirelurk, this.monsters.bloatfly]; if(lvl >= 5) pool.push(this.monsters.ghoul); } else { pool = [this.monsters.moleRat, this.monsters.radRoach, this.monsters.bloatfly]; if(lvl >= 2) pool.push(this.monsters.raider); if(lvl >= 3) pool.push(this.monsters.wildDog); } if(lvl >= 8 && Math.random() < 0.1) pool = [this.monsters.deathclaw]; else if (Math.random() < 0.01) pool = [this.monsters.deathclaw]; const template = pool[Math.floor(Math.random()*pool.length)]; let enemy = { ...template }; const isLegendary = Math.random() < 0.15; if(isLegendary) { enemy.isLegendary = true; enemy.name = "Legendäre " + enemy.name; enemy.hp *= 2; enemy.maxHp = enemy.hp; enemy.dmg = Math.floor(enemy.dmg*1.5); enemy.loot *= 3; if(Array.isArray(enemy.xp)) enemy.xp = [enemy.xp[0]*3, enemy.xp[1]*3]; } else enemy.maxHp = enemy.hp; this.state.enemy = enemy; this.state.inDialog = true; if(Date.now() < this.state.buffEndTime) UI.log("⚡ S.P.E.C.I.A.L. OVERDRIVE aktiv!", "text-yellow-400"); UI.switchView('combat').then(() => UI.renderCombat()); UI.log(isLegendary ? "LEGENDÄRER GEGNER!" : "Kampf gestartet!", isLegendary ? "text-yellow-400" : "text-red-500"); },
     getRandomXP: function(xpData) { if (Array.isArray(xpData)) return Math.floor(Math.random() * (xpData[1] - xpData[0] + 1)) + xpData[0]; return xpData; },
-    combatAction: function(act) { if(this.state.isGameOver) return; if(!this.state.enemy) return; if(this.state.enemy.hp <= 0) return; if(act === 'attack') { const wpn = this.state.equip.weapon; if(wpn.isRanged) { if(this.state.ammo > 0) this.state.ammo--; else { UI.log("Keine Munition! Fäuste.", "text-red-500"); this.state.equip.weapon = this.items.fists; this.enemyTurn(); return; } } if(Math.random() > 0.3) { const baseDmg = wpn.baseDmg || 2; const dmg = Math.floor(baseDmg + (this.getStat('STR') * 1.5)); this.state.enemy.hp -= dmg; UI.log(`Treffer: ${dmg} Schaden.`, "text-green-400"); if(this.state.enemy.hp <= 0) { const enemy = this.state.enemy; this.state.caps += enemy.loot; UI.log(`Sieg! ${enemy.loot} Kronkorken.`, "text-yellow-400"); this.gainExp(this.getRandomXP(enemy.xp)); if(enemy.isLegendary) { this.addToInventory('legendary_part', 1); UI.log("★ DROP: Legendäres Modul", "text-yellow-400 font-bold"); if(Math.random() < 0.5) { const bonusCaps = this.state.lvl * 50; this.state.caps += bonusCaps; UI.log(`★ BONUS: ${bonusCaps} Caps`, "text-yellow-400"); } } if(enemy.drops) { enemy.drops.forEach(drop => { if(Math.random() < drop.c) { this.addToInventory(drop.id, 1); } }); } this.endCombat(); return; } } else UI.log("Verfehlt!", "text-gray-500"); this.enemyTurn(); } else if (act === 'flee') { if(Math.random() < 0.4 + (this.getStat('AGI')*0.05)) { UI.log("Geflohen.", "text-green-400"); this.endCombat(); } else { UI.log("Flucht gescheitert!", "text-red-500"); this.enemyTurn(); } } UI.update(); if(this.state.view === 'combat') UI.renderCombat(); },
-    rollLegendaryLoot: function() { const result = Math.floor(Math.random() * 16) + 3; let msg = "", type = ""; if(result <= 7) { type = "CAPS"; const amt = this.state.lvl * 80; this.state.caps += amt; msg = `KRONKORKEN REGEN: +${amt} Caps!`; } else if (result <= 12) { type = "AMMO"; const amt = this.state.lvl * 25; this.state.ammo += amt; msg = `MUNITIONS JACKPOT: +${amt} Schuss!`; } else { type = "BUFF"; this.state.buffEndTime = Date.now() + 300000; msg = `S.P.E.C.I.A.L. OVERDRIVE! (5 Min)`; } return { val: result, msg: msg, type: type }; },
+    combatAction: function(act) { if(this.state.isGameOver) return; if(!this.state.enemy) return; if(this.state.enemy.hp <= 0) return; if(act === 'attack') { const wpn = this.state.equip.weapon; if(wpn.isRanged) { if(this.state.ammo > 0) this.state.ammo--; else { UI.log("Keine Munition! Fäuste.", "text-red-500"); this.state.equip.weapon = this.items.fists; this.enemyTurn(); return; } } if(Math.random() > 0.3) { const baseDmg = wpn.baseDmg || 2; const dmg = Math.floor(baseDmg + (this.getStat('STR') * 1.5)); this.state.enemy.hp -= dmg; UI.log(`Treffer: ${dmg} Schaden.`, "text-green-400"); if(this.state.enemy.hp <= 0) { const enemy = this.state.enemy; this.state.caps += enemy.loot; UI.log(`Sieg! ${enemy.loot} Kronkorken.`, "text-yellow-400"); this.gainExp(this.getRandomXP(enemy.xp)); if(enemy.isLegendary) { this.addToInventory('legendary_part', 1); UI.log("★ DROP: Legendäres Modul", "text-yellow-400 font-bold"); if(Math.random() < 0.5) { const bonusCaps = this.state.lvl * 50; this.state.caps += bonusCaps; UI.log(`★ BONUS: ${bonusCaps} KK`, "text-yellow-400"); } } if(enemy.drops) { enemy.drops.forEach(drop => { if(Math.random() < drop.c) { this.addToInventory(drop.id, 1); } }); } this.endCombat(); return; } } else UI.log("Verfehlt!", "text-gray-500"); this.enemyTurn(); } else if (act === 'flee') { if(Math.random() < 0.4 + (this.getStat('AGI')*0.05)) { UI.log("Geflohen.", "text-green-400"); this.endCombat(); } else { UI.log("Flucht gescheitert!", "text-red-500"); this.enemyTurn(); } } UI.update(); if(this.state.view === 'combat') UI.renderCombat(); },
+    rollLegendaryLoot: function() { const result = Math.floor(Math.random() * 16) + 3; let msg = "", type = ""; if(result <= 7) { type = "CAPS"; const amt = this.state.lvl * 80; this.state.caps += amt; msg = `KRONKORKEN REGEN: +${amt} KK!`; } else if (result <= 12) { type = "AMMO"; const amt = this.state.lvl * 25; this.state.ammo += amt; msg = `MUNITIONS JACKPOT: +${amt} Schuss!`; } else { type = "BUFF"; this.state.buffEndTime = Date.now() + 300000; msg = `S.P.E.C.I.A.L. OVERDRIVE! (5 Min)`; } return { val: result, msg: msg, type: type }; },
     enemyTurn: function() { if(this.state.enemy.hp <= 0) return; if(Math.random() < 0.8) { const armor = (this.getStat('END') * 0.5); const dmg = Math.max(1, Math.floor(this.state.enemy.dmg - armor)); this.state.hp -= dmg; UI.log(`Schaden erhalten: ${dmg}`, "text-red-400"); this.checkDeath(); } else UI.log("Gegner verfehlt.", "text-gray-500"); },
     checkDeath: function() { if(this.state.hp <= 0) { this.state.hp = 0; this.state.isGameOver = true; if(typeof Network !== 'undefined') Network.deleteSave(); UI.update(); UI.showGameOver(); } },
     endCombat: function() { this.state.enemy = null; this.state.inDialog = false; UI.switchView('map'); this.saveGame(); },
