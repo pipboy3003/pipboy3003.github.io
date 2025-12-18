@@ -1,3 +1,9 @@
+Login screen. Kleine umgestaltung. 
+
+Der Anleitungsbutton soll nun auch so heißen. Dazu setzen wir diesen direkt unter login mit "Anleitung" als Namen, 
+daneben kommt ein "changelog" button, er öffnet ein fenster mit dem inhalt aus "change.log" um sehen zu können was gemacht wurde.
+Die beiden Buttons sollen die identische breite wie der Loginbutton haben.
+
 Wiki - Tabs vorhanden aber leer? Keinerlei Infos und keine Items außer bei Bestarium drin. Hier fehlt wohl noch alles außer die Tabs.
 Welt - Sieht unschön aus, wie können wir das besser machen?
 Inventar - Slots mit Ausrüstung als kleine Bilder. Rucksack kann beim Händler in der Stadt erweitert werden an Slots. 
