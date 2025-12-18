@@ -2,8 +2,6 @@ const UI = {
     els: {},
     timerInterval: null,
     lastInputTime: Date.now(), 
-    
-    // Nutze zentrale Farben
     biomeColors: GameData.colors, 
     
     touchState: {
@@ -33,11 +31,6 @@ const UI = {
             line.className = "text-red-500 font-bold blink-red";
             line.textContent = errText;
             this.els.log.prepend(line);
-        }
-        const loginStat = document.getElementById('login-status');
-        if(loginStat && document.getElementById('login-screen').style.display !== 'none') {
-            loginStat.textContent = msg;
-            loginStat.className = "mt-4 text-red-500 font-bold blink-red";
         }
     },
 
@@ -426,7 +419,7 @@ const UI = {
         const v = this.els.version;
         if(!v) return;
         if(status === 'online') {
-            v.textContent = "ONLINE (v0.0.16a)"; 
+            v.textContent = "ONLINE (v0.0.16b)"; 
             v.className = "text-[#39ff14] font-bold tracking-widest"; v.style.textShadow = "0 0 5px #39ff14";
         } else if (status === 'offline') {
             v.textContent = "OFFLINE"; v.className = "text-red-500 font-bold tracking-widest"; v.style.textShadow = "0 0 5px red";
@@ -490,7 +483,7 @@ const UI = {
             
             if (name === 'char') this.renderChar(); 
             if (name === 'inventory') this.renderInventory(); 
-            if (name === 'wiki') this.renderWiki(); 
+            if (name === 'wiki') this.renderWiki(); // Default: Monsters
             if (name === 'worldmap') this.renderWorldMap(); 
             if (name === 'city') this.renderCity(); 
             if (name === 'combat') this.renderCombat(); 
@@ -699,7 +692,8 @@ const UI = {
             }
         });
 
-        content.innerHTML = '';
+        // Use a buffer string for better performance
+        let htmlBuffer = '';
 
         if(category === 'monsters') {
             Object.keys(Game.monsters).forEach(k => {
@@ -714,7 +708,7 @@ const UI = {
                     }).join(', ');
                 }
 
-                content.innerHTML += `
+                htmlBuffer += `
                     <div class="border border-green-900 bg-green-900/10 p-3 mb-2">
                         <div class="flex justify-between items-start">
                             <div class="font-bold text-yellow-400 text-xl">${m.name} ${m.isLegendary ? '★' : ''}</div>
@@ -734,37 +728,48 @@ const UI = {
         } 
         else if (category === 'items') {
             const categories = {};
-            Object.keys(Game.items).forEach(k => {
-                const i = Game.items[k];
-                if(!categories[i.type]) categories[i.type] = [];
-                categories[i.type].push(i);
-            });
-
-            for(let type in categories) {
-                content.innerHTML += `<h3 class="text-lg font-bold border-b border-green-500 mt-4 mb-2 uppercase">${type}</h3>`;
-                categories[type].forEach(item => {
-                    let details = `Wert: ${item.cost}`;
-                    if(item.baseDmg) details += ` | DMG: ${item.baseDmg}`;
-                    if(item.bonus) details += ` | Bonus: ${JSON.stringify(item.bonus).replace(/["{}]/g, '').replace(/:/g, '+')}`;
-                    
-                    content.innerHTML += `
-                        <div class="flex justify-between items-center border-b border-green-900/50 py-1">
-                            <span class="font-bold text-green-300">${item.name}</span>
-                            <span class="text-xs text-gray-400">${details}</span>
-                        </div>`;
+            // Safely iterate Game.items
+            if (Game.items) {
+                Object.keys(Game.items).forEach(k => {
+                    const i = Game.items[k];
+                    if(!categories[i.type]) categories[i.type] = [];
+                    categories[i.type].push(i);
                 });
+
+                for(let type in categories) {
+                    htmlBuffer += `<h3 class="text-lg font-bold border-b border-green-500 mt-4 mb-2 uppercase text-green-300">${type}</h3>`;
+                    categories[type].forEach(item => {
+                        let details = `Wert: ${item.cost}`;
+                        if(item.baseDmg) details += ` | DMG: ${item.baseDmg}`;
+                        if(item.bonus) details += ` | Bonus: ${JSON.stringify(item.bonus).replace(/["{}]/g, '').replace(/:/g, '+')}`;
+                        
+                        htmlBuffer += `
+                            <div class="flex justify-between items-center border-b border-green-900/30 py-1">
+                                <span class="font-bold text-white">${item.name}</span>
+                                <span class="text-xs text-gray-400">${details}</span>
+                            </div>`;
+                    });
+                }
+            } else {
+                htmlBuffer = '<div class="text-red-500">Fehler: Item-Datenbank nicht gefunden.</div>';
             }
         }
         else if (category === 'crafting') {
-            Game.recipes.forEach(r => {
-                const outName = r.out === "AMMO" ? "Munition x15" : Game.items[r.out].name;
-                const reqs = Object.keys(r.req).map(rid => `${r.req[rid]}x ${Game.items[rid].name}`).join(', ');
-                content.innerHTML += `
-                    <div class="border border-green-900 p-2 mb-2">
-                        <div class="font-bold text-yellow-400">${outName} <span class="text-xs text-gray-500 ml-2">(Lvl ${r.lvl})</span></div>
-                        <div class="text-xs text-green-300 italic">Benötigt: ${reqs}</div>
-                    </div>`;
-            });
+            if (Game.recipes) {
+                Game.recipes.forEach(r => {
+                    const outName = r.out === "AMMO" ? "Munition x15" : (Game.items[r.out] ? Game.items[r.out].name : r.out);
+                    const reqs = Object.keys(r.req).map(rid => {
+                        const iName = Game.items[rid] ? Game.items[rid].name : rid;
+                        return `${r.req[rid]}x ${iName}`;
+                    }).join(', ');
+                    
+                    htmlBuffer += `
+                        <div class="border border-green-900 p-2 mb-2 bg-green-900/10">
+                            <div class="font-bold text-yellow-400">${outName} <span class="text-xs text-gray-500 ml-2">(Lvl ${r.lvl})</span></div>
+                            <div class="text-xs text-green-300 italic">Benötigt: ${reqs}</div>
+                        </div>`;
+                });
+            }
         }
         else if (category === 'locs') {
             const locs = [
@@ -777,13 +782,15 @@ const UI = {
                 {name: "Sumpf", desc: "Sektor [6,0] bis [7,1]. Giftiges Wasser und Mirelurks."}
             ];
             locs.forEach(l => {
-                content.innerHTML += `
-                    <div class="mb-3">
-                        <div class="font-bold text-cyan-400 text-lg">LOCATION: ${l.name.toUpperCase()}</div>
+                htmlBuffer += `
+                    <div class="mb-3 border-l-2 border-green-500 pl-2">
+                        <div class="font-bold text-cyan-400 text-lg uppercase">${l.name}</div>
                         <div class="text-sm text-green-200 leading-tight">${l.desc}</div>
                     </div>`;
             });
         }
+        
+        content.innerHTML = htmlBuffer;
     },
 
     renderChar: function() { 
@@ -858,7 +865,8 @@ const UI = {
     showQuestDetail: function(id) { const quest = Game.state.quests.find(q => q.id === id); if(!quest) return; quest.read = true; this.update(); const list = document.getElementById('quest-list'); const detail = document.getElementById('quest-detail'); const content = document.getElementById('quest-content'); list.classList.add('hidden'); detail.classList.remove('hidden'); content.innerHTML = `<h2 class="text-2xl font-bold text-yellow-400 border-b border-green-500 mb-4">${quest.title}</h2><div class="font-mono text-lg leading-relaxed whitespace-pre-wrap">${quest.text}</div>`; },
     closeQuestDetail: function() { document.getElementById('quest-detail').classList.add('hidden'); document.getElementById('quest-list').classList.remove('hidden'); this.renderQuests(); },
     renderChar: function() { const grid = document.getElementById('stat-grid'); if(!grid) return; const lvlDisplay = document.getElementById('char-lvl'); if(lvlDisplay) lvlDisplay.textContent = Game.state.lvl; grid.innerHTML = Object.keys(Game.state.stats).map(k => { const val = Game.getStat(k); const btn = Game.state.statPoints > 0 ? `<button class="border border-green-500 px-1 ml-2" onclick="Game.upgradeStat('${k}')">+</button>` : ''; return `<div class="flex justify-between items-center border-b border-green-900/30 py-1"><span>${k}</span> <div class="flex items-center"><span class="text-yellow-400 font-bold">${val}</span>${btn}</div></div>`; }).join(''); const nextXp = Game.expToNextLevel(Game.state.lvl); const expPct = Math.min(100, (Game.state.xp / nextXp) * 100); document.getElementById('char-exp').textContent = Game.state.xp; document.getElementById('char-next').textContent = nextXp; document.getElementById('char-exp-bar').style.width = `${expPct}%`; document.getElementById('char-points').textContent = Game.state.statPoints; const wpn = Game.state.equip.weapon || {name: "Fäuste", baseDmg: 2}; const arm = Game.state.equip.body || {name: "Vault-Anzug", bonus: {END: 1}}; document.getElementById('equip-weapon-name').textContent = wpn.name; let wpnStats = `DMG: ${wpn.baseDmg}`; if(wpn.bonus) { for(let s in wpn.bonus) wpnStats += ` ${s}:${wpn.bonus[s]}`; } document.getElementById('equip-weapon-stats').textContent = wpnStats; document.getElementById('equip-body-name').textContent = arm.name; let armStats = ""; if(arm.bonus) { for(let s in arm.bonus) armStats += `${s}:${arm.bonus[s]} `; } document.getElementById('equip-body-stats').textContent = armStats || "Kein Bonus"; },
-    renderWiki: function() { const content = document.getElementById('wiki-content'); if(!content) return; content.innerHTML = Object.keys(Game.monsters).map(k => { const m = Game.monsters[k]; const xpText = Array.isArray(m.xp) ? `${m.xp[0]}-${m.xp[1]}` : m.xp; return `<div class="border-b border-green-900 pb-1"><div class="font-bold text-yellow-400">${m.name}</div><div class="text-xs opacity-70">HP: ~${m.hp}, XP: ${xpText}</div></div>`; }).join(''); },
+    
+    // Wiki Rendering ist nun direkt in renderWiki implementiert (siehe oben)
     renderWorldMap: function() { const grid = document.getElementById('world-grid'); if(!grid) return; grid.innerHTML = ''; for(let y=0; y<8; y++) { for(let x=0; x<8; x++) { const d = document.createElement('div'); d.className = "border border-green-900/30 flex justify-center items-center text-xs relative"; if(x === Game.state.sector.x && y === Game.state.sector.y) { d.style.backgroundColor = "#39ff14"; d.style.color = "black"; d.style.fontWeight = "bold"; d.textContent = "YOU"; } else if(Game.worldData[`${x},${y}`]) { const biome = Game.worldData[`${x},${y}`].biome; d.style.backgroundColor = this.biomeColors[biome] || '#4a3d34'; } if(typeof Network !== 'undefined' && Network.otherPlayers) { const playersHere = Object.values(Network.otherPlayers).filter(p => p.sector && p.sector.x === x && p.sector.y === y); if(playersHere.length > 0) { const dot = document.createElement('div'); dot.className = "absolute w-2 h-2 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_5px_cyan]"; if(x === Game.state.sector.x && y === Game.state.sector.y) { dot.style.top = "2px"; dot.style.right = "2px"; } d.appendChild(dot); } } grid.appendChild(d); } } grid.style.gridTemplateColumns = "repeat(8, 1fr)"; },
     renderCity: function() { const con = document.getElementById('city-options'); if(!con) return; con.innerHTML = ''; const addBtn = (txt, cb, disabled=false) => { const b = document.createElement('button'); b.className = "action-button w-full mb-2 text-left p-3 flex justify-between"; b.innerHTML = txt; b.onclick = cb; if(disabled) { b.disabled = true; b.style.opacity = 0.5; } con.appendChild(b); }; addBtn("Heilen (25 Kronkorken)", () => Game.heal(), Game.state.caps < 25 || Game.state.hp >= Game.state.maxHp); addBtn("Munition (10 Stk / 10 Kronkorken)", () => Game.buyAmmo(), Game.state.caps < 10); addBtn("Händler / Waffen & Rüstung", () => this.renderShop(con)); addBtn("🛠️ Werkbank / Crafting", () => this.toggleView('crafting')); addBtn("Stadt verlassen", () => this.switchView('map')); },
     renderShop: function(container) { container.innerHTML = ''; const backBtn = document.createElement('button'); backBtn.className = "action-button w-full mb-4 text-center border-yellow-400 text-yellow-400"; backBtn.textContent = "ZURÜCK ZUM PLATZ"; backBtn.onclick = () => this.renderCity(); container.appendChild(backBtn); Object.keys(Game.items).forEach(key => { const item = Game.items[key]; if(item.cost > 0 && Game.state.lvl >= (item.requiredLevel || 0) - 2) { const canAfford = Game.state.caps >= item.cost; const isEquipped = (Game.state.equip[item.slot] && Game.state.equip[item.slot].name === item.name); let label = `<span>${item.name}</span> <span>${item.cost} Kronkorken</span>`; if(isEquipped) label = `<span class="text-green-500">[AUSGERÜSTET]</span>`; const btn = document.createElement('button'); btn.className = "action-button w-full mb-2 flex justify-between text-sm"; btn.innerHTML = label; if(!canAfford || isEquipped) { btn.disabled = true; btn.style.opacity = 0.5; } else { btn.onclick = () => Game.buyItem(key); } container.appendChild(btn); } }); },
