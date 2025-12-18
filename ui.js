@@ -2,7 +2,7 @@ const UI = {
     els: {},
     timerInterval: null,
     lastInputTime: Date.now(), 
-    biomeColors: GameData.colors, 
+    biomeColors: (typeof window.GameData !== 'undefined') ? window.GameData.colors : {}, 
     
     touchState: {
         active: false, id: null, startX: 0, startY: 0, currentX: 0, currentY: 0, moveDir: { x: 0, y: 0 }, timer: null
@@ -497,7 +497,7 @@ const UI = {
         const v = this.els.version;
         if(!v) return;
         if(status === 'online') {
-            v.textContent = "ONLINE (v0.0.17f)"; 
+            v.textContent = "ONLINE (v0.0.17g)"; 
             v.className = "text-[#39ff14] font-bold tracking-widest"; v.style.textShadow = "0 0 5px #39ff14";
         } else if (status === 'offline') {
             v.textContent = "OFFLINE"; v.className = "text-red-500 font-bold tracking-widest"; v.style.textShadow = "0 0 5px red";
@@ -591,15 +591,9 @@ const UI = {
             this.els.name.textContent = Network.myId || "SURVIVOR";
         }
 
-        // NEW: Level Up Notification
-        if(Game.state.statPoints > 0) {
-            this.els.lvl.innerHTML = `${Game.state.lvl} <span class="text-yellow-400 animate-pulse ml-1 text-xs">LVL UP!</span>`;
-        } else {
-            this.els.lvl.textContent = Game.state.lvl; 
-        }
-
+        if(this.els.lvl) this.els.lvl.textContent = Game.state.lvl; 
         if(this.els.ammo) this.els.ammo.textContent = Game.state.ammo; 
-        if(this.els.caps) this.els.caps.textContent = `${Game.state.caps} Caps`; 
+        if(this.els.caps) this.els.caps.textContent = `${Game.state.caps}`; 
         if(this.els.zone) this.els.zone.textContent = Game.state.zone; 
         
         const buffActive = Date.now() < Game.state.buffEndTime; 
@@ -650,7 +644,7 @@ const UI = {
         });
         
         if(this.els.lvl) {
-            if(buffActive) this.els.lvl.classList.add('blink-red'); 
+            if(Date.now() < Game.state.buffEndTime) this.els.lvl.classList.add('blink-red'); 
             else this.els.lvl.classList.remove('blink-red'); 
         }
         
@@ -676,32 +670,56 @@ const UI = {
         
         let totalItems = 0;
         
-        Game.state.inventory.forEach(entry => {
+        const getIcon = (type) => {
+            switch(type) {
+                case 'weapon': return '🔫';
+                case 'body': return '🛡️';
+                case 'consumable': return '💉';
+                case 'junk': return '⚙️';
+                case 'component': return '🔩';
+                case 'rare': return '⭐';
+                default: return '📦';
+            }
+        };
+
+        Game.state.inventory.forEach((entry, index) => {
             if(entry.count <= 0) return;
             totalItems += entry.count;
             const item = Game.items[entry.id];
             
-            const div = document.createElement('div');
-            div.className = "border border-green-900 bg-green-900/10 p-2 flex justify-between items-center";
+            const btn = document.createElement('div');
+            btn.className = "relative border border-green-500 bg-green-900/30 w-full h-16 flex flex-col items-center justify-center cursor-pointer hover:bg-green-500 hover:text-black transition-colors group";
             
-            let btnText = "BENUTZEN";
-            if(item.type === 'weapon' || item.type === 'body') btnText = "AUSRÜSTEN";
-            if(item.type === 'junk' || item.type === 'component' || item.type === 'rare') btnText = "-";
+            const tooltipPos = index < 4 ? "top-full mt-2" : "bottom-full mb-2";
             
-            div.innerHTML = `
-                <div>
-                    <div class="font-bold text-yellow-400">${item.name} <span class="text-white">x${entry.count}</span></div>
-                    <div class="text-xs opacity-70">${item.type.toUpperCase()}</div>
+            btn.innerHTML = `
+                <div class="text-2xl">${getIcon(item.type)}</div>
+                <div class="text-[10px] truncate max-w-full px-1 font-bold">${item.name}</div>
+                <div class="absolute top-0 right-0 bg-green-900 text-white text-[10px] px-1 font-mono">${entry.count}</div>
+                <div class="hidden group-hover:flex absolute ${tooltipPos} left-1/2 -translate-x-1/2 w-48 bg-black border border-green-500 p-2 z-[9999] flex-col gap-1 text-left shadow-[0_0_10px_#000]">
+                    <div class="font-bold text-yellow-400 text-sm border-b border-green-900 pb-1 mb-1">${item.name}</div>
+                    <div class="text-[10px] text-green-300">Typ: ${item.type.toUpperCase()}</div>
+                    <div class="text-[10px] text-gray-400">Wert: ${item.cost} Caps</div>
+                    ${(item.baseDmg) ? `<div class="text-[10px] text-red-400">DMG: ${item.baseDmg}</div>` : ''}
+                    ${(item.bonus) ? `<div class="text-[10px] text-blue-400">Bonus: ${JSON.stringify(item.bonus).replace(/["{}]/g,'')}</div>` : ''}
+                    <div class="text-[9px] text-center text-green-500 mt-1">[KLICK] AKTION</div>
                 </div>
-                ${btnText !== '-' ? `<button class="action-button text-sm px-2" onclick="Game.useItem('${entry.id}')">${btnText}</button>` : ''}
             `;
-            list.appendChild(div);
+            
+            btn.onclick = () => {
+                 if(item.type === 'junk' || item.type === 'component' || item.type === 'rare') {
+                 } else {
+                     Game.useItem(entry.id);
+                 }
+            };
+
+            list.appendChild(btn);
         });
         
         countDisplay.textContent = totalItems;
         
         if(totalItems === 0) {
-            list.innerHTML = '<div class="text-center text-gray-500 italic mt-10">Leerer Rucksack...</div>';
+            list.innerHTML = '<div class="col-span-4 text-center text-gray-500 italic mt-10">Leerer Rucksack...</div>';
         }
     },
     
@@ -885,11 +903,14 @@ const UI = {
         const lvlDisplay = document.getElementById('char-lvl'); 
         if(lvlDisplay) lvlDisplay.textContent = Game.state.lvl; 
         
+        // FIX: Translate stat keys
         grid.innerHTML = Object.keys(Game.state.stats).map(k => { 
             const val = Game.getStat(k); 
-            // FIX: Große Buttons (w-12 h-12)
+            // Use translation or fallback
+            const label = (typeof window.GameData !== 'undefined' && window.GameData.statLabels && window.GameData.statLabels[k]) ? window.GameData.statLabels[k] : k;
+
             const btn = Game.state.statPoints > 0 ? `<button class="w-12 h-12 border-2 border-green-500 bg-green-900/50 text-green-400 font-bold ml-2 flex items-center justify-center hover:bg-green-500 hover:text-black transition-colors" onclick="Game.upgradeStat('${k}')" style="font-size: 1.5rem;">+</button>` : ''; 
-            return `<div class="flex justify-between items-center border-b border-green-900/30 py-1 h-14"><span>${k}</span> <div class="flex items-center"><span class="text-yellow-400 font-bold mr-4 text-xl">${val}</span>${btn}</div></div>`; 
+            return `<div class="flex justify-between items-center border-b border-green-900/30 py-1 h-14"><span>${label}</span> <div class="flex items-center"><span class="text-yellow-400 font-bold mr-4 text-xl">${val}</span>${btn}</div></div>`; 
         }).join(''); 
         
         const nextXp = Game.expToNextLevel(Game.state.lvl); 
@@ -897,15 +918,7 @@ const UI = {
         document.getElementById('char-exp').textContent = Game.state.xp; 
         document.getElementById('char-next').textContent = nextXp; 
         document.getElementById('char-exp-bar').style.width = `${expPct}%`; 
-        
-        // NEU: Auffälliger Hinweis, wenn Punkte verfügbar sind
-        const pts = Game.state.statPoints;
-        const ptsEl = document.getElementById('char-points');
-        if (pts > 0) {
-            ptsEl.innerHTML = `<span class="text-red-500 animate-pulse text-2xl font-bold bg-red-900/20 px-2 border border-red-500">${pts} VERFÜGBAR!</span>`;
-        } else {
-            ptsEl.textContent = pts;
-        }
+        document.getElementById('char-points').textContent = Game.state.statPoints; 
         
         const wpn = Game.state.equip.weapon || {name: "Fäuste", baseDmg: 2};
         const arm = Game.state.equip.body || {name: "Vault-Anzug", bonus: {END: 1}};
