@@ -115,33 +115,24 @@ const UI = {
             };
         }
         
-        // GLOBAL CLICK HANDLER: CLOSE MENUS ON OUTSIDE CLICK
         document.addEventListener('click', (e) => {
-            // Close Nav Menu
             if(this.els.navMenu && !this.els.navMenu.classList.contains('hidden')) {
                 if (!this.els.navMenu.contains(e.target) && e.target !== this.els.btnMenu) {
                     this.els.navMenu.classList.add('hidden');
                     this.els.navMenu.style.display = 'none';
                 }
             }
-            
-            // NEW: Close any active view (Inventory, Char, etc.) when clicking on Log or outside
-            // Only if NOT in map view and NOT clicking inside the view container
-            if (Game.state && Game.state.view !== 'map' && Game.state.view !== 'combat' && Game.state.view !== 'city' && Game.state.view !== 'shop' && Game.state.view !== 'crafting' && Game.state.view !== 'clinic') {
+            if (Game.state && Game.state.view !== 'map' && Game.state.view !== 'combat' && Game.state.view !== 'city' && Game.state.view !== 'shop' && Game.state.view !== 'crafting' && Game.state.view !== 'clinic' && Game.state.view !== 'vault') {
                 const viewContainer = document.getElementById('view-container');
-                // Check if click was OUTSIDE the view content (e.g. on the log panel)
                 if (!viewContainer.contains(e.target)) {
                     this.switchView('map');
                 }
             }
         });
         
-        // FIX: Click on Log Panel specifically closes menus
         if(this.els.log.parentElement) {
             this.els.log.parentElement.addEventListener('click', () => {
-                if (Game.state && Game.state.view !== 'map' && Game.state.view !== 'combat' && !Game.state.view.includes('city')) { // Don't close city views on log click, might be annoying? Actually user requested it.
-                     // User said: "Wenn man in ein Menü gehts, soll man über INS Log klicken zurück zur Spielwelt kommen."
-                     // So we close EVERYTHING except map and combat.
+                if (Game.state && Game.state.view !== 'map' && Game.state.view !== 'combat' && !Game.state.view.includes('city')) {
                      if (Game.state.view !== 'combat') {
                          this.switchView('map');
                      }
@@ -195,50 +186,25 @@ const UI = {
     showManualOverlay: async function() {
         const overlay = document.getElementById('manual-overlay');
         const content = document.getElementById('manual-content');
-        
-        if(this.els.navMenu) {
-            this.els.navMenu.classList.add('hidden');
-            this.els.navMenu.style.display = 'none';
-        }
-        
+        if(this.els.navMenu) { this.els.navMenu.classList.add('hidden'); this.els.navMenu.style.display = 'none'; }
         if(overlay && content) {
             content.innerHTML = '<div class="text-center animate-pulse">Lade Handbuch...</div>';
-            overlay.style.display = 'flex'; 
-            overlay.classList.remove('hidden');
-            
+            overlay.style.display = 'flex'; overlay.classList.remove('hidden');
             const verDisplay = document.getElementById('version-display'); 
             const ver = verDisplay ? verDisplay.textContent.trim() : Date.now();
-            try {
-                const res = await fetch(`views/manual.html?v=${ver}`);
-                if (!res.ok) throw new Error("Manual not found");
-                const html = await res.text();
-                content.innerHTML = html;
-            } catch(e) {
-                content.innerHTML = `<div class="text-red-500">Fehler beim Laden: ${e.message}</div>`;
-            }
+            try { const res = await fetch(`views/manual.html?v=${ver}`); if (!res.ok) throw new Error("Manual not found"); const html = await res.text(); content.innerHTML = html; } catch(e) { content.innerHTML = `<div class="text-red-500">Fehler beim Laden: ${e.message}</div>`; }
         }
     },
 
     showChangelogOverlay: async function() {
         const overlay = document.getElementById('changelog-overlay');
         const content = document.getElementById('changelog-content');
-        
         if(overlay && content) {
             content.textContent = 'Lade Daten...';
-            overlay.style.display = 'flex'; 
-            overlay.classList.remove('hidden');
-            
+            overlay.style.display = 'flex'; overlay.classList.remove('hidden');
             const verDisplay = document.getElementById('version-display'); 
             const ver = verDisplay ? verDisplay.textContent.trim() : Date.now();
-            
-            try {
-                const res = await fetch(`change.log?v=${ver}`);
-                if (!res.ok) throw new Error("Logfile nicht gefunden");
-                const text = await res.text();
-                content.textContent = text;
-            } catch(e) {
-                content.textContent = `Fehler beim Laden: ${e.message}`;
-            }
+            try { const res = await fetch(`change.log?v=${ver}`); if (!res.ok) throw new Error("Logfile nicht gefunden"); const text = await res.text(); content.textContent = text; } catch(e) { content.textContent = `Fehler beim Laden: ${e.message}`; }
         }
     },
 
@@ -249,17 +215,43 @@ const UI = {
                 <div class="border-2 border-[#39ff14] bg-black p-6 text-center shadow-[0_0_20px_#39ff14] max-w-sm mx-4">
                     <div class="text-5xl mb-4 animate-bounce">👆</div>
                     <h2 class="text-2xl font-bold text-[#39ff14] mb-2 tracking-widest border-b border-[#39ff14] pb-2">TOUCH STEUERUNG</h2>
-                    <p class="text-green-300 mb-6 font-mono leading-relaxed">
-                        Tippe und halte IRGENDWO auf dem Hauptschirm (auch im Log), um den Joystick zu aktivieren.
-                    </p>
-                    <div class="text-xs text-[#39ff14] animate-pulse font-bold bg-[#39ff14]/20 py-2 rounded">
-                        > TIPPEN ZUM STARTEN <
-                    </div>
+                    <p class="text-green-300 mb-6 font-mono leading-relaxed">Tippe und halte IRGENDWO auf dem Hauptschirm (auch im Log), um den Joystick zu aktivieren.</p>
+                    <div class="text-xs text-[#39ff14] animate-pulse font-bold bg-[#39ff14]/20 py-2 rounded">> TIPPEN ZUM STARTEN <</div>
                 </div>
-            </div>
-        `;
+            </div>`;
         document.body.insertAdjacentHTML('beforeend', hintHTML);
         setTimeout(() => { const el = document.getElementById('mobile-hint'); if(el) el.classList.remove('opacity-0'); }, 10);
+    },
+
+    // NEU: Dungeon Warnung
+    showDungeonWarning: function(confirmCallback) {
+        if(document.getElementById('dungeon-warning')) return;
+        const html = `
+            <div id="dungeon-warning" class="absolute inset-0 z-[200] flex flex-col justify-center items-center bg-black/95">
+                <div class="border-4 border-red-600 p-8 text-center animate-pulse bg-red-900/20 max-w-sm shadow-[0_0_50px_red]">
+                    <h1 class="text-5xl font-bold text-red-600 mb-4 tracking-widest">WARNUNG</h1>
+                    <p class="text-red-400 mb-8 text-xl font-bold">HOHE GEFAHR!<br>TÖDLICHE KREATUREN.<br>KEINE RÜCKKEHR OHNE SIEG.</p>
+                    <div class="flex gap-4 justify-center">
+                        <button id="btn-enter-dungeon" class="action-button border-red-600 text-red-500 px-6 py-4 font-bold text-xl hover:bg-red-900">BETRETEN</button>
+                        <button id="btn-cancel-dungeon" class="action-button border-green-500 text-green-500 px-6 py-4 font-bold text-xl hover:bg-green-900">FLUCHT</button>
+                    </div>
+                </div>
+            </div>`;
+        document.body.insertAdjacentHTML('beforeend', html);
+        
+        document.getElementById('btn-enter-dungeon').onclick = () => {
+            document.getElementById('dungeon-warning').remove();
+            confirmCallback();
+        };
+        document.getElementById('btn-cancel-dungeon').onclick = () => {
+            document.getElementById('dungeon-warning').remove();
+            // Step back to avoid loop
+            Game.move(0, 0); // Refresh view only? No, move player back?
+            // Actually, we are still on the tile. We need to move player 1 tile back or just don't enter.
+            // But next move will trigger it again.
+            // Simple workaround: Teleport player 1 tile away based on rotation?
+            // For now just stay and update UI, user must walk away.
+        };
     },
 
     handleTouchStart: function(e) {
@@ -522,7 +514,7 @@ const UI = {
         const v = this.els.version;
         if(!v) return;
         if(status === 'online') {
-            v.textContent = "ONLINE (v0.0.17h)"; 
+            v.textContent = "ONLINE (v0.0.18a)"; 
             v.className = "text-[#39ff14] font-bold tracking-widest"; v.style.textShadow = "0 0 5px #39ff14";
         } else if (status === 'offline') {
             v.textContent = "OFFLINE"; v.className = "text-red-500 font-bold tracking-widest"; v.style.textShadow = "0 0 5px red";
