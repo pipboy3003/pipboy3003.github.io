@@ -1,7 +1,6 @@
 const Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     
-    // Referenz auf externe Daten für kürzeren Code
     colors: GameData.colors,
     items: GameData.items,
     monsters: GameData.monsters,
@@ -25,8 +24,6 @@ const Game = {
             if (saveData) {
                 this.state = saveData;
                 this.state.inDialog = false; 
-                
-                // Fallback für alte Saves ohne Equip
                 if(!this.state.equip) this.state.equip = { weapon: this.items.fists, body: this.items.vault_suit };
                 if(!this.state.equip.weapon) this.state.equip.weapon = this.items.fists;
                 if(!this.state.equip.body) this.state.equip.body = this.items.vault_suit;
@@ -43,7 +40,6 @@ const Game = {
                     startSecY = spawnTarget.sector.y;
                     startX = spawnTarget.x;
                     startY = spawnTarget.y;
-                    UI.log(`>> Spawn bei Signal: ${startSecX},${startSecY}`, "text-yellow-400");
                 }
                 this.state = {
                     sector: {x: startSecX, y: startSecY}, startSector: {x: startSecX, y: startSecY}, 
@@ -55,7 +51,8 @@ const Game = {
                     view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, explored: {}, 
                     tempStatIncrease: {}, buffEndTime: 0,
                     quests: [ { id: "q1", title: "Der Weg nach Hause", text: "Suche Zivilisation.", read: false } ], 
-                    startTime: Date.now()
+                    startTime: Date.now(),
+                    savedPosition: null // Zum Speichern der Position beim Betreten von Gebäuden
                 };
                 this.addToInventory('stimpack', 1);
                 this.state.hp = this.calculateMaxHP(this.getStat('END')); 
@@ -87,8 +84,13 @@ const Game = {
 
         const tile = this.state.currentMap[ny][nx];
         
-        if(['M', 'W', '#', 'U', 't', 'T', 'o', 'Y'].includes(tile)) { 
-            // FIX: Shake-Effekt statt Text-Meldung
+        // INTERAKTIONEN IN DER STADT
+        if (tile === '$') { UI.switchView('shop'); return; }
+        if (tile === '&') { UI.switchView('crafting'); return; }
+        if (tile === 'P') { UI.switchView('clinic'); return; }
+        if (tile === 'E') { this.leaveCity(); return; }
+
+        if(['M', 'W', '#', 'U', 't', 'T', 'o', 'Y', '|', 'F'].includes(tile)) { 
             UI.shakeView();
             return; 
         }
@@ -108,7 +110,9 @@ const Game = {
         if(tile === 'V') { UI.enterVault(); return; }
         if(tile === 'S') { UI.enterSupermarket(); return; }
         if(tile === 'H') { UI.enterCave(); return; }
-        if(tile === 'C') { UI.switchView('city'); return; } 
+        
+        // C ist jetzt begehbar und lädt die Stadt-Map
+        if(tile === 'C') { this.enterCity(); return; } 
         
         if(['.', ',', '_', ';', '"', '+', 'x'].includes(tile)) {
             if(Math.random() < 0.04) { 
@@ -118,6 +122,40 @@ const Game = {
         }
         
         UI.update();
+    },
+
+    // NEU: City Logic
+    enterCity: function() {
+        // Speichere Position auf der Weltkarte
+        this.state.savedPosition = { x: this.state.player.x, y: this.state.player.y };
+        
+        // Lade Stadt-Layout
+        const map = WorldGen.generateCityLayout(this.MAP_W, this.MAP_H);
+        this.state.currentMap = map;
+        this.state.zone = "Rusty Springs (Stadt)";
+        
+        // Setze Spieler zum Eingang (Unten Mitte)
+        this.state.player.x = 20;
+        this.state.player.y = 38;
+        this.state.player.rot = 0; // Nach oben schauen
+        
+        // Rendern
+        this.renderStaticMap();
+        this.state.explored = {}; // Stadt ist sichtbar
+        for(let y=0; y<this.MAP_H; y++) for(let x=0; x<this.MAP_W; x++) this.state.explored[`${x},${y}`] = true;
+        
+        UI.log("Betrete Rusty Springs...", "text-yellow-400");
+        UI.update();
+    },
+
+    leaveCity: function() {
+        if(this.state.savedPosition) {
+            this.state.player.x = this.state.savedPosition.x;
+            this.state.player.y = this.state.savedPosition.y;
+            this.state.savedPosition = null;
+        }
+        this.loadSector(this.state.sector.x, this.state.sector.y);
+        UI.log("Verlasse Stadt.", "text-green-400");
     },
 
     addToInventory: function(id, count=1) { 
@@ -277,29 +315,47 @@ const Game = {
         const pulse = Math.sin(Date.now() / 200) * 0.3 + 0.7; 
         const startX = Math.floor(this.camera.x / this.TILE); const startY = Math.floor(this.camera.y / this.TILE); 
         const endX = startX + Math.ceil(cvs.width / this.TILE) + 1; const endY = startY + Math.ceil(cvs.height / this.TILE) + 1; 
-        for(let y=startY; y<endY; y++) { for(let x=startX; x<endX; x++) { if(y>=0 && y<this.MAP_H && x>=0 && x<this.MAP_W) { const t = this.state.currentMap[y][x]; if(['V', 'S', 'C', 'G', 'H', '^', 'v', '<', '>'].includes(t)) { this.drawTile(ctx, x, y, t, pulse); } } } } 
+        for(let y=startY; y<endY; y++) { for(let x=startX; x<endX; x++) { if(y>=0 && y<this.MAP_H && x>=0 && x<this.MAP_W) { const t = this.state.currentMap[y][x]; if(['V', 'S', 'C', 'G', 'H', '^', 'v', '<', '>', '$', '&', 'P', 'E', 'F'].includes(t)) { this.drawTile(ctx, x, y, t, pulse); } } } } 
         if(typeof Network !== 'undefined' && Network.otherPlayers) { for(let pid in Network.otherPlayers) { const p = Network.otherPlayers[pid]; if(p.sector && (p.sector.x !== this.state.sector.x || p.sector.y !== this.state.sector.y)) continue; const ox = p.x * this.TILE + this.TILE/2; const oy = p.y * this.TILE + this.TILE/2; ctx.fillStyle = "#00ffff"; ctx.shadowBlur = 5; ctx.shadowColor = "#00ffff"; ctx.beginPath(); ctx.arc(ox, oy, 5, 0, Math.PI*2); ctx.fill(); ctx.font = "10px monospace"; ctx.fillStyle = "white"; ctx.fillText("P", ox+6, oy); ctx.shadowBlur = 0; } } 
         const px = this.state.player.x * this.TILE + this.TILE/2; const py = this.state.player.y * this.TILE + this.TILE/2; ctx.translate(px, py); ctx.rotate(this.state.player.rot); ctx.translate(-px, -py); ctx.fillStyle = "#39ff14"; ctx.shadowBlur = 10; ctx.shadowColor = "#39ff14"; ctx.beginPath(); ctx.moveTo(px, py - 8); ctx.lineTo(px + 6, py + 8); ctx.lineTo(px, py + 5); ctx.lineTo(px - 6, py + 8); ctx.fill(); ctx.shadowBlur = 0; ctx.restore(); 
     },
 
     drawTile: function(ctx, x, y, type, pulse = 1) { 
         const ts = this.TILE; const px = x * ts; const py = y * ts; 
-        let bg = this.colors['.']; if(type === '_') bg = this.colors['_']; if(type === ',') bg = this.colors[',']; if(type === '=') bg = this.colors['=']; if(type === 'W') bg = this.colors['W']; if(type === 'M') bg = this.colors['M']; if(type === '#') bg = this.colors['#'];
-        if (type !== '~' && !['^','v','<','>'].includes(type)) { ctx.fillStyle = bg; ctx.fillRect(px, py, ts, ts); } 
-        if(!['^','v','<','>','M','W'].includes(type)) { ctx.strokeStyle = "rgba(40, 90, 40, 0.1)"; ctx.lineWidth = 1; ctx.strokeRect(px, py, ts, ts); } 
+        let bg = this.colors['.']; 
+        if(['_', ',', ';', '=', 'W', 'M', '~', '#', '|'].includes(type)) bg = this.colors[type];
+        
+        if (!['^','v','<','>'].includes(type)) { ctx.fillStyle = bg; ctx.fillRect(px, py, ts, ts); } 
+        if(!['^','v','<','>','M','W','~'].includes(type)) { ctx.strokeStyle = "rgba(40, 90, 40, 0.05)"; ctx.lineWidth = 1; ctx.strokeRect(px, py, ts, ts); } 
+        
         if(['^', 'v', '<', '>'].includes(type)) { ctx.fillStyle = "#000"; ctx.fillRect(px, py, ts, ts); ctx.fillStyle = "#1aff1a"; ctx.strokeStyle = "#000"; ctx.beginPath(); if (type === '^') { ctx.moveTo(px + ts/2, py + 5); ctx.lineTo(px + ts - 5, py + ts - 5); ctx.lineTo(px + 5, py + ts - 5); } else if (type === 'v') { ctx.moveTo(px + ts/2, py + ts - 5); ctx.lineTo(px + ts - 5, py + 5); ctx.lineTo(px + 5, py + 5); } else if (type === '<') { ctx.moveTo(px + 5, py + ts/2); ctx.lineTo(px + ts - 5, py + 5); ctx.lineTo(px + ts - 5, py + ts - 5); } else if (type === '>') { ctx.moveTo(px + ts - 5, py + ts/2); ctx.lineTo(px + 5, py + 5); ctx.lineTo(px + 5, py + ts - 5); } ctx.fill(); ctx.stroke(); return; }
+
         ctx.beginPath(); 
         switch(type) { 
             case 't': ctx.fillStyle = this.colors['t']; ctx.moveTo(px + ts/2, py + 2); ctx.lineTo(px + ts - 4, py + ts - 2); ctx.lineTo(px + 4, py + ts - 2); ctx.fill(); break;
-            case 'M': ctx.fillStyle = "#5d4037"; ctx.moveTo(px + ts/2, py + 2); ctx.lineTo(px + ts, py + ts); ctx.lineTo(px, py + ts); ctx.fill(); break;
+            case 'T': ctx.fillStyle = this.colors['T']; ctx.moveTo(px + ts/2, py + 2); ctx.lineTo(px + ts - 2, py + ts - 2); ctx.lineTo(px + 2, py + ts - 2); ctx.fill(); break;
+            case 'x': ctx.strokeStyle = this.colors['x']; ctx.lineWidth = 2; ctx.moveTo(px+5, py+ts-5); ctx.lineTo(px+ts-5, py+5); ctx.moveTo(px+5, py+5); ctx.lineTo(px+ts-5, py+ts-5); ctx.stroke(); break;
+            case '"': ctx.strokeStyle = this.colors['"']; ctx.lineWidth = 1; ctx.moveTo(px+5, py+ts-5); ctx.lineTo(px+5, py+10); ctx.moveTo(px+15, py+ts-5); ctx.lineTo(px+15, py+5); ctx.moveTo(px+25, py+ts-5); ctx.lineTo(px+25, py+12); ctx.stroke(); break;
+            case 'Y': ctx.strokeStyle = this.colors['Y']; ctx.lineWidth = 3; ctx.moveTo(px+15, py+ts-5); ctx.lineTo(px+15, py+5); ctx.moveTo(px+15, py+15); ctx.lineTo(px+5, py+10); ctx.moveTo(px+15, py+10); ctx.lineTo(px+25, py+5); ctx.stroke(); break;
+            case 'o': ctx.fillStyle = this.colors['o']; ctx.arc(px+ts/2, py+ts/2, ts/3, 0, Math.PI*2); ctx.fill(); break;
+            case '+': ctx.fillStyle = this.colors['+']; ctx.fillRect(px+5, py+10, 5, 5); ctx.fillRect(px+15, py+20, 4, 4); ctx.fillRect(px+20, py+5, 6, 6); break;
+            case 'M': ctx.fillStyle = "#3e2723"; ctx.moveTo(px + ts/2, py + 2); ctx.lineTo(px + ts, py + ts); ctx.lineTo(px, py + ts); ctx.fill(); break;
             case 'W': ctx.strokeStyle = "#4fc3f7"; ctx.lineWidth = 2; ctx.moveTo(px+5, py+15); ctx.lineTo(px+15, py+10); ctx.lineTo(px+25, py+15); ctx.stroke(); break;
+            case '~': ctx.strokeStyle = "#556b2f"; ctx.lineWidth = 2; ctx.moveTo(px+5, py+15); ctx.lineTo(px+15, py+10); ctx.lineTo(px+25, py+15); ctx.stroke(); break;
             case '=': ctx.strokeStyle = "#5d4037"; ctx.lineWidth = 2; ctx.moveTo(px, py+5); ctx.lineTo(px+ts, py+5); ctx.moveTo(px, py+25); ctx.lineTo(px+ts, py+25); ctx.stroke(); break;
             case 'U': ctx.fillStyle = "#000"; ctx.arc(px+ts/2, py+ts/2, ts/3, 0, Math.PI, true); ctx.fill(); break;
-            case 'G': ctx.globalAlpha = pulse; ctx.strokeStyle = this.colors['G']; ctx.lineWidth = 3; ctx.moveTo(px+ts/2, py+4); ctx.lineTo(px+ts/2, py+26); ctx.moveTo(px+10, py+10); ctx.lineTo(px+ts/2, py+4); ctx.lineTo(px+20, py+10); ctx.stroke(); break;
             case 'V': ctx.globalAlpha = pulse; ctx.fillStyle = this.colors['V']; ctx.arc(px+ts/2, py+ts/2, ts/3, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = "#000"; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = "#000"; ctx.font="bold 12px monospace"; ctx.fillText("101", px+5, py+20); break; 
             case 'C': ctx.globalAlpha = pulse; ctx.fillStyle = this.colors['C']; ctx.fillRect(px+6, py+14, 18, 12); ctx.beginPath(); ctx.moveTo(px+4, py+14); ctx.lineTo(px+15, py+4); ctx.lineTo(px+26, py+14); ctx.fill(); break; 
             case 'S': ctx.globalAlpha = pulse; ctx.fillStyle = this.colors['S']; ctx.arc(px+ts/2, py+12, 6, 0, Math.PI*2); ctx.fill(); ctx.fillRect(px+10, py+18, 10, 6); break; 
             case 'H': ctx.globalAlpha = pulse; ctx.fillStyle = this.colors['H']; ctx.arc(px+ts/2, py+ts/2, ts/2.5, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = "#000"; ctx.beginPath(); ctx.arc(px+ts/2, py+ts/2, ts/4, 0, Math.PI*2); ctx.fill(); break; 
+            
+            // NEU: City Icons
+            case '$': ctx.fillStyle = this.colors['$']; ctx.fillText("$$", px+5, py+20); break;
+            case '&': ctx.fillStyle = this.colors['&']; ctx.fillText("🔧", px+5, py+20); break;
+            case 'P': ctx.fillStyle = this.colors['P']; ctx.fillText("✚", px+8, py+20); break;
+            case 'E': ctx.fillStyle = this.colors['E']; ctx.fillText("EXIT", px+2, py+20); break;
+            case 'F': ctx.fillStyle = this.colors['F']; ctx.arc(px+ts/2, py+ts/2, ts/3, 0, Math.PI*2); ctx.fill(); break;
+            case '|': ctx.fillStyle = this.colors['|']; ctx.fillRect(px, py, ts, ts); break;
         } 
         ctx.globalAlpha = 1; 
     },
@@ -320,13 +376,6 @@ const Game = {
     heal: function() { if(this.state.caps >= 25) { this.state.caps -= 25; this.rest(); } else UI.log("Zu wenig Kronkorken.", "text-red-500"); },
     buyAmmo: function() { if(this.state.caps >= 10) { this.state.caps -= 10; this.state.ammo += 10; UI.log("Munition gekauft.", "text-green-400"); UI.update(); } else UI.log("Zu wenig Kronkorken.", "text-red-500"); },
     buyItem: function(key) { const item = this.items[key]; if(this.state.caps >= item.cost) { this.state.caps -= item.cost; this.addToInventory(key, 1); UI.log(`Gekauft: ${item.name}`, "text-green-400"); UI.renderCity(); UI.update(); this.saveGame(); } else { UI.log("Zu wenig Kronkorken.", "text-red-500"); } },
-    
-    // NEU: HARD RESET
-    hardReset: function() { 
-        if(typeof Network !== 'undefined') Network.deleteSave(); 
-        this.state = null; 
-        location.reload(); 
-    },
-    
+    hardReset: function() { if(typeof Network !== 'undefined') Network.deleteSave(); this.state = null; location.reload(); },
     upgradeStat: function(key) { if(this.state.statPoints > 0) { this.state.stats[key]++; this.state.statPoints--; if(key === 'END') this.state.maxHp = this.calculateMaxHP(this.getStat('END')); UI.renderChar(); UI.update(); this.saveGame(); } }
 };
