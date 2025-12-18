@@ -1,7 +1,6 @@
 const Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     
-    // Referenz auf externe Daten für kürzeren Code
     colors: (typeof window.GameData !== 'undefined') ? window.GameData.colors : {},
     items: (typeof window.GameData !== 'undefined') ? window.GameData.items : {},
     monsters: (typeof window.GameData !== 'undefined') ? window.GameData.monsters : {},
@@ -16,6 +15,25 @@ const Game = {
         this.cacheCtx = this.cacheCanvas.getContext('2d'); 
     }, 
     
+    // WICHTIG: initCanvas restored
+    initCanvas: function() { 
+        const cvs = document.getElementById('game-canvas'); 
+        if(!cvs) return; 
+        const viewContainer = document.getElementById('view-container'); 
+        cvs.width = viewContainer.offsetWidth; 
+        cvs.height = viewContainer.offsetHeight; 
+        this.ctx = cvs.getContext('2d'); 
+        if(this.loopId) cancelAnimationFrame(this.loopId); 
+        this.drawLoop(); 
+    },
+
+    // WICHTIG: drawLoop restored
+    drawLoop: function() { 
+        if(this.state.view !== 'map' || this.state.isGameOver) return; 
+        this.draw(); 
+        this.loopId = requestAnimationFrame(() => this.drawLoop()); 
+    },
+
     calculateMaxHP: function(end) { return 100 + (end - 5) * 10; }, 
     
     getStat: function(k) { 
@@ -59,25 +77,6 @@ const Game = {
         UI.update(); 
         UI.log(`Teleport erfolgreich.`, "text-green-400"); 
     }, 
-
-    // WIEDERHERGESTELLT: initCanvas
-    initCanvas: function() { 
-        const cvs = document.getElementById('game-canvas'); 
-        if(!cvs) return; 
-        const viewContainer = document.getElementById('view-container'); 
-        cvs.width = viewContainer.offsetWidth; 
-        cvs.height = viewContainer.offsetHeight; 
-        this.ctx = cvs.getContext('2d'); 
-        if(this.loopId) cancelAnimationFrame(this.loopId); 
-        this.drawLoop(); 
-    },
-
-    // WIEDERHERGESTELLT: drawLoop
-    drawLoop: function() { 
-        if(this.state.view !== 'map' || this.state.isGameOver) return; 
-        this.draw(); 
-        this.loopId = requestAnimationFrame(() => this.drawLoop()); 
-    },
 
     renderStaticMap: function() { 
         if(!this.cacheCtx) this.initCache();
@@ -196,6 +195,7 @@ const Game = {
         UI.update();
     },
     
+    // WICHTIG: reveal restored
     reveal: function(px, py) { 
         for(let y=py-2; y<=py+2; y++) {
             for(let x=px-2; x<=px+2; x++) {
@@ -206,6 +206,7 @@ const Game = {
         }
     },
 
+    // WICHTIG: fixMapBorders restored
     fixMapBorders: function(map, sx, sy) {
         if(sy === 0) { for(let i=0; i<this.MAP_W; i++) map[0][i] = '#'; }
         if(sy === 7) { for(let i=0; i<this.MAP_W; i++) map[this.MAP_H-1][i] = '#'; }
