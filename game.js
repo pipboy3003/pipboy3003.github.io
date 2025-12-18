@@ -1,7 +1,6 @@
 const Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     
-    // Referenz auf externe Daten
     colors: (typeof window.GameData !== 'undefined') ? window.GameData.colors : {},
     items: (typeof window.GameData !== 'undefined') ? window.GameData.items : {},
     monsters: (typeof window.GameData !== 'undefined') ? window.GameData.monsters : {},
@@ -158,7 +157,6 @@ const Game = {
         if(dy === 1) this.state.player.rot = Math.PI;
         if(dy === -1) this.state.player.rot = 0;
 
-        // HIER WAR DAS PROBLEM: this.reveal MUSS EXISTIEREN
         this.reveal(nx, ny);
         
         if(typeof Network !== 'undefined') Network.sendMove(nx, ny, this.state.lvl, this.state.sector);
@@ -178,7 +176,6 @@ const Game = {
         UI.update();
     },
     
-    // DIE FUNKTION DIE FEHLTE ODER KAPUTT WAR
     reveal: function(px, py) { 
         for(let y=py-2; y<=py+2; y++) {
             for(let x=px-2; x<=px+2; x++) {
@@ -187,6 +184,14 @@ const Game = {
                 }
             }
         }
+    },
+
+    // FIX: Restore missing function
+    fixMapBorders: function(map, sx, sy) {
+        if(sy === 0) { for(let i=0; i<this.MAP_W; i++) map[0][i] = '#'; }
+        if(sy === 7) { for(let i=0; i<this.MAP_W; i++) map[this.MAP_H-1][i] = '#'; }
+        if(sx === 0) { for(let i=0; i<this.MAP_H; i++) map[i][0] = '#'; }
+        if(sx === 7) { for(let i=0; i<this.MAP_H; i++) map[i][this.MAP_W-1] = '#'; }
     },
 
     enterDungeon: function(type) {
@@ -379,11 +384,7 @@ const Game = {
         
         this.fixMapBorders(this.state.currentMap, sx, sy);
         this.state.explored = data.explored; 
-        let zn = "Ödland"; 
-        if(data.biome === 'city') zn = "D.C. Ruinen"; 
-        if(data.biome === 'desert') zn = "The Pitt / Asche"; 
-        if(data.biome === 'jungle') zn = "Oasis"; 
-        if(data.biome === 'swamp') zn = "Sumpf";
+        let zn = "Ödland"; if(data.biome === 'city') zn = "Ruinenstadt"; if(data.biome === 'desert') zn = "Glühende Wüste"; if(data.biome === 'jungle') zn = "Überwucherte Zone"; 
         this.state.zone = `${zn} (${sx},${sy})`; 
         
         this.findSafeSpawn();
