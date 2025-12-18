@@ -1,5 +1,16 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.0.18f] - 2025-12-18 19:30 (System Restoration Update)
+
+SYSTEM: Komplette Wiederherstellung von game.js, um den initCanvas-Absturz und alle fehlenden Methoden zu beheben.
+
+FIX: Die Spiel-Logik wurde in game.js neu geschrieben, sodass Game.initCanvas, Game.reveal und alle anderen Funktionen nun garantiert verfügbar sind.
+
+FIX: world_gen.js nutzt nun eine sicherere Methode, um auf window.GameData zuzugreifen, was Abstürze beim Start verhindert.
+
+UI: ui.js wurde synchronisiert, um Fehler beim Rendern zu vermeiden.
+
+
 [v0.0.18e] - 2025-12-18 19:15 (Stability & Browser Fix)
 
 CRITICAL FIX: Login-Feld in ein <form autocomplete="off"> gepackt, um einen Absturz in Firefox zu verhindern, der durch Passwort-Manager verursacht wurde (ControlLooksLikePasswordCredentialField).
