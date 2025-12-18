@@ -15,7 +15,8 @@ const Game = {
     expToNextLevel: function(l) { return 100 * l; }, 
     gainExp: function(amount) { this.state.xp += amount; UI.log(`+${amount} EXP.`, 'text-blue-400'); let need = this.expToNextLevel(this.state.lvl); while(this.state.xp >= need) { this.state.lvl++; this.state.statPoints++; this.state.xp -= need; need = this.expToNextLevel(this.state.lvl); this.state.maxHp = this.calculateMaxHP(this.getStat('END')); this.state.hp = this.state.maxHp; UI.log(`LEVEL UP! LVL ${this.state.lvl}`, 'text-yellow-400 font-bold'); } }, 
     teleportTo: function(targetSector, tx, ty) { this.state.sector = targetSector; this.loadSector(targetSector.x, targetSector.y); this.state.player.x = tx; this.state.player.y = ty; this.reveal(tx, ty); if(typeof Network !== 'undefined') Network.sendMove(tx, ty, this.state.lvl, this.state.sector); UI.update(); UI.log(`Teleport erfolgreich.`, "text-green-400"); }, 
-    
+    getPseudoRandomGate: function(val1, val2, max) { const seed = (val1 * 9301 + val2 * 49297) % 233280; return 3 + (seed % (max - 6)); },
+
     renderStaticMap: function() { const ctx = this.cacheCtx; const ts = this.TILE; ctx.fillStyle = "#000"; ctx.fillRect(0, 0, this.cacheCanvas.width, this.cacheCanvas.height); for(let y=0; y<this.MAP_H; y++) for(let x=0; x<this.MAP_W; x++) this.drawTile(ctx, x, y, this.state.currentMap[y][x]); },
 
     init: function(saveData, spawnTarget=null) {
@@ -31,6 +32,7 @@ const Game = {
                 if(!this.state.equip.weapon) this.state.equip.weapon = this.items.fists;
                 if(!this.state.equip.body) this.state.equip.body = this.items.vault_suit;
                 if(!this.state.inventory) this.state.inventory = [];
+                if(!this.state.visitedSectors) this.state.visitedSectors = [];
                 if(!this.state.view) this.state.view = 'map';
                 UI.log(">> Spielstand geladen.", "text-cyan-400");
             } else {
@@ -53,9 +55,11 @@ const Game = {
                     inventory: [], 
                     hp: 100, maxHp: 100, xp: 0, lvl: 1, caps: 50, ammo: 10, statPoints: 0, 
                     view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, explored: {}, 
+                    visitedSectors: [`${startSecX},${startSecY}`],
                     tempStatIncrease: {}, buffEndTime: 0,
                     quests: [ { id: "q1", title: "Der Weg nach Hause", text: "Suche Zivilisation.", read: false } ], 
-                    startTime: Date.now()
+                    startTime: Date.now(),
+                    savedPosition: null
                 };
                 this.addToInventory('stimpack', 1);
                 this.state.hp = this.calculateMaxHP(this.getStat('END')); 
@@ -80,6 +84,7 @@ const Game = {
         const nx = this.state.player.x + dx;
         const ny = this.state.player.y + dy;
         
+        // FIX: Sektorwechsel-Prüfung verbessert
         if(nx < 0 || nx >= this.MAP_W || ny < 0 || ny >= this.MAP_H) {
             this.changeSector(nx, ny);
             return;
@@ -87,6 +92,11 @@ const Game = {
 
         const tile = this.state.currentMap[ny][nx];
         
+        if (tile === '$') { UI.switchView('shop'); return; }
+        if (tile === '&') { UI.switchView('crafting'); return; }
+        if (tile === 'P') { UI.switchView('clinic'); return; }
+        if (tile === 'E') { this.leaveCity(); return; }
+
         if(['M', 'W', '#', 'U', 't', 'T', 'o', 'Y', '|', 'F'].includes(tile)) { 
             UI.shakeView();
             return; 
@@ -104,10 +114,10 @@ const Game = {
         
         if(typeof Network !== 'undefined') Network.sendMove(nx, ny, this.state.lvl, this.state.sector);
 
-        if(tile === 'V') { UI.enterVault(); return; }
+        if(tile === 'V') { UI.switchView('vault'); return; } // NEU: Vault View
         if(tile === 'S') { UI.enterSupermarket(); return; }
         if(tile === 'H') { UI.enterCave(); return; }
-        if(tile === 'C') { UI.switchView('city'); return; } 
+        if(tile === 'C') { this.enterCity(); return; } 
         
         if(['.', ',', '_', ';', '"', '+', 'x'].includes(tile)) {
             if(Math.random() < 0.04) { 
@@ -119,8 +129,58 @@ const Game = {
         UI.update();
     },
 
+    enterCity: function() {
+        this.state.savedPosition = { x: this.state.player.x, y: this.state.player.y };
+        const map = WorldGen.generateCityLayout(this.MAP_W, this.MAP_H);
+        this.state.currentMap = map;
+        this.state.zone = "Rusty Springs (Stadt)";
+        this.state.player.x = 20;
+        this.state.player.y = 38;
+        this.state.player.rot = 0; 
+        this.renderStaticMap();
+        this.state.explored = {}; 
+        for(let y=0; y<this.MAP_H; y++) for(let x=0; x<this.MAP_W; x++) this.state.explored[`${x},${y}`] = true;
+        UI.log("Betrete Rusty Springs...", "text-yellow-400");
+        UI.update();
+    },
+
+    leaveCity: function() {
+        if(this.state.savedPosition) {
+            this.state.player.x = this.state.savedPosition.x;
+            this.state.player.y = this.state.savedPosition.y;
+            this.state.savedPosition = null;
+        }
+        this.loadSector(this.state.sector.x, this.state.sector.y);
+        UI.log("Verlasse Stadt.", "text-green-400");
+    },
+
     addToInventory: function(id, count=1) { if(!this.state.inventory) this.state.inventory = []; const existing = this.state.inventory.find(i => i.id === id); if(existing) existing.count += count; else this.state.inventory.push({id: id, count: count}); UI.log(`Erhalten: ${this.items[id].name} (${count})`, "text-green-400"); }, 
     useItem: function(id) { const itemDef = this.items[id]; const invItem = this.state.inventory.find(i => i.id === id); if(!invItem || invItem.count <= 0) return; if(itemDef.type === 'consumable') { if(itemDef.effect === 'heal') { const healAmt = itemDef.val; if(this.state.hp >= this.state.maxHp) { UI.log("Gesundheit bereits voll.", "text-gray-500"); return; } this.state.hp = Math.min(this.state.maxHp, this.state.hp + healAmt); UI.log(`Verwendet: ${itemDef.name}. +${healAmt} HP.`, "text-blue-400"); invItem.count--; } } else if (itemDef.type === 'weapon' || itemDef.type === 'body') { const oldItemName = this.state.equip[itemDef.slot].name; const oldItemKey = Object.keys(this.items).find(key => this.items[key].name === oldItemName); if(oldItemKey && oldItemKey !== 'fists' && oldItemKey !== 'vault_suit') { this.addToInventory(oldItemKey, 1); } this.state.equip[itemDef.slot] = itemDef; invItem.count--; UI.log(`Ausgerüstet: ${itemDef.name}`, "text-yellow-400"); if(itemDef.slot === 'body') { const oldMax = this.state.maxHp; this.state.maxHp = this.calculateMaxHP(this.getStat('END')); this.state.hp += (this.state.maxHp - oldMax); } } if(invItem.count <= 0) { this.state.inventory = this.state.inventory.filter(i => i.id !== id); } UI.update(); if(this.state.view === 'inventory') UI.renderInventory(); this.saveGame(); }, 
+    
+    craftItem: function(recipeId) {
+        const recipe = this.recipes.find(r => r.id === recipeId);
+        if(!recipe) return;
+        if(this.state.lvl < recipe.lvl) { UI.log(`Benötigt Level ${recipe.lvl}!`, "text-red-500"); return; }
+        for(let reqId in recipe.req) {
+            const countNeeded = recipe.req[reqId];
+            const invItem = this.state.inventory.find(i => i.id === reqId);
+            let hasEquipped = false;
+            if (this.state.equip.weapon && Object.keys(this.items).find(k => this.items[k].name === this.state.equip.weapon.name) === reqId) hasEquipped = true;
+            if (this.state.equip.body && Object.keys(this.items).find(k => this.items[k].name === this.state.equip.body.name) === reqId) hasEquipped = true;
+            if (hasEquipped || !invItem || invItem.count < countNeeded) { UI.log(`Material fehlt (oder ausgerüstet): ${this.items[reqId].name}`, "text-red-500"); return; }
+        }
+        for(let reqId in recipe.req) {
+            const countNeeded = recipe.req[reqId];
+            const invItem = this.state.inventory.find(i => i.id === reqId);
+            invItem.count -= countNeeded;
+            if(invItem.count <= 0) this.state.inventory = this.state.inventory.filter(i => i.id !== reqId);
+        }
+        if(recipe.out === "AMMO") { this.state.ammo += recipe.count; UI.log(`Hergestellt: ${recipe.count} Munition`, "text-green-400 font-bold"); } 
+        else { this.addToInventory(recipe.out, recipe.count); UI.log(`Hergestellt: ${this.items[recipe.out].name}`, "text-green-400 font-bold"); }
+        this.saveGame();
+        if(typeof UI !== 'undefined') UI.renderCrafting(); 
+    },
+
     saveGame: function(manual = false) { if(!this.state) return; if(manual) UI.log("Speichere...", "text-gray-500"); if(typeof Network !== 'undefined') Network.save(this.state); }, 
 
     loadSector: function(sx_in, sy_in, isInterior = false, dungeonType = "market") { 
@@ -165,9 +225,21 @@ const Game = {
         const data = this.worldData[key]; 
         this.state.currentMap = data.layout; 
         
+        if(this.state.visitedSectors) {
+            const secId = `${sx},${sy}`;
+            if(!this.state.visitedSectors.includes(secId)) {
+                this.state.visitedSectors.push(secId);
+            }
+        }
+        
         this.fixMapBorders(this.state.currentMap, sx, sy);
         this.state.explored = data.explored; 
-        let zn = "Ödland"; if(data.biome === 'city') zn = "Ruinenstadt"; if(data.biome === 'desert') zn = "Glühende Wüste"; if(data.biome === 'jungle') zn = "Überwucherte Zone"; 
+        
+        let zn = "Ödland"; 
+        if(data.biome === 'city') zn = "D.C. Ruinen"; 
+        if(data.biome === 'desert') zn = "The Pitt / Asche"; 
+        if(data.biome === 'jungle') zn = "Oasis"; 
+        if(data.biome === 'swamp') zn = "Sumpf";
         this.state.zone = `${zn} (${sx},${sy})`; 
         
         this.findSafeSpawn();
@@ -195,9 +267,9 @@ const Game = {
     },
 
     isValidSpawn: function(x, y) {
-        if(x < 1 || x >= this.MAP_W-1 || y < 1 || y >= this.MAP_H-1) return false;
+        if(x < 0 || x >= this.MAP_W || y < 0 || y >= this.MAP_H) return false;
         const t = this.state.currentMap[y][x];
-        return ['.', '_', ',', '=', '#'].includes(t);
+        return ['.', '_', ',', ';', '=', '"', '+', 'x'].includes(t);
     },
 
     fixMapBorders: function(map, sx, sy) {
@@ -205,6 +277,50 @@ const Game = {
         if(sy === 7) { for(let i=0; i<this.MAP_W; i++) map[this.MAP_H-1][i] = '#'; }
         if(sx === 0) { for(let i=0; i<this.MAP_H; i++) map[i][0] = '#'; }
         if(sx === 7) { for(let i=0; i<this.MAP_H; i++) map[i][this.MAP_W-1] = '#'; }
+    },
+
+    // FIX: changeSector Logic
+    changeSector: function(px, py) { 
+        let sx=this.state.sector.x, sy=this.state.sector.y; 
+        let newPx = px;
+        let newPy = py;
+
+        // Prüfe WELCHE Grenze überschritten wurde
+        if(py < 0) { 
+            sy--; 
+            newPy = this.MAP_H - 1; // Kommt von oben -> landet unten
+            newPx = this.state.player.x; // X bleibt gleich
+        }
+        else if(py >= this.MAP_H) { 
+            sy++; 
+            newPy = 0; // Kommt von unten -> landet oben
+            newPx = this.state.player.x;
+        }
+        
+        if(px < 0) { 
+            sx--; 
+            newPx = this.MAP_W - 1; // Kommt von links -> landet rechts
+            newPy = this.state.player.y; // Y bleibt gleich
+        }
+        else if(px >= this.MAP_W) { 
+            sx++; 
+            newPx = 0; // Kommt von rechts -> landet links
+            newPy = this.state.player.y;
+        }
+
+        // Welt-Grenze Check
+        if(sx < 0 || sx > 7 || sy < 0 || sy > 7) { 
+            UI.log("Ende der Weltkarte.", "text-red-500"); 
+            return; 
+        } 
+        
+        this.state.sector = {x: sx, y: sy}; 
+        this.loadSector(sx, sy); 
+        this.state.player.x = newPx;
+        this.state.player.y = newPy;
+        this.findSafeSpawn(); // Falls der neue Spawn blockiert ist
+        this.reveal(this.state.player.x, this.state.player.y); 
+        UI.log(`Sektorwechsel: ${sx},${sy}`, "text-blue-400"); 
     },
 
     draw: function() { 
