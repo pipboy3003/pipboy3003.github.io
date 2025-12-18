@@ -1,5 +1,14 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.0.18e] - 2025-12-18 19:15 (Stability & Browser Fix)
+
+CRITICAL FIX: Login-Feld in ein <form autocomplete="off"> gepackt, um einen Absturz in Firefox zu verhindern, der durch Passwort-Manager verursacht wurde (ControlLooksLikePasswordCredentialField).
+
+SYSTEM: game.js erneut validiert und initCanvas, reveal sowie fixMapBorders sichergestellt.
+
+INFO: Version auf 0.0.18e angehoben, um sauberes Caching zu erzwingen.
+
+
 [v0.0.18b] - 2025-12-18 18:30 (Fine Tuning Update)
 
 UI: Währung "Caps" in "Kronkorken (KK)" umbenannt und im gesamten Spiel konsistent ersetzt.
