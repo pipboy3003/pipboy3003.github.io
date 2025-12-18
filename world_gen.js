@@ -14,12 +14,14 @@ const WorldGen = {
     createSector: function(width, height, biomeType, poiList) {
         let map = Array(height).fill().map(() => Array(width).fill('.'));
         
-        // USE GAMEDATA
-        if (typeof GameData === 'undefined' || !GameData.biomes[biomeType]) {
-            biomeType = 'wasteland'; 
+        // SAFE ACCESS TO GAMEDATA
+        let conf = { ground: '.', water: 0, mountain: 0, features: [] };
+        if (typeof window.GameData !== 'undefined' && window.GameData.biomes) {
+            if (!window.GameData.biomes[biomeType]) biomeType = 'wasteland';
+            conf = window.GameData.biomes[biomeType];
+        } else {
+            console.error("Critical: GameData not found in WorldGen");
         }
-        
-        const conf = GameData.biomes[biomeType];
 
         for(let y = 0; y < height; y++) {
             for(let x = 0; x < width; x++) {
@@ -33,11 +35,13 @@ const WorldGen = {
                 } else {
                     const d = this.rand();
                     let currentProb = 0;
-                    for(let feat of conf.features) {
-                        currentProb += feat.prob;
-                        if(d < currentProb) {
-                            map[y][x] = feat.char;
-                            break;
+                    if(conf.features) {
+                        for(let feat of conf.features) {
+                            currentProb += feat.prob;
+                            if(d < currentProb) {
+                                map[y][x] = feat.char;
+                                break;
+                            }
                         }
                     }
                 }
