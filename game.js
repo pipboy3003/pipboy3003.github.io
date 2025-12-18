@@ -1,85 +1,11 @@
 const Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     
-    colors: { 
-        '.':'#2d241b', '_':'#4a4036', ',':'#1a261a', ';':'#1e1e11', '=':'#333333', '#':'#111', 
-        'line_default': '#2a5a2a', 'line_wall': '#39ff14', 
-        'V': '#39ff14', 'C': '#eab308', 'S': '#ff0000', 'G': '#00ffff', 'H': '#888888', 
-        '^': '#111', 'v':'#111', '<':'#111', '>':'#111',
-        'M': '#3e2723', 'W': '#0d47a1', '~': '#2f4f2f', 
-        't': '#1b5e20', 'T': '#0a3d0a', 'x': '#5c4033', 'o': '#555555',
-        '+': '#666666', '"': '#3cb371', 'Y': '#deb887', 'U': '#212121'
-    },
-    
-    items: { 
-        // Währungen & Consumables
-        stimpack: { name: "Stimpack", type: "consumable", effect: "heal", val: 50, cost: 25 },
-        
-        // Crafting / Junk Materials
-        meat_roach: { name: "Kakerlakenfleisch", type: "junk", cost: 2 },
-        meat_mole: { name: "Rattenfleisch", type: "junk", cost: 4 },
-        meat_fly: { name: "Blähfliegen-Düse", type: "junk", cost: 3 },
-        meat_lurk: { name: "Softshell-Fleisch", type: "junk", cost: 15 },
-        meat_scorp: { name: "Skorpion-Drüse", type: "junk", cost: 12 }, // NEU
-        hide_yao: { name: "Yao Guai Leder", type: "junk", cost: 25 },
-        scrap_metal: { name: "Metallschrott", type: "component", cost: 1 },
-        adhesive: { name: "Wunderkleber", type: "component", cost: 10 },
-        screws: { name: "Schrauben", type: "component", cost: 5 },
-        gears: { name: "Zahnräder", type: "component", cost: 8 },
-        springs: { name: "Federn", type: "component", cost: 8 },
-        circuitry: { name: "Schaltkreise", type: "component", cost: 20 },
-        nuclear_mat: { name: "Nukleares Material", type: "component", cost: 35 },
-        legendary_part: { name: "★ Legendäres Modul", type: "rare", cost: 100 },
-
-        // Waffen & Rüstung
-        fists: { name: "Fäuste", slot: 'weapon', type: 'weapon', baseDmg: 2, bonus: {}, cost: 0, requiredLevel: 0, isRanged: false }, 
-        vault_suit: { name: "Vault-Anzug", slot: 'body', type: 'body', bonus: { END: 1 }, cost: 0, requiredLevel: 0 }, 
-        knife: { name: "Kampfmesser", slot: 'weapon', type: 'weapon', baseDmg: 8, bonus: { STR: 1 }, cost: 15, requiredLevel: 1, isRanged: false }, 
-        bat: { name: "Baseballschläger", slot: 'weapon', type: 'weapon', baseDmg: 12, bonus: { STR: 2 }, cost: 25, requiredLevel: 2, isRanged: false },
-        bat_spiked: { name: "Nagelschläger", slot: 'weapon', type: 'weapon', baseDmg: 18, bonus: { STR: 2 }, cost: 50, requiredLevel: 3, isRanged: false },
-        pistol: { name: "10mm Pistole", slot: 'weapon', type: 'weapon', baseDmg: 14, bonus: { AGI: 1 }, cost: 50, requiredLevel: 1, isRanged: true }, 
-        pistol_tac: { name: "Taktische 10mm", slot: 'weapon', type: 'weapon', baseDmg: 20, bonus: { AGI: 2, PER: 1 }, cost: 100, requiredLevel: 4, isRanged: true },
-        leather_armor: { name: "Lederharnisch", slot: 'body', type: 'body', bonus: { END: 2 }, cost: 30, requiredLevel: 1 }, 
-        leather_armor_h: { name: "Gehärtetes Leder", slot: 'body', type: 'body', bonus: { END: 4 }, cost: 80, requiredLevel: 3 },
-        shotgun: { name: "Kampfschrotflinte", slot: 'weapon', type: 'weapon', baseDmg: 24, bonus: { STR: 1 }, cost: 120, requiredLevel: 3, isRanged: true }, 
-        rifle_hunting: { name: "Jagdgewehr", slot: 'weapon', type: 'weapon', baseDmg: 35, bonus: { PER: 2 }, cost: 180, requiredLevel: 4, isRanged: true },
-        laser_rifle: { name: "Laser-Gewehr", slot: 'weapon', type: 'weapon', baseDmg: 30, bonus: { PER: 2, INT: 1 }, cost: 300, requiredLevel: 5, isRanged: true }, 
-        combat_armor: { name: "Kampf-Rüstung", slot: 'body', type: 'body', bonus: { END: 4 }, cost: 150, requiredLevel: 5 },
-        metal_armor: { name: "Metall-Rüstung", slot: 'body', type: 'body', bonus: { END: 6, AGI: -1 }, cost: 250, requiredLevel: 7 },
-        power_fist: { name: "Powerfaust", slot: 'weapon', type: 'weapon', baseDmg: 45, bonus: { STR: 3 }, cost: 400, requiredLevel: 8, isRanged: false },
-        plasma_rifle: { name: "Plasma-Gewehr", slot: 'weapon', type: 'weapon', baseDmg: 55, bonus: { PER: 2, INT: 2 }, cost: 600, requiredLevel: 10, isRanged: true }
-    },
-    
-    recipes: [
-        { id: "stimpack", out: "stimpack", count: 1, req: { "meat_fly": 1, "adhesive": 1 }, lvl: 1 },
-        { id: "ammo_pack", out: "AMMO", count: 15, req: { "scrap_metal": 2 }, lvl: 1 },
-        { id: "bat_upgrade", out: "bat_spiked", count: 1, req: { "bat": 1, "scrap_metal": 5, "adhesive": 1 }, lvl: 2 },
-        { id: "leather_upgrade", out: "leather_armor_h", count: 1, req: { "leather_armor": 1, "hide_yao": 2, "adhesive": 2 }, lvl: 3 },
-        { id: "pistol_mod", out: "pistol_tac", count: 1, req: { "pistol": 1, "screws": 3, "gears": 2 }, lvl: 4 },
-        { id: "laser_mod", out: "laser_rifle", count: 1, req: { "rifle_hunting": 1, "circuitry": 2, "nuclear_mat": 1 }, lvl: 6 }
-    ],
-
-    monsters: { 
-        radRoach: { name: "Rad-Kakerlake", hp: 15, dmg: 3, xp: [10, 15], loot: 1, minLvl: 1, drops: [{id:'meat_roach', c:0.6}] }, 
-        bloatfly: { name: "Blähfliege", hp: 10, dmg: 5, xp: [12, 18], loot: 2, minLvl: 1, drops: [{id:'meat_fly', c:0.7}, {id:'nuclear_mat', c:0.05}] },
-        moleRat: { name: "Maulwurfsratte", hp: 25, dmg: 6, xp: [15, 25], loot: 3, minLvl: 1, drops: [{id:'meat_mole', c:0.5}] }, 
-        wildDog: { name: "Wilder Hund", hp: 40, dmg: 9, loot: 0, xp: [30, 50], minLvl: 2, drops: [{id:'meat_mole', c:0.4}] }, 
-        
-        // FIX: Wiederhergestellt
-        mutantRose: { name: "Mutanten-Pflanze", hp: 45, dmg: 15, loot: 5, xp: [45, 60], minLvl: 1, drops: [{id:'adhesive', c:0.4}] }, 
-        radScorpion: { name: "Radskorpion", hp: 90, dmg: 18, loot: 15, xp: [80, 100], minLvl: 3, drops: [{id:'meat_scorp', c:0.5}, {id:'nuclear_mat', c:0.1}] },
-
-        raider: { name: "Raider", hp: 60, dmg: 12, loot: 20, xp: [50, 70], minLvl: 2, drops: [{id:'stimpack', c:0.15}, {id:'scrap_metal', c:0.3}] }, 
-        ghoul: { name: "Wilder Ghul", hp: 50, dmg: 10, loot: 5, xp: [40, 60], minLvl: 2, drops: [{id:'nuclear_mat', c:0.1}] }, 
-        
-        mirelurk: { name: "Mirelurk", hp: 110, dmg: 20, loot: 10, xp: [90, 120], minLvl: 4, drops: [{id:'meat_lurk', c:0.8}, {id:'adhesive', c:0.3}] },
-        protectron: { name: "Protectron", hp: 130, dmg: 15, loot: 30, xp: [100, 140], minLvl: 4, drops: [{id:'scrap_metal', c:1.0}, {id:'circuitry', c:0.4}] },
-        
-        yaoGuai: { name: "Yao Guai", hp: 180, dmg: 35, loot: 0, xp: [180, 250], minLvl: 6, drops: [{id:'hide_yao', c:1.0}, {id:'springs', c:0.3}] },
-        sentryBot: { name: "Wachbot MK-II", hp: 250, dmg: 45, loot: 80, xp: [300, 400], minLvl: 8, drops: [{id:'scrap_metal', c:1.0}, {id:'gears', c:0.8}, {id:'nuclear_mat', c:0.5}] },
-        
-        deathclaw: { name: "Todesklaue", hp: 400, dmg: 70, loot: 100, xp: [600, 800], minLvl: 10, drops: [{id:'hide_yao', c:1.0}, {id:'gears', c:0.5}] } 
-    },
+    // Referenz auf externe Daten für kürzeren Code
+    colors: GameData.colors,
+    items: GameData.items,
+    monsters: GameData.monsters,
+    recipes: GameData.recipes,
 
     state: null, worldData: {}, ctx: null, loopId: null, camera: { x: 0, y: 0 }, cacheCanvas: null, cacheCtx: null,
 
@@ -100,6 +26,7 @@ const Game = {
                 this.state = saveData;
                 this.state.inDialog = false; 
                 
+                // Fallback für alte Saves ohne Equip
                 if(!this.state.equip) this.state.equip = { weapon: this.items.fists, body: this.items.vault_suit };
                 if(!this.state.equip.weapon) this.state.equip.weapon = this.items.fists;
                 if(!this.state.equip.body) this.state.equip.body = this.items.vault_suit;
@@ -205,50 +132,23 @@ const Game = {
     craftItem: function(recipeId) {
         const recipe = this.recipes.find(r => r.id === recipeId);
         if(!recipe) return;
-        
-        if(this.state.lvl < recipe.lvl) {
-            UI.log(`Benötigt Level ${recipe.lvl}!`, "text-red-500");
-            return;
-        }
-        
+        if(this.state.lvl < recipe.lvl) { UI.log(`Benötigt Level ${recipe.lvl}!`, "text-red-500"); return; }
         for(let reqId in recipe.req) {
             const countNeeded = recipe.req[reqId];
             const invItem = this.state.inventory.find(i => i.id === reqId);
-            
             let hasEquipped = false;
             if (this.state.equip.weapon && Object.keys(this.items).find(k => this.items[k].name === this.state.equip.weapon.name) === reqId) hasEquipped = true;
             if (this.state.equip.body && Object.keys(this.items).find(k => this.items[k].name === this.state.equip.body.name) === reqId) hasEquipped = true;
-
-            if (hasEquipped) {
-                if((!invItem || invItem.count < countNeeded)) {
-                    UI.log(`Material fehlt (oder ist ausgerüstet): ${this.items[reqId].name}`, "text-red-500");
-                    return;
-                }
-            } else {
-                if(!invItem || invItem.count < countNeeded) {
-                    UI.log(`Fehlendes Material: ${this.items[reqId].name}`, "text-red-500");
-                    return;
-                }
-            }
+            if (hasEquipped || !invItem || invItem.count < countNeeded) { UI.log(`Material fehlt (oder ausgerüstet): ${this.items[reqId].name}`, "text-red-500"); return; }
         }
-        
         for(let reqId in recipe.req) {
             const countNeeded = recipe.req[reqId];
             const invItem = this.state.inventory.find(i => i.id === reqId);
             invItem.count -= countNeeded;
-            if(invItem.count <= 0) {
-                this.state.inventory = this.state.inventory.filter(i => i.id !== reqId);
-            }
+            if(invItem.count <= 0) this.state.inventory = this.state.inventory.filter(i => i.id !== reqId);
         }
-        
-        if(recipe.out === "AMMO") {
-            this.state.ammo += recipe.count;
-            UI.log(`Hergestellt: ${recipe.count} Schuss Munition`, "text-green-400 font-bold");
-        } else {
-            this.addToInventory(recipe.out, recipe.count);
-            UI.log(`Hergestellt: ${this.items[recipe.out].name}`, "text-green-400 font-bold");
-        }
-        
+        if(recipe.out === "AMMO") { this.state.ammo += recipe.count; UI.log(`Hergestellt: ${recipe.count} Munition`, "text-green-400 font-bold"); } 
+        else { this.addToInventory(recipe.out, recipe.count); UI.log(`Hergestellt: ${this.items[recipe.out].name}`, "text-green-400 font-bold"); }
         this.saveGame();
         if(typeof UI !== 'undefined') UI.renderCrafting(); 
     },
@@ -279,9 +179,7 @@ const Game = {
             else if (rng() < 0.30) biome = 'city'; 
             
             let poiList = [];
-            
             if(sx === this.state.startSector.x && sy === this.state.startSector.y) poiList.push({x:20, y:20, type:'V'}); 
-            
             if(rng() < 0.35) { 
                 let type = 'C'; const r = rng(); if(r < 0.3) type = 'S'; else if(r < 0.6) type = 'H';
                 poiList.push({x: Math.floor(rng()*(this.MAP_W-6))+3, y: Math.floor(rng()*(this.MAP_H-6))+3, type: type});
@@ -298,16 +196,14 @@ const Game = {
         
         const data = this.worldData[key]; 
         this.state.currentMap = data.layout; 
-        
         this.fixMapBorders(this.state.currentMap, sx, sy);
-        
         this.state.explored = data.explored; 
+        
         let zn = "Ödland"; 
         if(data.biome === 'city') zn = "D.C. Ruinen"; 
         if(data.biome === 'desert') zn = "The Pitt / Asche"; 
         if(data.biome === 'jungle') zn = "Oasis"; 
         if(data.biome === 'swamp') zn = "Sumpf";
-        
         this.state.zone = `${zn} (${sx},${sy})`; 
         
         this.findSafeSpawn();
@@ -354,14 +250,10 @@ const Game = {
 
         if(py < 0) { sy--; newPy = this.MAP_H - 1; }
         else if(py >= this.MAP_H) { sy++; newPy = 0; }
-        
         if(px < 0) { sx--; newPx = this.MAP_W - 1; }
         else if(px >= this.MAP_W) { sx++; newPx = 0; }
 
-        if(sx < 0 || sx > 7 || sy < 0 || sy > 7) { 
-            UI.log("Ende der Weltkarte.", "text-red-500"); 
-            return; 
-        } 
+        if(sx < 0 || sx > 7 || sy < 0 || sy > 7) { UI.log("Ende der Weltkarte.", "text-red-500"); return; } 
         
         this.state.sector = {x: sx, y: sy}; 
         this.loadSector(sx, sy); 
@@ -393,16 +285,11 @@ const Game = {
         const ts = this.TILE; const px = x * ts; const py = y * ts; 
         let bg = this.colors['.']; 
         if(['_', ',', ';', '=', 'W', 'M', '~', '#'].includes(type)) bg = this.colors[type];
-        
         if (!['^','v','<','>'].includes(type)) { ctx.fillStyle = bg; ctx.fillRect(px, py, ts, ts); } 
-        
-        if(!['^','v','<','>','M','W','~'].includes(type)) { 
-            ctx.strokeStyle = "rgba(40, 90, 40, 0.05)"; ctx.lineWidth = 1; ctx.strokeRect(px, py, ts, ts); 
-        } 
+        if(!['^','v','<','>','M','W','~'].includes(type)) { ctx.strokeStyle = "rgba(40, 90, 40, 0.05)"; ctx.lineWidth = 1; ctx.strokeRect(px, py, ts, ts); } 
         
         if(['^', 'v', '<', '>'].includes(type)) { 
-            ctx.fillStyle = "#000"; ctx.fillRect(px, py, ts, ts); 
-            ctx.fillStyle = "#1aff1a"; ctx.strokeStyle = "#000"; ctx.beginPath(); 
+            ctx.fillStyle = "#000"; ctx.fillRect(px, py, ts, ts); ctx.fillStyle = "#1aff1a"; ctx.strokeStyle = "#000"; ctx.beginPath(); 
             if (type === '^') { ctx.moveTo(px + ts/2, py + 5); ctx.lineTo(px + ts - 5, py + ts - 5); ctx.lineTo(px + 5, py + ts - 5); } 
             else if (type === 'v') { ctx.moveTo(px + ts/2, py + ts - 5); ctx.lineTo(px + ts - 5, py + 5); ctx.lineTo(px + 5, py + 5); } 
             else if (type === '<') { ctx.moveTo(px + 5, py + ts/2); ctx.lineTo(px + ts - 5, py + 5); ctx.lineTo(px + ts - 5, py + ts - 5); } 
