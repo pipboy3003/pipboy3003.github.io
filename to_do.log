@@ -1,15 +1,16 @@
 Login screen. Kleine umgestaltung. 
 
-Der Anleitungsbutton soll nun auch so heißen. Dazu setzen wir diesen direkt unter login mit "Anleitung" als Namen, 
+Der Anleitungsbutton soll nun auch so heißen und kein ?Zeichen mehr sein.
+Dazu setzen wir diesen direkt unter Login mit "Anleitung" als Namen, 
 daneben kommt ein "changelog" button, er öffnet ein fenster mit dem inhalt aus "change.log" um sehen zu können was gemacht wurde.
-Die beiden Buttons sollen die identische breite wie der Loginbutton haben.
+Die beiden Buttons sollen die identische breite (zusammen)  wie der Loginbutton haben.
 
 Wiki - Tabs vorhanden aber leer? Keinerlei Infos und keine Items außer bei Bestarium drin. Hier fehlt wohl noch alles außer die Tabs.
 Welt - Sieht unschön aus, wie können wir das besser machen?
 Inventar - Slots mit Ausrüstung als kleine Bilder. Rucksack kann beim Händler in der Stadt erweitert werden an Slots. 
 Beim mit der Maus drüber hovern, oder am handy beim Antippen mit dem Finger, soll ein Fenster kommen mit den Infos.
 
-Allgemein, jedes Fenster soll sich schließen 
+Allgemein, jedes Fenster soll sich schließen sobald man neben das Fenster klickt.
 
 - V.A.T.S. Kampf-System: Der Kampf ist aktuell reines Glück. 
 Wir könnten ein System einbauen, bei dem man Körperteile anvisiert (Kopf, Torso, Beine) mit unterschiedlichen Trefferchancen.
