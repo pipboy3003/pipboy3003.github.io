@@ -1,5 +1,13 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.0.17g] - 2025-12-18 16:30 (Clarity & Fixes Update)
+
+UI (Map): Hindernisse (Wände #, Steine o) haben nun mehr Kontrast und eine hellere Farbe/Schraffur, um die Sichtbarkeit auf dunklen Bildschirmen zu verbessern.
+
+UI (Header): Die Kronkorken-Anzeige ist nun Teil des Haupt-Statusblocks, gelb hervorgehoben und nutzt "C" als Währungssymbol.
+
+UI (Char): Stat-Abkürzungen (STR, PER etc.) wurden durch ausgeschriebene deutsche Bezeichnungen (STÄRKE, WAHRNEHMUNG etc.) ersetzt.
+
 [v0.0.17f] - 2025-12-18 16:30 (UX Fixes & Vault View)
 
 BUGFIX: changeSector in game.js korrigiert. Der Gebietswechsel funktionierte nicht mehr zuverlässig. Die Positionsberechnung beim Wechsel (z.B. von Ost nach West) ist nun präziser.
