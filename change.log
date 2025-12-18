@@ -1,5 +1,14 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.0.17h] - 2025-12-18 17:45 (Menu & Readability Update)
+
+FIX: Rücksprung-Buttons in Crafting und Shop führen nun korrekt zur Stadt-Ansicht zurück, statt in eine ungültige Ansicht.
+
+UI: Ein Klick auf das Log-Fenster oder den freien Hintergrund schließt nun aktive Menüs (Inventar, Char, Wiki) und kehrt zur Karte zurück.
+
+VISUAL: Lesbarkeit verbessert. HP/XP Texte auf Balken sind nun schwarz für besseren Kontrast. Online-Status im Menü ist weiß.
+
+
 [v0.0.17g] - 2025-12-18 16:30 (Clarity & Fixes Update)
 
 UI (Map): Hindernisse (Wände #, Steine o) haben nun mehr Kontrast und eine hellere Farbe/Schraffur, um die Sichtbarkeit auf dunklen Bildschirmen zu verbessern.
@@ -8,6 +17,7 @@ UI (Header): Die Kronkorken-Anzeige ist nun Teil des Haupt-Statusblocks, gelb he
 
 UI (Char): Stat-Abkürzungen (STR, PER etc.) wurden durch ausgeschriebene deutsche Bezeichnungen (STÄRKE, WAHRNEHMUNG etc.) ersetzt.
 
+
 [v0.0.17f] - 2025-12-18 16:30 (UX Fixes & Vault View)
 
 BUGFIX: changeSector in game.js korrigiert. Der Gebietswechsel funktionierte nicht mehr zuverlässig. Die Positionsberechnung beim Wechsel (z.B. von Ost nach West) ist nun präziser.
@@ -15,6 +25,7 @@ BUGFIX: changeSector in game.js korrigiert. Der Gebietswechsel funktionierte nic
 FEATURE: Neue vault.html View. Das Betreten eines Vaults öffnet nun einen eigenen Screen mit animiertem Zahnrad-Hintergrund, statt eines einfachen Dialogs.
 
 UX: Level-Up Indikator im Header blinkt nun "LVL UP!", wenn Skillpunkte verfügbar sind. Im Charakter-Menü wird dies zusätzlich durch einen fetten roten Balken hervorgehoben.
+
 
 [v0.0.17xxx] - 2025-12-18 12:45 (Full System Restore)
 
