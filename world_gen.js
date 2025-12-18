@@ -13,35 +13,24 @@ const WorldGen = {
 
     createSector: function(width, height, biomeType, poiList) {
         let map = Array(height).fill().map(() => Array(width).fill('.'));
-        
-        // SAFE ACCESS TO GAMEDATA
-        let conf = { ground: '.', water: 0, mountain: 0, features: [] };
         if (typeof window.GameData !== 'undefined' && window.GameData.biomes) {
             if (!window.GameData.biomes[biomeType]) biomeType = 'wasteland';
-            conf = window.GameData.biomes[biomeType];
-        } else {
-            console.error("Critical: GameData not found in WorldGen");
-        }
+            var conf = window.GameData.biomes[biomeType];
+        } else { var conf = {ground:'.', features:[]}; }
 
         for(let y = 0; y < height; y++) {
             for(let x = 0; x < width; x++) {
                 const r = this.rand();
                 map[y][x] = conf.ground;
-
-                if(r < conf.water) {
-                    map[y][x] = 'W';
-                } else if(r < conf.water + conf.mountain) {
-                    map[y][x] = 'M';
-                } else {
+                if(r < conf.water) map[y][x] = 'W';
+                else if(r < conf.water + conf.mountain) map[y][x] = 'M';
+                else {
                     const d = this.rand();
                     let currentProb = 0;
                     if(conf.features) {
                         for(let feat of conf.features) {
                             currentProb += feat.prob;
-                            if(d < currentProb) {
-                                map[y][x] = feat.char;
-                                break;
-                            }
+                            if(d < currentProb) { map[y][x] = feat.char; break; }
                         }
                     }
                 }
@@ -75,53 +64,82 @@ const WorldGen = {
 
     generateCityLayout: function(width, height) {
         let map = Array(height).fill().map(() => Array(width).fill('=')); 
-        
         for(let y=0; y<height; y++) { map[y][0] = '|'; map[y][width-1] = '|'; }
         for(let x=0; x<width; x++) { map[0][x] = '|'; map[height-1][x] = '|'; }
-        
-        map[height-1][width/2] = 'E';
-        map[height-1][width/2-1] = 'E';
-        map[height-1][width/2+1] = 'E';
-
+        map[height-1][width/2] = 'E'; map[height-1][width/2-1] = 'E'; map[height-1][width/2+1] = 'E';
         const cx = Math.floor(width/2), cy = Math.floor(height/2);
         for(let dy=-1; dy<=1; dy++) for(let dx=-1; dx<=1; dx++) map[cy+dy][cx+dx] = 'F';
-
-        for(let y=5; y<12; y++) for(let x=5; x<15; x++) map[y][x] = '|';
-        for(let y=6; y<11; y++) for(let x=6; x<14; x++) map[y][x] = '.';
-        map[11][10] = '='; 
-        map[8][10] = '$'; 
-
-        for(let y=5; y<12; y++) for(let x=25; x<35; x++) map[y][x] = '|';
-        for(let y=6; y<11; y++) for(let x=26; x<34; x++) map[y][x] = '.';
-        map[11][30] = '='; 
-        map[8][30] = 'P'; 
-
-        for(let y=25; y<32; y++) for(let x=5; x<15; x++) map[y][x] = '|';
-        for(let y=26; y<31; y++) for(let x=6; x<14; x++) map[y][x] = '.';
-        map[25][10] = '='; 
-        map[28][10] = '&'; 
-
+        for(let y=5; y<12; y++) for(let x=5; x<15; x++) map[y][x] = '|'; for(let y=6; y<11; y++) for(let x=6; x<14; x++) map[y][x] = '.'; map[11][10] = '='; map[8][10] = '$'; 
+        for(let y=5; y<12; y++) for(let x=25; x<35; x++) map[y][x] = '|'; for(let y=6; y<11; y++) for(let x=26; x<34; x++) map[y][x] = '.'; map[11][30] = '='; map[8][30] = 'P'; 
+        for(let y=25; y<32; y++) for(let x=5; x<15; x++) map[y][x] = '|'; for(let y=26; y<31; y++) for(let x=6; x<14; x++) map[y][x] = '.'; map[25][10] = '='; map[28][10] = '&'; 
         return map;
+    },
+    
+    // NEU: Dungeon Generator
+    generateDungeonLayout: function(width, height) {
+        let map = Array(height).fill().map(() => Array(width).fill('#')); // Alles Wand
+        
+        // Räume graben
+        const rooms = [];
+        const numRooms = 8;
+        
+        for(let i=0; i<numRooms; i++) {
+            const w = Math.floor(this.rand() * 6) + 4;
+            const h = Math.floor(this.rand() * 6) + 4;
+            const x = Math.floor(this.rand() * (width - w - 2)) + 1;
+            const y = Math.floor(this.rand() * (height - h - 2)) + 1;
+            
+            // Raum aushöhlen
+            for(let ry=y; ry<y+h; ry++) {
+                for(let rx=x; rx<x+w; rx++) {
+                    map[ry][rx] = 'B'; // Boden
+                }
+            }
+            rooms.push({x, y, w, h, cx: Math.floor(x+w/2), cy: Math.floor(y+h/2)});
+            
+            // Korridor zum vorherigen Raum
+            if(i > 0) {
+                const prev = rooms[i-1];
+                this.buildDungeonCorridor(map, prev.cx, prev.cy, rooms[i].cx, rooms[i].cy);
+            }
+        }
+        
+        // Eingang (Exit) im ersten Raum
+        const start = rooms[0];
+        map[start.cy][start.cx] = 'E';
+        
+        // Schatz (Chest) im letzten Raum
+        const end = rooms[rooms.length-1];
+        map[end.cy][end.cx] = 'X';
+        
+        // Strikte Außenmauer erzwingen
+        for(let y=0; y<height; y++) { map[y][0] = '#'; map[y][width-1] = '#'; }
+        for(let x=0; x<width; x++) { map[0][x] = '#'; map[height-1][x] = '#'; }
+        
+        return { map, startX: start.cx, startY: start.cy };
+    },
+    
+    buildDungeonCorridor: function(map, x1, y1, x2, y2) {
+        let x = x1, y = y1;
+        while(x !== x2) {
+            map[y][x] = 'B';
+            x += (x < x2) ? 1 : -1;
+        }
+        while(y !== y2) {
+            map[y][x] = 'B';
+            y += (y < y2) ? 1 : -1;
+        }
     },
 
     buildRoad: function(map, start, end, groundChar) {
-        let x = start.x;
-        let y = start.y;
+        let x = start.x, y = start.y;
         while(x !== end.x || y !== end.y) {
-            if(this.rand() < 0.2) {
-                const dir = this.rand() < 0.5 ? 0 : 1; 
-                if(dir === 0 && x !== end.x) x += (end.x > x ? 1 : -1);
-                else if(y !== end.y) y += (end.y > y ? 1 : -1);
-            } else {
-                if(Math.abs(end.x - x) > Math.abs(end.y - y)) x += (end.x > x ? 1 : -1);
-                else y += (end.y > y ? 1 : -1);
-            }
+            if(this.rand() < 0.2) { const dir = this.rand() < 0.5 ? 0 : 1; if(dir === 0 && x !== end.x) x += (end.x > x ? 1 : -1); else if(y !== end.y) y += (end.y > y ? 1 : -1); } 
+            else { if(Math.abs(end.x - x) > Math.abs(end.y - y)) x += (end.x > x ? 1 : -1); else y += (end.y > y ? 1 : -1); }
             if(x < 0 || x >= map[0].length || y < 0 || y >= map.length) continue;
             const current = map[y][x];
             if (['V', 'C', 'S', 'H'].includes(current)) continue; 
-            if (current === 'W' || current === '~') map[y][x] = '='; 
-            else if (current === 'M') map[y][x] = 'U'; 
-            else map[y][x] = '='; 
+            if (current === 'W' || current === '~') map[y][x] = '='; else if (current === 'M') map[y][x] = 'U'; else map[y][x] = '='; 
         }
     }
 };
