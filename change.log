@@ -1,5 +1,12 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.0.18i] - 2025-12-18 (Dungeon Warning Hotfix)
+------------------------------------------------
+- FIX: Fehlende Funktion 'UI.showDungeonWarning' implementiert.
+  Das Betreten von Dungeons (Supermarkt/Höhle) öffnet nun wieder korrekt das rote Warn-Overlay ("DANGER"), anstatt einen Crash zu verursachen.
+- RESTORE: Warn-Logik aus v0.0.18a wiederhergestellt.
+
+
 [v0.0.18h] - 2025-12-18 (Emergency Fix)
 ------------------------------------------------
 - FIX: Kritische Funktionen (expToNextLevel, getStat, gainExp, saveGame) wiederhergestellt, die zu Abstürzen führten.
