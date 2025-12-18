@@ -1,17 +1,28 @@
 window.GameData = {
     // --- FARBPALETTE ---
     colors: { 
-        '.':'#2d241b', '_':'#4a4036', ',':'#1a261a', ';':'#1e1e11', '=':'#333333', '#':'#111', 
+        '.':'#2d241b', '_':'#4a4036', ',':'#1a261a', ';':'#1e1e11', '=':'#333333', 
+        '#':'#555', // FIX: Helleres Grau für Wände damit sichtbar
         'line_default': '#2a5a2a', 'line_wall': '#39ff14', 
         'V': '#39ff14', 'C': '#eab308', 'S': '#ff0000', 'G': '#00ffff', 'H': '#888888', 
         '^': '#111', 'v':'#111', '<':'#111', '>':'#111',
         'M': '#3e2723', 'W': '#0d47a1', '~': '#2f4f2f', 
-        't': '#1b5e20', 'T': '#0a3d0a', 'x': '#5c4033', 'o': '#555555',
+        't': '#1b5e20', 'T': '#0a3d0a', 'x': '#8b4513', 'o': '#808080', // Steine heller
         '+': '#666666', '"': '#3cb371', 'Y': '#deb887', 'U': '#212121',
         // City Tiles
-        '$': '#ffd700', '&': '#ff8c00', 'P': '#ff3333', 'E': '#39ff14', 'F': '#00bfff', '|': '#555555',
+        '$': '#ffd700', '&': '#ff8c00', 'P': '#ff3333', 'E': '#39ff14', 'F': '#00bfff', '|': '#777',
         // Map Colors
         'wasteland': '#5d5345', 'desert': '#eecfa1', 'jungle': '#1a3300', 'city': '#555555', 'swamp': '#1e1e11'
+    },
+
+    // --- TEXTE ---
+    statLabels: {
+        'STR': 'STÄRKE',
+        'PER': 'WAHRNEHMUNG',
+        'END': 'AUSDAUER',
+        'INT': 'INTELLIGENZ',
+        'AGI': 'BEWEGLICHKEIT',
+        'LUC': 'GLÜCK'
     },
 
     // --- BIOME ---
