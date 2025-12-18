@@ -1,6 +1,12 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 ==============================
 
+[v0.0.16b] - 2025-12-18 07:45 (Wiki UI Fix)
+
+FIX: wiki.html wurde aktualisiert, um sicherzustellen, dass die Tabs für "Items", "Baupläne" und "Orte" vorhanden sind.
+
+OPTIMIERUNG: renderWiki in ui.js baut den HTML-Content nun effizienter in einem Puffer auf, bevor er in den DOM geschrieben wird. Dies verbessert die Performance und vermeidet Render-Fehler.
+
 [v0.0.16a] - 2025-12-18 07:00 (Data Architecture Update)
 
 SYSTEM: Neue Datei data.js eingeführt. Enthält alle statischen Definitionen (Items, Monster, Rezepte, Biome).
