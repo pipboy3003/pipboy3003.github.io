@@ -3,10 +3,12 @@ const UI = {
     timerInterval: null,
     lastInputTime: Date.now(), 
     biomeColors: (typeof window.GameData !== 'undefined') ? window.GameData.colors : {}, 
-    
-    // Login Lock Flag gegen doppeltes Einloggen
     loginBusy: false,
     
+    // KEYBOARD FOCUS SYSTEM
+    focusIndex: -1,
+    focusableEls: [],
+
     touchState: {
         active: false, id: null, startX: 0, startY: 0, currentX: 0, currentY: 0, moveDir: { x: 0, y: 0 }, timer: null
     },
@@ -95,7 +97,6 @@ const UI = {
             document.body.addEventListener(evt, () => this.lastInputTime = Date.now());
         });
 
-        // Keyup Listener für Enter beim Login
         if(this.els.loginInput) {
             this.els.loginInput.addEventListener("keydown", (e) => {
                 if (e.key === "Enter") {
@@ -167,17 +168,49 @@ const UI = {
         }
 
         window.addEventListener('keydown', (e) => {
-            if (!Game.state || Game.state.isGameOver) return;
-
-            // COMBAT STEUERUNG
-            if (Game.state.view === 'combat' && typeof Combat !== 'undefined') {
-                if (e.key === 'ArrowUp' || e.key === 'w') Combat.moveSelection(-1);
-                if (e.key === 'ArrowDown' || e.key === 's') Combat.moveSelection(1);
-                if (e.key === ' ' || e.key === 'Enter') Combat.confirmSelection();
-                if (e.key === 'Escape') Combat.flee();
+            if (!Game.state || Game.state.isGameOver) {
+                if(this.els.gameOver && !this.els.gameOver.classList.contains('hidden')) {
+                     if(e.key === 'Enter' || e.key === ' ') {
+                         location.reload();
+                     }
+                }
+                return;
             }
-            // MAP STEUERUNG
-            else if (Game.state.view === 'map' && !Game.state.inDialog) {
+
+            if(e.key === 'Escape') {
+                if(Game.state.inDialog) { /* handled by focus */ }
+                else if(Game.state.view !== 'map') { this.switchView('map'); return; }
+            }
+
+            if (Game.state.inDialog) {
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd'].includes(e.key)) {
+                    this.navigateFocus(e.key === 'ArrowRight' || e.key === 'd' || e.key === 'ArrowDown' || e.key === 's' ? 1 : -1);
+                } else if (e.key === 'Enter' || e.key === ' ') {
+                    this.triggerFocus();
+                }
+                return;
+            }
+
+            if (Game.state.view === 'combat') {
+                if (typeof Combat !== 'undefined') {
+                    if (e.key === 'ArrowUp' || e.key === 'w') Combat.moveSelection(-1);
+                    if (e.key === 'ArrowDown' || e.key === 's') Combat.moveSelection(1);
+                    if (e.key === ' ' || e.key === 'Enter') Combat.confirmSelection();
+                    if (e.key === 'Escape') Combat.flee();
+                }
+                return;
+            }
+
+            if (Game.state.view !== 'map') {
+                if (['ArrowUp', 'w'].includes(e.key)) this.navigateFocus(-4); 
+                if (['ArrowDown', 's'].includes(e.key)) this.navigateFocus(4);
+                if (['ArrowLeft', 'a'].includes(e.key)) this.navigateFocus(-1);
+                if (['ArrowRight', 'd'].includes(e.key)) this.navigateFocus(1);
+                if (e.key === 'Enter' || e.key === ' ') this.triggerFocus();
+                return;
+            }
+
+            if (Game.state.view === 'map') {
                 if(e.key === 'w' || e.key === 'ArrowUp') Game.move(0, -1);
                 if(e.key === 's' || e.key === 'ArrowDown') Game.move(0, 1);
                 if(e.key === 'a' || e.key === 'ArrowLeft') Game.move(-1, 0);
@@ -190,6 +223,46 @@ const UI = {
         
         if(this.timerInterval) clearInterval(this.timerInterval);
         this.timerInterval = setInterval(() => this.updateTimer(), 1000);
+    },
+
+    refreshFocusables: function() {
+        let container = this.els.view;
+        if (Game.state && Game.state.inDialog && this.els.dialog) {
+            container = this.els.dialog;
+        }
+        const buttons = Array.from(container.querySelectorAll('button:not([disabled])'));
+        this.focusableEls = buttons.filter(b => b.offsetParent !== null);
+        
+        if (this.focusIndex >= this.focusableEls.length) this.focusIndex = 0;
+        if (this.focusIndex < 0 && this.focusableEls.length > 0) this.focusIndex = 0;
+        
+        this.updateFocusVisuals();
+    },
+
+    navigateFocus: function(delta) {
+        if (this.focusableEls.length === 0) this.refreshFocusables();
+        if (this.focusableEls.length === 0) return;
+
+        this.focusIndex += delta;
+        if (this.focusIndex < 0) this.focusIndex = this.focusableEls.length - 1;
+        if (this.focusIndex >= this.focusableEls.length) this.focusIndex = 0;
+
+        this.updateFocusVisuals();
+    },
+
+    updateFocusVisuals: function() {
+        document.querySelectorAll('.key-focus').forEach(el => el.classList.remove('key-focus'));
+        if (this.focusableEls[this.focusIndex]) {
+            const el = this.focusableEls[this.focusIndex];
+            el.classList.add('key-focus');
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    },
+
+    triggerFocus: function() {
+        if (this.focusableEls[this.focusIndex]) {
+            this.focusableEls[this.focusIndex].click();
+        }
     },
     
     isMobile: function() {
@@ -209,13 +282,11 @@ const UI = {
                 const res = await fetch(`readme.md?v=${ver}`); 
                 if (!res.ok) throw new Error("Manual not found"); 
                 let text = await res.text(); 
-                
                 text = text.replace(/^# (.*$)/gim, '<h1 class="text-3xl font-bold text-yellow-400 mb-2 border-b border-yellow-500">$1</h1>');
                 text = text.replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold text-green-400 mt-4 mb-2">$1</h2>');
                 text = text.replace(/^### (.*$)/gim, '<h3 class="text-xl font-bold text-green-300 mt-2 mb-1">$1</h3>');
                 text = text.replace(/\*\*(.*)\*\*/gim, '<b>$1</b>');
                 text = text.replace(/\n/gim, '<br>');
-
                 content.innerHTML = text; 
             } catch(e) { content.innerHTML = `<div class="text-red-500">Fehler beim Laden: ${e.message}</div>`; }
         }
@@ -397,55 +468,6 @@ const UI = {
         });
     },
 
-    attemptLogin: async function() {
-        if(!this.els.loginInput) return;
-        
-        // FIX: Login Lock
-        if(this.loginBusy) return;
-        this.loginBusy = true;
-
-        const id = this.els.loginInput.value.trim().toUpperCase();
-        if(id.length < 3) {
-            this.els.loginStatus.textContent = "ID ZU KURZ (MIN 3 ZEICHEN)";
-            this.els.loginStatus.className = "mt-4 text-red-500 font-bold";
-            this.loginBusy = false;
-            return;
-        }
-        
-        this.els.loginStatus.textContent = "VERBINDE MIT VAULT-TEC NETZWERK...";
-        this.els.loginStatus.className = "mt-4 text-yellow-400 animate-pulse";
-        this.lastInputTime = Date.now(); 
-        
-        try {
-            if(typeof Network === 'undefined') throw new Error("Netzwerk Modul fehlt");
-            Network.init(); 
-            const saveData = await Network.login(id);
-            if (saveData) {
-                this.els.loginScreen.style.display = 'none';
-                this.els.gameScreen.classList.remove('hidden');
-                this.els.gameScreen.classList.remove('opacity-0');
-                Game.init(saveData);
-                if(this.isMobile()) {
-                    this.showMobileControlsHint();
-                }
-            } else {
-                this.els.loginScreen.style.display = 'none';
-                this.els.spawnScreen.style.display = 'flex'; 
-                this.els.spawnScreen.classList.remove('hidden');
-                if(this.els.spawnMsg) this.els.spawnMsg.textContent = `KEIN SPIELSTAND FÜR ID '${id}' GEFUNDEN.`;
-            }
-        } catch(e) {
-            if (e.message === "ALREADY_ONLINE") {
-                this.els.loginStatus.textContent = "FEHLER: BENUTZER BEREITS EINGELOGGT";
-                this.els.loginStatus.className = "mt-4 text-red-500 font-bold blink-red";
-            } else {
-                this.error("LOGIN FEHLGESCHLAGEN: " + e.message);
-            }
-        } finally {
-            this.loginBusy = false;
-        }
-    },
-
     renderSpawnList: function(players) {
         if(!this.els.spawnList) return;
         this.els.spawnList.innerHTML = '';
@@ -523,7 +545,6 @@ const UI = {
     setConnectionState: function(status) {
         const v = this.els.version;
         if(!v) return;
-        // FIX: Version nicht überschreiben, nur Farbe ändern
         if(status === 'online') {
             v.className = "text-[#39ff14] font-bold tracking-widest"; 
             v.style.textShadow = "0 0 5px #39ff14";
@@ -555,21 +576,20 @@ const UI = {
 
     restoreOverlay: function() { 
         if(document.getElementById('joystick-base')) return; 
-        
         const joystickHTML = `
             <div id="joystick-base" style="position: absolute; width: 100px; height: 100px; border-radius: 50%; border: 2px solid rgba(57, 255, 20, 0.5); background: rgba(0, 0, 0, 0.2); display: none; pointer-events: none; z-index: 9999;"></div>
             <div id="joystick-stick" style="position: absolute; width: 50px; height: 50px; border-radius: 50%; background: rgba(57, 255, 20, 0.8); display: none; pointer-events: none; z-index: 10000; box-shadow: 0 0 10px #39ff14;"></div>
             <div id="dialog-overlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 50; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 5px; width: auto; max-width: 90%;"></div> 
         `; 
         this.els.view.insertAdjacentHTML('beforeend', joystickHTML); 
-        
-        this.els.joyBase = document.getElementById('joystick-base');
-        this.els.joyStick = document.getElementById('joystick-stick');
+        this.els.joyBase = document.getElementById('joystick-base'); 
+        this.els.joyStick = document.getElementById('joystick-stick'); 
         this.els.dialog = document.getElementById('dialog-overlay'); 
     },
 
     switchView: async function(name) { 
         this.stopJoystick();
+        this.focusIndex = -1;
 
         if(this.els.navMenu) {
             this.els.navMenu.classList.add('hidden');
@@ -605,7 +625,6 @@ const UI = {
             this.els.view.innerHTML = html; 
             Game.state.view = name; 
             
-            // FIX: Restore Overlay for dialogs!
             this.restoreOverlay();
 
             if (name === 'combat') { 
@@ -622,10 +641,13 @@ const UI = {
             if (name === 'city') this.renderCity(); 
             if (name === 'combat') this.renderCombat(); 
             if (name === 'quests') this.renderQuests(); 
-            if (name === 'crafting') this.renderCrafting();
+            if (name === 'crafting') this.renderCrafting(); 
             
-            this.updateButtonStates(name);
+            this.updateButtonStates(name); 
             this.update(); 
+            
+            setTimeout(() => this.refreshFocusables(), 100);
+
         } catch (e) { this.error(`Ladefehler: ${e.message}`); } 
     },
 
@@ -665,10 +687,8 @@ const UI = {
         if(this.els.hp) this.els.hp.textContent = `${Math.round(Game.state.hp)}/${maxHp}`; 
         if(this.els.hpBar) this.els.hpBar.style.width = `${Math.max(0, (Game.state.hp / maxHp) * 100)}%`;
         
-        // --- ALERT SYSTEM (FIXED CLASSES) ---
         let hasAlert = false;
 
-        // CHAR Alert
         if(this.els.btnChar) {
             if(Game.state.statPoints > 0) { 
                 this.els.btnChar.classList.add('alert-glow-yellow');
@@ -678,7 +698,6 @@ const UI = {
             }
         } 
 
-        // QUESTS Alert
         const unreadQuests = Game.state.quests.some(q => !q.read); 
         if(this.els.btnQuests) {
             if(unreadQuests) { 
@@ -689,7 +708,6 @@ const UI = {
             }
         } 
 
-        // MENU Alert
         if(this.els.btnMenu) {
             if(hasAlert) {
                 this.els.btnMenu.classList.add('alert-glow-red');
@@ -765,6 +783,7 @@ const UI = {
         btnContainer.appendChild(btnNo);
         box.appendChild(btnContainer);
         this.els.dialog.appendChild(box);
+        this.refreshFocusables();
     },
 
     renderInventory: function() {
@@ -1131,6 +1150,7 @@ const UI = {
         btnContainer.appendChild(btnNo);
         box.appendChild(btnContainer);
         this.els.dialog.appendChild(box);
+        this.refreshFocusables();
     },
 
     showDungeonLocked: function(minutesLeft) {
@@ -1153,6 +1173,7 @@ const UI = {
         
         box.appendChild(btn);
         this.els.dialog.appendChild(box);
+        this.refreshFocusables();
     },
 
     showDungeonVictory: function(caps, lvl) {
