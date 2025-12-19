@@ -1,5 +1,12 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.1.2-beta] - 2025-12-19 (Inventory & Dungeon Fix)
+------------------------------------------------
+- FIX: Kritischer Fehler behoben, der das Betreten von Dungeons verhinderte (UI.showDungeonWarning restored).
+- UI (Inventar): Das fehlerhafte Hover-Tooltip (abgeschnitten am Rand) wurde entfernt.
+- UI (Inventar): Item-Details (Schaden, Heilung, Wert) werden nun im "Benutzen"-Dialog angezeigt. Dieser liegt garantiert über allen anderen Fenstern.
+
+
 [v0.1.1-beta] - 2025-12-19 (Control & Interaction Fix)
 ------------------------------------------------
 - FIX: Fehlende Interaktions-Funktionen (rest, heal, buyAmmo, buyItem) in game.js wiederhergestellt. Vault und Händler funktionieren wieder.
