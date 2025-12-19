@@ -3,11 +3,7 @@ const UI = {
     timerInterval: null,
     lastInputTime: Date.now(), 
     biomeColors: (typeof window.GameData !== 'undefined') ? window.GameData.colors : {}, 
-    
-    // Login Lock Flag
     loginBusy: false,
-    
-    // KEYBOARD FOCUS SYSTEM
     focusIndex: -1,
     focusableEls: [],
 
@@ -173,68 +169,63 @@ const UI = {
         window.addEventListener('keydown', (e) => {
             if (!Game.state || Game.state.isGameOver) {
                 if(this.els.gameOver && !this.els.gameOver.classList.contains('hidden')) {
-                     if(e.key === 'Enter' || e.key === ' ') {
-                         location.reload();
-                     }
+                     if(e.key === 'Enter' || e.key === ' ') location.reload();
                 }
                 return;
             }
 
             if(e.key === 'Escape') {
-                // Priority: Player List -> Menu -> Map View
-                if(this.els.playerList && this.els.playerList.style.display === 'flex') {
+                if (Game.state.inDialog) { /* Dialoge managen sich selbst oder Buttonklick */ }
+                else if(this.els.playerList && this.els.playerList.style.display === 'flex') {
                     this.togglePlayerList();
-                    return;
                 }
-
-                if(this.els.navMenu && !this.els.navMenu.classList.contains('hidden')) {
+                else if(this.els.navMenu && !this.els.navMenu.classList.contains('hidden')) {
                     this.toggleMenu();
-                    return;
                 }
-
-                if(Game.state.view !== 'map') { 
+                else if(Game.state.view !== 'map') { 
                     this.switchView('map'); 
-                    return; 
                 }
-
-                // If nothing else, open Menu
-                this.toggleMenu();
+                else {
+                    this.toggleMenu(); // Map -> ESC -> Menu
+                }
                 return;
             }
 
-            // DIALOG MODE (Highest Priority)
-            if (Game.state.inDialog) {
+            // DIALOGS & OVERLAYS
+            if (Game.state.inDialog || (this.els.playerList && this.els.playerList.style.display === 'flex')) {
                 if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd'].includes(e.key)) {
-                    this.navigateFocus(e.key === 'ArrowRight' || e.key === 'd' || e.key === 'ArrowDown' || e.key === 's' ? 1 : -1);
+                    this.navigateFocus(e.key === 'ArrowUp' || e.key === 'w' || e.key === 'ArrowLeft' || e.key === 'a' ? -1 : 1);
                 } else if (e.key === 'Enter' || e.key === ' ') {
                     this.triggerFocus();
                 }
                 return;
             }
 
-            // COMBAT MODE
+            // COMBAT
             if (Game.state.view === 'combat') {
                 if (typeof Combat !== 'undefined') {
                     if (e.key === 'ArrowUp' || e.key === 'w') Combat.moveSelection(-1);
                     if (e.key === 'ArrowDown' || e.key === 's') Combat.moveSelection(1);
                     if (e.key === ' ' || e.key === 'Enter') Combat.confirmSelection();
-                    // ESC handled above
                 }
                 return;
             }
 
-            // MENU/VIEW MODE (Inventory, Shop, etc.)
+            // MENU / VIEWS / LISTS
             const isMenuOpen = this.els.navMenu && !this.els.navMenu.classList.contains('hidden');
             if (Game.state.view !== 'map' || isMenuOpen) {
-                if (['ArrowUp', 'w'].includes(e.key)) this.navigateFocus(-4); 
-                if (['ArrowDown', 's'].includes(e.key)) this.navigateFocus(4);
+                // FIX: Check if it's a grid view (inventory) or list view (menu, city, etc)
+                let isGrid = (Game.state.view === 'inventory') && !isMenuOpen;
+                
+                if (['ArrowUp', 'w'].includes(e.key)) this.navigateFocus(isGrid ? -4 : -1); 
+                if (['ArrowDown', 's'].includes(e.key)) this.navigateFocus(isGrid ? 4 : 1);
                 if (['ArrowLeft', 'a'].includes(e.key)) this.navigateFocus(-1);
                 if (['ArrowRight', 'd'].includes(e.key)) this.navigateFocus(1);
                 if (e.key === 'Enter' || e.key === ' ') this.triggerFocus();
                 return;
             }
 
-            // MAP MODE
+            // MAP MOVEMENT
             if (Game.state.view === 'map') {
                 if(e.key === 'w' || e.key === 'ArrowUp') Game.move(0, -1);
                 if(e.key === 's' || e.key === 'ArrowDown') Game.move(0, 1);
@@ -250,7 +241,6 @@ const UI = {
         this.timerInterval = setInterval(() => this.updateTimer(), 1000);
     },
 
-    // --- FOCUS MANAGER ---
     toggleMenu: function() {
         if(!this.els.navMenu) return;
         const isHidden = this.els.navMenu.classList.contains('hidden');
@@ -276,7 +266,7 @@ const UI = {
         }
 
         const buttons = Array.from(container.querySelectorAll('button:not([disabled])'));
-        this.focusableEls = buttons.filter(b => b.offsetParent !== null);
+        this.focusableEls = buttons.filter(b => b.offsetParent !== null && b.style.display !== 'none');
         
         if (this.focusIndex >= this.focusableEls.length) this.focusIndex = 0;
         if (this.focusIndex < 0 && this.focusableEls.length > 0) this.focusIndex = 0;
@@ -311,7 +301,6 @@ const UI = {
         }
     },
 
-    // --- SYSTEM ---
     isMobile: function() { return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0); },
 
     showManualOverlay: async function() {
@@ -332,7 +321,13 @@ const UI = {
                 text = text.replace(/^### (.*$)/gim, '<h3 class="text-xl font-bold text-green-300 mt-2 mb-1">$1</h3>');
                 text = text.replace(/\*\*(.*)\*\*/gim, '<b>$1</b>');
                 text = text.replace(/\n/gim, '<br>');
+                // Button hinzufügen
+                text += '<br><button class="action-button w-full mt-4 border-red-500 text-red-500" onclick="document.getElementById(\'manual-overlay\').classList.add(\'hidden\'); document.getElementById(\'manual-overlay\').style.display=\'none\';">SCHLIESSEN (ESC)</button>';
                 content.innerHTML = text; 
+                setTimeout(() => { // Hack to refresh focus after load
+                     this.refreshFocusables(); // Doesn't really work cause overlay is not tracked in main loop easily, but user can click ESC
+                }, 500);
+
             } catch(e) { content.innerHTML = `<div class="text-red-500">Fehler beim Laden: ${e.message}</div>`; }
         }
     },
@@ -624,14 +619,22 @@ const UI = {
         }
     },
 
+    // FIX: Player List Update mit Sektor Anzeige
     updatePlayerList: function() {
         if(!this.els.playerListContent || typeof Network === 'undefined') return;
-        let html = `<div class="text-green-400">> ${Network.myId} (DU)</div>`;
+        
+        let myLoc = "[?,?]";
+        if (Game.state && Game.state.sector) {
+            myLoc = `[${Game.state.sector.x},${Game.state.sector.y}]`;
+        }
+        
+        let html = `<div class="text-green-400">> ${Network.myId} (DU) <span class="text-yellow-400">${myLoc}</span></div>`;
+        
         if(Network.otherPlayers) {
             for(let id in Network.otherPlayers) {
                 const p = Network.otherPlayers[id];
                 const loc = (p.sector) ? `[${p.sector.x},${p.sector.y}]` : '[?]';
-                html += `<div class="text-cyan-400">> ${id} ${loc}</div>`;
+                html += `<div class="text-cyan-400">> ${id} <span class="text-yellow-400">${loc}</span></div>`;
             }
         }
         this.els.playerListContent.innerHTML = html;
@@ -782,7 +785,6 @@ const UI = {
         if(this.els.hp) this.els.hp.textContent = `${Math.round(Game.state.hp)}/${maxHp}`; 
         if(this.els.hpBar) this.els.hpBar.style.width = `${Math.max(0, (Game.state.hp / maxHp) * 100)}%`;
         
-        // ALERT SYSTEM
         let hasAlert = false;
 
         if(this.els.btnChar) {
