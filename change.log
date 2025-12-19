@@ -1,5 +1,13 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.1.15-beta] - 2025-12-19 (Full UI Restore & Aggressive Glow)
+------------------------------------------------
+- RESTORE: ui.js wurde komplett dekomprimiert. Alle Funktionen (Wiki, Map, Inventar) sind wieder voll lesbar und editierbar.
+- UI: Neue "Intense Pulse" Animationen für Benachrichtigungen.
+  - Buttons leuchten nun innen und außen pulsierend, um Aufmerksamkeit zu erregen ("Es ballert").
+  - Farben: Gelb (Charakter/Level Up), Cyan (Neue Aufgaben), Rot (Menü-Alarm).
+
+
 [v0.1.14-beta] - 2025-12-19 (Keyboard Control & Map Fix)
 ------------------------------------------------
 - FIX: Weltkarten-Bug behoben. Bereits aufgedeckte Gebiete werden nach dem Neuladen nicht mehr "vergessen".
