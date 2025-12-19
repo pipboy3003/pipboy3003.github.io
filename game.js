@@ -56,7 +56,7 @@ const Game = {
                 if(!this.state.view) this.state.view = 'map';
                 if(!this.state.equip) this.state.equip = { weapon: this.items.fists, body: this.items.vault_suit };
                 if(!this.state.inventory) this.state.inventory = [];
-                if(!this.state.cooldowns) this.state.cooldowns = {}; // NEU: Cooldown Init
+                if(!this.state.cooldowns) this.state.cooldowns = {}; 
                 UI.log(">> Spielstand geladen.", "text-cyan-400");
             } else {
                 let startSecX = Math.floor(Math.random() * 8);
@@ -79,7 +79,7 @@ const Game = {
                     view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, explored: {}, 
                     visitedSectors: [`${startSecX},${startSecY}`],
                     tempStatIncrease: {}, buffEndTime: 0,
-                    cooldowns: {}, // NEU
+                    cooldowns: {}, 
                     quests: [ { id: "q1", title: "Der Weg nach Hause", text: "Suche Zivilisation.", read: false } ], 
                     startTime: Date.now(),
                     savedPosition: null
@@ -120,9 +120,8 @@ const Game = {
         if (tile === 'P') { UI.switchView('clinic'); return; }
         if (tile === 'E') { this.leaveCity(); return; }
         if (tile === 'X') { this.openChest(nx, ny); return; } 
-        if (tile === 'v') { this.descendDungeon(); return; } // NEU: Treppe
+        if (tile === 'v') { this.descendDungeon(); return; }
 
-        // Hindernisse prüfen
         if(['M', 'W', '#', 'U', 't', 'T', 'o', 'Y', '|', 'F'].includes(tile)) { 
             UI.shakeView();
             return; 
@@ -141,7 +140,6 @@ const Game = {
         if(typeof Network !== 'undefined') Network.sendMove(nx, ny, this.state.lvl, this.state.sector);
 
         if(tile === 'V') { UI.switchView('vault'); return; }
-        // NEU: tryEnterDungeon statt direktem Warn-Aufruf
         if(tile === 'S') { this.tryEnterDungeon("market"); return; }
         if(tile === 'H') { this.tryEnterDungeon("cave"); return; }
         if(tile === 'C') { this.enterCity(); return; } 
@@ -220,8 +218,6 @@ const Game = {
     },
 
     // --- SUB-ZONES (Dungeons) ---
-    
-    // NEU: Checkt Cooldown und ruft UI auf
     tryEnterDungeon: function(type) {
         const key = `${this.state.sector.x},${this.state.sector.y}_${type}`;
         const cd = this.state.cooldowns ? this.state.cooldowns[key] : 0;
@@ -240,14 +236,12 @@ const Game = {
         this.state.dungeonType = type;
 
         if(typeof WorldGen !== 'undefined') {
-            // Seed ändert sich pro Level
             WorldGen.setSeed((this.state.sector.x + 1) * (this.state.sector.y + 1) * Date.now() + level); 
             const data = WorldGen.generateDungeonLayout(this.MAP_W, this.MAP_H);
             this.state.currentMap = data.map;
             this.state.player.x = data.startX;
             this.state.player.y = data.startY;
 
-            // NEU: Wenn nicht Level 3, ersetze Truhe (X) durch Treppe (v)
             if(level < 3) {
                 for(let y=0; y<this.MAP_H; y++) {
                     for(let x=0; x<this.MAP_W; x++) {
@@ -278,24 +272,20 @@ const Game = {
         this.state.currentMap[y][x] = 'B'; 
         this.renderStaticMap(); 
         
-        // Loot berechnen (Mehr Loot auf tieferen Ebenen)
         const multiplier = this.state.dungeonLevel || 1;
         const caps = (Math.floor(Math.random() * 200) + 100) * multiplier;
         this.state.caps += caps;
         this.addToInventory('legendary_part', 1 * multiplier);
         
-        // Cooldown setzen
         if(!this.state.cooldowns) this.state.cooldowns = {};
         const key = `${this.state.sector.x},${this.state.sector.y}_${this.state.dungeonType}`;
         this.state.cooldowns[key] = Date.now() + (10 * 60 * 1000); // 10 Minuten
 
-        // UI Anzeige
         UI.showDungeonVictory(caps, multiplier);
         
         if(Math.random() < 0.5) this.addToInventory('stimpack', 2);
         if(Math.random() < 0.5) this.addToInventory('nuclear_mat', 1);
         
-        // Rauswurf
         setTimeout(() => { this.leaveCity(); }, 4000);
     },
 
@@ -322,7 +312,7 @@ const Game = {
             this.state.player.y = this.state.savedPosition.y;
             this.state.savedPosition = null;
         }
-        this.state.dungeonLevel = 0; // Reset Dungeon Level
+        this.state.dungeonLevel = 0; 
         this.loadSector(this.state.sector.x, this.state.sector.y);
         UI.log("Zurück im Ödland.", "text-green-400");
     },
@@ -486,15 +476,14 @@ const Game = {
         try { localStorage.setItem('pipboy_save', JSON.stringify(this.state)); } catch(e){}
     },
 
-    // --- COMBAT & INTERACTIONS ---
+    // --- COMBAT INIT (DELEGATION TO COMBAT.JS) ---
     startCombat: function() { 
         let pool = []; 
         let lvl = this.state.lvl; 
         
-        // DYNAMIC DIFFICULTY: Level Skalierung im Dungeon
         let difficultyMult = 1;
         if(this.state.dungeonLevel) {
-            difficultyMult = 1 + (this.state.dungeonLevel * 0.2); // +20% pro Level
+            difficultyMult = 1 + (this.state.dungeonLevel * 0.2); 
         }
 
         let biome = this.worldData[`${this.state.sector.x},${this.state.sector.y}`]?.biome || 'wasteland'; 
@@ -514,7 +503,6 @@ const Game = {
         const template = pool[Math.floor(Math.random()*pool.length)]; 
         let enemy = { ...template }; 
         
-        // Apply Scaling
         enemy.hp = Math.floor(enemy.hp * difficultyMult);
         enemy.maxHp = enemy.hp;
         enemy.dmg = Math.floor(enemy.dmg * difficultyMult);
@@ -533,23 +521,15 @@ const Game = {
              enemy.maxHp = enemy.hp; 
         }
         
-        this.state.enemy = enemy; 
-        this.state.inDialog = true; 
-        if(Date.now() < this.state.buffEndTime) UI.log("⚡ S.P.E.C.I.A.L. OVERDRIVE aktiv!", "text-yellow-400"); 
-        UI.switchView('combat').then(() => UI.renderCombat()); 
-        UI.log(isLegendary ? "LEGENDÄRER GEGNER!" : "Kampf gestartet!", isLegendary ? "text-yellow-400" : "text-red-500"); 
+        // DELEGATE TO COMBAT MODULE
+        if(typeof Combat !== 'undefined') {
+            Combat.start(enemy);
+        } else {
+            console.error("Combat module missing!");
+        }
     },
     
-    getRandomXP: function(xpData) { if (Array.isArray(xpData)) return Math.floor(Math.random() * (xpData[1] - xpData[0] + 1)) + xpData[0]; return xpData; },
-    combatAction: function(act) { if(this.state.isGameOver) return; if(!this.state.enemy) return; if(this.state.enemy.hp <= 0) return; if(act === 'attack') { const wpn = this.state.equip.weapon; if(wpn.isRanged) { if(this.state.ammo > 0) this.state.ammo--; else { UI.log("Keine Munition! Fäuste.", "text-red-500"); this.state.equip.weapon = this.items.fists; this.enemyTurn(); return; } } if(Math.random() > 0.3) { const baseDmg = wpn.baseDmg || 2; const dmg = Math.floor(baseDmg + (this.getStat('STR') * 1.5)); this.state.enemy.hp -= dmg; UI.log(`Treffer: ${dmg} Schaden.`, "text-green-400"); if(this.state.enemy.hp <= 0) { const enemy = this.state.enemy; this.state.caps += enemy.loot; UI.log(`Sieg! ${enemy.loot} Kronkorken.`, "text-yellow-400"); this.gainExp(this.getRandomXP(enemy.xp)); if(enemy.isLegendary) { this.addToInventory('legendary_part', 1); UI.log("★ DROP: Legendäres Modul", "text-yellow-400 font-bold"); if(Math.random() < 0.5) { const bonusCaps = this.state.lvl * 50; this.state.caps += bonusCaps; UI.log(`★ BONUS: ${bonusCaps} KK`, "text-yellow-400"); } } if(enemy.drops) { enemy.drops.forEach(drop => { if(Math.random() < drop.c) { this.addToInventory(drop.id, 1); } }); } this.endCombat(); return; } } else UI.log("Verfehlt!", "text-gray-500"); this.enemyTurn(); } else if (act === 'flee') { if(Math.random() < 0.4 + (this.getStat('AGI')*0.05)) { UI.log("Geflohen.", "text-green-400"); this.endCombat(); } else { UI.log("Flucht gescheitert!", "text-red-500"); this.enemyTurn(); } } UI.update(); if(this.state.view === 'combat') UI.renderCombat(); },
-    rollLegendaryLoot: function() { const result = Math.floor(Math.random() * 16) + 3; let msg = "", type = ""; if(result <= 7) { type = "CAPS"; const amt = this.state.lvl * 80; this.state.caps += amt; msg = `KRONKORKEN REGEN: +${amt} KK!`; } else if (result <= 12) { type = "AMMO"; const amt = this.state.lvl * 25; this.state.ammo += amt; msg = `MUNITIONS JACKPOT: +${amt} Schuss!`; } else { type = "BUFF"; this.state.buffEndTime = Date.now() + 300000; msg = `S.P.E.C.I.A.L. OVERDRIVE! (5 Min)`; } return { val: result, msg: msg, type: type }; },
-    enemyTurn: function() { if(this.state.enemy.hp <= 0) return; if(Math.random() < 0.8) { const armor = (this.getStat('END') * 0.5); const dmg = Math.max(1, Math.floor(this.state.enemy.dmg - armor)); this.state.hp -= dmg; UI.log(`Schaden erhalten: ${dmg}`, "text-red-400"); this.checkDeath(); } else UI.log("Gegner verfehlt.", "text-gray-500"); },
-    checkDeath: function() { if(this.state.hp <= 0) { this.state.hp = 0; this.state.isGameOver = true; if(typeof Network !== 'undefined') Network.deleteSave(); UI.update(); UI.showGameOver(); } },
-    endCombat: function() { this.state.enemy = null; this.state.inDialog = false; UI.switchView('map'); this.saveGame(); },
-    rest: function() { this.state.hp = this.state.maxHp; UI.log("Ausgeruht. HP voll.", "text-blue-400"); UI.update(); this.saveGame(); },
-    heal: function() { if(this.state.caps >= 25) { this.state.caps -= 25; this.rest(); } else UI.log("Zu wenig Kronkorken.", "text-red-500"); },
-    buyAmmo: function() { if(this.state.caps >= 10) { this.state.caps -= 10; this.state.ammo += 10; UI.log("Munition gekauft.", "text-green-400"); UI.update(); } else UI.log("Zu wenig Kronkorken.", "text-red-500"); },
-    buyItem: function(key) { const item = this.items[key]; if(this.state.caps >= item.cost) { this.state.caps -= item.cost; this.addToInventory(key, 1); UI.log(`Gekauft: ${item.name}`, "text-green-400"); UI.renderCity(); UI.update(); this.saveGame(); } else { UI.log("Zu wenig Kronkorken.", "text-red-500"); } },
+    // Combat actions sind jetzt in combat.js, aber wir behalten hardReset etc.
     hardReset: function() { if(typeof Network !== 'undefined') Network.deleteSave(); this.state = null; location.reload(); },
     upgradeStat: function(key) { if(this.state.statPoints > 0) { this.state.stats[key]++; this.state.statPoints--; if(key === 'END') this.state.maxHp = this.calculateMaxHP(this.getStat('END')); UI.renderChar(); UI.update(); this.saveGame(); } },
     
@@ -587,7 +567,6 @@ const Game = {
         
         ctx.beginPath(); 
         switch(type) { 
-            // FIX: Sichtbare Wände!
             case '#': ctx.fillStyle = "#222"; ctx.fillRect(px, py, ts, ts); ctx.lineWidth=1; ctx.strokeStyle="#444"; ctx.strokeRect(px, py, ts, ts); break; 
             case 't': ctx.fillStyle = this.colors['t']; ctx.moveTo(px + ts/2, py + 2); ctx.lineTo(px + ts - 4, py + ts - 2); ctx.lineTo(px + 4, py + ts - 2); ctx.fill(); break;
             case 'T': ctx.fillStyle = this.colors['T']; ctx.moveTo(px + ts/2, py + 2); ctx.lineTo(px + ts - 2, py + ts - 2); ctx.lineTo(px + 2, py + ts - 2); ctx.fill(); break;
