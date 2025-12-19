@@ -1,5 +1,13 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.1.10-beta] - 2025-12-19 (Network & Spawn Fixes)
+------------------------------------------------
+- FIX: Doppelter Login endgültig behoben. Ein neuer "Heartbeat" sendet alle 5 Sekunden ein Lebenszeichen.
+  - Spieler gelten nun solange als "Online", wie der Tab offen ist, auch wenn sie sich nicht bewegen.
+- FIX: "Spawn bei Freund" repariert. Die Koordinaten werden beim Charaktereinstieg nun korrekt übernommen und nicht mehr vom Map-Generator überschrieben.
+- CORE: Netzwerk-Stabilität verbessert. Ghost-Gamer werden aggressiver gefiltert.
+
+
 [v0.1.9-beta] - 2025-12-19 (UI Centering & Glow Fix)
 ------------------------------------------------
 - FIX: Menü-Glow-Effekte (Charakter, Aufgaben, Menü) repariert. Sie nutzen nun feste CSS-Klassen statt dynamischer Tailwind-Werte.
