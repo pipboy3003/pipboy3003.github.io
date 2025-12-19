@@ -1,14 +1,12 @@
-<div class="p-4 w-full h-full flex flex-col items-center justify-center border-4 border-red-900 bg-red-900/10">
-    <h1 class="text-4xl font-bold mb-8 text-center text-red-500 tracking-widest">DR. WASTELAND</h1>
+<div class="p-4 w-full max-w-full h-full flex flex-col items-center justify-center overflow-hidden">
+    <div class="text-6xl mb-4 animate-pulse">✚</div>
+    <h1 class="text-3xl font-bold mb-4 text-center text-red-500">DOC'S KLINIK</h1>
     
-    <div class="text-center mb-8">
-        <p class="text-xl text-white mb-2">"Na, wo tut's denn weh?"</p>
-        <p class="text-sm text-gray-400">Heilung kostet 25 Kronkorken.</p>
+    <div class="w-full max-w-md bg-green-900/20 border border-green-500 p-4 mb-4 text-center break-words">
+        <p class="mb-2 text-green-300">"Na, sieht übel aus. Ich kann dich zusammenflicken."</p>
+        <p class="font-bold text-yellow-400">KOSTEN: 25 KRONKORKEN</p>
     </div>
 
-    <button class="action-button w-full mb-4 py-4 text-xl border-red-500 text-red-400 font-bold" onclick="Game.heal()">
-        HEILUNG ERHALTEN (25 CAPS)
-    </button>
-
-    <button class="action-button w-full mt-4" onclick="UI.switchView('map')">GEHEN</button>
+    <button class="action-button w-full mb-2 border-red-500 text-red-500" onclick="Game.heal()">BEHANDLUNG STARTEN</button>
+    <button class="action-button w-full" onclick="UI.switchView('city')">GEHEN</button>
 </div>
