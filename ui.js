@@ -954,7 +954,6 @@ const UI = {
     
     // --- DIALOGS & INTERACTIONS ---
     
-    // NEU: Hinzugefügt aus v0.0.18a für Dungeon Warnung
     showDungeonWarning: function(callback) {
         if(!this.els.dialog) return;
         Game.state.inDialog = true;
@@ -990,6 +989,54 @@ const UI = {
         btnContainer.appendChild(btnNo);
         box.appendChild(btnContainer);
         this.els.dialog.appendChild(box);
+    },
+
+    // NEU: Locked Screen (10 Min Sperre)
+    showDungeonLocked: function(minutesLeft) {
+        if(!this.els.dialog) return;
+        Game.state.inDialog = true;
+        this.els.dialog.innerHTML = '';
+        this.els.dialog.style.display = 'flex';
+        
+        const box = document.createElement('div');
+        box.className = "bg-black border-2 border-gray-600 p-4 shadow-[0_0_20px_gray] max-w-sm text-center mb-4 mr-4";
+        box.innerHTML = `
+            <h2 class="text-3xl font-bold text-gray-400 mb-2 tracking-widest">🔒 LOCKED</h2>
+            <p class="text-gray-300 mb-4 font-bold">Dieses Gebiet ist versiegelt.<br>Versuche es in ${minutesLeft} Minuten wieder.</p>
+        `;
+        
+        const btn = document.createElement('button');
+        btn.className = "border border-gray-500 text-gray-500 hover:bg-gray-900 px-4 py-2 font-bold w-full";
+        btn.textContent = "VERSTANDEN";
+        btn.onclick = () => this.leaveDialog();
+        
+        box.appendChild(btn);
+        this.els.dialog.appendChild(box);
+    },
+
+    // NEU: Victory Screen (Golden)
+    showDungeonVictory: function(caps, lvl) {
+        if(!this.els.dialog) return;
+        Game.state.inDialog = true;
+        this.els.dialog.innerHTML = '';
+        this.els.dialog.style.display = 'flex';
+        
+        const box = document.createElement('div');
+        box.className = "bg-black border-4 border-yellow-400 p-6 shadow-[0_0_30px_gold] max-w-md text-center mb-4 mr-4 animate-bounce";
+        // Krone & Schwert Unicode
+        box.innerHTML = `
+            <div class="text-6xl mb-2">👑⚔️</div>
+            <h2 class="text-4xl font-bold text-yellow-400 mb-2 tracking-widest text-shadow-gold">VICTORY!</h2>
+            <p class="text-yellow-200 mb-4 font-bold text-lg">DUNGEON (LVL ${lvl}) GECLEARED!</p>
+            <div class="text-2xl text-white font-bold border-t border-b border-yellow-500 py-2 mb-4 bg-yellow-900/30">
+                +${caps} KRONKORKEN
+            </div>
+            <p class="text-xs text-yellow-600">Komme in 10 Minuten wieder!</p>
+        `;
+        
+        this.els.dialog.appendChild(box);
+        
+        // Automatisches Schließen passiert durch leaveCity() Timeout, aber hier nur visuell
     },
 
     enterVault: function() { Game.state.inDialog = true; this.els.dialog.innerHTML = ''; const restBtn = document.createElement('button'); restBtn.className = "action-button w-full mb-1 border-blue-500 text-blue-300"; restBtn.textContent = "Ausruhen (Gratis)"; restBtn.onclick = () => { Game.rest(); this.leaveDialog(); }; const leaveBtn = document.createElement('button'); leaveBtn.className = "action-button w-full"; leaveBtn.textContent = "Weiter geht's"; leaveBtn.onclick = () => this.leaveDialog(); this.els.dialog.appendChild(restBtn); this.els.dialog.appendChild(leaveBtn); this.els.dialog.style.display = 'flex'; },
