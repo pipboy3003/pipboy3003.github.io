@@ -4,11 +4,12 @@ const UI = {
     lastInputTime: Date.now(), 
     biomeColors: (typeof window.GameData !== 'undefined') ? window.GameData.colors : {}, 
     
+    // Login Lock Flag gegen doppeltes Einloggen
+    loginBusy: false,
+    
     touchState: {
         active: false, id: null, startX: 0, startY: 0, currentX: 0, currentY: 0, moveDir: { x: 0, y: 0 }, timer: null
     },
-    
-    loginBusy: false,
 
     log: function(msg, color="text-green-500") { 
         if(!this.els.log) return;
@@ -94,7 +95,7 @@ const UI = {
             document.body.addEventListener(evt, () => this.lastInputTime = Date.now());
         });
 
-        // FIX: Enter-Taste (Keydown statt Keyup für schnellere Reaktion)
+        // Keyup Listener für Enter beim Login
         if(this.els.loginInput) {
             this.els.loginInput.addEventListener("keydown", (e) => {
                 if (e.key === "Enter") {
@@ -208,11 +209,13 @@ const UI = {
                 const res = await fetch(`readme.md?v=${ver}`); 
                 if (!res.ok) throw new Error("Manual not found"); 
                 let text = await res.text(); 
+                
                 text = text.replace(/^# (.*$)/gim, '<h1 class="text-3xl font-bold text-yellow-400 mb-2 border-b border-yellow-500">$1</h1>');
                 text = text.replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold text-green-400 mt-4 mb-2">$1</h2>');
                 text = text.replace(/^### (.*$)/gim, '<h3 class="text-xl font-bold text-green-300 mt-2 mb-1">$1</h3>');
                 text = text.replace(/\*\*(.*)\*\*/gim, '<b>$1</b>');
                 text = text.replace(/\n/gim, '<br>');
+
                 content.innerHTML = text; 
             } catch(e) { content.innerHTML = `<div class="text-red-500">Fehler beim Laden: ${e.message}</div>`; }
         }
@@ -520,13 +523,15 @@ const UI = {
     setConnectionState: function(status) {
         const v = this.els.version;
         if(!v) return;
+        // FIX: Version nicht überschreiben, nur Farbe ändern
         if(status === 'online') {
-            v.textContent = "ONLINE (v0.0.18f)"; 
-            v.className = "text-[#39ff14] font-bold tracking-widest"; v.style.textShadow = "0 0 5px #39ff14";
+            v.className = "text-[#39ff14] font-bold tracking-widest"; 
+            v.style.textShadow = "0 0 5px #39ff14";
         } else if (status === 'offline') {
-            v.textContent = "OFFLINE"; v.className = "text-red-500 font-bold tracking-widest"; v.style.textShadow = "0 0 5px red";
+            v.className = "text-red-500 font-bold tracking-widest"; 
+            v.style.textShadow = "0 0 5px red";
         } else {
-            v.textContent = "CONNECTING..."; v.className = "text-yellow-400 font-bold tracking-widest animate-pulse";
+            v.className = "text-yellow-400 font-bold tracking-widest animate-pulse";
         }
     },
 
@@ -554,7 +559,7 @@ const UI = {
         const joystickHTML = `
             <div id="joystick-base" style="position: absolute; width: 100px; height: 100px; border-radius: 50%; border: 2px solid rgba(57, 255, 20, 0.5); background: rgba(0, 0, 0, 0.2); display: none; pointer-events: none; z-index: 9999;"></div>
             <div id="joystick-stick" style="position: absolute; width: 50px; height: 50px; border-radius: 50%; background: rgba(57, 255, 20, 0.8); display: none; pointer-events: none; z-index: 10000; box-shadow: 0 0 10px #39ff14;"></div>
-            <div id="dialog-overlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 50; display: none; flex-direction: column; align-items: center; justify-center; gap: 5px; width: auto; max-width: 90%;"></div> 
+            <div id="dialog-overlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 50; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 5px; width: auto; max-width: 90%;"></div> 
         `; 
         this.els.view.insertAdjacentHTML('beforeend', joystickHTML); 
         
