@@ -1,5 +1,12 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.1.7-beta] - 2025-12-19 (Layout Lock & Quest Fix)
+------------------------------------------------
+- CRITICAL FIX: 'UI.renderQuests' wiederhergestellt. Der Absturz beim Öffnen des Aufgaben-Menüs ist behoben.
+- UI (Layout): Globales "Horizontal Lock" implementiert. Menüs können auf Mobile nicht mehr zur Seite wackeln/scrollen.
+- UI (Styling): Padding und Breiten in allen Views (Quests, Char, Wiki) angepasst, um Clipping zu verhindern.
+
+
 [v0.1.6-beta] - 2025-12-19 (Mobile Layout & Glow Update)
 ------------------------------------------------
 - UI (Mobile): "SPEICHERN"-Button im Header auf Smartphones ausgeblendet, um Platz zu sparen.
