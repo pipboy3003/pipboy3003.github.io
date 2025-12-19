@@ -52,11 +52,11 @@ const Game = {
             if (saveData) {
                 this.state = saveData;
                 this.state.inDialog = false; 
-                // Restore defaults
                 if(!this.state.visitedSectors) this.state.visitedSectors = [];
                 if(!this.state.view) this.state.view = 'map';
                 if(!this.state.equip) this.state.equip = { weapon: this.items.fists, body: this.items.vault_suit };
                 if(!this.state.inventory) this.state.inventory = [];
+                if(!this.state.cooldowns) this.state.cooldowns = {}; // NEU: Cooldown Init
                 UI.log(">> Spielstand geladen.", "text-cyan-400");
             } else {
                 let startSecX = Math.floor(Math.random() * 8);
@@ -79,6 +79,7 @@ const Game = {
                     view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, explored: {}, 
                     visitedSectors: [`${startSecX},${startSecY}`],
                     tempStatIncrease: {}, buffEndTime: 0,
+                    cooldowns: {}, // NEU
                     quests: [ { id: "q1", title: "Der Weg nach Hause", text: "Suche Zivilisation.", read: false } ], 
                     startTime: Date.now(),
                     savedPosition: null
@@ -119,6 +120,7 @@ const Game = {
         if (tile === 'P') { UI.switchView('clinic'); return; }
         if (tile === 'E') { this.leaveCity(); return; }
         if (tile === 'X') { this.openChest(nx, ny); return; } 
+        if (tile === 'v') { this.descendDungeon(); return; } // NEU: Treppe
 
         // Hindernisse prüfen
         if(['M', 'W', '#', 'U', 't', 'T', 'o', 'Y', '|', 'F'].includes(tile)) { 
@@ -139,8 +141,9 @@ const Game = {
         if(typeof Network !== 'undefined') Network.sendMove(nx, ny, this.state.lvl, this.state.sector);
 
         if(tile === 'V') { UI.switchView('vault'); return; }
-        if(tile === 'S') { UI.showDungeonWarning(() => this.enterDungeon("market")); return; }
-        if(tile === 'H') { UI.showDungeonWarning(() => this.enterDungeon("cave")); return; }
+        // NEU: tryEnterDungeon statt direktem Warn-Aufruf
+        if(tile === 'S') { this.tryEnterDungeon("market"); return; }
+        if(tile === 'H') { this.tryEnterDungeon("cave"); return; }
         if(tile === 'C') { this.enterCity(); return; } 
         
         if(['.', ',', '_', ';', '"', '+', 'x', 'B'].includes(tile)) {
@@ -172,15 +175,12 @@ const Game = {
 
     findSafeSpawn: function() {
         if(!this.state || !this.state.currentMap) return;
-        
         const isSafe = (x, y) => {
             if(x < 0 || x >= this.MAP_W || y < 0 || y >= this.MAP_H) return false;
             const t = this.state.currentMap[y][x];
             return !['M', 'W', '#', 'U', 't', 'T', 'o', 'Y', '|', 'F'].includes(t);
         };
-
         if(isSafe(this.state.player.x, this.state.player.y)) return;
-
         const rMax = 6;
         for(let r=1; r<=rMax; r++) {
             for(let dy=-r; dy<=r; dy++) {
@@ -219,35 +219,84 @@ const Game = {
         UI.log(`Sektorwechsel: ${sx},${sy}`, "text-blue-400"); 
     },
 
-    // --- SUB-ZONES ---
-    enterDungeon: function(type) {
-        this.state.savedPosition = { x: this.state.player.x, y: this.state.player.y };
+    // --- SUB-ZONES (Dungeons) ---
+    
+    // NEU: Checkt Cooldown und ruft UI auf
+    tryEnterDungeon: function(type) {
+        const key = `${this.state.sector.x},${this.state.sector.y}_${type}`;
+        const cd = this.state.cooldowns ? this.state.cooldowns[key] : 0;
+        if(cd && Date.now() < cd) {
+             const minLeft = Math.ceil((cd - Date.now())/60000);
+             UI.showDungeonLocked(minLeft);
+             return;
+        }
+        UI.showDungeonWarning(() => this.enterDungeon(type));
+    },
+
+    enterDungeon: function(type, level=1) {
+        if(level === 1) this.state.savedPosition = { x: this.state.player.x, y: this.state.player.y };
+        
+        this.state.dungeonLevel = level;
+        this.state.dungeonType = type;
+
         if(typeof WorldGen !== 'undefined') {
-            WorldGen.setSeed((this.state.sector.x + 1) * (this.state.sector.y + 1) * Date.now()); 
+            // Seed ändert sich pro Level
+            WorldGen.setSeed((this.state.sector.x + 1) * (this.state.sector.y + 1) * Date.now() + level); 
             const data = WorldGen.generateDungeonLayout(this.MAP_W, this.MAP_H);
             this.state.currentMap = data.map;
             this.state.player.x = data.startX;
             this.state.player.y = data.startY;
+
+            // NEU: Wenn nicht Level 3, ersetze Truhe (X) durch Treppe (v)
+            if(level < 3) {
+                for(let y=0; y<this.MAP_H; y++) {
+                    for(let x=0; x<this.MAP_W; x++) {
+                        if(this.state.currentMap[y][x] === 'X') {
+                            this.state.currentMap[y][x] = 'v';
+                        }
+                    }
+                }
+            }
         }
-        this.state.zone = type === "cave" ? "Dunkle Höhle (Gefahr)" : "Supermarkt Ruine (Gefahr)";
+        
+        const typeName = type === "cave" ? "Dunkle Höhle" : "Supermarkt Ruine";
+        this.state.zone = `${typeName} (Ebene ${level})`;
         this.state.explored = {};
         for(let y=0; y<this.MAP_H; y++) for(let x=0; x<this.MAP_W; x++) this.state.explored[`${x},${y}`] = true;
         this.renderStaticMap();
-        UI.log("Dungeon betreten!", "text-red-500");
+        UI.log(`${typeName} - Ebene ${level} betreten!`, "text-red-500");
         UI.update();
+    },
+
+    descendDungeon: function() {
+        this.enterDungeon(this.state.dungeonType, this.state.dungeonLevel + 1);
+        UI.shakeView();
+        UI.log("Du steigst tiefer hinab...", "text-purple-400 font-bold");
     },
     
     openChest: function(x, y) {
         this.state.currentMap[y][x] = 'B'; 
         this.renderStaticMap(); 
-        const caps = Math.floor(Math.random() * 200) + 100;
+        
+        // Loot berechnen (Mehr Loot auf tieferen Ebenen)
+        const multiplier = this.state.dungeonLevel || 1;
+        const caps = (Math.floor(Math.random() * 200) + 100) * multiplier;
         this.state.caps += caps;
-        this.addToInventory('legendary_part', 1);
-        UI.log(`TRUHE GEÖFFNET! +${caps} KK, +1 Legendäres Modul`, "text-yellow-400 font-bold animate-pulse");
-        UI.shakeView();
+        this.addToInventory('legendary_part', 1 * multiplier);
+        
+        // Cooldown setzen
+        if(!this.state.cooldowns) this.state.cooldowns = {};
+        const key = `${this.state.sector.x},${this.state.sector.y}_${this.state.dungeonType}`;
+        this.state.cooldowns[key] = Date.now() + (10 * 60 * 1000); // 10 Minuten
+
+        // UI Anzeige
+        UI.showDungeonVictory(caps, multiplier);
+        
         if(Math.random() < 0.5) this.addToInventory('stimpack', 2);
         if(Math.random() < 0.5) this.addToInventory('nuclear_mat', 1);
-        setTimeout(() => { this.leaveCity(); }, 2000);
+        
+        // Rauswurf
+        setTimeout(() => { this.leaveCity(); }, 4000);
     },
 
     enterCity: function() {
@@ -273,6 +322,7 @@ const Game = {
             this.state.player.y = this.state.savedPosition.y;
             this.state.savedPosition = null;
         }
+        this.state.dungeonLevel = 0; // Reset Dungeon Level
         this.loadSector(this.state.sector.x, this.state.sector.y);
         UI.log("Zurück im Ödland.", "text-green-400");
     },
@@ -401,7 +451,7 @@ const Game = {
         if(typeof UI !== 'undefined') UI.renderCrafting(); 
     },
 
-    // --- HELPER FUNCTIONS (WICHTIG!) ---
+    // --- HELPER FUNCTIONS ---
     calculateMaxHP: function(end) { return 100 + (end - 5) * 10; }, 
     
     getStat: function(key) {
@@ -433,12 +483,63 @@ const Game = {
 
     saveGame: function(force=false) {
         if(typeof Network !== 'undefined') Network.save(this.state);
-        // Backup LocalStorage
         try { localStorage.setItem('pipboy_save', JSON.stringify(this.state)); } catch(e){}
     },
 
     // --- COMBAT & INTERACTIONS ---
-    startCombat: function() { let pool = []; let lvl = this.state.lvl; let biome = this.worldData[`${this.state.sector.x},${this.state.sector.y}`]?.biome || 'wasteland'; let zone = this.state.zone; if(zone.includes("Supermarkt")) { pool = [this.monsters.raider, this.monsters.ghoul, this.monsters.wildDog]; if(lvl >= 4) pool.push(this.monsters.superMutant); } else if (zone.includes("Höhle")) { pool = [this.monsters.moleRat, this.monsters.radScorpion, this.monsters.bloatfly]; if(lvl >= 3) pool.push(this.monsters.ghoul); } else if(biome === 'city') { pool = [this.monsters.raider, this.monsters.ghoul, this.monsters.protectron]; if(lvl >= 5) pool.push(this.monsters.superMutant); if(lvl >= 7) pool.push(this.monsters.sentryBot); } else if(biome === 'desert') { pool = [this.monsters.radScorpion, this.monsters.raider, this.monsters.moleRat]; } else if(biome === 'jungle') { pool = [this.monsters.bloatfly, this.monsters.mutantRose, this.monsters.yaoGuai]; } else if(biome === 'swamp') { pool = [this.monsters.mirelurk, this.monsters.bloatfly]; if(lvl >= 5) pool.push(this.monsters.ghoul); } else { pool = [this.monsters.moleRat, this.monsters.radRoach, this.monsters.bloatfly]; if(lvl >= 2) pool.push(this.monsters.raider); if(lvl >= 3) pool.push(this.monsters.wildDog); } if(lvl >= 8 && Math.random() < 0.1) pool = [this.monsters.deathclaw]; else if (Math.random() < 0.01) pool = [this.monsters.deathclaw]; const template = pool[Math.floor(Math.random()*pool.length)]; let enemy = { ...template }; const isLegendary = Math.random() < 0.15; if(isLegendary) { enemy.isLegendary = true; enemy.name = "Legendäre " + enemy.name; enemy.hp *= 2; enemy.maxHp = enemy.hp; enemy.dmg = Math.floor(enemy.dmg*1.5); enemy.loot *= 3; if(Array.isArray(enemy.xp)) enemy.xp = [enemy.xp[0]*3, enemy.xp[1]*3]; } else enemy.maxHp = enemy.hp; this.state.enemy = enemy; this.state.inDialog = true; if(Date.now() < this.state.buffEndTime) UI.log("⚡ S.P.E.C.I.A.L. OVERDRIVE aktiv!", "text-yellow-400"); UI.switchView('combat').then(() => UI.renderCombat()); UI.log(isLegendary ? "LEGENDÄRER GEGNER!" : "Kampf gestartet!", isLegendary ? "text-yellow-400" : "text-red-500"); },
+    startCombat: function() { 
+        let pool = []; 
+        let lvl = this.state.lvl; 
+        
+        // DYNAMIC DIFFICULTY: Level Skalierung im Dungeon
+        let difficultyMult = 1;
+        if(this.state.dungeonLevel) {
+            difficultyMult = 1 + (this.state.dungeonLevel * 0.2); // +20% pro Level
+        }
+
+        let biome = this.worldData[`${this.state.sector.x},${this.state.sector.y}`]?.biome || 'wasteland'; 
+        let zone = this.state.zone; 
+        
+        if(zone.includes("Supermarkt")) { pool = [this.monsters.raider, this.monsters.ghoul, this.monsters.wildDog]; if(lvl >= 4) pool.push(this.monsters.superMutant); } 
+        else if (zone.includes("Höhle")) { pool = [this.monsters.moleRat, this.monsters.radScorpion, this.monsters.bloatfly]; if(lvl >= 3) pool.push(this.monsters.ghoul); } 
+        else if(biome === 'city') { pool = [this.monsters.raider, this.monsters.ghoul, this.monsters.protectron]; if(lvl >= 5) pool.push(this.monsters.superMutant); if(lvl >= 7) pool.push(this.monsters.sentryBot); } 
+        else if(biome === 'desert') { pool = [this.monsters.radScorpion, this.monsters.raider, this.monsters.moleRat]; } 
+        else if(biome === 'jungle') { pool = [this.monsters.bloatfly, this.monsters.mutantRose, this.monsters.yaoGuai]; } 
+        else if(biome === 'swamp') { pool = [this.monsters.mirelurk, this.monsters.bloatfly]; if(lvl >= 5) pool.push(this.monsters.ghoul); } 
+        else { pool = [this.monsters.moleRat, this.monsters.radRoach, this.monsters.bloatfly]; if(lvl >= 2) pool.push(this.monsters.raider); if(lvl >= 3) pool.push(this.monsters.wildDog); } 
+        
+        if(lvl >= 8 && Math.random() < 0.1) pool = [this.monsters.deathclaw]; 
+        else if (Math.random() < 0.01) pool = [this.monsters.deathclaw]; 
+        
+        const template = pool[Math.floor(Math.random()*pool.length)]; 
+        let enemy = { ...template }; 
+        
+        // Apply Scaling
+        enemy.hp = Math.floor(enemy.hp * difficultyMult);
+        enemy.maxHp = enemy.hp;
+        enemy.dmg = Math.floor(enemy.dmg * difficultyMult);
+        enemy.loot = Math.floor(enemy.loot * difficultyMult);
+
+        const isLegendary = Math.random() < 0.15; 
+        if(isLegendary) { 
+            enemy.isLegendary = true; 
+            enemy.name = "Legendäre " + enemy.name; 
+            enemy.hp *= 2; 
+            enemy.maxHp = enemy.hp; 
+            enemy.dmg = Math.floor(enemy.dmg*1.5); 
+            enemy.loot *= 3; 
+            if(Array.isArray(enemy.xp)) enemy.xp = [enemy.xp[0]*3, enemy.xp[1]*3]; 
+        } else {
+             enemy.maxHp = enemy.hp; 
+        }
+        
+        this.state.enemy = enemy; 
+        this.state.inDialog = true; 
+        if(Date.now() < this.state.buffEndTime) UI.log("⚡ S.P.E.C.I.A.L. OVERDRIVE aktiv!", "text-yellow-400"); 
+        UI.switchView('combat').then(() => UI.renderCombat()); 
+        UI.log(isLegendary ? "LEGENDÄRER GEGNER!" : "Kampf gestartet!", isLegendary ? "text-yellow-400" : "text-red-500"); 
+    },
+    
     getRandomXP: function(xpData) { if (Array.isArray(xpData)) return Math.floor(Math.random() * (xpData[1] - xpData[0] + 1)) + xpData[0]; return xpData; },
     combatAction: function(act) { if(this.state.isGameOver) return; if(!this.state.enemy) return; if(this.state.enemy.hp <= 0) return; if(act === 'attack') { const wpn = this.state.equip.weapon; if(wpn.isRanged) { if(this.state.ammo > 0) this.state.ammo--; else { UI.log("Keine Munition! Fäuste.", "text-red-500"); this.state.equip.weapon = this.items.fists; this.enemyTurn(); return; } } if(Math.random() > 0.3) { const baseDmg = wpn.baseDmg || 2; const dmg = Math.floor(baseDmg + (this.getStat('STR') * 1.5)); this.state.enemy.hp -= dmg; UI.log(`Treffer: ${dmg} Schaden.`, "text-green-400"); if(this.state.enemy.hp <= 0) { const enemy = this.state.enemy; this.state.caps += enemy.loot; UI.log(`Sieg! ${enemy.loot} Kronkorken.`, "text-yellow-400"); this.gainExp(this.getRandomXP(enemy.xp)); if(enemy.isLegendary) { this.addToInventory('legendary_part', 1); UI.log("★ DROP: Legendäres Modul", "text-yellow-400 font-bold"); if(Math.random() < 0.5) { const bonusCaps = this.state.lvl * 50; this.state.caps += bonusCaps; UI.log(`★ BONUS: ${bonusCaps} KK`, "text-yellow-400"); } } if(enemy.drops) { enemy.drops.forEach(drop => { if(Math.random() < drop.c) { this.addToInventory(drop.id, 1); } }); } this.endCombat(); return; } } else UI.log("Verfehlt!", "text-gray-500"); this.enemyTurn(); } else if (act === 'flee') { if(Math.random() < 0.4 + (this.getStat('AGI')*0.05)) { UI.log("Geflohen.", "text-green-400"); this.endCombat(); } else { UI.log("Flucht gescheitert!", "text-red-500"); this.enemyTurn(); } } UI.update(); if(this.state.view === 'combat') UI.renderCombat(); },
     rollLegendaryLoot: function() { const result = Math.floor(Math.random() * 16) + 3; let msg = "", type = ""; if(result <= 7) { type = "CAPS"; const amt = this.state.lvl * 80; this.state.caps += amt; msg = `KRONKORKEN REGEN: +${amt} KK!`; } else if (result <= 12) { type = "AMMO"; const amt = this.state.lvl * 25; this.state.ammo += amt; msg = `MUNITIONS JACKPOT: +${amt} Schuss!`; } else { type = "BUFF"; this.state.buffEndTime = Date.now() + 300000; msg = `S.P.E.C.I.A.L. OVERDRIVE! (5 Min)`; } return { val: result, msg: msg, type: type }; },
@@ -472,12 +573,22 @@ const Game = {
 
     drawTile: function(ctx, x, y, type, pulse = 1) { 
         const ts = this.TILE; const px = x * ts; const py = y * ts; 
-        let bg = this.colors['.']; if(['_', ',', ';', '=', 'W', 'M', '~', '#', '|', 'B'].includes(type)) bg = this.colors[type]; 
-        if (!['^','v','<','>'].includes(type)) { ctx.fillStyle = bg; ctx.fillRect(px, py, ts, ts); } 
-        if(!['^','v','<','>','M','W','~'].includes(type)) { ctx.strokeStyle = "rgba(40, 90, 40, 0.05)"; ctx.lineWidth = 1; ctx.strokeRect(px, py, ts, ts); } 
-        if(['^', 'v', '<', '>'].includes(type)) { ctx.fillStyle = "#000"; ctx.fillRect(px, py, ts, ts); ctx.fillStyle = "#1aff1a"; ctx.strokeStyle = "#000"; ctx.beginPath(); if (type === '^') { ctx.moveTo(px + ts/2, py + 5); ctx.lineTo(px + ts - 5, py + ts - 5); ctx.lineTo(px + 5, py + ts - 5); } else if (type === 'v') { ctx.moveTo(px + ts/2, py + ts - 5); ctx.lineTo(px + ts - 5, py + 5); ctx.lineTo(px + 5, py + 5); } else if (type === '<') { ctx.moveTo(px + 5, py + ts/2); ctx.lineTo(px + ts - 5, py + 5); ctx.lineTo(px + ts - 5, py + ts - 5); } else if (type === '>') { ctx.moveTo(px + ts - 5, py + ts/2); ctx.lineTo(px + 5, py + 5); ctx.lineTo(px + 5, py + ts - 5); } ctx.fill(); ctx.stroke(); return; }
+        let bg = this.colors['.']; if(['_', ',', ';', '=', 'W', 'M', '~', '|', 'B'].includes(type)) bg = this.colors[type]; 
+        if (!['^','v','<','>'].includes(type) && type !== '#') { ctx.fillStyle = bg; ctx.fillRect(px, py, ts, ts); } 
+        if(!['^','v','<','>','M','W','~'].includes(type) && type !== '#') { ctx.strokeStyle = "rgba(40, 90, 40, 0.05)"; ctx.lineWidth = 1; ctx.strokeRect(px, py, ts, ts); } 
+        if(['^', 'v', '<', '>'].includes(type)) { 
+            ctx.fillStyle = "#000"; ctx.fillRect(px, py, ts, ts); ctx.fillStyle = "#1aff1a"; ctx.strokeStyle = "#000"; ctx.beginPath(); 
+            if (type === '^') { ctx.moveTo(px + ts/2, py + 5); ctx.lineTo(px + ts - 5, py + ts - 5); ctx.lineTo(px + 5, py + ts - 5); } 
+            else if (type === 'v') { ctx.moveTo(px + ts/2, py + ts - 5); ctx.lineTo(px + ts - 5, py + 5); ctx.lineTo(px + 5, py + 5); } 
+            else if (type === '<') { ctx.moveTo(px + 5, py + ts/2); ctx.lineTo(px + ts - 5, py + 5); ctx.lineTo(px + ts - 5, py + ts - 5); } 
+            else if (type === '>') { ctx.moveTo(px + ts - 5, py + ts/2); ctx.lineTo(px + 5, py + 5); ctx.lineTo(px + 5, py + ts - 5); } 
+            ctx.fill(); ctx.stroke(); return; 
+        }
+        
         ctx.beginPath(); 
         switch(type) { 
+            // FIX: Sichtbare Wände!
+            case '#': ctx.fillStyle = "#222"; ctx.fillRect(px, py, ts, ts); ctx.lineWidth=1; ctx.strokeStyle="#444"; ctx.strokeRect(px, py, ts, ts); break; 
             case 't': ctx.fillStyle = this.colors['t']; ctx.moveTo(px + ts/2, py + 2); ctx.lineTo(px + ts - 4, py + ts - 2); ctx.lineTo(px + 4, py + ts - 2); ctx.fill(); break;
             case 'T': ctx.fillStyle = this.colors['T']; ctx.moveTo(px + ts/2, py + 2); ctx.lineTo(px + ts - 2, py + ts - 2); ctx.lineTo(px + 2, py + ts - 2); ctx.fill(); break;
             case 'x': ctx.strokeStyle = this.colors['x']; ctx.lineWidth = 2; ctx.moveTo(px+5, py+ts-5); ctx.lineTo(px+ts-5, py+5); ctx.moveTo(px+5, py+5); ctx.lineTo(px+ts-5, py+ts-5); ctx.stroke(); break;
