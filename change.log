@@ -1,5 +1,13 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.1.18c-beta] - 2025-12-20 (Manual & Nav Fix)
+------------------------------------------------
+- FIX: Tastatur-Navigation im Hauptmenü (ESC) und Listen (Stadt, Wiki) repariert. Pfeiltasten Hoch/Runter springen nun korrekt zum nächsten Element (statt wie im Inventar 4 Felder zu springen).
+- UI: Spielerliste zeigt nun auch beim eigenen Namen den aktuellen Sektor an.
+- CONTENT: Handbuch (readme.md) massiv erweitert. Enthält nun alle Infos zu Steuerung, V.A.T.S., Map-Symbolen und Spielmechaniken.
+- UI: Handbuch-Overlay hat nun einen "SCHLIESSEN"-Button am Ende, der per Tastatur/Maus bedienbar ist.
+
+
 [v0.1.18-beta] - 2025-12-19 (UI Full Rewrite Fix)
 ------------------------------------------------
 - CRITICAL FIX: Die Datei 'ui.js' wurde vollständig neu geschrieben und validiert.
