@@ -1,5 +1,12 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.1.16-beta] - 2025-12-19 (UI Full Recovery)
+------------------------------------------------
+- CRITICAL FIX: Die Datei 'ui.js' war unvollständig. Alle fehlenden Funktionen (attemptLogin, renderQuests, Dungeons, etc.) wurden wiederhergestellt.
+- FIX: Login funktioniert nun wieder per Klick und Enter-Taste (ohne Seiten-Neuladen).
+- UI: Alle vorherigen Features (Glow, Zentrierung, Tastatur-Fokus) sind in diesem Build enthalten.
+
+
 [v0.1.15-beta] - 2025-12-19 (Full UI Restore & Aggressive Glow)
 ------------------------------------------------
 - RESTORE: ui.js wurde komplett dekomprimiert. Alle Funktionen (Wiki, Map, Inventar) sind wieder voll lesbar und editierbar.
