@@ -1,5 +1,15 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.1.1-beta] - 2025-12-19 (Control & Interaction Fix)
+------------------------------------------------
+- FIX: Fehlende Interaktions-Funktionen (rest, heal, buyAmmo, buyItem) in game.js wiederhergestellt. Vault und Händler funktionieren wieder.
+- FEATURE: Tastatur-Steuerung im V.A.T.S. Kampf.
+  - W/S oder Pfeiltasten zum Auswählen der Trefferzone.
+  - LEERTASTE zum Feuern.
+  - ESC zur Flucht.
+- UI: Handbuch lädt nun dynamisch den Inhalt der 'readme.md'.
+
+
 [v0.1.0-beta] - 2025-12-19 (V.A.T.S. Combat Update)
 ------------------------------------------------
 - CORE: Großes Refactoring! Kampfsystem wurde in 'combat.js' ausgelagert.
