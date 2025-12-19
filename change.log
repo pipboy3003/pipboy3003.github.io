@@ -1,5 +1,12 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.1.18-beta] - 2025-12-19 (UI Full Rewrite Fix)
+------------------------------------------------
+- CRITICAL FIX: Die Datei 'ui.js' wurde vollständig neu geschrieben und validiert.
+  - Alle Funktionen (attemptLogin, renderQuests, Dungeons) sind vorhanden.
+  - Das Problem, dass der Login-Button oder Enter nicht funktionierten, ist behoben.
+
+
 [v0.1.17-beta] - 2025-12-19 (Green Glow & Menu Controls)
 ------------------------------------------------
 - UI: Fokus-Indikator (Tastatur-Auswahl) ist nun ein pulsierender grüner Glow (passend zum Theme), statt hartem Weiß.
