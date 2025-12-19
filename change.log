@@ -1,5 +1,17 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.1.0-beta] - 2025-12-19 (V.A.T.S. Combat Update)
+------------------------------------------------
+- CORE: Großes Refactoring! Kampfsystem wurde in 'combat.js' ausgelagert.
+- FEATURE: V.A.T.S. Kampfsystem implementiert!
+  - Wähle Körperteile (Kopf, Torso, Beine) mit unterschiedlichen Chancen.
+  - KOPF: Geringe Chance, Kritischer Schaden (2.5x).
+  - TORSO: Hohe Chance, Normaler Schaden.
+  - BEINE: Mittlere Chance, reduziert gegnerischen Schaden ("Verkrüppeln").
+- STATS: 'Wahrnehmung' (PER) erhöht nun direkt die V.A.T.S. Trefferchance.
+- UI: Komplett neues Kampf-Interface im Pip-Boy Retro-Look.
+
+
 [v0.0.18k] - 2025-12-19 (Security & Usability Update)
 ------------------------------------------------
 - FIX: Doppel-Login verhindert. Aktive Sessions blockieren neue Login-Versuche für die gleiche ID.
