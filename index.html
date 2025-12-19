@@ -58,7 +58,6 @@
             <h1 class="text-5xl md:text-6xl font-bold glow-text mb-2">PIP-BOY 3003</h1>
             <div class="text-xl mb-4 opacity-80">AUTHENTICATION REQUIRED</div>
             
-            <!-- FIX: Form Wrapper gegen Browser-Passwort-Manager Fehler -->
             <form id="login-form" onsubmit="event.preventDefault(); document.getElementById('btn-login').click();" autocomplete="off">
                 <input type="text" id="survivor-id-input" placeholder="SURVIVOR ID" maxlength="15" autofocus autocomplete="off" name="survivor_id_field">
             </form>
@@ -73,7 +72,6 @@
         </div>
     </div>
 
-    <!-- Manual Overlay Fixed -->
     <div id="manual-overlay" class="hidden z-[1000] bg-black/95" style="display: none;">
         <div class="border-2 border-yellow-400 w-full max-w-2xl h-[90vh] bg-[#111] flex flex-col p-4 shadow-[0_0_30px_#aa0]">
             <div class="flex justify-between items-center border-b border-yellow-400 pb-2 mb-2">
@@ -106,7 +104,7 @@
                 <div class="flex items-baseline gap-2">
                     <span id="val-name" class="text-xl font-bold text-cyan-400 uppercase tracking-wide truncate">PLAYER</span>
                     <span class="text-yellow-400 font-bold text-sm">LVL <span id="val-lvl">1</span></span>
-                    <span class="text-yellow-400 font-bold text-sm ml-2"> <span id="val-caps" class="text-yellow-400 text-lg">0</span>C</span>
+                    <span class="text-yellow-400 font-bold text-sm ml-2"> <span id="val-caps" class="text-yellow-400 text-lg">0</span> KK</span>
                 </div>
                 <div class="flex items-center gap-2 w-full max-w-xs">
                     <span class="text-xs font-bold w-6">HP</span>
@@ -171,6 +169,7 @@
                 .then(() => loadScript('world_gen.js?v=' + ver))
                 .then(() => loadScript('network.js?v=' + ver))
                 .then(() => loadScript('ui.js?v=' + ver))
+                .then(() => loadScript('combat.js?v=' + ver))  /* NEUE ZEILE */
                 .then(() => loadScript('game.js?v=' + ver))
                 .then(() => { if(typeof UI !== 'undefined') UI.init(); console.log("System Ready."); });
         });
