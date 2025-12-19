@@ -1,5 +1,14 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.0.18j] - 2025-12-19 (Dungeon Master Update)
+------------------------------------------------
+- FEATURE: Multi-Level Dungeons! Dungeons haben nun 3 Ebenen. Treppen (v) führen tiefer hinab.
+- FEATURE: Dynamische Schwierigkeit. Gegner werden mit jeder Dungeon-Ebene stärker.
+- FEATURE: Cooldown-System. Nach Abschluss ist ein Dungeon für 10 Minuten gesperrt (mit goldener Sieg-Nachricht).
+- FIX: Wände (#) in Dungeons sind nun sichtbar (grau statt schwarz), keine "unsichtbaren Stolperfallen" mehr.
+- UI: Neuer "Victory Screen" und "Locked Screen" für Dungeons.
+
+
 [v0.0.18i] - 2025-12-18 (Dungeon Warning Hotfix)
 ------------------------------------------------
 - FIX: Fehlende Funktion 'UI.showDungeonWarning' implementiert.
