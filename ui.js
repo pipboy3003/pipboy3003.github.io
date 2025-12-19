@@ -62,6 +62,7 @@ const UI = {
             btnChar: document.getElementById('btn-char'),
             btnQuests: document.getElementById('btn-quests'),
             btnSave: document.getElementById('btn-save'),
+            btnMenuSave: document.getElementById('btn-menu-save'), // NEU
             btnLogout: document.getElementById('btn-logout'),
             btnReset: document.getElementById('btn-reset'), 
             btnMenu: document.getElementById('btn-menu-toggle'),
@@ -101,6 +102,7 @@ const UI = {
         if(btnLogin) btnLogin.onclick = () => this.attemptLogin();
 
         if(this.els.btnSave) this.els.btnSave.onclick = () => this.handleSaveClick();
+        if(this.els.btnMenuSave) this.els.btnMenuSave.onclick = () => this.handleSaveClick(); // NEU
         if(this.els.btnLogout) this.els.btnLogout.onclick = () => this.logout('MANUELL AUSGELOGGT');
         if(this.els.btnReset) this.els.btnReset.onclick = () => this.handleReset();
 
@@ -372,15 +374,20 @@ const UI = {
 
     handleSaveClick: function() {
         Game.saveGame(true);
-        const btn = this.els.btnSave;
-        const originalText = btn.textContent;
-        const originalClass = btn.className;
-        btn.textContent = "SAVED!";
-        btn.className = "header-btn bg-[#39ff14] text-black border-[#39ff14]";
-        setTimeout(() => {
-            btn.textContent = originalText;
-            btn.className = originalClass;
-        }, 1000);
+        // Feedback für beide Buttons (Header & Menü)
+        [this.els.btnSave, this.els.btnMenuSave].forEach(btn => {
+            if(!btn) return;
+            const originalText = btn.textContent;
+            const originalClass = btn.className;
+            btn.textContent = "SAVED!";
+            btn.className = "header-btn bg-[#39ff14] text-black border-[#39ff14] w-full text-left"; // Style override
+            if(btn === this.els.btnSave) btn.className = "header-btn bg-[#39ff14] text-black border-[#39ff14] hidden md:flex";
+            
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.className = originalClass;
+            }, 1000);
+        });
     },
 
     attemptLogin: async function() {
@@ -580,7 +587,6 @@ const UI = {
             this.els.view.innerHTML = html; 
             Game.state.view = name; 
             
-            // FIX: Restore Overlay for dialogs!
             this.restoreOverlay();
 
             if (name === 'combat') { 
@@ -640,31 +646,37 @@ const UI = {
         if(this.els.hp) this.els.hp.textContent = `${Math.round(Game.state.hp)}/${maxHp}`; 
         if(this.els.hpBar) this.els.hpBar.style.width = `${Math.max(0, (Game.state.hp / maxHp) * 100)}%`;
         
+        // --- ALERT SYSTEM (GLOW) ---
         let hasAlert = false;
+
+        // CHAR Alert (Level Up)
         if(this.els.btnChar) {
             if(Game.state.statPoints > 0) { 
-                this.els.btnChar.innerHTML = "CHAR <span class='text-yellow-400'>!</span>"; 
+                this.els.btnChar.classList.add('shadow-[0_0_10px_yellow]', 'border-yellow-400', 'text-yellow-400');
                 hasAlert = true;
             } else { 
-                this.els.btnChar.textContent = "CHARAKTER"; 
+                this.els.btnChar.classList.remove('shadow-[0_0_10px_yellow]', 'border-yellow-400', 'text-yellow-400');
             }
         } 
+
+        // QUESTS Alert (Unread)
         const unreadQuests = Game.state.quests.some(q => !q.read); 
         if(this.els.btnQuests) {
             if(unreadQuests) { 
-                this.els.btnQuests.innerHTML = "AUFGABEN <span class='text-cyan-400'>!</span>"; 
+                this.els.btnQuests.classList.add('shadow-[0_0_10px_cyan]', 'border-cyan-400', 'text-cyan-400');
                 hasAlert = true;
             } else { 
-                this.els.btnQuests.textContent = "AUFGABEN"; 
+                this.els.btnQuests.classList.remove('shadow-[0_0_10px_cyan]', 'border-cyan-400', 'text-cyan-400');
             }
         } 
+
+        // MAIN MENU Alert (Bubble up)
         if(this.els.btnMenu) {
             if(hasAlert) {
-                this.els.btnMenu.classList.add('border-red-500', 'text-red-500');
-                this.els.btnMenu.innerHTML = 'MENÜ <span class="text-xl font-bold animate-pulse">!</span>';
+                // Pulsierender Rand, KEIN fetter Text
+                this.els.btnMenu.classList.add('shadow-[0_0_10px_red]', 'border-red-500', 'animate-pulse');
             } else {
-                this.els.btnMenu.classList.remove('border-red-500', 'text-red-500');
-                this.els.btnMenu.innerHTML = 'MENÜ <span class="text-xl">☰</span>';
+                this.els.btnMenu.classList.remove('shadow-[0_0_10px_red]', 'border-red-500', 'animate-pulse');
             }
         }
         
@@ -686,10 +698,7 @@ const UI = {
     },
 
     showItemConfirm: function(itemId) {
-        if(!this.els.dialog) {
-            this.restoreOverlay();
-        }
-        if(!Game.items[itemId]) return;
+        if(!this.els.dialog || !Game.items[itemId]) return;
         
         const item = Game.items[itemId];
         Game.state.inDialog = true;
@@ -972,10 +981,7 @@ const UI = {
         const lvlDisplay = document.getElementById('char-lvl'); 
         if(lvlDisplay) lvlDisplay.textContent = Game.state.lvl; 
         
-        // FIX: FESTE REIHENFOLGE DER STATS
-        const statOrder = ['STR', 'PER', 'END', 'INT', 'AGI', 'LUC'];
-        
-        grid.innerHTML = statOrder.map(k => { 
+        grid.innerHTML = Object.keys(Game.state.stats).map(k => { 
             const val = Game.getStat(k); 
             const btn = Game.state.statPoints > 0 ? `<button class="w-12 h-12 border-2 border-green-500 bg-green-900/50 text-green-400 font-bold ml-2 flex items-center justify-center hover:bg-green-500 hover:text-black transition-colors" onclick="Game.upgradeStat('${k}')" style="font-size: 1.5rem;">+</button>` : ''; 
             const label = (typeof window.GameData !== 'undefined' && window.GameData.statLabels && window.GameData.statLabels[k]) ? window.GameData.statLabels[k] : k;
@@ -1100,7 +1106,6 @@ const UI = {
     showGameOver: function() { if(this.els.gameOver) this.els.gameOver.classList.remove('hidden'); this.toggleControls(false); },
     leaveDialog: function() { Game.state.inDialog = false; this.els.dialog.style.display = 'none'; this.update(); },
     
-    // NEU: POI Marker hinzugefügt
     renderWorldMap: function() { 
         const grid = document.getElementById('world-grid'); 
         if(!grid) return; 
