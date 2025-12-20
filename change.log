@@ -1,5 +1,11 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.2.3b-alpha] - 2025-12-20 (UI FINAL FULL REPAIR)
+------------------------------------------------
+- CRITICAL: 'ui.js' wurde komplett entpackt und Zeile für Zeile ausgeschrieben.
+- Keine Platzhalter mehr, keine Minifizierung.
+- Alle Funktionen (Login, Charakterwahl, Inventar, Wiki, Map, Touch) sind voll lesbar und editierbar enthalten.
+
 [v0.2.3-alpha] - 2025-12-20 (Touch & Explored Fix)
 ------------------------------------------------
 - CRITICAL FIX: Absturz beim Erkunden der Karte behoben (TypeError: undefined is not an object).
