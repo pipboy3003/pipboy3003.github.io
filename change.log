@@ -1,5 +1,16 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.2.2-beta] - 2025-12-20 (Character Slots Update)
+------------------------------------------------
+- FEATURE: Charakter-Auswahl nach dem Login hinzugefügt.
+  - 5 Speicher-Slots pro Account.
+  - Leere Slots können ausgewählt werden, um einen neuen Charakter zu erstellen.
+- FEATURE: Lösch-Funktion für Charaktere.
+  - Sicherheitsabfrage: Der Charaktername muss zur Bestätigung exakt eingetippt werden.
+- UI: Neuer Screen "Charakter-Wahl" mit vollständiger Tastatur-Steuerung (Pfeiltasten, Enter, Entf).
+- CORE: Savegame-Struktur angepasst. Spielstände werden nun pro Slot (0-4) gespeichert.
+
+
 [v0.1.23-beta] - 2025-12-20 (Game Logic Repair)
 ------------------------------------------------
 - CRITICAL FIX: 'game.js' repariert.
@@ -7,7 +18,7 @@ CHANGE LOG - PIP-BOY 3000 Mk-V
   - Das behebt den Absturz beim Spielstart ("GAME INIT FAIL").
 - FIX: Map-Gedächtnis (Fog of War) und Rand-Fix sind weiterhin enthalten.
 
-
+ 
 [v0.1.22-beta] - 2025-12-20 (Map Persistence & Fog Fix)
 ------------------------------------------------
 - CRITICAL FIX: Die Weltkarte merkt sich nun dauerhaft aufgedeckte Gebiete.
