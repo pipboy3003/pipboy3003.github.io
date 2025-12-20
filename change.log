@@ -1,5 +1,12 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.2.10-beta] - 2025-12-20 (UI Syntax Repair)
+------------------------------------------------
+- CRITICAL FIX: Syntaxfehler in 'ui.js' behoben, der dazu führte, dass Funktionen wie 'renderWorldMap' nicht gefunden wurden.
+- REFACTOR: Code-Formatierung bereinigt (keine Einzeiler mehr), um Stabilität zu garantieren.
+- FIX: 'Charakter Löschen' Button für Mobile ist nun korrekt integriert.
+
+
 [v0.2.9-beta] - 2025-12-20 (FINAL FULL INTEGRITY)
 ------------------------------------------------
 - SYSTEM: 'ui.js' wurde aufgrund der Länge in zwei Teile gesplittet, um Vollständigkeit zu garantieren.
