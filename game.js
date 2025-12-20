@@ -8,7 +8,7 @@ const Game = {
 
     state: null, worldData: {}, ctx: null, loopId: null, camera: { x: 0, y: 0 }, cacheCanvas: null, cacheCtx: null,
 
-    // --- INITIALIZATION ---
+    // --- INITIALIZATION & RENDERING ---
     initCache: function() { 
         this.cacheCanvas = document.createElement('canvas'); 
         this.cacheCanvas.width = this.MAP_W * this.TILE; 
@@ -55,7 +55,6 @@ const Game = {
         this.initCache();
         try {
             let isNewGame = false;
-            
             if (saveData) {
                 this.state = saveData;
                 if(!this.state.explored || typeof this.state.explored !== 'object') this.state.explored = {};
@@ -118,9 +117,7 @@ const Game = {
             UI.switchView('map').then(() => { 
                 if(UI.els.gameOver) UI.els.gameOver.classList.add('hidden'); 
                 if(typeof Network !== 'undefined') Network.sendHeartbeat();
-                
-                // --- PERMADEATH WARNING (NUR BEI NEUEM SPIEL) ---
-                if (isNewGame) {
+                if(isNewGame) {
                     setTimeout(() => UI.showPermadeathWarning(), 500);
                 }
             });
@@ -130,7 +127,7 @@ const Game = {
         }
     },
 
-    // --- REST / HEAL (FIXED) ---
+    // --- HEAL & REST ---
     rest: function() { 
         if(!this.state) return;
         this.state.hp = this.state.maxHp; 
@@ -167,7 +164,6 @@ const Game = {
             this.addToInventory(key, 1); 
             UI.log(`Gekauft: ${item.name}`, "text-green-400"); 
             if(typeof UI.renderShop === 'function') {
-                 // Refresh Shop UI
                  const con = document.getElementById('city-options');
                  if(con) UI.renderShop(con);
             }
