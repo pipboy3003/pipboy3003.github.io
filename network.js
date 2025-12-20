@@ -19,12 +19,14 @@ const Network = {
     },
 
     init: function() {
+        // FIX: Active immer auf true setzen, auch wenn DB schon da ist
+        this.active = true;
+
         if (typeof firebase !== 'undefined' && !this.db) {
             try {
                 if (!firebase.apps.length) firebase.initializeApp(this.config);
                 this.db = firebase.database();
                 this.auth = firebase.auth();
-                this.active = true;
             } catch (e) {
                 console.error("Firebase Init Error:", e);
                 this.active = false;
@@ -33,14 +35,13 @@ const Network = {
     },
 
     register: async function(email, password, name) {
-        if(!this.active) throw new Error("Netzwerkfehler");
+        if(!this.active) throw new Error("Netzwerk nicht aktiv (Init Failed)");
         try {
             const userCredential = await this.auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
             await user.updateProfile({ displayName: name });
             this.myId = user.uid;
             this.myDisplayName = name;
-            // No saves yet, return empty object
             return {}; 
         } catch(e) {
             throw e;
@@ -48,27 +49,27 @@ const Network = {
     },
 
     login: async function(email, password) {
-        if (!this.active) throw new Error("Netzwerkfehler");
+        // Sicherstellen, dass wir aktiv sind
+        this.init(); 
+        
+        if (!this.active) throw new Error("Verbindung zu Vault-Tec unterbrochen.");
         try {
             const userCredential = await this.auth.signInWithEmailAndPassword(email, password);
             const user = userCredential.user;
             this.myId = user.uid;
             this.myDisplayName = user.displayName || "Unknown";
 
-            // Load all saves (slots 0-4)
             const snapshot = await this.db.ref('saves/' + this.myId).once('value');
-            return snapshot.val() || {}; // Return object with slots
+            return snapshot.val() || {}; 
         } catch(e) {
             console.error("Auth Error:", e);
             throw e;
         }
     },
     
-    // NEW: Save specific slot
     saveToSlot: function(slotIndex, gameState) {
         if(!this.active || !this.myId) return;
         
-        // Metadata for Character Selection Screen
         const meta = {
             name: gameState.playerName || "Unknown",
             lvl: gameState.lvl,
@@ -77,11 +78,8 @@ const Network = {
         };
         
         const saveObj = JSON.parse(JSON.stringify(gameState));
-        
         const updates = {};
         updates[`saves/${this.myId}/${slotIndex}`] = saveObj;
-        // Optionally store metadata separately for fast loading? 
-        // For now, loading full save is fine for 5 slots.
         
         this.db.ref().update(updates)
             .then(() => { if(typeof UI !== 'undefined') UI.log("SLOT " + (slotIndex+1) + " GESPEICHERT.", "text-cyan-400"); })
@@ -94,6 +92,8 @@ const Network = {
     },
 
     startPresence: function() {
+        if(!this.myId) return;
+        
         this.db.ref('players/' + this.myId).onDisconnect().remove();
         
         this.db.ref('players').on('value', (snapshot) => {
@@ -131,7 +131,6 @@ const Network = {
     },
 
     save: function(gameState) {
-        // Fallback for old calls: Save to current slot from Game State
         if (typeof Game !== 'undefined' && Game.state && Game.state.saveSlot !== undefined) {
             this.saveToSlot(Game.state.saveSlot, gameState);
         } else {
@@ -139,11 +138,8 @@ const Network = {
         }
     },
     
-    // Alte deleteSave Funktion für HardReset (löscht alles!)
     deleteSave: function() {
         if(!this.active || !this.myId) return;
-        // In Slot Logic: Delete active slot? Or delete all?
-        // Let's assume hard reset deletes current active slot.
         if (typeof Game !== 'undefined' && Game.state && Game.state.saveSlot !== undefined) {
             this.deleteSlot(Game.state.saveSlot);
         }
@@ -152,13 +148,13 @@ const Network = {
     disconnect: function() {
         if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
         if (this.auth) this.auth.signOut();
+        // WICHTIG: Active auf false setzen, damit man nicht versehentlich weiter funkt
         this.active = false;
         this.myId = null;
     },
 
     sendHeartbeat: function() {
         if (!this.active || !this.myId) return;
-        // Only update if in-game
         if(typeof Game !== 'undefined' && Game.state && Game.state.view === 'map') {
              this.db.ref('players/' + this.myId).update({
                 lastSeen: Date.now(),
