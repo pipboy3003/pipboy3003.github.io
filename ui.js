@@ -21,6 +21,7 @@ const UI = {
         active: false, id: null, startX: 0, startY: 0, currentX: 0, currentY: 0, moveDir: { x: 0, y: 0 }, timer: null
     },
 
+    // --- BASIC UTILS ---
     log: function(msg, color="text-green-500") { 
         if(!this.els.log) return;
         const line = document.createElement('div');
@@ -49,14 +50,45 @@ const UI = {
         }
     },
 
-    // --- WICHTIG: Hier beginnt INIT ---
+    setConnectionState: function(status) {
+        const v = this.els.version;
+        if(!v) return;
+        if(status === 'online') {
+            v.className = "text-[#39ff14] font-bold tracking-widest"; 
+            v.style.textShadow = "0 0 5px #39ff14";
+        } else if (status === 'offline') {
+            v.className = "text-red-500 font-bold tracking-widest"; 
+            v.style.textShadow = "0 0 5px red";
+        } else {
+            v.className = "text-yellow-400 font-bold tracking-widest animate-pulse";
+        }
+    },
+
+    updateTimer: function() { 
+        if(Game.state && this.els.gameScreen && !this.els.gameScreen.classList.contains('hidden')) {
+            if(Date.now() - this.lastInputTime > 300000) {
+                this.logout("AFK: ZEITÜBERSCHREITUNG");
+                return;
+            }
+        }
+        if(!Game.state || !Game.state.startTime) return; 
+        const diff = Math.floor((Date.now() - Game.state.startTime) / 1000); 
+        const h = Math.floor(diff / 3600).toString().padStart(2,'0'); 
+        const m = Math.floor((diff % 3600) / 60).toString().padStart(2,'0'); 
+        const s = (diff % 60).toString().padStart(2,'0'); 
+        if(this.els.timer) this.els.timer.textContent = `${h}:${m}:${s}`; 
+        
+        // Refresh Map logic if needed
+        if(Game.state.view === 'map') this.update(); 
+    },
+
+    // --- INITIALIZATION ---
     init: function() {
         this.els = {
             touchArea: document.getElementById('main-content'),
             view: document.getElementById('view-container'),
             log: document.getElementById('log-area'),
             
-            // Stats
             hp: document.getElementById('val-hp'),
             hpBar: document.getElementById('bar-hp'),
             expBarTop: document.getElementById('bar-exp-top'),
@@ -64,13 +96,12 @@ const UI = {
             xpTxt: document.getElementById('val-xp-txt'),
             caps: document.getElementById('val-caps'),
             name: document.getElementById('val-name'),
+
             version: document.getElementById('version-display'), 
-            
             joyBase: null, joyStick: null,
             dialog: document.getElementById('dialog-overlay'),
             timer: document.getElementById('game-timer'),
             
-            // Buttons Main
             btnNew: document.getElementById('btn-new'),
             btnInv: document.getElementById('btn-inv'),
             btnWiki: document.getElementById('btn-wiki'),
@@ -87,7 +118,6 @@ const UI = {
             playerList: document.getElementById('player-list-overlay'),
             playerListContent: document.getElementById('player-list-content'),
             
-            // Login Screens
             loginScreen: document.getElementById('login-screen'),
             loginStatus: document.getElementById('login-status'),
             inputEmail: document.getElementById('login-email'),
@@ -97,7 +127,6 @@ const UI = {
             btnToggleRegister: document.getElementById('btn-toggle-register'),
             loginTitle: document.getElementById('login-title'),
             
-            // Character Selection
             charSelectScreen: document.getElementById('char-select-screen'),
             charSlotsList: document.getElementById('char-slots-list'),
             newCharOverlay: document.getElementById('new-char-overlay'),
@@ -106,14 +135,12 @@ const UI = {
             btnCharSelectAction: document.getElementById('btn-char-select-action'),
             btnCharDeleteAction: document.getElementById('btn-char-delete-action'),
             
-            // Delete Overlay
             deleteOverlay: document.getElementById('delete-confirm-overlay'),
             deleteTargetName: document.getElementById('delete-target-name'),
             deleteInput: document.getElementById('delete-input'),
             btnDeleteConfirm: document.getElementById('btn-delete-confirm'),
             btnDeleteCancel: document.getElementById('btn-delete-cancel'),
 
-            // Spawn & Game Over
             spawnScreen: document.getElementById('spawn-screen'),
             spawnMsg: document.getElementById('spawn-msg'),
             spawnList: document.getElementById('spawn-list'),
@@ -122,12 +149,7 @@ const UI = {
             btnConfirmReset: document.getElementById('btn-confirm-reset'),
             btnCancelReset: document.getElementById('btn-cancel-reset'),
             gameScreen: document.getElementById('game-screen'),
-            gameOver: document.getElementById('game-over-screen'),
-            
-            btnUp: document.getElementById('btn-up'),
-            btnDown: document.getElementById('btn-down'),
-            btnLeft: document.getElementById('btn-left'),
-            btnRight: document.getElementById('btn-right')
+            gameOver: document.getElementById('game-over-screen')
         };
 
         // Inputs
@@ -178,10 +200,10 @@ const UI = {
             }
         });
 
-        // Buttons for Char Select
         if (this.els.btnCharSelectAction) {
              this.els.btnCharSelectAction.onclick = () => this.triggerCharSlot();
         }
+
         if (this.els.btnCharDeleteAction) {
             this.els.btnCharDeleteAction.onclick = () => this.triggerDeleteSlot();
         }
@@ -221,7 +243,6 @@ const UI = {
             };
         }
 
-        // Game Buttons
         if(this.els.btnSave) this.els.btnSave.onclick = () => this.handleSaveClick();
         if(this.els.btnMenuSave) this.els.btnMenuSave.onclick = () => this.handleSaveClick();
         if(this.els.btnLogout) this.els.btnLogout.onclick = () => this.logout('MANUELL AUSGELOGGT');
@@ -345,6 +366,7 @@ const UI = {
         if(this.timerInterval) clearInterval(this.timerInterval);
         this.timerInterval = setInterval(() => this.updateTimer(), 1000);
     },
+    
     // --- UTILS & TOUCH ---
     isMobile: function() { 
         return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0); 
@@ -534,7 +556,6 @@ const UI = {
         }
     },
 
-    // --- CHAR SELECT RENDERER ---
     renderCharacterSelection: function(saves) {
         this.charSelectMode = true;
         this.currentSaves = saves;
@@ -581,7 +602,6 @@ const UI = {
         for(let s of slots) s.classList.remove('active-slot');
         if(slots[index]) slots[index].classList.add('active-slot');
         
-        // Update Action Buttons
         const save = this.currentSaves[index];
         if (this.els.btnCharSelectAction) {
             if (save) {
@@ -655,7 +675,9 @@ const UI = {
         }
         Network.startPresence();
     },
-     toggleMenu: function() {
+
+    // --- FOCUS MANAGER ---
+    toggleMenu: function() {
         if(!this.els.navMenu) return;
         const isHidden = this.els.navMenu.classList.contains('hidden');
         if(isHidden) {
@@ -719,6 +741,7 @@ const UI = {
         }
     },
 
+    // --- SYSTEM ---
     showManualOverlay: async function() {
         const overlay = document.getElementById('manual-overlay');
         const content = document.getElementById('manual-content');
@@ -884,18 +907,32 @@ const UI = {
         if(this.els.hpBar) this.els.hpBar.style.width = `${Math.max(0, (Game.state.hp / maxHp) * 100)}%`;
         
         let hasAlert = false;
+
         if(this.els.btnChar) {
-            if(Game.state.statPoints > 0) { this.els.btnChar.classList.add('alert-glow-yellow'); hasAlert = true; } 
-            else { this.els.btnChar.classList.remove('alert-glow-yellow'); }
+            if(Game.state.statPoints > 0) { 
+                this.els.btnChar.classList.add('alert-glow-yellow');
+                hasAlert = true;
+            } else { 
+                this.els.btnChar.classList.remove('alert-glow-yellow');
+            }
         } 
+
         const unreadQuests = Game.state.quests.some(q => !q.read); 
         if(this.els.btnQuests) {
-            if(unreadQuests) { this.els.btnQuests.classList.add('alert-glow-cyan'); hasAlert = true; } 
-            else { this.els.btnQuests.classList.remove('alert-glow-cyan'); }
+            if(unreadQuests) { 
+                this.els.btnQuests.classList.add('alert-glow-cyan');
+                hasAlert = true;
+            } else { 
+                this.els.btnQuests.classList.remove('alert-glow-cyan');
+            }
         } 
+
         if(this.els.btnMenu) {
-            if(hasAlert) { this.els.btnMenu.classList.add('alert-glow-red'); } 
-            else { this.els.btnMenu.classList.remove('alert-glow-red'); }
+            if(hasAlert) {
+                this.els.btnMenu.classList.add('alert-glow-red');
+            } else {
+                this.els.btnMenu.classList.remove('alert-glow-red');
+            }
         }
         
         const inCombat = Game.state.view === 'combat'; 
@@ -1331,7 +1368,8 @@ const UI = {
         
         this.els.dialog.appendChild(box);
     },
-
+    
+    // Warnung vor Permadeath
     showPermadeathWarning: function() {
         if(!this.els.dialog) this.restoreOverlay();
         Game.state.inDialog = true;
@@ -1356,69 +1394,11 @@ const UI = {
         this.els.dialog.appendChild(box);
     },
 
-    // --- HELPER ---
-    toggleControls: function(show) { 
-        if (!show && this.els.dialog) {
-            this.els.dialog.innerHTML = ''; 
-        }
-    },
+    toggleControls: function(show) { if (!show && this.els.dialog) this.els.dialog.innerHTML = ''; },
     
-    showGameOver: function() { 
-        if(this.els.gameOver) this.els.gameOver.classList.remove('hidden'); 
-        this.toggleControls(false); 
-    },
-    
-    enterVault: function() { 
-        Game.state.inDialog = true; 
-        this.els.dialog.innerHTML = ''; 
-        const restBtn = document.createElement('button'); 
-        restBtn.className = "action-button w-full mb-1 border-blue-500 text-blue-300"; 
-        restBtn.textContent = "Ausruhen (Gratis)"; 
-        restBtn.onclick = () => { Game.rest(); this.leaveDialog(); }; 
-        const leaveBtn = document.createElement('button'); 
-        leaveBtn.className = "action-button w-full"; 
-        leaveBtn.textContent = "Weiter geht's"; 
-        leaveBtn.onclick = () => this.leaveDialog(); 
-        this.els.dialog.appendChild(restBtn); 
-        this.els.dialog.appendChild(leaveBtn); 
-        this.els.dialog.style.display = 'flex'; 
-    },
-    
-    enterSupermarket: function() { 
-        Game.state.inDialog = true; 
-        this.els.dialog.innerHTML = ''; 
-        const enterBtn = document.createElement('button'); 
-        enterBtn.className = "action-button w-full mb-1 border-red-500 text-red-300"; 
-        enterBtn.textContent = "Ruine betreten (Gefahr!)"; 
-        enterBtn.onclick = () => { Game.loadSector(0, 0, true, "market"); this.leaveDialog(); }; 
-        const leaveBtn = document.createElement('button'); 
-        leaveBtn.className = "action-button w-full"; 
-        leaveBtn.textContent = "Weitergehen"; 
-        leaveBtn.onclick = () => this.leaveDialog(); 
-        this.els.dialog.appendChild(enterBtn); 
-        this.els.dialog.appendChild(leaveBtn); 
-        this.els.dialog.style.display = 'block'; 
-    },
-    
-    enterCave: function() { 
-        Game.state.inDialog = true; 
-        this.els.dialog.innerHTML = ''; 
-        const enterBtn = document.createElement('button'); 
-        enterBtn.className = "action-button w-full mb-1 border-gray-500 text-gray-300"; 
-        enterBtn.textContent = "In die Tiefe (Dungeon)"; 
-        enterBtn.onclick = () => { Game.loadSector(0, 0, true, "cave"); this.leaveDialog(); }; 
-        const leaveBtn = document.createElement('button'); 
-        leaveBtn.className = "action-button w-full"; 
-        leaveBtn.textContent = "Weitergehen"; 
-        leaveBtn.onclick = () => this.leaveDialog(); 
-        this.els.dialog.appendChild(enterBtn); 
-        this.els.dialog.appendChild(leaveBtn); 
-        this.els.dialog.style.display = 'block'; 
-    },
-    
-    leaveDialog: function() { 
-        Game.state.inDialog = false; 
-        this.els.dialog.style.display = 'none'; 
-        this.update(); 
-    }
+    showGameOver: function() { if(this.els.gameOver) this.els.gameOver.classList.remove('hidden'); this.toggleControls(false); },
+    enterVault: function() { Game.state.inDialog = true; this.els.dialog.innerHTML = ''; const restBtn = document.createElement('button'); restBtn.className = "action-button w-full mb-1 border-blue-500 text-blue-300"; restBtn.textContent = "Ausruhen (Gratis)"; restBtn.onclick = () => { Game.rest(); this.leaveDialog(); }; const leaveBtn = document.createElement('button'); leaveBtn.className = "action-button w-full"; leaveBtn.textContent = "Weiter geht's"; leaveBtn.onclick = () => this.leaveDialog(); this.els.dialog.appendChild(restBtn); this.els.dialog.appendChild(leaveBtn); this.els.dialog.style.display = 'flex'; },
+    enterSupermarket: function() { Game.state.inDialog = true; this.els.dialog.innerHTML = ''; const enterBtn = document.createElement('button'); enterBtn.className = "action-button w-full mb-1 border-red-500 text-red-300"; enterBtn.textContent = "Ruine betreten (Gefahr!)"; enterBtn.onclick = () => { Game.loadSector(0, 0, true, "market"); this.leaveDialog(); }; const leaveBtn = document.createElement('button'); leaveBtn.className = "action-button w-full"; leaveBtn.textContent = "Weitergehen"; leaveBtn.onclick = () => this.leaveDialog(); this.els.dialog.appendChild(enterBtn); this.els.dialog.appendChild(leaveBtn); this.els.dialog.style.display = 'block'; },
+    enterCave: function() { Game.state.inDialog = true; this.els.dialog.innerHTML = ''; const enterBtn = document.createElement('button'); enterBtn.className = "action-button w-full mb-1 border-gray-500 text-gray-300"; enterBtn.textContent = "In die Tiefe (Dungeon)"; enterBtn.onclick = () => { Game.loadSector(0, 0, true, "cave"); this.leaveDialog(); }; const leaveBtn = document.createElement('button'); leaveBtn.className = "action-button w-full"; leaveBtn.textContent = "Weitergehen"; leaveBtn.onclick = () => this.leaveDialog(); this.els.dialog.appendChild(enterBtn); this.els.dialog.appendChild(leaveBtn); this.els.dialog.style.display = 'block'; },
+    leaveDialog: function() { Game.state.inDialog = false; this.els.dialog.style.display = 'none'; this.update(); }
 };
