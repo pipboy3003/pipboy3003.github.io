@@ -54,6 +54,8 @@ const Game = {
         this.worldData = {};
         this.initCache();
         try {
+            let isNewGame = false;
+            
             if (saveData) {
                 this.state = saveData;
                 if(!this.state.explored || typeof this.state.explored !== 'object') this.state.explored = {};
@@ -63,6 +65,7 @@ const Game = {
                 this.state.saveSlot = slotIndex;
                 UI.log(">> Spielstand geladen.", "text-cyan-400");
             } else {
+                isNewGame = true;
                 let startSecX = Math.floor(Math.random() * 8);
                 let startSecY = Math.floor(Math.random() * 8);
                 let startX = 20;
@@ -102,11 +105,6 @@ const Game = {
                 
                 UI.log(">> Neuer Charakter erstellt.", "text-green-400");
                 this.saveGame(); 
-                
-                // SHOW INTRO DIALOG
-                setTimeout(() => {
-                    UI.showDungeonWarning(() => {}, "SYSTEM INITIALISIERUNG...\n\nWARNUNG: Sie betreten nun ungesichertes Ödland.\nStrahlung: Hoch.\nFeindliche Aktivitäten: Extrem.\n\nViel Glück, Bewohner!");
-                }, 1000);
             }
 
             this.loadSector(this.state.sector.x, this.state.sector.y);
@@ -120,11 +118,64 @@ const Game = {
             UI.switchView('map').then(() => { 
                 if(UI.els.gameOver) UI.els.gameOver.classList.add('hidden'); 
                 if(typeof Network !== 'undefined') Network.sendHeartbeat();
+                
+                // --- PERMADEATH WARNING (NUR BEI NEUEM SPIEL) ---
+                if (isNewGame) {
+                    setTimeout(() => UI.showPermadeathWarning(), 500);
+                }
             });
         } catch(e) {
             console.error(e);
             if(UI.error) UI.error("GAME INIT FAIL: " + e.message);
         }
+    },
+
+    // --- REST / HEAL (FIXED) ---
+    rest: function() { 
+        if(!this.state) return;
+        this.state.hp = this.state.maxHp; 
+        UI.log("Ausgeruht. HP voll.", "text-blue-400"); 
+        UI.update(); 
+        this.saveGame(); 
+    },
+
+    heal: function() { 
+        if(this.state.caps >= 25) { 
+            this.state.caps -= 25; 
+            this.rest(); 
+        } else {
+            UI.log("Zu wenig Kronkorken.", "text-red-500"); 
+        }
+    },
+    
+    buyAmmo: function() { 
+        if(this.state.caps >= 10) { 
+            this.state.caps -= 10; 
+            this.state.ammo += 10; 
+            UI.log("Munition gekauft.", "text-green-400"); 
+            UI.update(); 
+            this.saveGame();
+        } else {
+            UI.log("Zu wenig Kronkorken.", "text-red-500"); 
+        }
+    },
+    
+    buyItem: function(key) { 
+        const item = this.items[key]; 
+        if(this.state.caps >= item.cost) { 
+            this.state.caps -= item.cost; 
+            this.addToInventory(key, 1); 
+            UI.log(`Gekauft: ${item.name}`, "text-green-400"); 
+            if(typeof UI.renderShop === 'function') {
+                 // Refresh Shop UI
+                 const con = document.getElementById('city-options');
+                 if(con) UI.renderShop(con);
+            }
+            UI.update(); 
+            this.saveGame(); 
+        } else { 
+            UI.log("Zu wenig Kronkorken.", "text-red-500"); 
+        } 
     },
 
     // --- MAP LOGIC ---
@@ -353,7 +404,6 @@ const Game = {
         
         const typeName = type === "cave" ? "Dunkle Höhle" : "Supermarkt Ruine";
         this.state.zone = `${typeName} (Ebene ${level})`;
-        // Dungeon Fog Logic
         this.state.explored = {}; 
         this.reveal(this.state.player.x, this.state.player.y);
         
