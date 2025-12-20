@@ -1,5 +1,14 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.2.4-alpha] - 2025-12-20 (Action Button Fix)
+------------------------------------------------
+- FIX: Fehlender "Aktions-Button" im HTML ergänzt. 
+  - Im Charakter-Auswahl-Screen gibt es nun über "Abmelden" einen dynamischen Button.
+  - Dieser Button wechselt je nach Slot zwischen "CHARAKTER ERSTELLEN" (Gelb) und "SPIEL LADEN" (Grün).
+  - Damit ist die Erstellung auch auf Touch-Geräten ohne Doppeltipp-Probleme möglich.
+- UI: Vollständiger Code-Restore für index.html und ui.js.
+
+
 [v0.2.3b-alpha] - 2025-12-20 (UI FINAL FULL REPAIR)
 ------------------------------------------------
 - CRITICAL: 'ui.js' wurde komplett entpackt und Zeile für Zeile ausgeschrieben.
