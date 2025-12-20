@@ -1,5 +1,13 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.2.6-beta] - 2025-12-20 (Layout Fix & Intro)
+------------------------------------------------
+- FIX: UI Layout auf Mobile korrigiert. Das Log-Fenster ist nun deutlich kleiner (30%), das Spielfeld dominiert wieder den Bildschirm.
+- FEATURE: Intro-Warnung hinzugefügt.
+  - Beim Erstellen eines neuen Charakters erscheint nun ein Popup "VAULT-TEC WARNUNG", bevor das Spiel startet.
+- FIX: 'game.js' und 'ui.js' synchronisiert, um den Intro-Dialog korrekt aufzurufen.
+
+
 [v0.2.5-alpha] - 2025-12-20 (Logout & Crash Fixes)
 ------------------------------------------------
 - CRITICAL FIX (Network): Fehler behoben, der das erneute Einloggen nach dem Ausloggen verhinderte ("Netzwerkfehler"). 
