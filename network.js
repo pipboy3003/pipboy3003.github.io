@@ -1,8 +1,8 @@
 const Network = {
     db: null,
     auth: null,
-    myId: null, // This is now the Firebase UID
-    myDisplayName: null, // "Survivor Name"
+    myId: null,
+    myDisplayName: null,
     otherPlayers: {},
     active: false,
     heartbeatInterval: null,
@@ -37,20 +37,11 @@ const Network = {
         try {
             const userCredential = await this.auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
-            
-            // Profil updaten mit Namen
             await user.updateProfile({ displayName: name });
-            
             this.myId = user.uid;
             this.myDisplayName = name;
-            
-            // Initiale Datenbankeinträge
-            await this.db.ref('players/' + this.myId).set({
-                name: name,
-                x: 20, y: 20, lvl: 1, sector: {x:0, y:0}, lastSeen: Date.now()
-            });
-            
-            return null; // Kein Savegame vorhanden, neues Spiel
+            // No saves yet, return empty object
+            return {}; 
         } catch(e) {
             throw e;
         }
@@ -61,51 +52,69 @@ const Network = {
         try {
             const userCredential = await this.auth.signInWithEmailAndPassword(email, password);
             const user = userCredential.user;
-            
             this.myId = user.uid;
             this.myDisplayName = user.displayName || "Unknown";
 
-            // Lade Savegame
+            // Load all saves (slots 0-4)
             const snapshot = await this.db.ref('saves/' + this.myId).once('value');
-            const saveData = snapshot.val();
-            
-            this.startPresence();
-            return saveData; 
+            return snapshot.val() || {}; // Return object with slots
         } catch(e) {
             console.error("Auth Error:", e);
             throw e;
         }
     },
+    
+    // NEW: Save specific slot
+    saveToSlot: function(slotIndex, gameState) {
+        if(!this.active || !this.myId) return;
+        
+        // Metadata for Character Selection Screen
+        const meta = {
+            name: gameState.playerName || "Unknown",
+            lvl: gameState.lvl,
+            sector: gameState.sector,
+            caps: gameState.caps
+        };
+        
+        const saveObj = JSON.parse(JSON.stringify(gameState));
+        
+        const updates = {};
+        updates[`saves/${this.myId}/${slotIndex}`] = saveObj;
+        // Optionally store metadata separately for fast loading? 
+        // For now, loading full save is fine for 5 slots.
+        
+        this.db.ref().update(updates)
+            .then(() => { if(typeof UI !== 'undefined') UI.log("SLOT " + (slotIndex+1) + " GESPEICHERT.", "text-cyan-400"); })
+            .catch(e => console.error("Save Error:", e));
+    },
+    
+    deleteSlot: async function(slotIndex) {
+        if(!this.active || !this.myId) return;
+        await this.db.ref(`saves/${this.myId}/${slotIndex}`).remove();
+    },
 
     startPresence: function() {
-        // Disconnect Handler
         this.db.ref('players/' + this.myId).onDisconnect().remove();
         
-        // Listener für andere
         this.db.ref('players').on('value', (snapshot) => {
             const rawData = snapshot.val() || {};
             const now = Date.now();
             const cleanData = {};
-
             for (let pid in rawData) {
                 if (pid === this.myId) continue;
                 const p = rawData[pid];
                 if (p.lastSeen && (now - p.lastSeen > 120000)) continue; 
-                cleanData[p.name || pid] = p; // Nutze Namen als Key für UI wenn möglich, oder UID
+                cleanData[p.name || pid] = p;
             }
-
             this.otherPlayers = cleanData;
-
             if(typeof UI !== 'undefined') {
                 const el = document.getElementById('val-players');
                 if(el) el.textContent = `${Object.keys(this.otherPlayers).length + 1}`; 
-                
                 if(UI.els.spawnScreen && UI.els.spawnScreen.style.display !== 'none') {
                     UI.renderSpawnList(this.otherPlayers);
                 }
                 UI.updatePlayerList();
             }
-
             if(typeof Game !== 'undefined' && Game.draw) Game.draw();
         });
         
@@ -114,31 +123,30 @@ const Network = {
             UI.log(`TERMINAL LINK: ${this.myDisplayName}`, "text-green-400 font-bold");
         }
         
-        // Heartbeat
         if(this.heartbeatInterval) clearInterval(this.heartbeatInterval);
         this.heartbeatInterval = setInterval(() => {
             this.sendHeartbeat();
         }, 5000);
-        
-        // Initial Ping
         this.sendHeartbeat();
     },
 
     save: function(gameState) {
-        if(!this.active || !this.myId) return;
-        // Speichere den Namen im Save, falls mal gebraucht
-        gameState.playerName = this.myDisplayName;
-        
-        const saveObj = JSON.parse(JSON.stringify(gameState));
-        this.db.ref('saves/' + this.myId).set(saveObj)
-            .then(() => { if(typeof UI !== 'undefined') UI.log("SPIEL GESPEICHERT.", "text-cyan-400"); })
-            .catch(e => console.error("Save Error:", e));
+        // Fallback for old calls: Save to current slot from Game State
+        if (typeof Game !== 'undefined' && Game.state && Game.state.saveSlot !== undefined) {
+            this.saveToSlot(Game.state.saveSlot, gameState);
+        } else {
+            console.error("No Save Slot defined!");
+        }
     },
-
+    
+    // Alte deleteSave Funktion für HardReset (löscht alles!)
     deleteSave: function() {
         if(!this.active || !this.myId) return;
-        this.db.ref('saves/' + this.myId).remove();
-        // Spielerdaten behalten wir evtl. kurz
+        // In Slot Logic: Delete active slot? Or delete all?
+        // Let's assume hard reset deletes current active slot.
+        if (typeof Game !== 'undefined' && Game.state && Game.state.saveSlot !== undefined) {
+            this.deleteSlot(Game.state.saveSlot);
+        }
     },
 
     disconnect: function() {
@@ -150,20 +158,19 @@ const Network = {
 
     sendHeartbeat: function() {
         if (!this.active || !this.myId) return;
-        // Wir updaten lastSeen. Wenn Game läuft, auch Position.
-        let updateData = { lastSeen: Date.now(), name: this.myDisplayName };
-        
-        if(typeof Game !== 'undefined' && Game.state && Game.state.player) {
-            updateData.x = Game.state.player.x;
-            updateData.y = Game.state.player.y;
-            updateData.sector = Game.state.sector;
-            updateData.lvl = Game.state.lvl;
+        // Only update if in-game
+        if(typeof Game !== 'undefined' && Game.state && Game.state.view === 'map') {
+             this.db.ref('players/' + this.myId).update({
+                lastSeen: Date.now(),
+                name: Game.state.playerName || this.myDisplayName,
+                x: Game.state.player.x,
+                y: Game.state.player.y,
+                sector: Game.state.sector,
+                lvl: Game.state.lvl
+            });
         }
-        
-        this.db.ref('players/' + this.myId).update(updateData);
     },
     
-    // Alias für alte Calls, leitet an Heartbeat weiter da Position jetzt dort ist
     sendMove: function(x, y, level, sector) {
         this.sendHeartbeat();
     }
