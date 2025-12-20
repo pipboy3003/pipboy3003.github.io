@@ -38,7 +38,6 @@
         }
         @keyframes pulse-focus { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
-        /* CHAR SLOT STYLES */
         .char-slot { border: 1px solid var(--pip-dim); background: rgba(0,20,0,0.5); padding: 10px; margin-bottom: 5px; cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
         .char-slot:hover { border-color: var(--pip-green); background: rgba(0,40,0,0.8); }
         .char-slot.active-slot { border-color: var(--pip-green); background: var(--pip-green); color: black; font-weight: bold; }
@@ -75,6 +74,22 @@
         
         input.login-input { background: #000; border: 2px solid var(--pip-green); color: var(--pip-green); font-family: inherit; font-size: 20px; padding: 10px; text-align: center; outline: none; width: 100%; }
         input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
+        
+        /* FIX: LAYOUT RATIOS FOR MOBILE */
+        #main-content { flex-grow: 1; display: flex; overflow: hidden; min-height: 0; position: relative; width: 100%; }
+        #main-panel { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; width: 100%; }
+        #layout-split { display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; min-height: 0; width: 100%; }
+        
+        /* MOBILE FIRST */
+        #view-container { position: relative; flex-grow: 0; flex-shrink: 0; display: flex; justify-content: center; align-items: center; height: 70%; border-bottom: 2px solid var(--pip-green); overflow: hidden; width: 100%; }
+        #log-panel { display: flex; flex-direction: column; flex-shrink: 0; flex-grow: 1; height: 30%; min-height: 0; background-color: #020a02; width: 100%; }
+        
+        /* DESKTOP */
+        @media (min-width: 768px) { 
+            #layout-split { flex-direction: row; }
+            #view-container { width: 75%; height: 100%; border-bottom: none; border-right: 2px solid var(--pip-green); flex-grow: 1; }
+            #log-panel { width: 25%; height: 100%; border-left: none; }
+        }
     </style>
     <script>window.onerror=function(m,u,l){console.error("ERR:",m);if(typeof UI!=='undefined'&&UI.error)UI.error(m);return false;};</script>
 </head>
