@@ -1,216 +1,52 @@
 const UI = {
-    els: {},
-    timerInterval: null,
-    lastInputTime: Date.now(), 
-    biomeColors: (typeof window.GameData !== 'undefined') ? window.GameData.colors : {}, 
-    
-    // States
-    loginBusy: false,
-    isRegistering: false,
-    charSelectMode: false,
-    deleteMode: false,
-    currentSaves: {},
-    selectedSlot: -1,
-    
-    // Focus System
-    focusIndex: -1,
-    focusableEls: [],
-    inputMethod: 'touch', 
+    els: {}, timerInterval: null, lastInputTime: Date.now(),
+    biomeColors: (typeof window.GameData !== 'undefined') ? window.GameData.colors : {},
+    loginBusy: false, isRegistering: false, charSelectMode: false, deleteMode: false,
+    currentSaves: {}, selectedSlot: -1, focusIndex: -1, focusableEls: [], inputMethod: 'touch',
+    touchState: { active: false, id: null, startX: 0, startY: 0, currentX: 0, currentY: 0, moveDir: { x: 0, y: 0 }, timer: null },
 
-    touchState: {
-        active: false, id: null, startX: 0, startY: 0, currentX: 0, currentY: 0, moveDir: { x: 0, y: 0 }, timer: null
-    },
-
-    log: function(msg, color="text-green-500") { 
-        if(!this.els.log) return;
-        const line = document.createElement('div');
-        line.className = color;
-        line.textContent = `> ${msg}`;
-        this.els.log.prepend(line);
-    },
-
-    shakeView: function() {
-        if(this.els.view) {
-            this.els.view.classList.remove('shake');
-            void this.els.view.offsetWidth; 
-            this.els.view.classList.add('shake');
-            setTimeout(() => { if(this.els.view) this.els.view.classList.remove('shake'); }, 300);
-        }
-    },
-
-    error: function(msg) {
-        const errText = `> ERROR: ${msg}`;
-        console.error(errText);
-        if(this.els.log) {
-            const line = document.createElement('div');
-            line.className = "text-red-500 font-bold blink-red";
-            line.textContent = errText;
-            this.els.log.prepend(line);
-        }
-    },
+    log: function(msg, color="text-green-500") { if(!this.els.log) return; const line = document.createElement('div'); line.className = color; line.textContent = `> ${msg}`; this.els.log.prepend(line); },
+    shakeView: function() { if(this.els.view) { this.els.view.classList.remove('shake'); void this.els.view.offsetWidth; this.els.view.classList.add('shake'); setTimeout(() => { if(this.els.view) this.els.view.classList.remove('shake'); }, 300); } },
+    error: function(msg) { const errText = `> ERROR: ${msg}`; console.error(errText); if(this.els.log) { const line = document.createElement('div'); line.className = "text-red-500 font-bold blink-red"; line.textContent = errText; this.els.log.prepend(line); } },
 
     init: function() {
         this.els = {
-            touchArea: document.getElementById('main-content'),
-            view: document.getElementById('view-container'),
-            log: document.getElementById('log-area'),
-            
-            // HUD
-            hp: document.getElementById('val-hp'),
-            hpBar: document.getElementById('bar-hp'),
-            expBarTop: document.getElementById('bar-exp-top'),
-            lvl: document.getElementById('val-lvl'),
-            xpTxt: document.getElementById('val-xp-txt'),
-            caps: document.getElementById('val-caps'),
-            name: document.getElementById('val-name'),
-
-            version: document.getElementById('version-display'), 
-            joyBase: null, joyStick: null,
-            dialog: document.getElementById('dialog-overlay'),
-            timer: document.getElementById('game-timer'),
-            
-            // Menu Buttons
-            btnNew: document.getElementById('btn-new'),
-            btnInv: document.getElementById('btn-inv'),
-            btnWiki: document.getElementById('btn-wiki'),
-            btnMap: document.getElementById('btn-map'),
-            btnChar: document.getElementById('btn-char'),
-            btnQuests: document.getElementById('btn-quests'),
-            btnSave: document.getElementById('btn-save'),
-            btnMenuSave: document.getElementById('btn-menu-save'),
-            btnLogout: document.getElementById('btn-logout'),
-            btnReset: document.getElementById('btn-reset'), 
-            btnMenu: document.getElementById('btn-menu-toggle'),
-            navMenu: document.getElementById('main-nav'),
-            playerCount: document.getElementById('val-players'),
-            playerList: document.getElementById('player-list-overlay'),
-            playerListContent: document.getElementById('player-list-content'),
-            
-            // Login & Char Select
-            loginScreen: document.getElementById('login-screen'),
-            loginStatus: document.getElementById('login-status'),
-            inputEmail: document.getElementById('login-email'),
-            inputPass: document.getElementById('login-pass'),
-            inputName: document.getElementById('login-name'),
-            btnLogin: document.getElementById('btn-login'),
-            btnToggleRegister: document.getElementById('btn-toggle-register'),
-            loginTitle: document.getElementById('login-title'),
-            
-            charSelectScreen: document.getElementById('char-select-screen'),
-            charSlotsList: document.getElementById('char-slots-list'),
-            newCharOverlay: document.getElementById('new-char-overlay'),
-            inputNewCharName: document.getElementById('new-char-name'),
-            btnCreateCharConfirm: document.getElementById('btn-create-char'),
-            btnCharSelectAction: document.getElementById('btn-char-select-action'),
-            
-            deleteOverlay: document.getElementById('delete-confirm-overlay'),
-            deleteTargetName: document.getElementById('delete-target-name'),
-            deleteInput: document.getElementById('delete-input'),
-            btnDeleteConfirm: document.getElementById('btn-delete-confirm'),
-            btnDeleteCancel: document.getElementById('btn-delete-cancel'),
-
-            // Overlays
-            spawnScreen: document.getElementById('spawn-screen'),
-            spawnMsg: document.getElementById('spawn-msg'),
-            spawnList: document.getElementById('spawn-list'),
-            btnSpawnRandom: document.getElementById('btn-spawn-random'),
-            resetOverlay: document.getElementById('reset-overlay'),
-            btnConfirmReset: document.getElementById('btn-confirm-reset'),
-            btnCancelReset: document.getElementById('btn-cancel-reset'),
-            gameScreen: document.getElementById('game-screen'),
-            gameOver: document.getElementById('game-over-screen'),
-            
-            btnUp: document.getElementById('btn-up'),
-            btnDown: document.getElementById('btn-down'),
-            btnLeft: document.getElementById('btn-left'),
-            btnRight: document.getElementById('btn-right')
+            touchArea: document.getElementById('main-content'), view: document.getElementById('view-container'), log: document.getElementById('log-area'),
+            hp: document.getElementById('val-hp'), hpBar: document.getElementById('bar-hp'), expBarTop: document.getElementById('bar-exp-top'),
+            lvl: document.getElementById('val-lvl'), xpTxt: document.getElementById('val-xp-txt'), caps: document.getElementById('val-caps'), name: document.getElementById('val-name'),
+            version: document.getElementById('version-display'), joyBase: null, joyStick: null, dialog: document.getElementById('dialog-overlay'), timer: document.getElementById('game-timer'),
+            btnNew: document.getElementById('btn-new'), btnInv: document.getElementById('btn-inv'), btnWiki: document.getElementById('btn-wiki'),
+            btnMap: document.getElementById('btn-map'), btnChar: document.getElementById('btn-char'), btnQuests: document.getElementById('btn-quests'),
+            btnSave: document.getElementById('btn-save'), btnMenuSave: document.getElementById('btn-menu-save'), btnLogout: document.getElementById('btn-logout'),
+            btnReset: document.getElementById('btn-reset'), btnMenu: document.getElementById('btn-menu-toggle'), navMenu: document.getElementById('main-nav'),
+            playerCount: document.getElementById('val-players'), playerList: document.getElementById('player-list-overlay'), playerListContent: document.getElementById('player-list-content'),
+            loginScreen: document.getElementById('login-screen'), loginStatus: document.getElementById('login-status'), inputEmail: document.getElementById('login-email'),
+            inputPass: document.getElementById('login-pass'), inputName: document.getElementById('login-name'), btnLogin: document.getElementById('btn-login'),
+            btnToggleRegister: document.getElementById('btn-toggle-register'), loginTitle: document.getElementById('login-title'),
+            charSelectScreen: document.getElementById('char-select-screen'), charSlotsList: document.getElementById('char-slots-list'),
+            newCharOverlay: document.getElementById('new-char-overlay'), inputNewCharName: document.getElementById('new-char-name'), btnCreateCharConfirm: document.getElementById('btn-create-char'),
+            btnCharSelectAction: document.getElementById('btn-char-select-action'), btnCharDeleteAction: document.getElementById('btn-char-delete-action'),
+            deleteOverlay: document.getElementById('delete-confirm-overlay'), deleteTargetName: document.getElementById('delete-target-name'), deleteInput: document.getElementById('delete-input'),
+            btnDeleteConfirm: document.getElementById('btn-delete-confirm'), btnDeleteCancel: document.getElementById('btn-delete-cancel'),
+            spawnScreen: document.getElementById('spawn-screen'), spawnMsg: document.getElementById('spawn-msg'), spawnList: document.getElementById('spawn-list'), btnSpawnRandom: document.getElementById('btn-spawn-random'),
+            resetOverlay: document.getElementById('reset-overlay'), btnConfirmReset: document.getElementById('btn-confirm-reset'), btnCancelReset: document.getElementById('btn-cancel-reset'),
+            gameScreen: document.getElementById('game-screen'), gameOver: document.getElementById('game-over-screen'),
+            btnUp: document.getElementById('btn-up'), btnDown: document.getElementById('btn-down'), btnLeft: document.getElementById('btn-left'), btnRight: document.getElementById('btn-right')
         };
 
-        // Inputs
-        ['mousemove', 'mousedown', 'touchstart'].forEach(evt => {
-            window.addEventListener(evt, () => {
-                this.lastInputTime = Date.now();
-                if (this.inputMethod !== 'touch') {
-                    this.focusIndex = -1;
-                    this.updateFocusVisuals();
-                    this.inputMethod = 'touch';
-                }
-            }, { passive: true });
-        });
+        ['mousemove', 'mousedown', 'touchstart'].forEach(evt => { window.addEventListener(evt, () => { this.lastInputTime = Date.now(); if (this.inputMethod !== 'touch') { this.focusIndex = -1; this.updateFocusVisuals(); this.inputMethod = 'touch'; } }, { passive: true }); });
+        window.addEventListener('keydown', () => { this.lastInputTime = Date.now(); this.inputMethod = 'key'; });
 
-        window.addEventListener('keydown', () => {
-            this.lastInputTime = Date.now();
-            this.inputMethod = 'key';
-        });
-
-        // Event Listeners
         if(this.els.btnLogin) this.els.btnLogin.onclick = () => this.attemptLogin();
-        if(this.els.btnToggleRegister) {
-            this.els.btnToggleRegister.onclick = () => {
-                this.isRegistering = !this.isRegistering;
-                if(this.isRegistering) {
-                    this.els.loginTitle.textContent = "NEUEN ACCOUNT ERSTELLEN";
-                    this.els.inputName.style.display = 'block';
-                    this.els.btnLogin.textContent = "REGISTRIEREN";
-                    this.els.btnToggleRegister.textContent = "Zurück zum Login";
-                } else {
-                    this.els.loginTitle.textContent = "AUTHENTICATION REQUIRED";
-                    this.els.inputName.style.display = 'none';
-                    this.els.btnLogin.textContent = "LOGIN";
-                    this.els.btnToggleRegister.textContent = "Noch kein Account? Hier registrieren";
-                }
-            };
-        }
+        if(this.els.btnToggleRegister) { this.els.btnToggleRegister.onclick = () => { this.isRegistering = !this.isRegistering; if(this.isRegistering) { this.els.loginTitle.textContent = "NEUEN ACCOUNT ERSTELLEN"; this.els.inputName.style.display = 'block'; this.els.btnLogin.textContent = "REGISTRIEREN"; this.els.btnToggleRegister.textContent = "Zurück zum Login"; } else { this.els.loginTitle.textContent = "AUTHENTICATION REQUIRED"; this.els.inputName.style.display = 'none'; this.els.btnLogin.textContent = "LOGIN"; this.els.btnToggleRegister.textContent = "Noch kein Account? Hier registrieren"; } }; }
+        [this.els.inputEmail, this.els.inputPass, this.els.inputName].forEach(el => { if(el) el.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); this.attemptLogin(); } }); });
 
-        [this.els.inputEmail, this.els.inputPass, this.els.inputName].forEach(el => {
-            if(el) {
-                el.addEventListener("keydown", (e) => {
-                    if (e.key === "Enter") {
-                        e.preventDefault();
-                        this.attemptLogin();
-                    }
-                });
-            }
-        });
-
-        if(this.els.btnCharSelectAction) {
-             this.els.btnCharSelectAction.onclick = () => this.triggerCharSlot();
-        }
-
-        if(this.els.btnCreateCharConfirm) {
-            this.els.btnCreateCharConfirm.onclick = () => {
-                const name = this.els.inputNewCharName.value.trim().toUpperCase();
-                if(name.length < 3) { alert("Name zu kurz!"); return; }
-                this.els.newCharOverlay.classList.add('hidden');
-                this.startGame(null, this.selectedSlot, name);
-            };
-        }
-        
+        if(this.els.btnCharSelectAction) this.els.btnCharSelectAction.onclick = () => this.triggerCharSlot();
+        if(this.els.btnCharDeleteAction) this.els.btnCharDeleteAction.onclick = () => this.triggerDeleteSlot();
+        if(this.els.btnCreateCharConfirm) this.els.btnCreateCharConfirm.onclick = () => { const name = this.els.inputNewCharName.value.trim().toUpperCase(); if(name.length < 3) { alert("Name zu kurz!"); return; } this.els.newCharOverlay.classList.add('hidden'); this.startGame(null, this.selectedSlot, name); };
         if(this.els.btnDeleteCancel) this.els.btnDeleteCancel.onclick = () => this.closeDeleteOverlay();
-        
-        if(this.els.deleteInput) {
-            this.els.deleteInput.addEventListener('input', () => {
-                const target = this.els.deleteTargetName.textContent;
-                const input = this.els.deleteInput.value.toUpperCase();
-                this.els.btnDeleteConfirm.disabled = (target !== input);
-                if(target === input) {
-                    this.els.btnDeleteConfirm.classList.remove('border-red-500', 'text-red-500');
-                    this.els.btnDeleteConfirm.classList.add('border-green-500', 'text-green-500', 'animate-pulse');
-                } else {
-                    this.els.btnDeleteConfirm.classList.add('border-red-500', 'text-red-500');
-                    this.els.btnDeleteConfirm.classList.remove('border-green-500', 'text-green-500', 'animate-pulse');
-                }
-            });
-        }
-        
-        if(this.els.btnDeleteConfirm) {
-            this.els.btnDeleteConfirm.onclick = async () => {
-                if(this.selectedSlot === -1) return;
-                await Network.deleteSlot(this.selectedSlot);
-                this.closeDeleteOverlay();
-                this.attemptLogin(); 
-            };
-        }
+        if(this.els.deleteInput) { this.els.deleteInput.addEventListener('input', () => { const target = this.els.deleteTargetName.textContent; const input = this.els.deleteInput.value.toUpperCase(); this.els.btnDeleteConfirm.disabled = (target !== input); if(target === input) { this.els.btnDeleteConfirm.classList.remove('border-red-500', 'text-red-500'); this.els.btnDeleteConfirm.classList.add('border-green-500', 'text-green-500', 'animate-pulse'); } else { this.els.btnDeleteConfirm.classList.add('border-red-500', 'text-red-500'); this.els.btnDeleteConfirm.classList.remove('border-green-500', 'text-green-500', 'animate-pulse'); } }); }
+        if(this.els.btnDeleteConfirm) { this.els.btnDeleteConfirm.onclick = async () => { if(this.selectedSlot === -1) return; await Network.deleteSlot(this.selectedSlot); this.closeDeleteOverlay(); this.attemptLogin(); }; }
 
         if(this.els.btnSave) this.els.btnSave.onclick = () => this.handleSaveClick();
         if(this.els.btnMenuSave) this.els.btnMenuSave.onclick = () => this.handleSaveClick();
@@ -218,39 +54,13 @@ const UI = {
         if(this.els.btnReset) this.els.btnReset.onclick = () => this.handleReset();
         if(this.els.btnConfirmReset) this.els.btnConfirmReset.onclick = () => this.confirmReset();
         if(this.els.btnCancelReset) this.els.btnCancelReset.onclick = () => this.cancelReset();
+        if(this.els.btnMenu) this.els.btnMenu.onclick = (e) => { e.stopPropagation(); this.toggleMenu(); };
 
-        if(this.els.btnMenu) {
-            this.els.btnMenu.onclick = (e) => {
-                e.stopPropagation(); 
-                this.toggleMenu();
-            };
-        }
-        
         document.addEventListener('click', (e) => {
-            if(this.els.navMenu && !this.els.navMenu.classList.contains('hidden')) {
-                if (!this.els.navMenu.contains(e.target) && e.target !== this.els.btnMenu) {
-                    this.els.navMenu.classList.add('hidden');
-                    this.els.navMenu.style.display = 'none';
-                    this.refreshFocusables();
-                }
-            }
-            if (Game.state && Game.state.view !== 'map' && Game.state.view !== 'combat' && Game.state.view !== 'city' && !Game.state.view.includes('shop') && !Game.state.view.includes('crafting') && !Game.state.view.includes('clinic') && !Game.state.view.includes('vault')) {
-                 const viewContainer = document.getElementById('view-container');
-                 if (!viewContainer.contains(e.target)) {
-                     this.switchView('map');
-                 }
-            }
+            if(this.els.navMenu && !this.els.navMenu.classList.contains('hidden')) { if (!this.els.navMenu.contains(e.target) && e.target !== this.els.btnMenu) { this.els.navMenu.classList.add('hidden'); this.els.navMenu.style.display = 'none'; this.refreshFocusables(); } }
+            if (Game.state && Game.state.view !== 'map' && Game.state.view !== 'combat' && Game.state.view !== 'city' && !Game.state.view.includes('shop') && !Game.state.view.includes('crafting') && !Game.state.view.includes('clinic') && !Game.state.view.includes('vault')) { const viewContainer = document.getElementById('view-container'); if (!viewContainer.contains(e.target)) this.switchView('map'); }
         });
-        
-        if(this.els.log.parentElement) {
-            this.els.log.parentElement.addEventListener('click', () => {
-                if (Game.state && Game.state.view !== 'map' && Game.state.view !== 'combat' && !Game.state.view.includes('city')) {
-                     if (Game.state.view !== 'combat') {
-                         this.switchView('map');
-                     }
-                }
-            });
-        }
+        if(this.els.log.parentElement) this.els.log.parentElement.addEventListener('click', () => { if (Game.state && Game.state.view !== 'map' && Game.state.view !== 'combat' && !Game.state.view.includes('city')) { if (Game.state.view !== 'combat') this.switchView('map'); } });
 
         if(this.els.playerCount) this.els.playerCount.onclick = () => this.togglePlayerList();
         if(this.els.btnInv) this.els.btnInv.onclick = () => this.toggleView('inventory');
@@ -260,234 +70,59 @@ const UI = {
         if(this.els.btnQuests) this.els.btnQuests.onclick = () => this.toggleView('quests');
         if(this.els.btnSpawnRandom) this.els.btnSpawnRandom.onclick = () => this.selectSpawn(null);
 
-        // --- TOUCH EVENTS ---
-        if(this.els.touchArea) {
-            this.els.touchArea.addEventListener('touchstart', (e) => this.handleTouchStart(e), {passive: false});
-            this.els.touchArea.addEventListener('touchmove', (e) => this.handleTouchMove(e), {passive: false});
-            this.els.touchArea.addEventListener('touchend', (e) => this.handleTouchEnd(e));
-            this.els.touchArea.addEventListener('touchcancel', (e) => this.handleTouchEnd(e));
-        }
+        if(this.els.touchArea) { this.els.touchArea.addEventListener('touchstart', (e) => this.handleTouchStart(e), {passive: false}); this.els.touchArea.addEventListener('touchmove', (e) => this.handleTouchMove(e), {passive: false}); this.els.touchArea.addEventListener('touchend', (e) => this.handleTouchEnd(e)); this.els.touchArea.addEventListener('touchcancel', (e) => this.handleTouchEnd(e)); }
 
-        // --- KEYBOARD MASTER HANDLER ---
         window.addEventListener('keydown', (e) => {
-            if (this.deleteMode) return; 
-
-            if (this.charSelectMode) {
-                if (e.key === 'ArrowUp') this.navigateCharSlot(-1);
-                if (e.key === 'ArrowDown') this.navigateCharSlot(1);
-                if (e.key === 'Enter') this.triggerCharSlot();
-                if (e.key === 'Delete' || e.key === 'Backspace') this.triggerDeleteSlot();
-                return;
-            }
-
-            if (!Game.state || Game.state.isGameOver) {
-                if(this.els.gameOver && !this.els.gameOver.classList.contains('hidden') && (e.key === 'Enter' || e.key === ' ')) location.reload();
-                return;
-            }
-
-            if(e.key === 'Escape') {
-                if (Game.state.inDialog) { /* ... */ }
-                else if(this.els.playerList && this.els.playerList.style.display === 'flex') this.togglePlayerList();
-                else if(this.els.navMenu && !this.els.navMenu.classList.contains('hidden')) this.toggleMenu();
-                else if(Game.state.view !== 'map') this.switchView('map'); 
-                else this.toggleMenu(); 
-                return;
-            }
-
-            if (Game.state.inDialog) {
-                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd'].includes(e.key)) {
-                    this.navigateFocus(e.key === 'ArrowRight' || e.key === 'd' || e.key === 'ArrowDown' || e.key === 's' ? 1 : -1);
-                } else if (e.key === 'Enter' || e.key === ' ') {
-                    this.triggerFocus();
-                }
-                return;
-            }
-
-            if (Game.state.view === 'combat') {
-                if (typeof Combat !== 'undefined') {
-                    if (e.key === 'ArrowUp' || e.key === 'w') Combat.moveSelection(-1);
-                    if (e.key === 'ArrowDown' || e.key === 's') Combat.moveSelection(1);
-                    if (e.key === ' ' || e.key === 'Enter') Combat.confirmSelection();
-                }
-                return;
-            }
-
+            if (this.deleteMode) return;
+            if (this.charSelectMode) { if (e.key === 'ArrowUp') this.navigateCharSlot(-1); if (e.key === 'ArrowDown') this.navigateCharSlot(1); if (e.key === 'Enter') this.triggerCharSlot(); if (e.key === 'Delete' || e.key === 'Backspace') this.triggerDeleteSlot(); return; }
+            if (!Game.state || Game.state.isGameOver) { if(this.els.gameOver && !this.els.gameOver.classList.contains('hidden') && (e.key === 'Enter' || e.key === ' ')) location.reload(); return; }
+            if(e.key === 'Escape') { if (Game.state.inDialog) {} else if(this.els.playerList && this.els.playerList.style.display === 'flex') this.togglePlayerList(); else if(this.els.navMenu && !this.els.navMenu.classList.contains('hidden')) this.toggleMenu(); else if(Game.state.view !== 'map') this.switchView('map'); else this.toggleMenu(); return; }
+            if (Game.state.inDialog) { if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd'].includes(e.key)) { this.navigateFocus(e.key === 'ArrowRight' || e.key === 'd' || e.key === 'ArrowDown' || e.key === 's' ? 1 : -1); } else if (e.key === 'Enter' || e.key === ' ') { this.triggerFocus(); } return; }
+            if (Game.state.view === 'combat') { if (typeof Combat !== 'undefined') { if (e.key === 'ArrowUp' || e.key === 'w') Combat.moveSelection(-1); if (e.key === 'ArrowDown' || e.key === 's') Combat.moveSelection(1); if (e.key === ' ' || e.key === 'Enter') Combat.confirmSelection(); } return; }
             const isMenuOpen = this.els.navMenu && !this.els.navMenu.classList.contains('hidden');
-            if (Game.state.view !== 'map' || isMenuOpen) {
-                let isGrid = (Game.state.view === 'inventory') && !isMenuOpen;
-                if (['ArrowUp', 'w'].includes(e.key)) this.navigateFocus(isGrid ? -4 : -1); 
-                if (['ArrowDown', 's'].includes(e.key)) this.navigateFocus(isGrid ? 4 : 1);
-                if (['ArrowLeft', 'a'].includes(e.key)) this.navigateFocus(-1);
-                if (['ArrowRight', 'd'].includes(e.key)) this.navigateFocus(1);
-                if (e.key === 'Enter' || e.key === ' ') this.triggerFocus();
-                return;
-            }
-
-            if (Game.state.view === 'map') {
-                if(e.key === 'w' || e.key === 'ArrowUp') Game.move(0, -1);
-                if(e.key === 's' || e.key === 'ArrowDown') Game.move(0, 1);
-                if(e.key === 'a' || e.key === 'ArrowLeft') Game.move(-1, 0);
-                if(e.key === 'd' || e.key === 'ArrowRight') Game.move(1, 0);
-            }
+            if (Game.state.view !== 'map' || isMenuOpen) { let isGrid = (Game.state.view === 'inventory') && !isMenuOpen; if (['ArrowUp', 'w'].includes(e.key)) this.navigateFocus(isGrid ? -4 : -1); if (['ArrowDown', 's'].includes(e.key)) this.navigateFocus(isGrid ? 4 : 1); if (['ArrowLeft', 'a'].includes(e.key)) this.navigateFocus(-1); if (['ArrowRight', 'd'].includes(e.key)) this.navigateFocus(1); if (e.key === 'Enter' || e.key === ' ') this.triggerFocus(); return; }
+            if (Game.state.view === 'map') { if(e.key === 'w' || e.key === 'ArrowUp') Game.move(0, -1); if(e.key === 's' || e.key === 'ArrowDown') Game.move(0, 1); if(e.key === 'a' || e.key === 'ArrowLeft') Game.move(-1, 0); if(e.key === 'd' || e.key === 'ArrowRight') Game.move(1, 0); }
         });
         
-        window.Game = Game; 
-        window.UI = this;
-        
+        window.Game = Game; window.UI = this;
         if(this.timerInterval) clearInterval(this.timerInterval);
         this.timerInterval = setInterval(() => this.updateTimer(), 1000);
     },
 
-    // --- CHARACTER SELECTION ---
     renderCharacterSelection: function(saves) {
-        this.charSelectMode = true;
-        this.currentSaves = saves;
-        this.els.loginScreen.style.display = 'none';
-        this.els.charSelectScreen.style.display = 'flex';
-        this.els.charSlotsList.innerHTML = '';
-
+        this.charSelectMode = true; this.currentSaves = saves;
+        this.els.loginScreen.style.display = 'none'; this.els.charSelectScreen.style.display = 'flex'; this.els.charSlotsList.innerHTML = '';
         for (let i = 0; i < 5; i++) {
-            const slot = document.createElement('div');
-            slot.className = "char-slot";
-            slot.dataset.index = i;
-            
-            const save = saves[i];
-            
-            if (save) {
-                const name = save.playerName || "UNBEKANNT";
-                const lvl = save.lvl || 1;
-                const loc = save.sector ? `[${save.sector.x},${save.sector.y}]` : "[?,?]";
-                slot.innerHTML = `
-                    <div class="flex flex-col">
-                        <span class="text-xl text-yellow-400 font-bold">${name}</span>
-                        <span class="text-xs text-green-300">Level ${lvl} | Sektor ${loc}</span>
-                    </div>
-                    <div class="text-xs text-gray-500">SLOT ${i+1}</div>
-                `;
-            } else {
-                slot.classList.add('empty-slot');
-                slot.innerHTML = `
-                    <div class="flex flex-col">
-                        <span class="text-xl text-gray-400">[ LEER ]</span>
-                        <span class="text-xs text-gray-600">Neuen Charakter erstellen</span>
-                    </div>
-                    <div class="text-xs text-gray-700">SLOT ${i+1}</div>
-                `;
-            }
-
-            slot.onclick = () => this.selectSlot(i);
-            this.els.charSlotsList.appendChild(slot);
+            const slot = document.createElement('div'); slot.className = "char-slot"; slot.dataset.index = i; const save = saves[i];
+            if (save) { const name = save.playerName || "UNBEKANNT"; const lvl = save.lvl || 1; const loc = save.sector ? `[${save.sector.x},${save.sector.y}]` : "[?,?]"; slot.innerHTML = `<div class="flex flex-col"><span class="text-xl text-yellow-400 font-bold">${name}</span><span class="text-xs text-green-300">Level ${lvl} | Sektor ${loc}</span></div><div class="text-xs text-gray-500">SLOT ${i+1}</div>`; } 
+            else { slot.classList.add('empty-slot'); slot.innerHTML = `<div class="flex flex-col"><span class="text-xl text-gray-400">[ LEER ]</span><span class="text-xs text-gray-600">Neuen Charakter erstellen</span></div><div class="text-xs text-gray-700">SLOT ${i+1}</div>`; }
+            slot.onclick = () => this.selectSlot(i); this.els.charSlotsList.appendChild(slot);
         }
-        
         this.selectSlot(0);
     },
 
     selectSlot: function(index) {
-        this.selectedSlot = index;
-        const slots = this.els.charSlotsList.children;
-        for(let s of slots) s.classList.remove('active-slot');
-        if(slots[index]) slots[index].classList.add('active-slot');
-        
+        this.selectedSlot = index; const slots = this.els.charSlotsList.children;
+        for(let s of slots) s.classList.remove('active-slot'); if(slots[index]) slots[index].classList.add('active-slot');
         const save = this.currentSaves[index];
         if (this.els.btnCharSelectAction) {
-            if (save) {
-                this.els.btnCharSelectAction.textContent = "SPIEL LADEN (ENTER)";
-                this.els.btnCharSelectAction.className = "action-button w-full border-green-500 text-green-500 font-bold mb-2";
-            } else {
-                this.els.btnCharSelectAction.textContent = "CHARAKTER ERSTELLEN";
-                this.els.btnCharSelectAction.className = "action-button w-full border-yellow-400 text-yellow-400 font-bold mb-2";
-            }
+            if (save) { this.els.btnCharSelectAction.textContent = "SPIEL LADEN (ENTER)"; this.els.btnCharSelectAction.className = "action-button w-full border-green-500 text-green-500 font-bold mb-2"; if(this.els.btnCharDeleteAction) this.els.btnCharDeleteAction.classList.remove('hidden'); } 
+            else { this.els.btnCharSelectAction.textContent = "CHARAKTER ERSTELLEN"; this.els.btnCharSelectAction.className = "action-button w-full border-yellow-400 text-yellow-400 font-bold mb-2"; if(this.els.btnCharDeleteAction) this.els.btnCharDeleteAction.classList.add('hidden'); }
         }
     },
 
-    navigateCharSlot: function(delta) {
-        let newIndex = this.selectedSlot + delta;
-        if(newIndex < 0) newIndex = 4;
-        if(newIndex > 4) newIndex = 0;
-        this.selectSlot(newIndex);
-    },
+    navigateCharSlot: function(delta) { let newIndex = this.selectedSlot + delta; if(newIndex < 0) newIndex = 4; if(newIndex > 4) newIndex = 0; this.selectSlot(newIndex); },
+    triggerCharSlot: function() { if(this.selectedSlot === -1) return; const save = this.currentSaves[this.selectedSlot]; if(save) { this.startGame(save, this.selectedSlot); } else { this.els.newCharOverlay.classList.remove('hidden'); this.els.inputNewCharName.value = ""; this.els.inputNewCharName.focus(); } },
+    triggerDeleteSlot: function() { if(this.selectedSlot === -1) return; const save = this.currentSaves[this.selectedSlot]; if(!save) return; this.deleteMode = true; this.els.deleteOverlay.style.display = 'flex'; this.els.deleteTargetName.textContent = save.playerName || "UNBEKANNT"; this.els.deleteInput.value = ""; this.els.btnDeleteConfirm.disabled = true; this.els.btnDeleteConfirm.classList.add('border-red-500', 'text-red-500'); this.els.btnDeleteConfirm.classList.remove('border-green-500', 'text-green-500', 'animate-pulse'); this.els.deleteInput.focus(); },
+    closeDeleteOverlay: function() { this.deleteMode = false; this.els.deleteOverlay.style.display = 'none'; this.els.charSelectScreen.focus(); },
+    startGame: function(saveData, slotIndex, newName=null) { this.charSelectMode = false; this.els.charSelectScreen.style.display = 'none'; this.els.gameScreen.classList.remove('hidden'); this.els.gameScreen.classList.remove('opacity-0'); Game.init(saveData, null, slotIndex, newName); if(this.isMobile()) { this.showMobileControlsHint(); } Network.startPresence(); },
 
-    triggerCharSlot: function() {
-        if(this.selectedSlot === -1) return;
-        const save = this.currentSaves[this.selectedSlot];
-        if(save) {
-            this.startGame(save, this.selectedSlot);
-        } else {
-            this.els.newCharOverlay.classList.remove('hidden');
-            this.els.inputNewCharName.value = "";
-            this.els.inputNewCharName.focus();
-        }
-    },
-    
-    triggerDeleteSlot: function() {
-        if(this.selectedSlot === -1) return;
-        const save = this.currentSaves[this.selectedSlot];
-        if(!save) return;
-        
-        this.deleteMode = true;
-        this.els.deleteOverlay.style.display = 'flex';
-        this.els.deleteTargetName.textContent = save.playerName || "UNBEKANNT";
-        this.els.deleteInput.value = "";
-        this.els.btnDeleteConfirm.disabled = true;
-        this.els.btnDeleteConfirm.classList.add('border-red-500', 'text-red-500');
-        this.els.btnDeleteConfirm.classList.remove('border-green-500', 'text-green-500', 'animate-pulse');
-        this.els.deleteInput.focus();
-    },
-    
-    closeDeleteOverlay: function() {
-        this.deleteMode = false;
-        this.els.deleteOverlay.style.display = 'none';
-        this.els.charSelectScreen.focus();
-    },
-
-    startGame: function(saveData, slotIndex, newName=null) {
-        this.charSelectMode = false;
-        this.els.charSelectScreen.style.display = 'none';
-        this.els.gameScreen.classList.remove('hidden');
-        this.els.gameScreen.classList.remove('opacity-0');
-        
-        Game.init(saveData, null, slotIndex, newName);
-        
-        if(this.isMobile()) {
-            this.showMobileControlsHint();
-        }
-        Network.startPresence();
-    },
-
-// --- ENDE TEIL 1 (Kopiere das hier und füge direkt TEIL 2 an) ---
-    // --- DIALOGS (PERMADEATH ETC) ---
-    showPermadeathWarning: function() {
-        if(!this.els.dialog) this.restoreOverlay();
-        Game.state.inDialog = true;
-        this.els.dialog.innerHTML = '';
-        this.els.dialog.style.display = 'flex';
-        
-        const box = document.createElement('div');
-        box.className = "bg-black border-4 border-red-600 p-6 shadow-[0_0_50px_red] max-w-lg text-center animate-pulse";
-        box.innerHTML = `
-            <div class="text-6xl text-red-600 mb-4 font-bold">☠️</div>
-            <h1 class="text-4xl font-bold text-red-600 mb-4 tracking-widest border-b-2 border-red-600 pb-2">PERMADEATH AKTIV</h1>
-            <p class="text-red-400 font-mono text-lg mb-6 leading-relaxed">
-                WARNUNG, BEWOHNER!<br>
-                Das Ödland kennt keine Gnade.<br>
-                Wenn deine HP auf 0 fallen, wird dieser Charakter<br>
-                <span class="font-bold text-white bg-red-900 px-1">DAUERHAFT GELÖSCHT</span>.
-            </p>
-            <button class="action-button w-full border-red-600 text-red-500 font-bold py-4 text-xl hover:bg-red-900" onclick="UI.leaveDialog()">
-                ICH HABE VERSTANDEN
-            </button>
-        `;
-        this.els.dialog.appendChild(box);
-    },
-
-    // --- FOCUS MANAGER ---
     toggleMenu: function() { if(!this.els.navMenu) return; const isHidden = this.els.navMenu.classList.contains('hidden'); if(isHidden) { this.els.navMenu.classList.remove('hidden'); this.els.navMenu.style.display = 'flex'; } else { this.els.navMenu.classList.add('hidden'); this.els.navMenu.style.display = 'none'; } this.focusIndex = -1; this.refreshFocusables(); },
     refreshFocusables: function() { let container = this.els.view; if (Game.state && Game.state.inDialog && this.els.dialog && this.els.dialog.style.display !== 'none') { container = this.els.dialog; } else if (this.els.navMenu && !this.els.navMenu.classList.contains('hidden')) { container = this.els.navMenu; } else if (this.els.playerList && this.els.playerList.style.display === 'flex') { container = this.els.playerList; } const buttons = Array.from(container.querySelectorAll('button:not([disabled])')); this.focusableEls = buttons.filter(b => b.offsetParent !== null && b.style.display !== 'none'); if (this.focusIndex >= this.focusableEls.length) this.focusIndex = 0; if (this.focusIndex < 0 && this.focusableEls.length > 0) this.focusIndex = 0; this.updateFocusVisuals(); },
     navigateFocus: function(delta) { if (this.focusableEls.length === 0) this.refreshFocusables(); if (this.focusableEls.length === 0) return; if (this.focusIndex === -1) { this.focusIndex = delta > 0 ? 0 : this.focusableEls.length - 1; } else { this.focusIndex += delta; } if (this.focusIndex < 0) this.focusIndex = this.focusableEls.length - 1; if (this.focusIndex >= this.focusableEls.length) this.focusIndex = 0; this.updateFocusVisuals(); },
     updateFocusVisuals: function() { document.querySelectorAll('.key-focus').forEach(el => el.classList.remove('key-focus')); if (this.focusIndex !== -1 && this.focusableEls[this.focusIndex]) { const el = this.focusableEls[this.focusIndex]; el.classList.add('key-focus'); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } },
     triggerFocus: function() { if (this.focusableEls[this.focusIndex]) { this.focusableEls[this.focusIndex].click(); } },
 
-    // --- SYSTEM ---
     isMobile: function() { return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0); },
     showManualOverlay: async function() { const overlay = document.getElementById('manual-overlay'); const content = document.getElementById('manual-content'); if(this.els.navMenu) { this.els.navMenu.classList.add('hidden'); this.els.navMenu.style.display = 'none'; } if(overlay && content) { content.innerHTML = '<div class="text-center animate-pulse">Lade Handbuch...</div>'; overlay.style.display = 'flex'; overlay.classList.remove('hidden'); const verDisplay = document.getElementById('version-display'); const ver = verDisplay ? verDisplay.textContent.trim() : Date.now(); try { const res = await fetch(`readme.md?v=${ver}`); if (!res.ok) throw new Error("Manual not found"); let text = await res.text(); text = text.replace(/^# (.*$)/gim, '<h1 class="text-3xl font-bold text-yellow-400 mb-2 border-b border-yellow-500">$1</h1>'); text = text.replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold text-green-400 mt-4 mb-2">$1</h2>'); text = text.replace(/^### (.*$)/gim, '<h3 class="text-xl font-bold text-green-300 mt-2 mb-1">$1</h3>'); text = text.replace(/\*\*(.*)\*\*/gim, '<b>$1</b>'); text = text.replace(/\n/gim, '<br>'); text += '<br><button class="action-button w-full mt-4 border-red-500 text-red-500" onclick="document.getElementById(\'manual-overlay\').classList.add(\'hidden\'); document.getElementById(\'manual-overlay\').style.display=\'none\';">SCHLIESSEN (ESC)</button>'; content.innerHTML = text; } catch(e) { content.innerHTML = `<div class="text-red-500">Fehler beim Laden: ${e.message}</div>`; } } },
     showChangelogOverlay: async function() { const overlay = document.getElementById('changelog-overlay'); const content = document.getElementById('changelog-content'); if(overlay && content) { content.textContent = 'Lade Daten...'; overlay.style.display = 'flex'; overlay.classList.remove('hidden'); const verDisplay = document.getElementById('version-display'); const ver = verDisplay ? verDisplay.textContent.trim() : Date.now(); try { const res = await fetch(`change.log?v=${ver}`); if (!res.ok) throw new Error("Logfile nicht gefunden"); const text = await res.text(); content.textContent = text; } catch(e) { content.textContent = `Fehler beim Laden: ${e.message}`; } } },
@@ -534,14 +169,31 @@ const UI = {
     showDungeonVictory: function(caps, lvl) { if(!this.els.dialog) { this.restoreOverlay(); } Game.state.inDialog = true; this.els.dialog.innerHTML = ''; this.els.dialog.style.display = 'flex'; const box = document.createElement('div'); box.className = "bg-black border-4 border-yellow-400 p-6 shadow-[0_0_30px_gold] max-w-md text-center mb-4 animate-bounce"; box.innerHTML = ` <div class="text-6xl mb-2">👑⚔️</div> <h2 class="text-4xl font-bold text-yellow-400 mb-2 tracking-widest text-shadow-gold">VICTORY!</h2> <p class="text-yellow-200 mb-4 font-bold text-lg">DUNGEON (LVL ${lvl}) GECLEARED!</p> <div class="text-2xl text-white font-bold border-t border-b border-yellow-500 py-2 mb-4 bg-yellow-900/30"> +${caps} KRONKORKEN </div> <p class="text-xs text-yellow-600">Komme in 10 Minuten wieder!</p> `; this.els.dialog.appendChild(box); },
     showDungeonLocked: function(minutesLeft) { if(!this.els.dialog) { this.restoreOverlay(); } Game.state.inDialog = true; this.els.dialog.innerHTML = ''; this.els.dialog.style.display = 'flex'; const box = document.createElement('div'); box.className = "bg-black border-2 border-gray-600 p-4 shadow-[0_0_20px_gray] max-w-sm text-center mb-4"; box.innerHTML = ` <h2 class="text-3xl font-bold text-gray-400 mb-2 tracking-widest">🔒 LOCKED</h2> <p class="text-gray-300 mb-4 font-bold">Dieses Gebiet ist versiegelt.<br>Versuche es in ${minutesLeft} Minuten wieder.</p> `; const btn = document.createElement('button'); btn.className = "border border-gray-500 text-gray-500 hover:bg-gray-900 px-4 py-2 font-bold w-full"; btn.textContent = "VERSTANDEN"; btn.onclick = () => this.leaveDialog(); box.appendChild(btn); this.els.dialog.appendChild(box); this.refreshFocusables(); },
     showDungeonWarning: function(callback) { if(!this.els.dialog) { this.restoreOverlay(); } Game.state.inDialog = true; this.els.dialog.innerHTML = ''; this.els.dialog.style.display = 'flex'; const box = document.createElement('div'); box.className = "bg-black border-2 border-red-600 p-4 shadow-[0_0_20px_red] max-w-sm text-center animate-pulse mb-4"; box.innerHTML = ` <h2 class="text-3xl font-bold text-red-600 mb-2 tracking-widest">⚠️ WARNING ⚠️</h2> <p class="text-red-400 mb-4 font-bold">HOHE GEFAHR!<br>Sicher, dass du eintreten willst?</p> `; const btnContainer = document.createElement('div'); btnContainer.className = "flex gap-2 justify-center w-full"; const btnYes = document.createElement('button'); btnYes.className = "border border-red-500 text-red-500 hover:bg-red-900 px-4 py-2 font-bold w-full"; btnYes.textContent = "BETRETEN"; btnYes.onclick = () => { this.leaveDialog(); if(callback) callback(); }; const btnNo = document.createElement('button'); btnNo.className = "border border-green-500 text-green-500 hover:bg-green-900 px-4 py-2 font-bold w-full"; btnNo.textContent = "FLUCHT"; btnNo.onclick = () => { this.leaveDialog(); }; btnContainer.appendChild(btnYes); btnContainer.appendChild(btnNo); box.appendChild(btnContainer); this.els.dialog.appendChild(box); this.refreshFocusables(); },
+    
+    // --- THIS WAS MISSING PREVIOUSLY ---
     showPermadeathWarning: function() {
         if(!this.els.dialog) this.restoreOverlay();
         Game.state.inDialog = true;
         this.els.dialog.innerHTML = '';
         this.els.dialog.style.display = 'flex';
+        
         const box = document.createElement('div');
         box.className = "bg-black border-4 border-red-600 p-6 shadow-[0_0_50px_red] max-w-lg text-center animate-pulse";
-        box.innerHTML = ` <div class="text-6xl text-red-600 mb-4 font-bold">☠️</div> <h1 class="text-4xl font-bold text-red-600 mb-4 tracking-widest border-b-2 border-red-600 pb-2">PERMADEATH AKTIV</h1> <p class="text-red-400 font-mono text-lg mb-6 leading-relaxed"> WARNUNG, BEWOHNER!<br> Das Ödland kennt keine Gnade.<br> Wenn deine HP auf 0 fallen, wird dieser Charakter<br> <span class="font-bold text-white bg-red-900 px-1">DAUERHAFT GELÖSCHT</span>. </p> <button class="action-button w-full border-red-600 text-red-500 font-bold py-4 text-xl hover:bg-red-900" onclick="UI.leaveDialog()"> ICH HABE VERSTANDEN </button> `;
+        box.innerHTML = `
+            <div class="text-6xl text-red-600 mb-4 font-bold">☠️</div>
+            <h1 class="text-4xl font-bold text-red-600 mb-4 tracking-widest border-b-2 border-red-600 pb-2">PERMADEATH AKTIV</h1>
+            <p class="text-red-400 font-mono text-lg mb-6 leading-relaxed">
+                WARNUNG, BEWOHNER!<br>
+                Das Ödland kennt keine Gnade.<br>
+                Wenn deine HP auf 0 fallen, wird dieser Charakter<br>
+                <span class="font-bold text-white bg-red-900 px-1">DAUERHAFT GELÖSCHT</span>.
+            </p>
+            <button class="action-button w-full border-red-600 text-red-500 font-bold py-4 text-xl hover:bg-red-900" onclick="UI.leaveDialog()">
+                ICH HABE VERSTANDEN
+            </button>
+        `;
         this.els.dialog.appendChild(box);
-    }
+    },
+
+    toggleControls: function(show) { if (!show && this.els.dialog) this.els.dialog.innerHTML = ''; }
 };
