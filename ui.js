@@ -49,6 +49,7 @@ const UI = {
         }
     },
 
+    // --- WICHTIG: Hier beginnt INIT ---
     init: function() {
         this.els = {
             touchArea: document.getElementById('main-content'),
@@ -63,8 +64,8 @@ const UI = {
             xpTxt: document.getElementById('val-xp-txt'),
             caps: document.getElementById('val-caps'),
             name: document.getElementById('val-name'),
-
             version: document.getElementById('version-display'), 
+            
             joyBase: null, joyStick: null,
             dialog: document.getElementById('dialog-overlay'),
             timer: document.getElementById('game-timer'),
@@ -129,7 +130,7 @@ const UI = {
             btnRight: document.getElementById('btn-right')
         };
 
-        // --- INPUT DETECTION ---
+        // Inputs
         ['mousemove', 'mousedown', 'touchstart'].forEach(evt => {
             window.addEventListener(evt, () => {
                 this.lastInputTime = Date.now();
@@ -146,7 +147,7 @@ const UI = {
             this.inputMethod = 'key';
         });
 
-        // --- EVENTS ---
+        // Event Listeners
         if(this.els.btnLogin) this.els.btnLogin.onclick = () => this.attemptLogin();
         
         if(this.els.btnToggleRegister) {
@@ -177,6 +178,7 @@ const UI = {
             }
         });
 
+        // Buttons for Char Select
         if (this.els.btnCharSelectAction) {
              this.els.btnCharSelectAction.onclick = () => this.triggerCharSlot();
         }
@@ -219,6 +221,7 @@ const UI = {
             };
         }
 
+        // Game Buttons
         if(this.els.btnSave) this.els.btnSave.onclick = () => this.handleSaveClick();
         if(this.els.btnMenuSave) this.els.btnMenuSave.onclick = () => this.handleSaveClick();
         if(this.els.btnLogout) this.els.btnLogout.onclick = () => this.logout('MANUELL AUSGELOGGT');
@@ -267,7 +270,6 @@ const UI = {
         if(this.els.btnQuests) this.els.btnQuests.onclick = () => this.toggleView('quests');
         if(this.els.btnSpawnRandom) this.els.btnSpawnRandom.onclick = () => this.selectSpawn(null);
 
-        // --- TOUCH EVENTS BINDING (HIER WAR DAS PROBLEM) ---
         if(this.els.touchArea) {
             this.els.touchArea.addEventListener('touchstart', (e) => this.handleTouchStart(e), {passive: false});
             this.els.touchArea.addEventListener('touchmove', (e) => this.handleTouchMove(e), {passive: false});
@@ -275,7 +277,6 @@ const UI = {
             this.els.touchArea.addEventListener('touchcancel', (e) => this.handleTouchEnd(e));
         }
 
-        // --- KEYBOARD ---
         window.addEventListener('keydown', (e) => {
             if (this.deleteMode) return; 
 
@@ -344,17 +345,14 @@ const UI = {
         if(this.timerInterval) clearInterval(this.timerInterval);
         this.timerInterval = setInterval(() => this.updateTimer(), 1000);
     },
-    
-    // --- UTILS ---
+    // --- UTILS & TOUCH ---
     isMobile: function() { 
         return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0); 
     },
 
-    // --- TOUCH HANDLER ---
     handleTouchStart: function(e) {
         if(e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.closest('.no-joystick')) return;
         if(!Game.state || Game.state.view !== 'map' || Game.state.inDialog || this.touchState.active) return;
-        
         const touch = e.changedTouches[0];
         this.touchState.active = true;
         this.touchState.id = touch.identifier;
@@ -363,9 +361,7 @@ const UI = {
         this.touchState.currentX = touch.clientX;
         this.touchState.currentY = touch.clientY;
         this.touchState.moveDir = {x:0, y:0};
-        
         this.showJoystick(touch.clientX, touch.clientY);
-        
         if(this.touchState.timer) clearInterval(this.touchState.timer);
         this.touchState.timer = setInterval(() => this.processJoystickMovement(), 150); 
     },
@@ -381,7 +377,6 @@ const UI = {
         }
         if(!touch) return;
         e.preventDefault(); 
-        
         this.touchState.currentX = touch.clientX;
         this.touchState.currentY = touch.clientY;
         this.updateJoystickVisuals();
@@ -472,7 +467,7 @@ const UI = {
         }
     },
 
-    // --- LOGIC ---
+    // --- GAME ACTIONS ---
     handleReset: function() {
         if(this.els.navMenu) {
             this.els.navMenu.classList.add('hidden');
@@ -508,29 +503,20 @@ const UI = {
     attemptLogin: async function() {
         if(this.loginBusy) return;
         this.loginBusy = true;
-
         const email = this.els.inputEmail.value.trim();
         const pass = this.els.inputPass.value.trim();
         const name = this.els.inputName ? this.els.inputName.value.trim().toUpperCase() : "";
-
         this.els.loginStatus.textContent = "VERBINDE MIT VAULT-TEC...";
         this.els.loginStatus.className = "mt-4 text-yellow-400 animate-pulse";
-
         try {
             if(typeof Network === 'undefined') throw new Error("Netzwerkfehler");
             Network.init();
-
             let saves = null;
-
             if (this.isRegistering) {
-                if (email.length < 5 || pass.length < 6 || name.length < 3) {
-                    throw new Error("Daten unvollständig (PW min 6, Name min 3)");
-                }
+                if (email.length < 5 || pass.length < 6 || name.length < 3) throw new Error("Daten unvollständig (PW min 6, Name min 3)");
                 saves = await Network.register(email, pass, name);
             } else {
-                if (email.length < 5 || pass.length < 1) {
-                    throw new Error("Bitte E-Mail und Passwort eingeben");
-                }
+                if (email.length < 5 || pass.length < 1) throw new Error("Bitte E-Mail und Passwort eingeben");
                 saves = await Network.login(email, pass);
             }
             this.renderCharacterSelection(saves || {});
@@ -541,7 +527,6 @@ const UI = {
             if (e.code === "auth/wrong-password") msg = "Falsches Passwort!";
             if (e.code === "auth/user-not-found") msg = "Benutzer nicht gefunden!";
             if (e.code === "auth/weak-password") msg = "Passwort zu schwach (min 6)!";
-            
             this.els.loginStatus.textContent = "FEHLER: " + msg;
             this.els.loginStatus.className = "mt-4 text-red-500 font-bold blink-red";
         } finally {
@@ -549,6 +534,7 @@ const UI = {
         }
     },
 
+    // --- CHAR SELECT RENDERER ---
     renderCharacterSelection: function(saves) {
         this.charSelectMode = true;
         this.currentSaves = saves;
@@ -560,7 +546,6 @@ const UI = {
             const slot = document.createElement('div');
             slot.className = "char-slot";
             slot.dataset.index = i;
-            
             const save = saves[i];
             
             if (save) {
@@ -596,16 +581,23 @@ const UI = {
         for(let s of slots) s.classList.remove('active-slot');
         if(slots[index]) slots[index].classList.add('active-slot');
         
+        // Update Action Buttons
         const save = this.currentSaves[index];
         if (this.els.btnCharSelectAction) {
             if (save) {
-                this.els.btnCharSelectAction.textContent = "SPIEL LADEN";
+                this.els.btnCharSelectAction.textContent = "SPIEL LADEN (ENTER)";
                 this.els.btnCharSelectAction.className = "action-button w-full border-green-500 text-green-500 font-bold py-3 mb-2";
-                if(this.els.btnCharDeleteAction) this.els.btnCharDeleteAction.classList.remove('hidden');
+                if(this.els.btnCharDeleteAction) {
+                    this.els.btnCharDeleteAction.classList.remove('hidden');
+                    this.els.btnCharDeleteAction.style.display = 'flex'; 
+                }
             } else {
                 this.els.btnCharSelectAction.textContent = "CHARAKTER ERSTELLEN";
                 this.els.btnCharSelectAction.className = "action-button w-full border-yellow-400 text-yellow-400 font-bold py-3 mb-2";
-                if(this.els.btnCharDeleteAction) this.els.btnCharDeleteAction.classList.add('hidden');
+                if(this.els.btnCharDeleteAction) {
+                    this.els.btnCharDeleteAction.classList.add('hidden');
+                    this.els.btnCharDeleteAction.style.display = 'none';
+                }
             }
         }
     },
@@ -628,7 +620,7 @@ const UI = {
             this.els.inputNewCharName.focus();
         }
     },
-
+    
     triggerDeleteSlot: function() {
         if(this.selectedSlot === -1) return;
         const save = this.currentSaves[this.selectedSlot];
@@ -663,8 +655,7 @@ const UI = {
         }
         Network.startPresence();
     },
-
-    toggleMenu: function() {
+     toggleMenu: function() {
         if(!this.els.navMenu) return;
         const isHidden = this.els.navMenu.classList.contains('hidden');
         if(isHidden) {
@@ -893,32 +884,18 @@ const UI = {
         if(this.els.hpBar) this.els.hpBar.style.width = `${Math.max(0, (Game.state.hp / maxHp) * 100)}%`;
         
         let hasAlert = false;
-
         if(this.els.btnChar) {
-            if(Game.state.statPoints > 0) { 
-                this.els.btnChar.classList.add('alert-glow-yellow');
-                hasAlert = true;
-            } else { 
-                this.els.btnChar.classList.remove('alert-glow-yellow');
-            }
+            if(Game.state.statPoints > 0) { this.els.btnChar.classList.add('alert-glow-yellow'); hasAlert = true; } 
+            else { this.els.btnChar.classList.remove('alert-glow-yellow'); }
         } 
-
         const unreadQuests = Game.state.quests.some(q => !q.read); 
         if(this.els.btnQuests) {
-            if(unreadQuests) { 
-                this.els.btnQuests.classList.add('alert-glow-cyan');
-                hasAlert = true;
-            } else { 
-                this.els.btnQuests.classList.remove('alert-glow-cyan');
-            }
+            if(unreadQuests) { this.els.btnQuests.classList.add('alert-glow-cyan'); hasAlert = true; } 
+            else { this.els.btnQuests.classList.remove('alert-glow-cyan'); }
         } 
-
         if(this.els.btnMenu) {
-            if(hasAlert) {
-                this.els.btnMenu.classList.add('alert-glow-red');
-            } else {
-                this.els.btnMenu.classList.remove('alert-glow-red');
-            }
+            if(hasAlert) { this.els.btnMenu.classList.add('alert-glow-red'); } 
+            else { this.els.btnMenu.classList.remove('alert-glow-red'); }
         }
         
         const inCombat = Game.state.view === 'combat'; 
@@ -1379,11 +1356,69 @@ const UI = {
         this.els.dialog.appendChild(box);
     },
 
-    toggleControls: function(show) { if (!show && this.els.dialog) this.els.dialog.innerHTML = ''; },
+    // --- HELPER ---
+    toggleControls: function(show) { 
+        if (!show && this.els.dialog) {
+            this.els.dialog.innerHTML = ''; 
+        }
+    },
     
-    enterVault: function() { Game.state.inDialog = true; this.els.dialog.innerHTML = ''; const restBtn = document.createElement('button'); restBtn.className = "action-button w-full mb-1 border-blue-500 text-blue-300"; restBtn.textContent = "Ausruhen (Gratis)"; restBtn.onclick = () => { Game.rest(); this.leaveDialog(); }; const leaveBtn = document.createElement('button'); leaveBtn.className = "action-button w-full"; leaveBtn.textContent = "Weiter geht's"; leaveBtn.onclick = () => this.leaveDialog(); this.els.dialog.appendChild(restBtn); this.els.dialog.appendChild(leaveBtn); this.els.dialog.style.display = 'flex'; },
-    enterSupermarket: function() { Game.state.inDialog = true; this.els.dialog.innerHTML = ''; const enterBtn = document.createElement('button'); enterBtn.className = "action-button w-full mb-1 border-red-500 text-red-300"; enterBtn.textContent = "Ruine betreten (Gefahr!)"; enterBtn.onclick = () => { Game.loadSector(0, 0, true, "market"); this.leaveDialog(); }; const leaveBtn = document.createElement('button'); leaveBtn.className = "action-button w-full"; leaveBtn.textContent = "Weitergehen"; leaveBtn.onclick = () => this.leaveDialog(); this.els.dialog.appendChild(enterBtn); this.els.dialog.appendChild(leaveBtn); this.els.dialog.style.display = 'block'; },
-    enterCave: function() { Game.state.inDialog = true; this.els.dialog.innerHTML = ''; const enterBtn = document.createElement('button'); enterBtn.className = "action-button w-full mb-1 border-gray-500 text-gray-300"; enterBtn.textContent = "In die Tiefe (Dungeon)"; enterBtn.onclick = () => { Game.loadSector(0, 0, true, "cave"); this.leaveDialog(); }; const leaveBtn = document.createElement('button'); leaveBtn.className = "action-button w-full"; leaveBtn.textContent = "Weitergehen"; leaveBtn.onclick = () => this.leaveDialog(); this.els.dialog.appendChild(enterBtn); this.els.dialog.appendChild(leaveBtn); this.els.dialog.style.display = 'block'; },
-    leaveDialog: function() { Game.state.inDialog = false; this.els.dialog.style.display = 'none'; this.update(); },
-    showGameOver: function() { if(this.els.gameOver) this.els.gameOver.classList.remove('hidden'); this.toggleControls(false); }
+    showGameOver: function() { 
+        if(this.els.gameOver) this.els.gameOver.classList.remove('hidden'); 
+        this.toggleControls(false); 
+    },
+    
+    enterVault: function() { 
+        Game.state.inDialog = true; 
+        this.els.dialog.innerHTML = ''; 
+        const restBtn = document.createElement('button'); 
+        restBtn.className = "action-button w-full mb-1 border-blue-500 text-blue-300"; 
+        restBtn.textContent = "Ausruhen (Gratis)"; 
+        restBtn.onclick = () => { Game.rest(); this.leaveDialog(); }; 
+        const leaveBtn = document.createElement('button'); 
+        leaveBtn.className = "action-button w-full"; 
+        leaveBtn.textContent = "Weiter geht's"; 
+        leaveBtn.onclick = () => this.leaveDialog(); 
+        this.els.dialog.appendChild(restBtn); 
+        this.els.dialog.appendChild(leaveBtn); 
+        this.els.dialog.style.display = 'flex'; 
+    },
+    
+    enterSupermarket: function() { 
+        Game.state.inDialog = true; 
+        this.els.dialog.innerHTML = ''; 
+        const enterBtn = document.createElement('button'); 
+        enterBtn.className = "action-button w-full mb-1 border-red-500 text-red-300"; 
+        enterBtn.textContent = "Ruine betreten (Gefahr!)"; 
+        enterBtn.onclick = () => { Game.loadSector(0, 0, true, "market"); this.leaveDialog(); }; 
+        const leaveBtn = document.createElement('button'); 
+        leaveBtn.className = "action-button w-full"; 
+        leaveBtn.textContent = "Weitergehen"; 
+        leaveBtn.onclick = () => this.leaveDialog(); 
+        this.els.dialog.appendChild(enterBtn); 
+        this.els.dialog.appendChild(leaveBtn); 
+        this.els.dialog.style.display = 'block'; 
+    },
+    
+    enterCave: function() { 
+        Game.state.inDialog = true; 
+        this.els.dialog.innerHTML = ''; 
+        const enterBtn = document.createElement('button'); 
+        enterBtn.className = "action-button w-full mb-1 border-gray-500 text-gray-300"; 
+        enterBtn.textContent = "In die Tiefe (Dungeon)"; 
+        enterBtn.onclick = () => { Game.loadSector(0, 0, true, "cave"); this.leaveDialog(); }; 
+        const leaveBtn = document.createElement('button'); 
+        leaveBtn.className = "action-button w-full"; 
+        leaveBtn.textContent = "Weitergehen"; 
+        leaveBtn.onclick = () => this.leaveDialog(); 
+        this.els.dialog.appendChild(enterBtn); 
+        this.els.dialog.appendChild(leaveBtn); 
+        this.els.dialog.style.display = 'block'; 
+    },
+    
+    leaveDialog: function() { 
+        Game.state.inDialog = false; 
+        this.els.dialog.style.display = 'none'; 
+        this.update(); 
+    }
 };
