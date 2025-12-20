@@ -56,16 +56,11 @@ const Game = {
         try {
             if (saveData) {
                 this.state = saveData;
-                // EXTREM WICHTIG: Sicherstellen, dass explored existiert
-                if(!this.state.explored || typeof this.state.explored !== 'object') {
-                    this.state.explored = {};
-                }
-                
+                if(!this.state.explored || typeof this.state.explored !== 'object') this.state.explored = {};
                 if(!this.state.inDialog) this.state.inDialog = false; 
                 if(!this.state.view) this.state.view = 'map';
                 if(!this.state.visitedSectors) this.state.visitedSectors = [];
                 this.state.saveSlot = slotIndex;
-                
                 UI.log(">> Spielstand geladen.", "text-cyan-400");
             } else {
                 let startSecX = Math.floor(Math.random() * 8);
@@ -107,6 +102,11 @@ const Game = {
                 
                 UI.log(">> Neuer Charakter erstellt.", "text-green-400");
                 this.saveGame(); 
+                
+                // SHOW INTRO DIALOG
+                setTimeout(() => {
+                    UI.showDungeonWarning(() => {}, "SYSTEM INITIALISIERUNG...\n\nWARNUNG: Sie betreten nun ungesichertes Ödland.\nStrahlung: Hoch.\nFeindliche Aktivitäten: Extrem.\n\nViel Glück, Bewohner!");
+                }, 1000);
             }
 
             this.loadSector(this.state.sector.x, this.state.sector.y);
@@ -128,10 +128,9 @@ const Game = {
     },
 
     // --- MAP LOGIC ---
-    // FIX: Absturz-Prävention
     reveal: function(px, py) { 
         if(!this.state) return;
-        if(!this.state.explored) this.state.explored = {}; // SAFETY FIRST
+        if(!this.state.explored) this.state.explored = {}; 
         
         const radius = 2; 
         const secKey = `${this.state.sector.x},${this.state.sector.y}`;
@@ -354,10 +353,8 @@ const Game = {
         
         const typeName = type === "cave" ? "Dunkle Höhle" : "Supermarkt Ruine";
         this.state.zone = `${typeName} (Ebene ${level})`;
-        // Dungeon Fog Reset (optional)
+        // Dungeon Fog Logic
         this.state.explored = {}; 
-        const secKey = `${this.state.sector.x},${this.state.sector.y}`;
-        // Mark current view as explored so we don't start in black
         this.reveal(this.state.player.x, this.state.player.y);
         
         this.renderStaticMap();
@@ -405,11 +402,8 @@ const Game = {
         
         this.renderStaticMap();
         
-        // City is fully explored
         if(!this.state.explored) this.state.explored = {};
         const secKey = `${this.state.sector.x},${this.state.sector.y}`;
-        // Simple trick: in Draw(), we check if zone is City and ignore fog. 
-        // But for safety:
         for(let y=0; y<this.MAP_H; y++) for(let x=0; x<this.MAP_W; x++) this.state.explored[`${secKey}_${x},${y}`] = true;
         
         UI.log("Betrete Rusty Springs...", "text-yellow-400");
