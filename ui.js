@@ -104,6 +104,7 @@ const UI = {
             newCharOverlay: document.getElementById('new-char-overlay'),
             inputNewCharName: document.getElementById('new-char-name'),
             btnCreateCharConfirm: document.getElementById('btn-create-char'),
+            // New Action Button
             btnCharSelectAction: document.getElementById('btn-char-select-action'),
             
             // Delete Overlay
@@ -136,6 +137,7 @@ const UI = {
             window.addEventListener(evt, () => {
                 this.lastInputTime = Date.now();
                 if (this.inputMethod !== 'touch') {
+                    // Reset Focus on Touch/Mouse interaction
                     this.focusIndex = -1;
                     this.updateFocusVisuals();
                     this.inputMethod = 'touch';
@@ -181,8 +183,7 @@ const UI = {
         });
 
         // --- CHAR SELECT & DELETE ---
-        // Button in der UI für "Erstellen" (falls vorhanden, oder via Slot-Klick)
-        if(this.els.btnCharSelectAction) {
+        if (this.els.btnCharSelectAction) {
              this.els.btnCharSelectAction.onclick = () => this.triggerCharSlot();
         }
 
