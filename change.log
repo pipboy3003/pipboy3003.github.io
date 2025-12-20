@@ -1,5 +1,18 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.2.0-alpha] - 2025-12-20 (Secure Auth Update)
+------------------------------------------------
+- CORE: Umstellung auf echtes Firebase Authentication System.
+  - Login erfordert nun E-Mail und Passwort.
+  - Neue Registrierungs-Funktion für Accounts.
+  - Spielstände sind nun an die sichere User-UID gebunden, nicht mehr an den Namen.
+- UI: Login-Screen komplett überarbeitet.
+  - Modus-Wechsel zwischen "LOGIN" und "REGISTRIEREN".
+  - Passwort-Feld (verdeckte Eingabe) hinzugefügt.
+- SECURITY: Datenbank-Regeln auf 'auth.uid' Authentifizierung umgestellt.
+
+
+
 [v0.1.21-beta] - 2025-12-20 (Login Feedback Fix)
 ------------------------------------------------
 - UI: Fehler beim Login (z.B. Netzwerkprobleme) werden nun direkt auf dem Login-Screen rot angezeigt, statt in der unsichtbaren Konsole.
