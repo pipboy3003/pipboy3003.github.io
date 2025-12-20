@@ -1,5 +1,13 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.2.5-alpha] - 2025-12-20 (Logout & Crash Fixes)
+------------------------------------------------
+- CRITICAL FIX (Network): Fehler behoben, der das erneute Einloggen nach dem Ausloggen verhinderte ("Netzwerkfehler"). 
+  - Der 'active'-Status wird nun bei jedem Initialisierungsversuch korrekt zurückgesetzt.
+- CRITICAL FIX (Game): Aggressiver Schutz gegen Map-Abstürze.
+  - Die Funktion 'reveal' erstellt das 'explored'-Objekt nun zwingend, falls es fehlt, bevor irgendein Zugriff erfolgt.
+  - Zusätzliche Sicherheitschecks beim Laden von Sektoren.
+
 [v0.2.4-alpha] - 2025-12-20 (Action Button Fix)
 ------------------------------------------------
 - FIX: Fehlender "Aktions-Button" im HTML ergänzt. 
