@@ -4,7 +4,6 @@ const UI = {
     lastInputTime: Date.now(), 
     biomeColors: (typeof window.GameData !== 'undefined') ? window.GameData.colors : {}, 
     
-    // States
     loginBusy: false,
     isRegistering: false,
     charSelectMode: false,
@@ -12,10 +11,9 @@ const UI = {
     currentSaves: {},
     selectedSlot: -1,
     
-    // Focus System
     focusIndex: -1,
     focusableEls: [],
-    inputMethod: 'touch', // 'touch', 'mouse', 'key'
+    inputMethod: 'touch', 
 
     touchState: {
         active: false, id: null, startX: 0, startY: 0, currentX: 0, currentY: 0, moveDir: { x: 0, y: 0 }, timer: null
@@ -55,7 +53,6 @@ const UI = {
             view: document.getElementById('view-container'),
             log: document.getElementById('log-area'),
             
-            // Stats
             hp: document.getElementById('val-hp'),
             hpBar: document.getElementById('bar-hp'),
             expBarTop: document.getElementById('bar-exp-top'),
@@ -69,7 +66,6 @@ const UI = {
             dialog: document.getElementById('dialog-overlay'),
             timer: document.getElementById('game-timer'),
             
-            // Buttons Main
             btnNew: document.getElementById('btn-new'),
             btnInv: document.getElementById('btn-inv'),
             btnWiki: document.getElementById('btn-wiki'),
@@ -86,7 +82,6 @@ const UI = {
             playerList: document.getElementById('player-list-overlay'),
             playerListContent: document.getElementById('player-list-content'),
             
-            // Login Screens
             loginScreen: document.getElementById('login-screen'),
             loginStatus: document.getElementById('login-status'),
             inputEmail: document.getElementById('login-email'),
@@ -96,7 +91,6 @@ const UI = {
             btnToggleRegister: document.getElementById('btn-toggle-register'),
             loginTitle: document.getElementById('login-title'),
             
-            // Character Selection
             charSelectScreen: document.getElementById('char-select-screen'),
             charSlotsList: document.getElementById('char-slots-list'),
             newCharOverlay: document.getElementById('new-char-overlay'),
@@ -105,14 +99,12 @@ const UI = {
             btnCharSelectAction: document.getElementById('btn-char-select-action'),
             btnCharDeleteAction: document.getElementById('btn-char-delete-action'),
             
-            // Delete Overlay
             deleteOverlay: document.getElementById('delete-confirm-overlay'),
             deleteTargetName: document.getElementById('delete-target-name'),
             deleteInput: document.getElementById('delete-input'),
             btnDeleteConfirm: document.getElementById('btn-delete-confirm'),
             btnDeleteCancel: document.getElementById('btn-delete-cancel'),
 
-            // Spawn & Game Over
             spawnScreen: document.getElementById('spawn-screen'),
             spawnMsg: document.getElementById('spawn-msg'),
             spawnList: document.getElementById('spawn-list'),
@@ -123,14 +115,12 @@ const UI = {
             gameScreen: document.getElementById('game-screen'),
             gameOver: document.getElementById('game-over-screen'),
             
-            // Virtual D-Pad (Hidden usually)
             btnUp: document.getElementById('btn-up'),
             btnDown: document.getElementById('btn-down'),
             btnLeft: document.getElementById('btn-left'),
             btnRight: document.getElementById('btn-right')
         };
 
-        // --- INPUT DETECTION (Smart Focus) ---
         ['mousemove', 'mousedown', 'touchstart'].forEach(evt => {
             window.addEventListener(evt, () => {
                 this.lastInputTime = Date.now();
@@ -147,7 +137,6 @@ const UI = {
             this.inputMethod = 'key';
         });
 
-        // --- LOGIN LOGIC ---
         if(this.els.btnLogin) this.els.btnLogin.onclick = () => this.attemptLogin();
         
         if(this.els.btnToggleRegister) {
@@ -167,7 +156,6 @@ const UI = {
             };
         }
 
-        // Enter Key for Login Inputs
         [this.els.inputEmail, this.els.inputPass, this.els.inputName].forEach(el => {
             if(el) {
                 el.addEventListener("keydown", (e) => {
@@ -179,12 +167,10 @@ const UI = {
             }
         });
 
-        // --- CHAR SELECT & DELETE ---
         if (this.els.btnCharSelectAction) {
              this.els.btnCharSelectAction.onclick = () => this.triggerCharSlot();
         }
 
-        // NEU: Delete Button Click Handler (Mobile)
         if (this.els.btnCharDeleteAction) {
             this.els.btnCharDeleteAction.onclick = () => this.triggerDeleteSlot();
         }
@@ -224,7 +210,6 @@ const UI = {
             };
         }
 
-        // --- BUTTON BINDINGS ---
         if(this.els.btnSave) this.els.btnSave.onclick = () => this.handleSaveClick();
         if(this.els.btnMenuSave) this.els.btnMenuSave.onclick = () => this.handleSaveClick();
         if(this.els.btnLogout) this.els.btnLogout.onclick = () => this.logout('MANUELL AUSGELOGGT');
@@ -239,7 +224,6 @@ const UI = {
             };
         }
         
-        // Close Menu on Click Outside
         document.addEventListener('click', (e) => {
             if(this.els.navMenu && !this.els.navMenu.classList.contains('hidden')) {
                 if (!this.els.navMenu.contains(e.target) && e.target !== this.els.btnMenu) {
@@ -274,7 +258,6 @@ const UI = {
         if(this.els.btnQuests) this.els.btnQuests.onclick = () => this.toggleView('quests');
         if(this.els.btnSpawnRandom) this.els.btnSpawnRandom.onclick = () => this.selectSpawn(null);
 
-        // --- TOUCH EVENTS ---
         if(this.els.touchArea) {
             this.els.touchArea.addEventListener('touchstart', (e) => this.handleTouchStart(e), {passive: false});
             this.els.touchArea.addEventListener('touchmove', (e) => this.handleTouchMove(e), {passive: false});
@@ -282,7 +265,6 @@ const UI = {
             this.els.touchArea.addEventListener('touchcancel', (e) => this.handleTouchEnd(e));
         }
 
-        // --- KEYBOARD MASTER HANDLER ---
         window.addEventListener('keydown', (e) => {
             if (this.deleteMode) return; 
 
@@ -300,7 +282,7 @@ const UI = {
             }
 
             if(e.key === 'Escape') {
-                if (Game.state.inDialog) { /* ... */ }
+                if (Game.state.inDialog) { return; }
                 else if(this.els.playerList && this.els.playerList.style.display === 'flex') this.togglePlayerList();
                 else if(this.els.navMenu && !this.els.navMenu.classList.contains('hidden')) this.toggleMenu();
                 else if(Game.state.view !== 'map') this.switchView('map'); 
@@ -353,7 +335,6 @@ const UI = {
         this.timerInterval = setInterval(() => this.updateTimer(), 1000);
     },
 
-    // --- CHARACTER SELECTION ---
     renderCharacterSelection: function(saves) {
         this.charSelectMode = true;
         this.currentSaves = saves;
@@ -403,11 +384,10 @@ const UI = {
         for(let s of slots) s.classList.remove('active-slot');
         if(slots[index]) slots[index].classList.add('active-slot');
         
-        // Update Action Button Text
         const save = this.currentSaves[index];
         if (this.els.btnCharSelectAction) {
             if (save) {
-                this.els.btnCharSelectAction.textContent = "SPIEL LADEN";
+                this.els.btnCharSelectAction.textContent = "SPIEL LADEN (ENTER)";
                 this.els.btnCharSelectAction.className = "action-button w-full border-green-500 text-green-500 font-bold py-3 mb-2";
                 if(this.els.btnCharDeleteAction) this.els.btnCharDeleteAction.classList.remove('hidden');
             } else {
@@ -472,7 +452,30 @@ const UI = {
         Network.startPresence();
     },
 
-    // --- FOCUS MANAGER ---
+    showPermadeathWarning: function() {
+        if(!this.els.dialog) this.restoreOverlay();
+        Game.state.inDialog = true;
+        this.els.dialog.innerHTML = '';
+        this.els.dialog.style.display = 'flex';
+        
+        const box = document.createElement('div');
+        box.className = "bg-black border-4 border-red-600 p-6 shadow-[0_0_50px_red] max-w-lg text-center animate-pulse";
+        box.innerHTML = `
+            <div class="text-6xl text-red-600 mb-4 font-bold">☠️</div>
+            <h1 class="text-4xl font-bold text-red-600 mb-4 tracking-widest border-b-2 border-red-600 pb-2">PERMADEATH AKTIV</h1>
+            <p class="text-red-400 font-mono text-lg mb-6 leading-relaxed">
+                WARNUNG, BEWOHNER!<br>
+                Das Ödland kennt keine Gnade.<br>
+                Wenn deine HP auf 0 fallen, wird dieser Charakter<br>
+                <span class="font-bold text-white bg-red-900 px-1">DAUERHAFT GELÖSCHT</span>.
+            </p>
+            <button class="action-button w-full border-red-600 text-red-500 font-bold py-4 text-xl hover:bg-red-900" onclick="UI.leaveDialog()">
+                ICH HABE VERSTANDEN
+            </button>
+        `;
+        this.els.dialog.appendChild(box);
+    },
+
     toggleMenu: function() {
         if(!this.els.navMenu) return;
         const isHidden = this.els.navMenu.classList.contains('hidden');
@@ -536,9 +539,6 @@ const UI = {
             this.focusableEls[this.focusIndex].click();
         }
     },
-
-    // --- SYSTEM ---
-    isMobile: function() { return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0); },
 
     showManualOverlay: async function() {
         const overlay = document.getElementById('manual-overlay');
@@ -1406,8 +1406,9 @@ const UI = {
     leaveDialog: function() { Game.state.inDialog = false; this.els.dialog.style.display = 'none'; this.update(); },
     renderCity: function() { const con = document.getElementById('city-options'); if(!con) return; con.innerHTML = ''; const addBtn = (txt, cb, disabled=false) => { const b = document.createElement('button'); b.className = "action-button w-full mb-2 text-left p-3 flex justify-between"; b.innerHTML = txt; b.onclick = cb; if(disabled) { b.disabled = true; b.style.opacity = 0.5; } con.appendChild(b); }; addBtn("Heilen (25 Kronkorken)", () => Game.heal(), Game.state.caps < 25 || Game.state.hp >= Game.state.maxHp); addBtn("Munition (10 Stk / 10 Kronkorken)", () => Game.buyAmmo(), Game.state.caps < 10); addBtn("Händler / Waffen & Rüstung", () => this.renderShop(con)); addBtn("🛠️ Werkbank / Crafting", () => this.toggleView('crafting')); addBtn("Stadt verlassen", () => this.switchView('map')); },
     renderShop: function(container) { container.innerHTML = ''; const backBtn = document.createElement('button'); backBtn.className = "action-button w-full mb-4 text-center border-yellow-400 text-yellow-400"; backBtn.textContent = "ZURÜCK ZUM PLATZ"; backBtn.onclick = () => this.renderCity(); container.appendChild(backBtn); Object.keys(Game.items).forEach(key => { const item = Game.items[key]; if(item.cost > 0 && Game.state.lvl >= (item.requiredLevel || 0) - 2) { const canAfford = Game.state.caps >= item.cost; const isEquipped = (Game.state.equip[item.slot] && Game.state.equip[item.slot].name === item.name); let label = `<span>${item.name}</span> <span>${item.cost} Kronkorken</span>`; if(isEquipped) label = `<span class="text-green-500">[AUSGERÜSTET]</span>`; const btn = document.createElement('button'); btn.className = "action-button w-full mb-2 flex justify-between text-sm"; btn.innerHTML = label; if(!canAfford || isEquipped) { btn.disabled = true; btn.style.opacity = 0.5; } else { btn.onclick = () => Game.buyItem(key); } container.appendChild(btn); } }); },
+    renderCombat: function() { const enemy = Game.state.enemy; if(!enemy) return; document.getElementById('enemy-name').textContent = enemy.name; document.getElementById('enemy-hp-text').textContent = `${Math.max(0, enemy.hp)}/${enemy.maxHp} TP`; document.getElementById('enemy-hp-bar').style.width = `${Math.max(0, (enemy.hp/enemy.maxHp)*100)}%`; },
     
-    // --- DIALOGS (PERMADEATH ETC) ---
+    // --- PERMADEATH WARNING (MUSS HIER REIN) ---
     showPermadeathWarning: function() {
         if(!this.els.dialog) this.restoreOverlay();
         Game.state.inDialog = true;
