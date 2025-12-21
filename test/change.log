@@ -1,5 +1,12 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.3.4a-map-polish] - 2025-12-21 (World Map & Lore Fixes)
+------------------------------------------------
+- LORE: Start-Bunker von "Vault 101" in "Vault 1337" umbenannt (in 'data.js', 'world_gen.js', 'ui_render.js').
+- VISUAL: Weltkarten-Icons (Stadt/Vault) vergrößert (text-3xl).
+- FIX: Weltkarten-Icons werden nun auch angezeigt, wenn der Spieler sich auf dem Feld befindet (zusammen mit einem kleineren "YOU"-Text).
+
+
 [v0.3.4-boot] - 2025-12-21 (Visual Polish)
 ------------------------------------------------
 - UI: 'index.html' enthält nun eine animierte Boot-Sequenz beim Start ("ROBCO INDUSTRIES...").
