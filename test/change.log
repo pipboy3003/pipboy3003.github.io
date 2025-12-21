@@ -1,5 +1,14 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.3.7] - 2025-12-21 (Map Fixes & Polish)
+------------------------------------------------
+- FIX: Weltkarten-Icons (Vault ⚙️ / Stadt 🏙️) werden nun zuverlässig angezeigt.
+- VISUAL: Map-Icons vergrößert (text-3xl) für bessere Sichtbarkeit.
+- LORE: Start-Bunker konsistent in "Vault 1337" umbenannt.
+- UI: Schließen-Button auf der Weltkarte bereinigt.
+- SYSTEM: Merge mit ASCII-Boot-Animation.
+
+
 [v0.3.6-vault-anim] - 2025-12-21 (Epic Boot Sequence)
 ------------------------------------------------
 - UI: Boot-Screen komplett überarbeitet & zentriert.
