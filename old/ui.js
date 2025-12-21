@@ -1400,5 +1400,100 @@ const UI = {
     enterVault: function() { Game.state.inDialog = true; this.els.dialog.innerHTML = ''; const restBtn = document.createElement('button'); restBtn.className = "action-button w-full mb-1 border-blue-500 text-blue-300"; restBtn.textContent = "Ausruhen (Gratis)"; restBtn.onclick = () => { Game.rest(); this.leaveDialog(); }; const leaveBtn = document.createElement('button'); leaveBtn.className = "action-button w-full"; leaveBtn.textContent = "Weiter geht's"; leaveBtn.onclick = () => this.leaveDialog(); this.els.dialog.appendChild(restBtn); this.els.dialog.appendChild(leaveBtn); this.els.dialog.style.display = 'flex'; },
     enterSupermarket: function() { Game.state.inDialog = true; this.els.dialog.innerHTML = ''; const enterBtn = document.createElement('button'); enterBtn.className = "action-button w-full mb-1 border-red-500 text-red-300"; enterBtn.textContent = "Ruine betreten (Gefahr!)"; enterBtn.onclick = () => { Game.loadSector(0, 0, true, "market"); this.leaveDialog(); }; const leaveBtn = document.createElement('button'); leaveBtn.className = "action-button w-full"; leaveBtn.textContent = "Weitergehen"; leaveBtn.onclick = () => this.leaveDialog(); this.els.dialog.appendChild(enterBtn); this.els.dialog.appendChild(leaveBtn); this.els.dialog.style.display = 'block'; },
     enterCave: function() { Game.state.inDialog = true; this.els.dialog.innerHTML = ''; const enterBtn = document.createElement('button'); enterBtn.className = "action-button w-full mb-1 border-gray-500 text-gray-300"; enterBtn.textContent = "In die Tiefe (Dungeon)"; enterBtn.onclick = () => { Game.loadSector(0, 0, true, "cave"); this.leaveDialog(); }; const leaveBtn = document.createElement('button'); leaveBtn.className = "action-button w-full"; leaveBtn.textContent = "Weitergehen"; leaveBtn.onclick = () => this.leaveDialog(); this.els.dialog.appendChild(enterBtn); this.els.dialog.appendChild(leaveBtn); this.els.dialog.style.display = 'block'; },
-    leaveDialog: function() { Game.state.inDialog = false; this.els.dialog.style.display = 'none'; this.update(); }
+    leaveDialog: function() { Game.state.inDialog = false; this.els.dialog.style.display = 'none'; this.update(); },
+
+    // --- REPAIRED MISSING FUNCTIONS ---
+    toggleView: function(name) {
+        if(Game.state.view === name) {
+            this.switchView('map');
+        } else {
+            this.switchView(name);
+        }
+    },
+
+    logout: function(msg) {
+        this.loginBusy = false;
+        if(typeof Network !== 'undefined') Network.disconnect();
+        if(Game.state) {
+            Game.saveGame();
+            Game.state = null; 
+        }
+        
+        this.els.gameScreen.classList.add('hidden');
+        this.els.loginScreen.style.display = 'flex';
+        this.els.loginStatus.textContent = msg || "AUSGELOGGT";
+        this.els.loginStatus.className = "mt-4 text-yellow-400";
+        this.els.inputPass.value = "";
+        
+        // Reset Views
+        if(this.els.navMenu) this.els.navMenu.classList.add('hidden');
+        if(this.els.playerList) this.els.playerList.style.display = 'none';
+        
+        console.log("Logout processed:", msg);
+    },
+
+    updatePlayerList: function() {
+        if(!this.els.playerListContent || typeof Network === 'undefined') return;
+        this.els.playerListContent.innerHTML = '';
+        
+        // Add Self
+        const myName = Network.myDisplayName || "ICH";
+        const mySec = (Game.state && Game.state.sector) ? `[${Game.state.sector.x},${Game.state.sector.y}]` : "[?,?]";
+        
+        const myEntry = document.createElement('div');
+        myEntry.className = "text-green-400 font-bold border-b border-green-900 py-1";
+        myEntry.textContent = `> ${myName} ${mySec}`;
+        this.els.playerListContent.appendChild(myEntry);
+
+        // Add Others
+        for(let pid in Network.otherPlayers) {
+            const p = Network.otherPlayers[pid];
+            const div = document.createElement('div');
+            div.className = "text-green-200 text-sm py-1";
+            const pSec = p.sector ? `[${p.sector.x},${p.sector.y}]` : "[?,?]";
+            div.textContent = `${p.name} ${pSec}`;
+            this.els.playerListContent.appendChild(div);
+        }
+    },
+    
+    togglePlayerList: function() {
+        if(!this.els.playerList) return;
+        if(this.els.playerList.style.display === 'flex') {
+            this.els.playerList.style.display = 'none';
+        } else {
+            this.els.playerList.style.display = 'flex';
+            this.updatePlayerList();
+        }
+    },
+
+    selectSpawn: function(mode) {
+        this.els.spawnScreen.style.display = 'none';
+        if(mode === 'random') {
+            this.startGame(null, this.selectedSlot, null);
+        }
+    },
+
+    renderSpawnList: function(players) {
+        if(!this.els.spawnList) return;
+        this.els.spawnList.innerHTML = '';
+        if(Object.keys(players).length === 0) {
+            this.els.spawnList.innerHTML = '<div class="text-gray-500 italic">Keine Signale gefunden...</div>';
+            return;
+        }
+        for(let pid in players) {
+            const p = players[pid];
+            const btn = document.createElement('button');
+            btn.className = "action-button w-full mb-2 text-left text-xs";
+            btn.innerHTML = `SIGNAL: ${p.name} <span class="float-right">[${p.sector.x},${p.sector.y}]</span>`;
+            btn.onclick = () => {
+                this.els.spawnScreen.style.display = 'none';
+                this.startGame(null, this.selectedSlot, null);
+                Game.state.player.x = p.x;
+                Game.state.player.y = p.y;
+                Game.state.sector = p.sector;
+                Game.changeSector(p.sector.x, p.sector.y); 
+            };
+            this.els.spawnList.appendChild(btn);
+        }
+    }
 };
