@@ -1,5 +1,10 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.3.1b-combat-fix] - 2025-12-21 (UI Hotfix)
+------------------------------------------------
+- FIX: Monster-Namen werden im Kampf-Bildschirm nun korrekt angezeigt (in 'combat.js' Render-Logik ergänzt).
+
+
 [v0.3.1a-map] - 2025-12-21 (World Map Refinement)
 ------------------------------------------------
 - GEN: 'world_gen.js' definiert nun die globalen Biome (Wald NW, Wüste SO, etc.).
