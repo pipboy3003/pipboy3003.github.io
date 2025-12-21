@@ -15,7 +15,7 @@ const WorldGen = {
     getSectorBiome: function(x, y) {
         // Fixe Orte
         if (x === 3 && y === 3) return 'city';      // Rusty Springs
-        if (x === 4 && y === 4) return 'vault';     // Vault 101 Area (Start)
+        if (x === 4 && y === 4) return 'vault';     // Vault 1337 Area (Start)
         
         // Regionen Logik (Hardcoded für Konsistenz)
         if (x <= 2 && y <= 2) return 'forest';      // NW: Oasis Dschungel
