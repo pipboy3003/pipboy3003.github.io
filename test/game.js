@@ -410,7 +410,8 @@ const Game = {
         
         this.state.lastSave = Date.now();
         if (typeof Network !== 'undefined') {
-            Network.saveGame(this.saveSlot, this.state);
+            // FIX: 'Network.saveGame' existiert nicht, es muss 'Network.saveToSlot' sein
+            Network.saveToSlot(this.saveSlot, this.state);
             if (manual) UI.log("Spiel gespeichert.", "text-green-500");
         }
     },
