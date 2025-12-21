@@ -1,5 +1,10 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.3.9] - 2025-12-21 (Critical Fix)
+------------------------------------------------
+- FIX: Kritischer Fehler in 'ui_render.js' behoben, bei dem auf 'Game.items' statt 'window.GameData.items' zugegriffen wurde. Dies verursachte den schwarzen Bildschirm.
+- SYSTEM: 'ui_core.js' gehärtet, um Abstürze bei Ladefehlern besser abzufangen.
+
 [v0.3.8b] - 2025-12-21 (Fix UI & Data Link)
     Fix: Game.items hinzugefügt und in init mit GameData verknüpft, um undefined-Abstürze in ui_core.js zu beheben.
     Fix: Network.saveToSlot Aufruf in saveGame beibehalten.
