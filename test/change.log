@@ -1,9 +1,11 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.3.8b] - 2025-12-21 (Fix UI & Data Link)
+    Fix: Game.items hinzugefügt und in init mit GameData verknüpft, um undefined-Abstürze in ui_core.js zu beheben.
+    Fix: Network.saveToSlot Aufruf in saveGame beibehalten.
+
 [v0.3.8a] - 2025-12-21 (Bugfix Save System)
-
     Fix: TypeError: Network.saveGame is not a function behoben.
-
     In game.js wurde der Aufruf Network.saveGame zu Network.saveToSlot korrigiert, damit er mit der Definition in network.js übereinstimmt.
 
 [v0.3.8-stability] - 2025-12-21 (Operation Anchor)
