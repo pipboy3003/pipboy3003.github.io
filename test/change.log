@@ -1,5 +1,13 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.3.1a-map] - 2025-12-21 (World Map Refinement)
+------------------------------------------------
+- GEN: 'world_gen.js' definiert nun die globalen Biome (Wald NW, Wüste SO, etc.).
+- UI: Weltkarte (Global Scan) komplett überarbeitet.
+- UI: Koordinaten-Achsen (0-7) zur besseren Orientierung hinzugefügt.
+- VISUAL: Klare Farbcodes für besuchte/unbekannte Sektoren.
+
+
 [v0.3.0-structure] - 2025-12-21 (Architecture Overhaul)
 ------------------------------------------------
 - SYSTEM: 'ui.js' wurde in drei Module zerlegt:
