@@ -1,5 +1,11 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.3.6-vault-anim] - 2025-12-21 (Epic Boot Sequence)
+------------------------------------------------
+- UI: Boot-Screen komplett überarbeitet & zentriert.
+- ANIM: Hinzugefügt: Animierte ASCII-Sequenz (Männchen winkt vor Vault-Tür).
+- VISUAL: Verbessertes Timing für den "Cinematic"-Start.
+
 [v0.3.4a-map-polish] - 2025-12-21 (World Map & Lore Fixes)
 ------------------------------------------------
 - LORE: Start-Bunker von "Vault 101" in "Vault 1337" umbenannt (in 'data.js', 'world_gen.js', 'ui_render.js').
