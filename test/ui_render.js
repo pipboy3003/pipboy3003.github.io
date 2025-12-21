@@ -108,6 +108,18 @@ Object.assign(UI, {
             return;
         }
 
+        // NEW: Minigame Views handling directly in Render to avoid fetch delay
+        if(name === 'hacking') {
+            this.renderHacking();
+            Game.state.view = name;
+            return;
+        }
+        if(name === 'lockpicking') {
+            this.renderLockpicking(true); // true = init structure
+            Game.state.view = name;
+            return;
+        }
+
         const path = `views/${name}.html?v=${ver}`;
         try {
             const res = await fetch(path);
@@ -129,10 +141,7 @@ Object.assign(UI, {
             if (name === 'char') this.renderChar();
             if (name === 'inventory') this.renderInventory();
             if (name === 'wiki') this.renderWiki();
-            
-            // NEU: Ruft die neue Render Funktion auf
             if (name === 'worldmap') this.renderWorldMap();
-            
             if (name === 'city') this.renderCity();
             if (name === 'quests') this.renderQuests();
             if (name === 'crafting') this.renderCrafting();
@@ -169,6 +178,89 @@ Object.assign(UI, {
     toggleControls: function(show) { if (!show && this.els.dialog) this.els.dialog.innerHTML = ''; },
 
     // --- RENDERERS ---
+    
+    // NEU: Hacking Render
+    renderHacking: function() {
+        const h = MiniGames.hacking;
+        let html = `
+            <div class="w-full h-full flex flex-col p-2 font-mono text-green-500 bg-black overflow-hidden relative">
+                <div class="flex justify-between border-b border-green-500 mb-2 pb-1">
+                    <span class="font-bold">ROBCO INDUSTRIES (TM) TERM-LINK</span>
+                    <span class="animate-pulse">ATTEMPTS: ${'█ '.repeat(h.attempts)}</span>
+                </div>
+                <div class="flex-grow flex gap-4 overflow-hidden relative">
+                    <div id="hack-words" class="flex flex-col flex-wrap h-full content-start gap-x-8 text-sm">
+                        </div>
+                    <div class="w-1/3 border-l border-green-900 pl-2 text-xs overflow-y-auto flex flex-col-reverse" id="hack-log">
+                        ${h.logs.map(l => `<div>${l}</div>`).join('')}
+                    </div>
+                </div>
+                <button class="absolute bottom-2 right-2 border border-red-500 text-red-500 px-2 text-xs hover:bg-red-900" onclick="MiniGames.hacking.end()">ABORT</button>
+            </div>
+        `;
+        
+        // Wenn es noch nicht da ist, setzen
+        if(this.els.view.innerHTML.indexOf('ROBCO') === -1) {
+            this.els.view.innerHTML = html;
+        } else {
+             // Nur Log und Attempts updaten wenn Struktur da ist, aber hier redraw ich einfach alles für Simplizität
+             document.getElementById('hack-log').innerHTML = h.logs.map(l => `<div>${l}</div>`).join('');
+             document.querySelector('.animate-pulse').textContent = `ATTEMPTS: ${'█ '.repeat(h.attempts)}`;
+        }
+
+        const wordContainer = document.getElementById('hack-words');
+        if(wordContainer) {
+            wordContainer.innerHTML = '';
+            // Generate garbage hex and words
+            let buffer = "";
+            h.words.forEach(word => {
+                const hex = `0x${Math.floor(Math.random()*65535).toString(16).toUpperCase()}`;
+                const btn = document.createElement('div');
+                btn.className = "hack-row";
+                btn.innerHTML = `<span class="hack-hex">${hex}</span> ${word}`;
+                btn.onclick = () => MiniGames.hacking.checkWord(word);
+                wordContainer.appendChild(btn);
+            });
+        }
+    },
+
+    // NEU: Lockpicking Render
+    renderLockpicking: function(init=false) {
+        if(init) {
+            this.els.view.innerHTML = `
+                <div class="w-full h-full flex flex-col items-center justify-center bg-black relative select-none">
+                    <div class="absolute top-2 left-2 text-xs text-gray-500">LEVEL: ${MiniGames.lockpicking.difficulty.toUpperCase()}</div>
+                    <div class="lock-container">
+                        <div class="lock-inner" id="lock-rotator"></div>
+                        <div class="lock-center"></div>
+                        <div class="bobby-pin" id="bobby-pin"></div>
+                        <div class="screwdriver"></div>
+                    </div>
+                    <div class="mt-8 text-center text-sm text-green-300 font-mono">
+                        <p>MAUS/TOUCH: Dietrich bewegen</p>
+                        <p>LEERTASTE / KNOPF: Schloss drehen</p>
+                    </div>
+                    <button id="btn-turn-lock" class="mt-4 action-button w-40 h-16 md:hidden">DREHEN</button>
+                    <button class="absolute bottom-4 right-4 border border-red-500 text-red-500 px-3 py-1 hover:bg-red-900" onclick="MiniGames.lockpicking.end()">ABBRECHEN</button>
+                </div>
+            `;
+            // Touch Button Event
+            const btn = document.getElementById('btn-turn-lock');
+            if(btn) {
+                btn.addEventListener('touchstart', (e) => { e.preventDefault(); MiniGames.lockpicking.rotateLock(); });
+                btn.addEventListener('touchend', (e) => { e.preventDefault(); MiniGames.lockpicking.releaseLock(); });
+                btn.addEventListener('mousedown', () => MiniGames.lockpicking.rotateLock());
+                btn.addEventListener('mouseup', () => MiniGames.lockpicking.releaseLock());
+            }
+        }
+        
+        // Update Rotation CSS
+        const pin = document.getElementById('bobby-pin');
+        const lock = document.getElementById('lock-rotator');
+        
+        if(pin) pin.style.transform = `rotate(${MiniGames.lockpicking.currentAngle - 90}deg)`; // -90 offset because CSS draws it horizontal
+        if(lock) lock.style.transform = `rotate(${MiniGames.lockpicking.lockAngle}deg)`;
+    },
 
     renderCharacterSelection: function(saves) {
         this.charSelectMode = true;
@@ -305,7 +397,6 @@ Object.assign(UI, {
         document.getElementById('equip-body-stats').textContent = armStats || "Kein Bonus";
     },
     
-    // NEU: Überarbeitetes WorldMap Rendering
     renderWorldMap: function() {
         const grid = document.getElementById('world-grid');
         const info = document.getElementById('sector-info');
@@ -335,7 +426,6 @@ Object.assign(UI, {
                 const isCurrent = (Game.state.sector.x === x && Game.state.sector.y === y);
                 const visited = Game.state.visitedSectors && Game.state.visitedSectors.includes(key);
                 
-                // Get biome from WorldGen (new function)
                 const biome = WorldGen.getSectorBiome(x, y);
                 
                 if (isCurrent) {
@@ -345,16 +435,13 @@ Object.assign(UI, {
                 else if (visited) {
                     const colorClass = colors[biome] || colors['wasteland'];
                     cell.className += ` ${colorClass} text-white/50`;
-                    // cell.textContent = `${x},${y}`; // Optional Coords
                 } 
                 else {
                     cell.className += " bg-black border-[#1aff1a] border-opacity-20";
-                    // Fog of War pattern
                     cell.style.backgroundImage = "radial-gradient(circle, rgba(0,50,0,0.5) 1px, transparent 1px)";
                     cell.style.backgroundSize = "4px 4px";
                 }
                 
-                // Other Players Dots
                 if(typeof Network !== 'undefined' && Network.otherPlayers) {
                     for(let pid in Network.otherPlayers) {
                         const p = Network.otherPlayers[pid];
@@ -366,7 +453,6 @@ Object.assign(UI, {
                     }
                 }
                 
-                // Hover Info
                 cell.title = `Sektor ${x},${y}`;
                 grid.appendChild(cell);
             }
@@ -513,6 +599,29 @@ Object.assign(UI, {
         addBtn("Munition (10 Stk / 10 Kronkorken)", () => Game.buyAmmo(), Game.state.caps < 10);
         addBtn("Händler / Waffen & Rüstung", () => this.renderShop(con));
         addBtn("🛠️ Werkbank / Crafting", () => this.toggleView('crafting'));
+        
+        // NEU: Trainingsgelände für Minigames
+        addBtn("🔒 Trainingsgelände (Hacking/Lockpick)", () => {
+             con.innerHTML = '';
+             const back = document.createElement('button');
+             back.className = "action-button w-full mb-4 border-yellow-400 text-yellow-400";
+             back.textContent = "ZURÜCK";
+             back.onclick = () => this.renderCity();
+             con.appendChild(back);
+             
+             const hack = document.createElement('button');
+             hack.className = "action-button w-full mb-2";
+             hack.textContent = "TERMINAL HACKEN (EASY)";
+             hack.onclick = () => MiniGames.hacking.start('easy');
+             con.appendChild(hack);
+
+             const pick = document.createElement('button');
+             pick.className = "action-button w-full mb-2";
+             pick.textContent = "SCHLOSS KNACKEN (EASY)";
+             pick.onclick = () => MiniGames.lockpicking.start('easy');
+             con.appendChild(pick);
+        });
+        
         addBtn("Stadt verlassen", () => this.switchView('map'));
     },
     
@@ -543,7 +652,10 @@ Object.assign(UI, {
     renderCombat: function() {
         const enemy = Game.state.enemy;
         if(!enemy) return;
-        document.getElementById('enemy-name').textContent = enemy.name;
+        // Fix from previous update
+        const nameEl = document.getElementById('enemy-name');
+        if(nameEl) nameEl.textContent = enemy.name;
+        
         document.getElementById('enemy-hp-text').textContent = `${Math.max(0, enemy.hp)}/${enemy.maxHp} TP`;
         document.getElementById('enemy-hp-bar').style.width = `${Math.max(0, (enemy.hp/enemy.maxHp)*100)}%`;
     },
