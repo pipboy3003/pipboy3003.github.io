@@ -129,7 +129,10 @@ Object.assign(UI, {
             if (name === 'char') this.renderChar();
             if (name === 'inventory') this.renderInventory();
             if (name === 'wiki') this.renderWiki();
+            
+            // NEU: Ruft die neue Render Funktion auf
             if (name === 'worldmap') this.renderWorldMap();
+            
             if (name === 'city') this.renderCity();
             if (name === 'quests') this.renderQuests();
             if (name === 'crafting') this.renderCrafting();
@@ -302,38 +305,69 @@ Object.assign(UI, {
         document.getElementById('equip-body-stats').textContent = armStats || "Kein Bonus";
     },
     
+    // NEU: Überarbeitetes WorldMap Rendering
     renderWorldMap: function() {
         const grid = document.getElementById('world-grid');
+        const info = document.getElementById('sector-info');
         if(!grid) return;
+        
         grid.innerHTML = '';
+        
+        const colors = {
+            'wasteland': 'bg-gray-600 border-gray-500',
+            'forest': 'bg-green-800 border-green-600',
+            'desert': 'bg-yellow-600 border-yellow-500',
+            'swamp': 'bg-purple-900 border-purple-700',
+            'city': 'bg-cyan-700 border-cyan-500',
+            'vault': 'bg-blue-600 border-blue-400',
+            'mountain': 'bg-gray-800 border-gray-600'
+        };
+
+        const currentBiome = WorldGen.getSectorBiome(Game.state.sector.x, Game.state.sector.y);
+        if(info) info.textContent = `${currentBiome.toUpperCase()} [${Game.state.sector.x}, ${Game.state.sector.y}]`;
+
         for(let y=0; y<8; y++) {
             for(let x=0; x<8; x++) {
                 const cell = document.createElement('div');
-                cell.className = "w-full h-full border border-green-900/30 flex items-center justify-center text-xs relative";
+                cell.className = "w-full h-full border text-[10px] flex items-center justify-center relative transition-all duration-300";
+                
                 const key = `${x},${y}`;
                 const isCurrent = (Game.state.sector.x === x && Game.state.sector.y === y);
                 const visited = Game.state.visitedSectors && Game.state.visitedSectors.includes(key);
                 
-                if(isCurrent) {
-                    cell.classList.add('bg-green-500', 'text-black', 'font-bold', 'animate-pulse');
-                    cell.textContent = "YOU";
-                } else if (visited) {
-                    cell.classList.add('bg-green-900/40');
-                    cell.textContent = `${x},${y}`;
-                } else {
-                    cell.classList.add('bg-black');
+                // Get biome from WorldGen (new function)
+                const biome = WorldGen.getSectorBiome(x, y);
+                
+                if (isCurrent) {
+                    cell.className += " bg-[#1aff1a] text-black font-bold border-white z-10 shadow-[0_0_15px_#1aff1a]";
+                    cell.innerHTML = '<span class="animate-pulse">YOU</span>';
+                } 
+                else if (visited) {
+                    const colorClass = colors[biome] || colors['wasteland'];
+                    cell.className += ` ${colorClass} text-white/50`;
+                    // cell.textContent = `${x},${y}`; // Optional Coords
+                } 
+                else {
+                    cell.className += " bg-black border-[#1aff1a] border-opacity-20";
+                    // Fog of War pattern
+                    cell.style.backgroundImage = "radial-gradient(circle, rgba(0,50,0,0.5) 1px, transparent 1px)";
+                    cell.style.backgroundSize = "4px 4px";
                 }
                 
+                // Other Players Dots
                 if(typeof Network !== 'undefined' && Network.otherPlayers) {
                     for(let pid in Network.otherPlayers) {
                         const p = Network.otherPlayers[pid];
                         if(p.sector && p.sector.x === x && p.sector.y === y) {
                             const dot = document.createElement('div');
-                            dot.className = "absolute top-1 right-1 w-2 h-2 bg-cyan-400 rounded-full shadow-[0_0_5px_cyan]";
+                            dot.className = "absolute -top-1 -right-1 w-3 h-3 bg-cyan-400 rounded-full border border-black z-20 shadow-[0_0_5px_cyan]";
                             cell.appendChild(dot);
                         }
                     }
                 }
+                
+                // Hover Info
+                cell.title = `Sektor ${x},${y}`;
                 grid.appendChild(cell);
             }
         }
