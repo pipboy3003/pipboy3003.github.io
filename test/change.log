@@ -1,5 +1,12 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.3.3a-map-fix] - 2025-12-21 (Map & UI Polish)
+------------------------------------------------
+- UI: 'views/worldmap.html' aktualisiert für korrektes 8x8 Grid-Layout.
+- UI: "SCHLIESSEN (ESC)" Button-Text auf der Weltkarte zu "SCHLIESSEN" gekürzt.
+- FIX: 'ui_render.js' sorgt nun dafür, dass Icons (Stadt/Vault) zentriert und groß genug dargestellt werden.
+
+
 [v0.3.3-map-icons] - 2025-12-21 (Map Visuals)
 ------------------------------------------------
 - UI: Weltkarte zeigt nun Icons für Städte (🏙️) und Vaults (⚙️) an, sobald der Fog of War gelüftet ist.
