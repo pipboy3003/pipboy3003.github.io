@@ -45,6 +45,17 @@
 
         #player-list-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 90; background: rgba(0, 0, 0, 0.95); border: 2px solid var(--pip-green); padding: 20px; min-width: 300px; display: none; flex-direction: column; box-shadow: 0 0 30px var(--pip-dim); }
 
+        /* MINIGAME STYLES */
+        .lock-container { position: relative; width: 250px; height: 250px; border-radius: 50%; border: 4px solid #333; background: radial-gradient(circle, #222, #000); box-shadow: inset 0 0 30px #000; margin: 0 auto; }
+        .lock-inner { position: absolute; top: 10%; left: 10%; width: 80%; height: 80%; border-radius: 50%; border: 2px dashed #444; transition: transform 0.1s; }
+        .lock-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; background: #111; border-radius: 50%; border: 1px solid #555; }
+        .bobby-pin { position: absolute; top: 50%; left: 50%; width: 120px; height: 4px; background: silver; transform-origin: 0% 50%; transform: rotate(-90deg); transition: transform 0.05s; z-index: 20; border-radius: 2px; box-shadow: 0 0 5px black; }
+        .screwdriver { position: absolute; bottom: 0; left: 50%; width: 20px; height: 100px; background: orange; transform: translateX(-50%); z-index: 10; opacity: 0.5; }
+        
+        .hack-row { font-family: 'VT323', monospace; letter-spacing: 2px; cursor: pointer; padding: 2px 5px; }
+        .hack-row:hover, .hack-row.selected { background-color: var(--pip-green); color: black; font-weight: bold; }
+        .hack-hex { color: #0d47a1; margin-right: 10px; }
+
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #001100; border-left: 1px solid var(--pip-dim); }
         ::-webkit-scrollbar-thumb { background: var(--pip-dim); border: 1px solid var(--pip-green); }
@@ -239,9 +250,9 @@
             loadScript('data.js?v=' + ver)
                 .then(() => loadScript('world_gen.js?v=' + ver))
                 .then(() => loadScript('network.js?v=' + ver))
+                .then(() => loadScript('minigames.js?v=' + ver)) // NEW
                 .then(() => loadScript('combat.js?v=' + ver))
                 .then(() => loadScript('game.js?v=' + ver))
-                // NEW: Load Split UI Files
                 .then(() => loadScript('ui_core.js?v=' + ver))
                 .then(() => loadScript('ui_render.js?v=' + ver))
                 .then(() => loadScript('ui_input.js?v=' + ver))
