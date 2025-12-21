@@ -46,7 +46,7 @@ Object.assign(UI, {
             else this.els.btnMenu.classList.remove('alert-glow-red');
         }
 
-        // DISABLE BUTTONS DURING COMBAT (Fix Request)
+        // DISABLE BUTTONS DURING COMBAT
         const inCombat = Game.state.view === 'combat';
         [this.els.btnWiki, this.els.btnMap, this.els.btnChar, this.els.btnQuests, this.els.btnSave, this.els.btnLogout, this.els.btnInv].forEach(btn => {
             if(btn) {
@@ -108,14 +108,14 @@ Object.assign(UI, {
             return;
         }
 
-        // NEW: Minigame Views handling directly in Render to avoid fetch delay
+        // Minigame Views
         if(name === 'hacking') {
             this.renderHacking();
             Game.state.view = name;
             return;
         }
         if(name === 'lockpicking') {
-            this.renderLockpicking(true); // true = init structure
+            this.renderLockpicking(true);
             Game.state.view = name;
             return;
         }
@@ -179,7 +179,6 @@ Object.assign(UI, {
 
     // --- RENDERERS ---
     
-    // NEU: Hacking Render
     renderHacking: function() {
         const h = MiniGames.hacking;
         let html = `
@@ -199,11 +198,9 @@ Object.assign(UI, {
             </div>
         `;
         
-        // Wenn es noch nicht da ist, setzen
         if(this.els.view.innerHTML.indexOf('ROBCO') === -1) {
             this.els.view.innerHTML = html;
         } else {
-             // Nur Log und Attempts updaten wenn Struktur da ist, aber hier redraw ich einfach alles für Simplizität
              document.getElementById('hack-log').innerHTML = h.logs.map(l => `<div>${l}</div>`).join('');
              document.querySelector('.animate-pulse').textContent = `ATTEMPTS: ${'█ '.repeat(h.attempts)}`;
         }
@@ -211,8 +208,6 @@ Object.assign(UI, {
         const wordContainer = document.getElementById('hack-words');
         if(wordContainer) {
             wordContainer.innerHTML = '';
-            // Generate garbage hex and words
-            let buffer = "";
             h.words.forEach(word => {
                 const hex = `0x${Math.floor(Math.random()*65535).toString(16).toUpperCase()}`;
                 const btn = document.createElement('div');
@@ -224,7 +219,6 @@ Object.assign(UI, {
         }
     },
 
-    // NEU: Lockpicking Render
     renderLockpicking: function(init=false) {
         if(init) {
             this.els.view.innerHTML = `
@@ -244,7 +238,6 @@ Object.assign(UI, {
                     <button class="absolute bottom-4 right-4 border border-red-500 text-red-500 px-3 py-1 hover:bg-red-900" onclick="MiniGames.lockpicking.end()">ABBRECHEN</button>
                 </div>
             `;
-            // Touch Button Event
             const btn = document.getElementById('btn-turn-lock');
             if(btn) {
                 btn.addEventListener('touchstart', (e) => { e.preventDefault(); MiniGames.lockpicking.rotateLock(); });
@@ -254,11 +247,10 @@ Object.assign(UI, {
             }
         }
         
-        // Update Rotation CSS
         const pin = document.getElementById('bobby-pin');
         const lock = document.getElementById('lock-rotator');
         
-        if(pin) pin.style.transform = `rotate(${MiniGames.lockpicking.currentAngle - 90}deg)`; // -90 offset because CSS draws it horizontal
+        if(pin) pin.style.transform = `rotate(${MiniGames.lockpicking.currentAngle - 90}deg)`; 
         if(lock) lock.style.transform = `rotate(${MiniGames.lockpicking.lockAngle}deg)`;
     },
 
@@ -397,6 +389,7 @@ Object.assign(UI, {
         document.getElementById('equip-body-stats').textContent = armStats || "Kein Bonus";
     },
     
+    // NEU: Verbesserte WorldMap Logik
     renderWorldMap: function() {
         const grid = document.getElementById('world-grid');
         const info = document.getElementById('sector-info');
@@ -420,30 +413,33 @@ Object.assign(UI, {
         for(let y=0; y<8; y++) {
             for(let x=0; x<8; x++) {
                 const cell = document.createElement('div');
-                cell.className = "w-full h-full border text-[10px] flex items-center justify-center relative transition-all duration-300";
+                cell.className = "w-full h-full border text-[10px] flex flex-col items-center justify-center relative transition-all duration-300";
                 
                 const key = `${x},${y}`;
                 const isCurrent = (Game.state.sector.x === x && Game.state.sector.y === y);
                 const visited = Game.state.visitedSectors && Game.state.visitedSectors.includes(key);
-                
                 const biome = WorldGen.getSectorBiome(x, y);
                 
+                let iconHtml = '';
+                let tooltipTxt = `Sektor ${x},${y}`;
+
+                if (biome === 'city') {
+                    iconHtml = '<span class="text-3xl">🏙️</span>'; 
+                    tooltipTxt = "Rusty Springs (Stadt)";
+                } else if (biome === 'vault') {
+                    iconHtml = '<span class="text-3xl">⚙️</span>'; 
+                    tooltipTxt = "Vault 1337";
+                }
+
                 if (isCurrent) {
-                    cell.className += " bg-[#1aff1a] text-black font-bold border-white z-10 shadow-[0_0_15px_#1aff1a]";
-                    cell.innerHTML = '<span class="animate-pulse">YOU</span>';
+                    // Zeige Icon UND "YOU"
+                    cell.className += " bg-[#1aff1a] text-black font-bold border-white z-10 shadow-[0_0_15px_#1aff1a] leading-none overflow-visible";
+                    cell.innerHTML = `${iconHtml}<span class="animate-pulse text-[8px] mt-0.5">YOU</span>`;
                 } 
                 else if (visited) {
                     const colorClass = colors[biome] || colors['wasteland'];
-                    cell.className += ` ${colorClass} text-white`;
-                    
-                    // FIX: Icons für Städte & Vaults
-                    if (biome === 'city') {
-                        cell.innerHTML = '<span class="text-2xl">🏙️</span>'; // Stadt Icon
-                        cell.title = "Rusty Springs (Stadt)";
-                    } else if (biome === 'vault') {
-                        cell.innerHTML = '<span class="text-2xl">⚙️</span>'; // Vault Icon
-                        cell.title = "Vault 101";
-                    }
+                    cell.className += ` ${colorClass} text-white/80`;
+                    cell.innerHTML = iconHtml;
                 } 
                 else {
                     cell.className += " bg-black border-[#1aff1a] border-opacity-20";
@@ -451,18 +447,19 @@ Object.assign(UI, {
                     cell.style.backgroundSize = "4px 4px";
                 }
                 
+                // Other Players
                 if(typeof Network !== 'undefined' && Network.otherPlayers) {
                     for(let pid in Network.otherPlayers) {
                         const p = Network.otherPlayers[pid];
                         if(p.sector && p.sector.x === x && p.sector.y === y) {
                             const dot = document.createElement('div');
-                            dot.className = "absolute -top-1 -right-1 w-3 h-3 bg-cyan-400 rounded-full border border-black z-20 shadow-[0_0_5px_cyan]";
+                            dot.className = "absolute top-1 right-1 w-2 h-2 bg-cyan-400 rounded-full border border-black z-20 shadow-[0_0_5px_cyan]";
                             cell.appendChild(dot);
                         }
                     }
                 }
                 
-                if (!cell.title) cell.title = `Sektor ${x},${y}`;
+                cell.title = tooltipTxt;
                 grid.appendChild(cell);
             }
         }
@@ -553,7 +550,7 @@ Object.assign(UI, {
             }
         } else if (category === 'locs') {
              const locs = [
-                {name: "Vault 101", desc: "Startpunkt. Sicherer Hafen. Bietet kostenlose Heilung."},
+                {name: "Vault 1337", desc: "Startpunkt. Sicherer Hafen. Bietet kostenlose Heilung."},
                 {name: "Rusty Springs", desc: "Zentrale Handelsstadt [3,3]. Händler, Heiler und Werkbank."},
                 {name: "Supermarkt", desc: "Zufällige Ruine. Mittlere Gefahr, viele Raider."},
                 {name: "Alte Höhlen", desc: "Zufälliger Dungeon. Dunkel, Skorpione und Insekten."},
@@ -661,7 +658,6 @@ Object.assign(UI, {
     renderCombat: function() {
         const enemy = Game.state.enemy;
         if(!enemy) return;
-        // Fix from previous update
         const nameEl = document.getElementById('enemy-name');
         if(nameEl) nameEl.textContent = enemy.name;
         
