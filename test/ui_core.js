@@ -1,5 +1,5 @@
 const UI = {
-    els: {},
+    els: {}, // Initialisiert als leeres Objekt
     timerInterval: null,
     lastInputTime: Date.now(),
     biomeColors: (typeof window.GameData !== 'undefined') ? window.GameData.colors : {},
@@ -15,11 +15,14 @@ const UI = {
     // Focus System
     focusIndex: -1,
     focusableEls: [],
-    inputMethod: 'touch', // 'touch' by default to avoid auto-focus on mobile
+    inputMethod: 'touch', 
 
     // Utils
     log: function(msg, color="text-green-500") {
-        if(!this.els.log) return;
+        if(!this.els || !this.els.log) {
+            console.log("[PRE-INIT LOG]:", msg);
+            return;
+        }
         const line = document.createElement('div');
         line.className = color;
         line.textContent = `> ${msg}`;
@@ -29,7 +32,7 @@ const UI = {
     error: function(msg) {
         const errText = `> ERROR: ${msg}`;
         console.error(errText);
-        if(this.els.log) {
+        if(this.els && this.els.log) {
             const line = document.createElement('div');
             line.className = "text-red-500 font-bold blink-red";
             line.textContent = errText;
@@ -38,8 +41,8 @@ const UI = {
     },
     
     setConnectionState: function(status) {
+        if(!this.els || !this.els.version) return;
         const v = this.els.version;
-        if(!v) return;
         if(status === 'online') {
             v.className = "text-[#39ff14] font-bold tracking-widest";
             v.style.textShadow = "0 0 5px #39ff14";
@@ -65,7 +68,6 @@ const UI = {
         const s = (diff % 60).toString().padStart(2,'0');
         if(this.els.timer) this.els.timer.textContent = `${h}:${m}:${s}`;
         
-        // Dynamic Updates (HP, XP, Combat State) from ui_render.js
         if(this.update) this.update();
     },
 
@@ -265,7 +267,6 @@ const UI = {
         const save = this.currentSaves[index];
         if (this.els.btnCharSelectAction) {
             if (save) {
-                // CHANGED: " (Enter)" text removed
                 this.els.btnCharSelectAction.textContent = "SPIEL LADEN";
                 this.els.btnCharSelectAction.className = "action-button w-full border-green-500 text-green-500 font-bold py-3 mb-2";
                 if(this.els.btnCharDeleteAction) {
