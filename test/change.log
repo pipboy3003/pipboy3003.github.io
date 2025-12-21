@@ -1,5 +1,12 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.3.4-boot] - 2025-12-21 (Visual Polish)
+------------------------------------------------
+- UI: 'index.html' enthält nun eine animierte Boot-Sequenz beim Start ("ROBCO INDUSTRIES...").
+- UI: Scanline-Effekt (wandernder Balken) für authentischeren Röhrenmonitor-Look hinzugefügt.
+- UI: Hintergrund des Login-Screens hat nun ein subtiles, animiertes Hex-Grid.
+
+
 [v0.3.3a-map-fix] - 2025-12-21 (Map & UI Polish)
 ------------------------------------------------
 - UI: 'views/worldmap.html' aktualisiert für korrektes 8x8 Grid-Layout.
