@@ -1,5 +1,14 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.4.0-gameplay-vis] - 2025-12-21 (Visuals Online)
+------------------------------------------------
+- CORE: 'game.js' implementiert nun einen echten Canvas-Renderer.
+- VISUAL: Lokale Spielwelt wird nun gezeichnet (Terrain, Berge, Wasser).
+- VISUAL: Spieler wird als leuchtendes Quadrat angezeigt.
+- LOGIC: Einfache Kollisionsabfrage hinzugefügt (Berge 'M' und Wasser 'W' blockieren).
+- SYSTEM: 'WorldGen' wird nun aktiv genutzt, um Sektoren zu generieren.
+
+
 [v0.3.9b] - 2025-12-21 (Emergency Fix)
 ------------------------------------------------
 - CRITICAL FIX: 'ui_render.js' greift nun korrekt auf 'window.GameData' zu statt auf 'Game.items/monsters'. Dies behebt den "Black Screen" Absturz.
