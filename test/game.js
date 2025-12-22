@@ -7,42 +7,35 @@ const Game = {
     ctx: null,
     mapWidth: 32,
     mapHeight: 24,
-    tileSize: 20, // Größe der Kacheln in Pixeln
+    tileSize: 20, 
 
-    // --- INITIALISIERUNG & SAVEGUARD ---
+    // --- INITIALISIERUNG ---
 
     init: function(saveData, dbRef, slotIndex, newName) {
         this.saveSlot = slotIndex;
         console.log("Initializing Game Loop...");
 
-        // 1. SaveGuard: Daten validieren oder neu erstellen
         if (saveData) {
             this.state = this.validateState(saveData);
             UI.log("System neu gestartet. Speicher geladen.", "text-green-500");
         } else {
             this.state = this.createNewState(newName);
             UI.log("Neue ID registriert: " + newName, "text-yellow-400");
-            // Start-Equipment
             this.addToInventory('vault_suit', 1);
             this.equipItem('vault_suit');
             this.addToInventory('pistol', 1); 
             this.addToInventory('AMMO', 20);
         }
 
-        // 2. Startzeit setzen
         if (!this.state.startTime) this.state.startTime = Date.now();
-
-        // 3. UI initialisieren
         UI.update();
         
-        // 4. View laden
         if (this.state.view === 'combat' && this.state.enemy && this.state.enemy.hp > 0) {
             if(typeof Combat !== 'undefined') Combat.start(this.state.enemy);
         } else {
             UI.switchView('map');
         }
 
-        // 5. Auto-Save (60s)
         setInterval(() => this.autoSave(), 60000);
     },
 
@@ -60,7 +53,7 @@ const Game = {
         if (!data.equip) data.equip = {};
         if (!data.quests) data.quests = [];
         if (!data.visitedSectors) data.visitedSectors = ["4,4"];
-        if (!data.localMap) data.localMap = []; // Map Data
+        if (!data.localMap) data.localMap = []; 
         
         data.inDialog = false;
         data.isGameOver = false;
@@ -76,7 +69,7 @@ const Game = {
             inventory: [],
             equip: { weapon: null, body: null },
             sector: { x:4, y:4 }, 
-            player: { x:16, y:12 }, // Mitte der Map
+            player: { x:16, y:12 }, 
             visitedSectors: ["4,4"],
             localMap: [],
             quests: [{id: "start", title: "Willkommen", text: "Verlasse den Vault.", read: false}],
@@ -86,7 +79,7 @@ const Game = {
         };
     },
 
-    // --- RENDER & MAP LOGIC (DER FIX) ---
+    // --- ASCII MAP RENDERER (WICHTIG!) ---
 
     initCanvas: function() {
         const canvas = document.getElementById('game-canvas');
@@ -95,12 +88,13 @@ const Game = {
         this.canvasMap = canvas;
         this.ctx = canvas.getContext('2d');
         
-        // Canvas Größe setzen
         canvas.width = this.mapWidth * this.tileSize;
         canvas.height = this.mapHeight * this.tileSize;
         
-        // Deaktiviere Antialiasing für Pixel-Look
-        this.ctx.imageSmoothingEnabled = false;
+        // Settings für scharfen Text
+        this.ctx.font = `${this.tileSize}px monospace`;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
 
         // Wenn keine Map im Speicher ist -> Generieren
         if (!this.state.localMap || this.state.localMap.length === 0) {
@@ -116,11 +110,9 @@ const Game = {
         const biome = WorldGen.getSectorBiome(this.state.sector.x, this.state.sector.y);
         let pois = [];
         
-        // Spezielle Orte setzen
         if(biome === 'city') pois.push({x: Math.floor(this.mapWidth/2), y: Math.floor(this.mapHeight/2), type: 'C'});
         if(biome === 'vault') pois.push({x: Math.floor(this.mapWidth/2), y: Math.floor(this.mapHeight/2), type: 'V'});
         
-        // Map generieren
         this.state.localMap = WorldGen.createSector(this.mapWidth, this.mapHeight, biome, pois);
     },
 
@@ -131,31 +123,34 @@ const Game = {
         const colors = window.GameData.colors;
         const ts = this.tileSize;
         
-        // 1. Clear
+        // 1. Hintergrund löschen (Schwarz)
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvasMap.width, this.canvasMap.height);
         
-        // 2. Draw Terrain
+        // Font Einstellung erneuern (falls Canvas resized wurde)
+        this.ctx.font = `bold ${ts}px monospace`;
+        
+        // 2. Terrain Zeichnen (ASCII)
         for (let y = 0; y < this.mapHeight; y++) {
             for (let x = 0; x < this.mapWidth; x++) {
                 if(!map[y] || !map[y][x]) continue;
                 const char = map[y][x];
-                this.ctx.fillStyle = colors[char] || '#111';
-                this.ctx.fillRect(x * ts, y * ts, ts, ts);
                 
-                // Optional: Grid Lines (leicht)
-                // this.ctx.strokeStyle = '#051105';
-                // this.ctx.strokeRect(x * ts, y * ts, ts, ts);
+                // Farbe setzen (Neon aus Data.js oder Fallback Grün)
+                this.ctx.fillStyle = colors[char] || '#1aff1a'; 
+                
+                // Zeichen malen (Zentriert in der Kachel)
+                this.ctx.fillText(char, x * ts + ts/2, y * ts + ts/2);
             }
         }
         
-        // 3. Draw Player
+        // 3. Spieler Zeichnen (@)
         const p = this.state.player;
         this.ctx.fillStyle = '#39ff14'; // Pip-Boy Green
-        this.ctx.shadowBlur = 15;
+        this.ctx.shadowBlur = 10;
         this.ctx.shadowColor = '#39ff14';
-        this.ctx.fillRect(p.x * ts, p.y * ts, ts, ts);
-        this.ctx.shadowBlur = 0; // Reset
+        this.ctx.fillText('@', p.x * ts + ts/2, p.y * ts + ts/2);
+        this.ctx.shadowBlur = 0; // Reset für nächsten Frame
     },
 
     // --- ACTIONS ---
@@ -169,27 +164,23 @@ const Game = {
         // Grenzen prüfen
         if (newX < 0 || newX >= this.mapWidth || newY < 0 || newY >= this.mapHeight) {
              UI.log("Ende des Sektors.", "text-gray-500");
-             // Hier könnte man den Sektorwechsel triggern
              return;
         }
         
-        // Kollision prüfen
+        // Kollision
         const tile = this.state.localMap[newY][newX];
-        const solidChars = ['M', 'W', '#', '|']; // Berg, Wasser, Wände
+        const solidChars = ['M', 'W', '#', '|']; 
         if (solidChars.includes(tile)) {
              UI.log("Weg blockiert!", "text-red-500");
              UI.shakeView();
              return;
         }
         
-        // Bewegung ausführen
         this.state.player.x = newX;
         this.state.player.y = newY;
         
-        // Interaktionen
         this.checkInteraction(tile);
 
-        // Zufallskampf
         const biome = WorldGen.getSectorBiome(this.state.sector.x, this.state.sector.y);
         if (biome !== 'city' && biome !== 'vault' && Math.random() < 0.05) { 
             this.triggerRandomEncounter();
@@ -260,7 +251,6 @@ const Game = {
             this.gainExp(10);
             UI.log(`Sektor [${sx},${sy}] entdeckt.`, "text-cyan-400");
         }
-        // Neue Map generieren erzwingen
         this.state.localMap = []; 
         this.state.player.x = Math.floor(this.mapWidth/2);
         this.state.player.y = Math.floor(this.mapHeight/2);
@@ -436,6 +426,6 @@ const Game = {
         if (!this.state.inDialog && !this.state.isGameOver) this.saveGame(false);
     },
 
-    // Placeholder falls nicht genutzt, aber initCanvas ist oben definiert
+    // Proxy Funktion
     initCanvasProxy: function() { this.initCanvas(); }
 };
