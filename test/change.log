@@ -1,5 +1,18 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.4.3-pixel-art] - 2025-12-22 (High-Res Graphics Update)
+------------------------------------------------
+- CORE: 'game.js' enthält nun einen komplexen Pixel-Art-Generator.
+- VISUAL: Kacheln (32x32) haben nun Texturen:
+  - Bäume haben Stämme und Laub-Kronen.
+  - Berge haben Fels-Strukturen und Schneekuppen.
+  - Wasser hat Wellen-Effekte.
+  - Wände (#) haben Ziegelstein-Muster.
+  - Spieler (@) ist nun eine Figur mit Vault-Anzug.
+  - Ziel (X) wird als Treppe dargestellt.
+- SYSTEM: Tileset-Größe auf 32px erhöht für mehr Details.
+
+
 [v0.4.2-graphics-overhaul] - 2025-12-22 (Grafik-Update)
 ------------------------------------------------
 - CORE: ASCII-Renderer entfernt. Neuer Tile-basierter Grafik-Renderer in 'game.js' implementiert.
