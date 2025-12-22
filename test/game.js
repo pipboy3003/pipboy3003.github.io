@@ -7,7 +7,8 @@ const Game = {
     ctx: null,
     mapWidth: 32,
     mapHeight: 24,
-    tileSize: 20, 
+    tileSize: 24, // Größere Kacheln für mehr Details
+    tilesetImage: null,
 
     // --- INITIALISIERUNG ---
 
@@ -79,7 +80,73 @@ const Game = {
         };
     },
 
-    // --- ASCII MAP RENDERER (WICHTIG!) ---
+    // --- NEUER GRAFIK RENDERER ---
+
+    // Erstellt ein kleines "Bild" im Speicher mit allen Kacheln
+    createTileset: function() {
+        const ts = this.tileSize;
+        const canvas = document.createElement('canvas');
+        canvas.width = ts * 8; // Platz für 8 Kacheln nebeneinander
+        canvas.height = ts * 2; // 2 Reihen
+        const ctx = canvas.getContext('2d');
+
+        // Hilfsfunktion zum Malen einer Kachel
+        const drawTile = (x, y, color, detailColor, detailType) => {
+            ctx.fillStyle = color;
+            ctx.fillRect(x * ts, y * ts, ts, ts);
+            if (detailColor) {
+                ctx.fillStyle = detailColor;
+                if (detailType === 'noise') { // Boden-Details
+                    for(let i=0; i<4; i++) ctx.fillRect(x*ts + Math.random()*ts, y*ts + Math.random()*ts, 2, 2);
+                } else if (detailType === 'tree') { // Baum
+                    ctx.fillRect(x*ts + ts/4, y*ts + ts/2, ts/2, ts/2); // Stamm
+                    ctx.fillStyle = '#228b22'; ctx.beginPath(); ctx.arc(x*ts+ts/2, y*ts+ts/2, ts/3, 0, Math.PI*2); ctx.fill(); // Krone
+                } else if (detailType === 'mountain') { // Berg
+                    ctx.beginPath(); ctx.moveTo(x*ts, y*ts+ts); ctx.lineTo(x*ts+ts/2, y*ts); ctx.lineTo(x*ts+ts, y*ts+ts); ctx.fill();
+                } else if (detailType === 'water') { // Wellen
+                    ctx.fillRect(x*ts+2, y*ts+ts/3, ts-4, 2); ctx.fillRect(x*ts+2, y*ts+ts*2/3, ts-4, 2);
+                } else if (detailType === 'vault') { // Zahnrad
+                    ctx.beginPath(); ctx.arc(x*ts+ts/2, y*ts+ts/2, ts/2.5, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(x*ts+ts/2, y*ts+ts/2, ts/5, 0, Math.PI*2); ctx.fill();
+                } else if (detailType === 'city') { // Haus
+                    ctx.fillRect(x*ts+4, y*ts+ts/3, ts-8, ts*2/3); ctx.fillStyle = '#000'; ctx.fillRect(x*ts+ts/2-2, y*ts+ts-6, 4, 6);
+                }
+            }
+        };
+
+        // Reihe 1: Terrain
+        drawTile(0, 0, '#5d5345', '#4a4036', 'noise'); // . Wasteland
+        drawTile(1, 0, '#eecfa1', '#d2b48c', 'noise'); // _ Desert
+        drawTile(2, 0, '#1a3300', '#228b22', 'noise'); // , Forest
+        drawTile(3, 0, '#1e1e11', '#2f4f2f', 'noise'); // ; Swamp
+        drawTile(4, 0, '#333333', '#555555', 'noise'); // = Road
+        
+        // Reihe 2: Features & Player
+        drawTile(0, 1, '#1e90ff', '#add8e6', 'water'); // W Water
+        drawTile(1, 1, '#a0522d', '#8b4513', 'mountain'); // M Mountain
+        drawTile(2, 1, '#228b22', '#006400', 'tree'); // T/t Tree
+        drawTile(3, 1, '#ffff00', '#0000ff', 'vault'); // V Vault
+        drawTile(4, 1, '#808080', '#d3d3d3', 'city'); // C City
+        drawTile(5, 1, '#39ff14'); // @ Player (einfaches grünes Quadrat für den Anfang, leuchtet eh)
+
+        const img = new Image();
+        img.src = canvas.toDataURL();
+        return img;
+    },
+
+    // Ordnet einem Karten-Zeichen die Position im Tileset zu
+    getTileCoords: function(char) {
+        const map = {
+            '.': {x:0, y:0}, '_': {x:1, y:0}, ',': {x:2, y:0}, ';': {x:3, y:0}, '=': {x:4, y:0},
+            'W': {x:0, y:1}, '~': {x:0, y:1}, 
+            'M': {x:1, y:1}, 
+            'T': {x:2, y:1}, 't': {x:2, y:1}, 
+            'V': {x:3, y:1}, 
+            'C': {x:4, y:1}, 'E': {x:4, y:1},
+            '@': {x:5, y:1}
+        };
+        return map[char] || map['.']; // Fallback auf Boden
+    },
 
     initCanvas: function() {
         const canvas = document.getElementById('game-canvas');
@@ -91,66 +158,64 @@ const Game = {
         canvas.width = this.mapWidth * this.tileSize;
         canvas.height = this.mapHeight * this.tileSize;
         
-        // Settings für scharfen Text
-        this.ctx.font = `${this.tileSize}px monospace`;
-        this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'middle';
+        // WICHTIG FÜR PIXEL-LOOK: Kein Weichzeichnen!
+        this.ctx.imageSmoothingEnabled = false; 
+        this.ctx.mozImageSmoothingEnabled = false;
+        this.ctx.webkitImageSmoothingEnabled = false;
 
-        // Wenn keine Map im Speicher ist -> Generieren
-        if (!this.state.localMap || this.state.localMap.length === 0) {
-            this.generateLocalMap();
-        }
-        
-        this.drawMap();
+        // Tileset generieren und laden
+        this.tilesetImage = this.createTileset();
+        this.tilesetImage.onload = () => {
+            // Wenn keine Map im Speicher ist -> Generieren
+            if (!this.state.localMap || this.state.localMap.length === 0) {
+                this.generateLocalMap();
+            }
+            this.drawMap();
+        };
     },
 
     generateLocalMap: function() {
         if (typeof WorldGen === 'undefined') return;
-        
         const biome = WorldGen.getSectorBiome(this.state.sector.x, this.state.sector.y);
         let pois = [];
-        
         if(biome === 'city') pois.push({x: Math.floor(this.mapWidth/2), y: Math.floor(this.mapHeight/2), type: 'C'});
         if(biome === 'vault') pois.push({x: Math.floor(this.mapWidth/2), y: Math.floor(this.mapHeight/2), type: 'V'});
-        
         this.state.localMap = WorldGen.createSector(this.mapWidth, this.mapHeight, biome, pois);
     },
 
     drawMap: function() {
-        if (!this.ctx || !this.state.localMap || this.state.localMap.length === 0) return;
+        if (!this.ctx || !this.state.localMap || this.state.localMap.length === 0 || !this.tilesetImage) return;
         
         const map = this.state.localMap;
-        const colors = window.GameData.colors;
         const ts = this.tileSize;
+        const ctx = this.ctx;
+        const img = this.tilesetImage;
         
-        // 1. Hintergrund löschen (Schwarz)
-        this.ctx.fillStyle = '#000';
-        this.ctx.fillRect(0, 0, this.canvasMap.width, this.canvasMap.height);
+        // 1. Alles löschen
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, this.canvasMap.width, this.canvasMap.height);
         
-        // Font Einstellung erneuern (falls Canvas resized wurde)
-        this.ctx.font = `bold ${ts}px monospace`;
-        
-        // 2. Terrain Zeichnen (ASCII)
+        // 2. Kacheln zeichnen
         for (let y = 0; y < this.mapHeight; y++) {
             for (let x = 0; x < this.mapWidth; x++) {
                 if(!map[y] || !map[y][x]) continue;
                 const char = map[y][x];
+                const coords = this.getTileCoords(char);
                 
-                // Farbe setzen (Neon aus Data.js oder Fallback Grün)
-                this.ctx.fillStyle = colors[char] || '#1aff1a'; 
-                
-                // Zeichen malen (Zentriert in der Kachel)
-                this.ctx.fillText(char, x * ts + ts/2, y * ts + ts/2);
+                // drawImage(image, srcX, srcY, srcW, srcH, destX, destY, destW, destH)
+                ctx.drawImage(img, coords.x * ts, coords.y * ts, ts, ts, x * ts, y * ts, ts, ts);
             }
         }
         
-        // 3. Spieler Zeichnen (@)
+        // 3. Spieler Zeichnen
         const p = this.state.player;
-        this.ctx.fillStyle = '#39ff14'; // Pip-Boy Green
-        this.ctx.shadowBlur = 10;
-        this.ctx.shadowColor = '#39ff14';
-        this.ctx.fillText('@', p.x * ts + ts/2, p.y * ts + ts/2);
-        this.ctx.shadowBlur = 0; // Reset für nächsten Frame
+        const pCoords = this.getTileCoords('@');
+        
+        // Leuchteffekt für den Spieler
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#39ff14';
+        ctx.drawImage(img, pCoords.x * ts, pCoords.y * ts, ts, ts, p.x * ts, p.y * ts, ts, ts);
+        ctx.shadowBlur = 0; // Reset
     },
 
     // --- ACTIONS ---
@@ -161,13 +226,11 @@ const Game = {
         let newX = this.state.player.x + dx;
         let newY = this.state.player.y + dy;
         
-        // Grenzen prüfen
         if (newX < 0 || newX >= this.mapWidth || newY < 0 || newY >= this.mapHeight) {
              UI.log("Ende des Sektors.", "text-gray-500");
              return;
         }
         
-        // Kollision
         const tile = this.state.localMap[newY][newX];
         const solidChars = ['M', 'W', '#', '|']; 
         if (solidChars.includes(tile)) {
@@ -190,11 +253,11 @@ const Game = {
     },
 
     checkInteraction: function(tile) {
-        if(tile === 'C' || tile === 'E' || tile === 'F') { // City Trigger
+        if(tile === 'C' || tile === 'E' || tile === 'F') {
             UI.toggleView('city');
             UI.log("Betrete Rusty Springs...", "text-cyan-400");
         }
-        if(tile === 'V') { // Vault Trigger
+        if(tile === 'V') {
             UI.enterVault();
         }
     },
@@ -426,6 +489,5 @@ const Game = {
         if (!this.state.inDialog && !this.state.isGameOver) this.saveGame(false);
     },
 
-    // Proxy Funktion
     initCanvasProxy: function() { this.initCanvas(); }
 };
