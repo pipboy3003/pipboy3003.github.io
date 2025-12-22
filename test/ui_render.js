@@ -434,7 +434,16 @@ Object.assign(UI, {
                 } 
                 else if (visited) {
                     const colorClass = colors[biome] || colors['wasteland'];
-                    cell.className += ` ${colorClass} text-white/50`;
+                    cell.className += ` ${colorClass} text-white`;
+                    
+                    // FIX: Icons für Städte & Vaults
+                    if (biome === 'city') {
+                        cell.innerHTML = '<span class="text-xl">🏙️</span>'; // Stadt Icon
+                        cell.title = "Rusty Springs (Stadt)";
+                    } else if (biome === 'vault') {
+                        cell.innerHTML = '<span class="text-xl">⚙️</span>'; // Vault Icon
+                        cell.title = "Vault 101";
+                    }
                 } 
                 else {
                     cell.className += " bg-black border-[#1aff1a] border-opacity-20";
@@ -453,7 +462,7 @@ Object.assign(UI, {
                     }
                 }
                 
-                cell.title = `Sektor ${x},${y}`;
+                if (!cell.title) cell.title = `Sektor ${x},${y}`;
                 grid.appendChild(cell);
             }
         }
