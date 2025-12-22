@@ -1,26 +1,64 @@
 window.GameData = {
+    // --- FARBPALETTE (NEON / HELL für ASCII auf Schwarz) ---
     colors: { 
-        '.':'#2d241b', '_':'#4a4036', ',':'#1a261a', ';':'#1e1e11', '=':'#333333', 
-        '#':'#555', 
-        'line_default': '#2a5a2a', 'line_wall': '#39ff14', 
-        'V': '#39ff14', 'C': '#eab308', 'S': '#ff0000', 'G': '#00ffff', 'H': '#888888', 
-        '^': '#111', 'v':'#111', '<':'#111', '>':'#111',
-        'M': '#3e2723', 'W': '#0d47a1', '~': '#2f4f2f', 
-        't': '#1b5e20', 'T': '#0a3d0a', 'x': '#8b4513', 'o': '#808080',
-        '+': '#666666', '"': '#3cb371', 'Y': '#deb887', 'U': '#212121',
-        '$': '#ffd700', '&': '#ff8c00', 'P': '#ff3333', 'E': '#39ff14', 'F': '#00bfff', '|': '#777',
-        'X': '#ff00ff', 
-        'wasteland': '#5d5345', 'desert': '#eecfa1', 'jungle': '#1a3300', 'city': '#555555', 'swamp': '#1e1e11'
+        '.': '#8b7355',  // Boden (Braun-Hell)
+        '_': '#eecfa1',  // Wüste (Sand)
+        ',': '#228b22',  // Dschungelboden (Forest Green)
+        ';': '#556b2f',  // Sumpf (Olive)
+        '=': '#808080',  // Straße/Stadt (Grau)
+        '#': '#d3d3d3',  // Mauer (Hellgrau)
+        
+        'M': '#a0522d',  // Berge (Sienna)
+        'W': '#1e90ff',  // Wasser (Dodger Blue)
+        '~': '#00ced1',  // Sumpfwasser (Dark Turquoise)
+        
+        't': '#32cd32',  // Kleiner Baum (Lime Green)
+        'T': '#006400',  // Großer Baum (Dark Green)
+        'x': '#8b4513',  // Toter Baum / Hindernis
+        'o': '#696969',  // Stein
+        
+        'V': '#ffff00',  // Vault (Gelb)
+        'C': '#00ffff',  // City (Cyan)
+        
+        // UI Colors
+        'wasteland': '#8b7355', 
+        'desert': '#eecfa1', 
+        'jungle': '#228b22', 
+        'city': '#808080', 
+        'swamp': '#556b2f',
+        'forest': '#228b22',
+        'mountain': '#a0522d'
     },
 
     statLabels: { 'STR': 'STÄRKE', 'PER': 'WAHRNEHMUNG', 'END': 'AUSDAUER', 'INT': 'INTELLIGENZ', 'AGI': 'BEWEGLICHKEIT', 'LUC': 'GLÜCK' },
 
+    // --- BIOME (Definiert die Zeichen) ---
     biomes: {
-        'wasteland': { ground: '.', water: 0.02, mountain: 0.03, features: [ { char: 'o', prob: 0.02, solid: true }, { char: 'x', prob: 0.03, solid: false }, { char: 't', prob: 0.01, solid: true } ] },
-        'jungle': { ground: ',', water: 0.08, mountain: 0.05, features: [ { char: 'T', prob: 0.08, solid: true }, { char: 't', prob: 0.15, solid: true }, { char: '"', prob: 0.15, solid: false } ] },
-        'desert': { ground: '_', water: 0.01, mountain: 0.10, features: [ { char: 'o', prob: 0.02, solid: true }, { char: 'Y', prob: 0.02, solid: true } ] },
-        'city': { ground: '=', water: 0.0, mountain: 0.0, features: [ { char: '#', prob: 0.10, solid: true }, { char: '+', prob: 0.08, solid: false }, { char: 'o', prob: 0.02, solid: true } ] },
-        'swamp': { ground: ';', water: 0.05, mountain: 0.0, features: [ { char: '~', prob: 0.10, solid: false }, { char: 'x', prob: 0.10, solid: false }, { char: 't', prob: 0.05, solid: true } ] }
+        'wasteland': { 
+            ground: '.', water: 0.02, mountain: 0.03,
+            features: [ { char: 'o', prob: 0.02, solid: true }, { char: 'x', prob: 0.03, solid: false }, { char: 't', prob: 0.01, solid: true } ]
+        },
+        'forest': { 
+            ground: ',', water: 0.05, mountain: 0.05,
+            features: [ { char: 'T', prob: 0.15, solid: true }, { char: 't', prob: 0.20, solid: true }, { char: 'o', prob: 0.05, solid: true } ]
+        },
+        'desert': { 
+            ground: '_', water: 0.01, mountain: 0.10,
+            features: [ { char: 'o', prob: 0.05, solid: true }, { char: 'x', prob: 0.02, solid: false } ]
+        },
+        'city': { 
+            ground: '=', water: 0.0, mountain: 0.0,
+            features: [ { char: '#', prob: 0.15, solid: true }, { char: 'o', prob: 0.05, solid: true } ]
+        },
+        'swamp': { 
+            ground: ';', water: 0.20, mountain: 0.0,
+            features: [ { char: '~', prob: 0.15, solid: false }, { char: 'x', prob: 0.10, solid: false }, { char: 't', prob: 0.05, solid: true } ]
+        },
+        'mountain': {
+            ground: '.', water: 0.0, mountain: 0.40,
+            features: [ { char: 'M', prob: 0.20, solid: true }, { char: 'o', prob: 0.20, solid: true } ]
+        },
+        'vault': { ground: '.', water: 0, mountain: 0, features: [] } // Safe Zone
     },
 
     hackWords: {
