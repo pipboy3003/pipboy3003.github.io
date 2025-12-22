@@ -7,7 +7,7 @@ const Game = {
     ctx: null,
     mapWidth: 32,
     mapHeight: 24,
-    tileSize: 24, // Größere Kacheln für mehr Details
+    tileSize: 32, // Erhöht auf 32px für "gute Grafik"
     tilesetImage: null,
 
     // --- INITIALISIERUNG ---
@@ -80,72 +80,107 @@ const Game = {
         };
     },
 
-    // --- NEUER GRAFIK RENDERER ---
+    // --- PIXEL ART GENERATOR ---
 
-    // Erstellt ein kleines "Bild" im Speicher mit allen Kacheln
     createTileset: function() {
         const ts = this.tileSize;
         const canvas = document.createElement('canvas');
-        canvas.width = ts * 8; // Platz für 8 Kacheln nebeneinander
-        canvas.height = ts * 2; // 2 Reihen
+        canvas.width = ts * 8; 
+        canvas.height = ts * 4; // Mehr Platz für Varianten
         const ctx = canvas.getContext('2d');
 
-        // Hilfsfunktion zum Malen einer Kachel
-        const drawTile = (x, y, color, detailColor, detailType) => {
-            ctx.fillStyle = color;
-            ctx.fillRect(x * ts, y * ts, ts, ts);
-            if (detailColor) {
-                ctx.fillStyle = detailColor;
-                if (detailType === 'noise') { // Boden-Details
-                    for(let i=0; i<4; i++) ctx.fillRect(x*ts + Math.random()*ts, y*ts + Math.random()*ts, 2, 2);
-                } else if (detailType === 'tree') { // Baum
-                    ctx.fillRect(x*ts + ts/4, y*ts + ts/2, ts/2, ts/2); // Stamm
-                    ctx.fillStyle = '#228b22'; ctx.beginPath(); ctx.arc(x*ts+ts/2, y*ts+ts/2, ts/3, 0, Math.PI*2); ctx.fill(); // Krone
-                } else if (detailType === 'mountain') { // Berg
-                    ctx.beginPath(); ctx.moveTo(x*ts, y*ts+ts); ctx.lineTo(x*ts+ts/2, y*ts); ctx.lineTo(x*ts+ts, y*ts+ts); ctx.fill();
-                } else if (detailType === 'water') { // Wellen
-                    ctx.fillRect(x*ts+2, y*ts+ts/3, ts-4, 2); ctx.fillRect(x*ts+2, y*ts+ts*2/3, ts-4, 2);
-                } else if (detailType === 'vault') { // Zahnrad
-                    ctx.beginPath(); ctx.arc(x*ts+ts/2, y*ts+ts/2, ts/2.5, 0, Math.PI*2); ctx.fill();
-                    ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(x*ts+ts/2, y*ts+ts/2, ts/5, 0, Math.PI*2); ctx.fill();
-                } else if (detailType === 'city') { // Haus
-                    ctx.fillRect(x*ts+4, y*ts+ts/3, ts-8, ts*2/3); ctx.fillStyle = '#000'; ctx.fillRect(x*ts+ts/2-2, y*ts+ts-6, 4, 6);
-                }
-            }
-        };
+        // Helpers
+        const rect = (x,y,w,h,c) => { ctx.fillStyle=c; ctx.fillRect(x,y,w,h); };
+        const circle = (x,y,r,c) => { ctx.fillStyle=c; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); };
+        const tri = (x1,y1,x2,y2,x3,y3,c) => { ctx.fillStyle=c; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.lineTo(x3,y3); ctx.fill(); };
 
-        // Reihe 1: Terrain
-        drawTile(0, 0, '#5d5345', '#4a4036', 'noise'); // . Wasteland
-        drawTile(1, 0, '#eecfa1', '#d2b48c', 'noise'); // _ Desert
-        drawTile(2, 0, '#1a3300', '#228b22', 'noise'); // , Forest
-        drawTile(3, 0, '#1e1e11', '#2f4f2f', 'noise'); // ; Swamp
-        drawTile(4, 0, '#333333', '#555555', 'noise'); // = Road
+        // 1. BODEN & TERRAIN
+        // Wasteland (.)
+        rect(0,0,ts,ts, '#5d4037'); // Basis Braun
+        for(let i=0; i<10; i++) rect(Math.random()*ts, Math.random()*ts, 2, 2, '#3e2723'); // Noise
         
-        // Reihe 2: Features & Player
-        drawTile(0, 1, '#1e90ff', '#add8e6', 'water'); // W Water
-        drawTile(1, 1, '#a0522d', '#8b4513', 'mountain'); // M Mountain
-        drawTile(2, 1, '#228b22', '#006400', 'tree'); // T/t Tree
-        drawTile(3, 1, '#ffff00', '#0000ff', 'vault'); // V Vault
-        drawTile(4, 1, '#808080', '#d3d3d3', 'city'); // C City
-        drawTile(5, 1, '#39ff14'); // @ Player (einfaches grünes Quadrat für den Anfang, leuchtet eh)
+        // Wüste (_)
+        rect(ts,0,ts,ts, '#eecfa1'); 
+        rect(ts, ts/2, ts, 2, '#d2b48c'); // Düne
+        
+        // Wald Boden (,)
+        rect(ts*2,0,ts,ts, '#2e7d32'); 
+        for(let i=0;i<5;i++) rect(ts*2+Math.random()*ts, Math.random()*ts, 2, 4, '#1b5e20'); // Gras
+        
+        // Sumpf (;)
+        rect(ts*3,0,ts,ts, '#1b5e20'); 
+        circle(ts*3+ts/2, ts/2, ts/3, '#2f4f2f'); // Pfütze
+        
+        // Straße (=)
+        rect(ts*4,0,ts,ts, '#424242'); 
+        rect(ts*4+ts/2-2, 0, 4, ts/2, '#ffeb3b'); // Mittelstreifen
+        
+        // Wasser (W)
+        rect(0,ts,ts,ts, '#0288d1');
+        rect(2, ts+ts/3, ts-4, 2, '#81d4fa'); // Welle 1
+        rect(5, ts+ts*2/3, ts-10, 2, '#81d4fa'); // Welle 2
 
+        // 2. OBJEKTE & WÄNDE
+        // Baum (T/t) - Slot [2,1]
+        rect(ts*2, ts, ts, ts, '#2e7d32'); // Gras Hintergrund
+        rect(ts*2+ts/2-3, ts+ts-8, 6, 8, '#5d4037'); // Stamm
+        tri(ts*2+ts/2, ts+2, ts*2+2, ts+ts-5, ts*2+ts-2, ts+ts-5, '#1b5e20'); // Tanne
+
+        // Berg (M) - Slot [1,1]
+        rect(ts, ts, ts, ts, '#5d4037'); // Boden
+        tri(ts+ts/2, ts+2, ts+2, ts+ts, ts+ts-2, ts+ts, '#795548'); // Berg Groß
+        tri(ts+ts/2, ts+2, ts+ts/2-4, ts+10, ts+ts/2+4, ts+10, '#ffffff'); // Schneekuppe
+
+        // Wand (#) - Slot [4,1]
+        rect(ts*4, ts, ts, ts, '#616161'); // Ziegel Grau
+        for(let r=0; r<4; r++) {
+            for(let c=0; c<4; c++) {
+                rect(ts*4 + c*8, ts + r*8, 7, 7, '#757575'); // Steine
+            }
+        }
+
+        // Vault (V) - Slot [3,1]
+        rect(ts*3, ts, ts, ts, '#000');
+        circle(ts*3+ts/2, ts+ts/2, ts/2-2, '#fdd835'); // Goldener Kreis
+        circle(ts*3+ts/2, ts+ts/2, ts/2-6, '#000'); // Loch
+        rect(ts*3+ts/2-2, ts+2, 4, ts, '#000'); // Zahnrad Zähne (Simple)
+        rect(ts*3+2, ts+ts/2-2, ts, 4, '#000');
+
+        // Stadt (C) - Slot [4,2] (Neu positioniert)
+        rect(ts*4, ts*2, ts, ts, '#424242'); // Boden
+        rect(ts*4+4, ts*2+4, ts-8, ts-4, '#9e9e9e'); // Gebäude
+        rect(ts*4+ts/2-3, ts*2+ts-8, 6, 8, '#3e2723'); // Tür
+        rect(ts*4+6, ts*2+8, 6, 6, '#81d4fa'); // Fenster
+
+        // Treppe/Ziel (X) - Slot [3,2]
+        rect(ts*3, ts*2, ts, ts, '#000');
+        for(let i=0; i<4; i++) {
+            rect(ts*3 + i*6, ts*2 + i*6, ts-i*6, 6, '#bdbdbd');
+        }
+
+        // Spieler (@) - Slot [5,1]
+        // Wir zeichnen den Spieler separat, damit er über allem liegt, 
+        // aber wir reservieren einen Slot für Inventory Icons
+        
+        // Image erzeugen
         const img = new Image();
         img.src = canvas.toDataURL();
         return img;
     },
 
-    // Ordnet einem Karten-Zeichen die Position im Tileset zu
     getTileCoords: function(char) {
         const map = {
             '.': {x:0, y:0}, '_': {x:1, y:0}, ',': {x:2, y:0}, ';': {x:3, y:0}, '=': {x:4, y:0},
-            'W': {x:0, y:1}, '~': {x:0, y:1}, 
+            'W': {x:0, y:1}, '~': {x:3, y:0}, // Sumpf nutzt Boden
             'M': {x:1, y:1}, 
             'T': {x:2, y:1}, 't': {x:2, y:1}, 
             'V': {x:3, y:1}, 
-            'C': {x:4, y:1}, 'E': {x:4, y:1},
-            '@': {x:5, y:1}
+            '#': {x:4, y:1}, // Mauer
+            'C': {x:4, y:2}, 'E': {x:4, y:2}, // Stadt
+            'X': {x:3, y:2}, // Treppe/Ziel
+            '@': {x:5, y:1}  // Spieler Dummy
         };
-        return map[char] || map['.']; // Fallback auf Boden
+        return map[char] || map['.']; 
     },
 
     initCanvas: function() {
@@ -158,15 +193,10 @@ const Game = {
         canvas.width = this.mapWidth * this.tileSize;
         canvas.height = this.mapHeight * this.tileSize;
         
-        // WICHTIG FÜR PIXEL-LOOK: Kein Weichzeichnen!
-        this.ctx.imageSmoothingEnabled = false; 
-        this.ctx.mozImageSmoothingEnabled = false;
-        this.ctx.webkitImageSmoothingEnabled = false;
+        this.ctx.imageSmoothingEnabled = false;
 
-        // Tileset generieren und laden
         this.tilesetImage = this.createTileset();
         this.tilesetImage.onload = () => {
-            // Wenn keine Map im Speicher ist -> Generieren
             if (!this.state.localMap || this.state.localMap.length === 0) {
                 this.generateLocalMap();
             }
@@ -184,38 +214,47 @@ const Game = {
     },
 
     drawMap: function() {
-        if (!this.ctx || !this.state.localMap || this.state.localMap.length === 0 || !this.tilesetImage) return;
+        if (!this.ctx || !this.state.localMap || !this.tilesetImage) return;
         
         const map = this.state.localMap;
         const ts = this.tileSize;
         const ctx = this.ctx;
         const img = this.tilesetImage;
         
-        // 1. Alles löschen
+        // 1. Clear
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, this.canvasMap.width, this.canvasMap.height);
         
-        // 2. Kacheln zeichnen
+        // 2. Draw Tiles
         for (let y = 0; y < this.mapHeight; y++) {
             for (let x = 0; x < this.mapWidth; x++) {
                 if(!map[y] || !map[y][x]) continue;
                 const char = map[y][x];
                 const coords = this.getTileCoords(char);
-                
-                // drawImage(image, srcX, srcY, srcW, srcH, destX, destY, destW, destH)
                 ctx.drawImage(img, coords.x * ts, coords.y * ts, ts, ts, x * ts, y * ts, ts, ts);
             }
         }
         
-        // 3. Spieler Zeichnen
+        // 3. Draw Player (Custom Draw für Animation/Leuchten)
         const p = this.state.player;
-        const pCoords = this.getTileCoords('@');
+        const px = p.x * ts;
+        const py = p.y * ts;
         
-        // Leuchteffekt für den Spieler
+        // Glow
         ctx.shadowBlur = 15;
         ctx.shadowColor = '#39ff14';
-        ctx.drawImage(img, pCoords.x * ts, pCoords.y * ts, ts, ts, p.x * ts, p.y * ts, ts, ts);
-        ctx.shadowBlur = 0; // Reset
+        
+        // Vault Boy (Simpel)
+        ctx.fillStyle = '#0000ff'; // Anzug Blau
+        ctx.fillRect(px+8, py+12, 16, 14);
+        ctx.fillStyle = '#ffd700'; // Streifen Gelb
+        ctx.fillRect(px+14, py+12, 4, 14);
+        ctx.fillStyle = '#ffccaa'; // Kopf Hautfarbe
+        ctx.fillRect(px+8, py+2, 16, 12);
+        ctx.fillStyle = '#ffff00'; // Haare
+        ctx.fillRect(px+8, py, 16, 4);
+        
+        ctx.shadowBlur = 0;
     },
 
     // --- ACTIONS ---
@@ -259,6 +298,10 @@ const Game = {
         }
         if(tile === 'V') {
             UI.enterVault();
+        }
+        if(tile === 'X') {
+            UI.log("Ebene abgeschlossen!", "text-yellow-400");
+            // Hier könnte man eine neue Ebene generieren
         }
     },
 
