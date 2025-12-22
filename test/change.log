@@ -1,5 +1,13 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.4.2-graphics-overhaul] - 2025-12-22 (Grafik-Update)
+------------------------------------------------
+- CORE: ASCII-Renderer entfernt. Neuer Tile-basierter Grafik-Renderer in 'game.js' implementiert.
+- VISUAL: Spielwelt besteht nun aus farbigen Pixel-Kacheln (Boden, Wasser, Berge, Bäume) statt Buchstaben.
+- VISUAL: Spieler, Vault und Stadt haben eigene grafische Icons.
+- SYSTEM: Tileset wird dynamisch beim Start generiert.
+
+
 [v0.4.1-visual-restore] - 2025-12-21 (ASCII Visuals Restored)
 ------------------------------------------------
 - CORE: 'game.js' Renderer komplett auf ASCII (Text-basiert) umgestellt. Zeichnet nun Zeichen wie 'M', 'T', '.' statt nur Farbblöcke.
