@@ -1,3 +1,4 @@
+// [v0.4.0]
 const Combat = {
     // V.A.T.S. Konfiguration
     VATS: [
