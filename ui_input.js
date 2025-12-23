@@ -1,9 +1,8 @@
 const Input = {
     init: function() {
-        // PREVENT BROWSER SCROLLING on Arrow Keys
+        // PREVENT BROWSER SCROLLING on Arrow Keys & Space
         window.addEventListener('keydown', (e) => {
             if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].indexOf(e.code) > -1) {
-                // Nur verhindern, wenn wir im Spiel sind (nicht in Textfeldern)
                 if(e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
                     e.preventDefault();
                 }
@@ -11,14 +10,26 @@ const Input = {
         }, false);
 
         document.addEventListener('keydown', (e) => {
-            if (!Game.state || Game.state.isGameOver) return;
+            // FIX: Allow Enter on Login Screen when Game.state is null
+            if (!Game.state) {
+                if (e.key === 'Enter') {
+                    // Prüfen ob wir im Login Screen sind (Input sichtbar?)
+                    const input = document.getElementById('player-name-input');
+                    if(input && input.offsetParent !== null) {
+                        if(typeof UI.initGame === 'function') UI.initGame();
+                    }
+                }
+                return;
+            }
+            
+            if (Game.state.isGameOver) return;
             
             // ESC Menu
             if (e.key === 'Escape') {
-                if(document.getElementById('manual-overlay').style.display !== 'none') {
+                if(document.getElementById('manual-overlay') && document.getElementById('manual-overlay').style.display !== 'none') {
                     document.getElementById('manual-overlay').style.display = 'none';
                     document.getElementById('manual-overlay').classList.add('hidden');
-                } else if(document.getElementById('changelog-overlay').style.display !== 'none') {
+                } else if(document.getElementById('changelog-overlay') && document.getElementById('changelog-overlay').style.display !== 'none') {
                      document.getElementById('changelog-overlay').style.display = 'none';
                      document.getElementById('changelog-overlay').classList.add('hidden');
                 } else {
@@ -29,9 +40,6 @@ const Input = {
 
             // Dialog handling
             if (Game.state.inDialog) {
-                if(e.key === 'Enter' || e.key === ' ') {
-                    // Confirm logic if needed
-                }
                 return;
             }
 
@@ -41,9 +49,6 @@ const Input = {
                 if (e.key === 's' || e.key === 'ArrowDown') Game.move(0, 1);
                 if (e.key === 'a' || e.key === 'ArrowLeft') Game.move(-1, 0);
                 if (e.key === 'd' || e.key === 'ArrowRight') Game.move(1, 0);
-                if (e.key === 'Enter' || e.key === ' ') {
-                     // Action Key (könnte man für Interaktion nutzen)
-                }
             } else if (Game.state.view === 'lockpicking') {
                 if(e.key === ' ') MiniGames.lockpicking.rotateLock();
             }
@@ -61,22 +66,30 @@ const Input = {
         let startX, startY, joyId = null;
 
         const handleStart = (x, y) => {
-            if (Game.state.view !== 'map') return;
-            const container = document.getElementById('game-canvas').getBoundingClientRect();
+            if (!Game.state || Game.state.view !== 'map') return;
+            const cvs = document.getElementById('game-canvas');
+            if(!cvs) return;
+            const container = cvs.getBoundingClientRect();
+            
             // Nur aktivieren wenn innerhalb des Canvas Bereichs
             if(x < container.left || x > container.right || y < container.top || y > container.bottom) return;
 
-            joyBase.style.display = 'block';
-            joyBase.style.left = (x - 50) + 'px';
-            joyBase.style.top = (y - 50) + 'px';
-            joyStick.style.display = 'block';
-            joyStick.style.left = (x - 25) + 'px';
-            joyStick.style.top = (y - 25) + 'px';
+            if(joyBase) {
+                joyBase.style.display = 'block';
+                joyBase.style.left = (x - 50) + 'px';
+                joyBase.style.top = (y - 50) + 'px';
+            }
+            if(joyStick) {
+                joyStick.style.display = 'block';
+                joyStick.style.left = (x - 25) + 'px';
+                joyStick.style.top = (y - 25) + 'px';
+            }
             startX = x;
             startY = y;
             
             if(joyId) clearInterval(joyId);
             joyId = setInterval(() => {
+                if(!joyStick) return;
                 const dx = parseFloat(joyStick.style.left) + 25 - startX;
                 const dy = parseFloat(joyStick.style.top) + 25 - startY;
                 if (Math.abs(dx) > 20) Game.move(Math.sign(dx), 0);
@@ -85,7 +98,7 @@ const Input = {
         };
 
         const handleMove = (x, y) => {
-            if (joyBase.style.display === 'none') return;
+            if (!joyBase || joyBase.style.display === 'none') return;
             let dx = x - startX;
             let dy = y - startY;
             const dist = Math.sqrt(dx*dx + dy*dy);
@@ -94,15 +107,15 @@ const Input = {
                 dx = Math.cos(angle) * 50;
                 dy = Math.sin(angle) * 50;
             }
-            joyStick.style.left = (startX + dx - 25) + 'px';
-            joyStick.style.top = (startY + dy - 25) + 'px';
+            if(joyStick) {
+                joyStick.style.left = (startX + dx - 25) + 'px';
+                joyStick.style.top = (startY + dy - 25) + 'px';
+            }
             
-            // Lockpicking Control via Touch Move
-            if(Game.state.view === 'lockpicking') {
-                 // Simple mapping: x movement rotates pick
+            if(Game.state && Game.state.view === 'lockpicking') {
                  const rect = document.body.getBoundingClientRect();
                  const relX = (x - rect.left) / rect.width;
-                 MiniGames.lockpicking.mouseMove(relX * 2 - 1); // -1 to 1
+                 MiniGames.lockpicking.mouseMove(relX * 2 - 1); 
             }
         };
 
@@ -126,9 +139,7 @@ const Input = {
         document.addEventListener('mousemove', (e) => {
              if(Game.state && Game.state.view === 'lockpicking') {
                  const rect = document.body.getBoundingClientRect();
-                 const x = (e.clientX - rect.left) / rect.width; // 0 to 1
-                 // Map to -180 to 180 logic or similar inside minigame, here just pass raw 
-                 // Actually minigame expects movement. Let's pass normalized X (-1 to 1)
+                 const x = (e.clientX - rect.left) / rect.width;
                  MiniGames.lockpicking.mouseMove((x * 2) - 1);
              }
         });
