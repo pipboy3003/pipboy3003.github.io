@@ -1,5 +1,11 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+1. [v0.3.4a] - 2025-12-23 02:00am (Dynamic World & Fog Fix)
+- Welt: Vergrößert auf 10x10 Sektoren. 
+- Generierung: Vault 101 und Rusty Springs haben nun zufällige Positionen bei Spielstart.
+- Fix: Der "Nebel des Krieges" (aufgedeckte Karte) bleibt nun erhalten, wenn man Dungeons verlässt.
+- Biomes: Supermärkte können nun auch in Stadt-Ruinen gefunden werden.
+
 [v0.3.3b] - 2025-12-22 19:55pm (World Map Overhaul)
 - Weltkarte: Komplett neues Design ohne Raster.
 - Fog of War: Weltkarte ist anfangs schwarz und wird Sektor für Sektor aufgedeckt.
