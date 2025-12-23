@@ -46,7 +46,7 @@ Object.assign(UI, {
             else this.els.btnMenu.classList.remove('alert-glow-red');
         }
 
-        // DISABLE BUTTONS DURING COMBAT (Fix Request)
+        // DISABLE BUTTONS DURING COMBAT
         const inCombat = Game.state.view === 'combat';
         [this.els.btnWiki, this.els.btnMap, this.els.btnChar, this.els.btnQuests, this.els.btnSave, this.els.btnLogout, this.els.btnInv].forEach(btn => {
             if(btn) {
@@ -108,14 +108,13 @@ Object.assign(UI, {
             return;
         }
 
-        // NEW: Minigame Views handling directly in Render to avoid fetch delay
         if(name === 'hacking') {
             this.renderHacking();
             Game.state.view = name;
             return;
         }
         if(name === 'lockpicking') {
-            this.renderLockpicking(true); // true = init structure
+            this.renderLockpicking(true);
             Game.state.view = name;
             return;
         }
@@ -179,7 +178,6 @@ Object.assign(UI, {
 
     // --- RENDERERS ---
     
-    // NEU: Hacking Render
     renderHacking: function() {
         const h = MiniGames.hacking;
         let html = `
@@ -199,11 +197,9 @@ Object.assign(UI, {
             </div>
         `;
         
-        // Wenn es noch nicht da ist, setzen
         if(this.els.view.innerHTML.indexOf('ROBCO') === -1) {
             this.els.view.innerHTML = html;
         } else {
-             // Nur Log und Attempts updaten wenn Struktur da ist, aber hier redraw ich einfach alles für Simplizität
              document.getElementById('hack-log').innerHTML = h.logs.map(l => `<div>${l}</div>`).join('');
              document.querySelector('.animate-pulse').textContent = `ATTEMPTS: ${'█ '.repeat(h.attempts)}`;
         }
@@ -211,7 +207,6 @@ Object.assign(UI, {
         const wordContainer = document.getElementById('hack-words');
         if(wordContainer) {
             wordContainer.innerHTML = '';
-            // Generate garbage hex and words
             let buffer = "";
             h.words.forEach(word => {
                 const hex = `0x${Math.floor(Math.random()*65535).toString(16).toUpperCase()}`;
@@ -224,7 +219,6 @@ Object.assign(UI, {
         }
     },
 
-    // NEU: Lockpicking Render
     renderLockpicking: function(init=false) {
         if(init) {
             this.els.view.innerHTML = `
@@ -244,7 +238,6 @@ Object.assign(UI, {
                     <button class="absolute bottom-4 right-4 border border-red-500 text-red-500 px-3 py-1 hover:bg-red-900" onclick="MiniGames.lockpicking.end()">ABBRECHEN</button>
                 </div>
             `;
-            // Touch Button Event
             const btn = document.getElementById('btn-turn-lock');
             if(btn) {
                 btn.addEventListener('touchstart', (e) => { e.preventDefault(); MiniGames.lockpicking.rotateLock(); });
@@ -254,11 +247,10 @@ Object.assign(UI, {
             }
         }
         
-        // Update Rotation CSS
         const pin = document.getElementById('bobby-pin');
         const lock = document.getElementById('lock-rotator');
         
-        if(pin) pin.style.transform = `rotate(${MiniGames.lockpicking.currentAngle - 90}deg)`; // -90 offset because CSS draws it horizontal
+        if(pin) pin.style.transform = `rotate(${MiniGames.lockpicking.currentAngle - 90}deg)`; 
         if(lock) lock.style.transform = `rotate(${MiniGames.lockpicking.lockAngle}deg)`;
     },
 
@@ -397,12 +389,13 @@ Object.assign(UI, {
         document.getElementById('equip-body-stats').textContent = armStats || "Kein Bonus";
     },
     
+    // UPDATE: Render World Map fixed for dynamic POIs
     renderWorldMap: function() {
         const cvs = document.getElementById('world-map-canvas');
         const details = document.getElementById('sector-details');
         if(!cvs) return;
         const ctx = cvs.getContext('2d');
-        const W = 10, H = 10; // NEU: An 10x10 Welt angepasst
+        const W = 10, H = 10; 
         const TILE_W = cvs.width / W;
         const TILE_H = cvs.height / H;
 
@@ -412,14 +405,14 @@ Object.assign(UI, {
 
         // Biome Colors
         const biomeColors = {
-            'wasteland': '#4a4036', // Dunkles Braun
-            'forest': '#1a3300',    // Tiefes Dunkelgrün
-            'jungle': '#0f2405',    // Fast schwarzgrün
-            'desert': '#8b5a2b',    // Rostiges Orange
-            'swamp': '#1e1e11',     // Modriges Grau
-            'mountain': '#333333',  // Stein
-            'city': '#444455',      // Beton
-            'vault': '#002244'      // Vault-Tec Blau
+            'wasteland': '#4a4036',
+            'forest': '#1a3300',
+            'jungle': '#0f2405',
+            'desert': '#8b5a2b',
+            'swamp': '#1e1e11',
+            'mountain': '#333333',
+            'city': '#444455',
+            'vault': '#002244'
         };
 
         for(let y=0; y<H; y++) {
@@ -429,29 +422,28 @@ Object.assign(UI, {
                 const isCurrent = (x === Game.state.sector.x && y === Game.state.sector.y);
 
                 if(isVisited) {
-                    // Draw Biome Rect
+                    // 1. Draw Biome Background
                     const biome = WorldGen.getSectorBiome(x, y);
                     ctx.fillStyle = biomeColors[biome] || '#222';
-                    
-                    // Zeichne leicht überlappend, um "Raster"-Look zu vermeiden
                     ctx.fillRect(x * TILE_W - 0.5, y * TILE_H - 0.5, TILE_W + 1, TILE_H + 1);
 
-                    // POI Icons (Nur wenn visited!)
-                    if(biome === 'city') {
-                        ctx.fillStyle = "#00ffff"; 
-                        ctx.font = "bold 20px monospace";
-                        ctx.textAlign = "center";
-                        ctx.textBaseline = "middle";
-                        ctx.fillText("🏙️", x * TILE_W + TILE_W/2, y * TILE_H + TILE_H/2);
-                    } else if(biome === 'vault') {
-                         ctx.fillStyle = "#ffff00";
-                         ctx.font = "bold 20px monospace";
-                         ctx.textAlign = "center";
-                         ctx.textBaseline = "middle";
-                         ctx.fillText("⚙️", x * TILE_W + TILE_W/2, y * TILE_H + TILE_H/2);
+                    // 2. Draw Dynamic POIs (NEW Logic)
+                    if(Game.state.worldPOIs) {
+                        const poi = Game.state.worldPOIs.find(p => p.x === x && p.y === y);
+                        if(poi) {
+                            ctx.font = "bold 20px monospace";
+                            ctx.textAlign = "center";
+                            ctx.textBaseline = "middle";
+                            if(poi.type === 'C') {
+                                ctx.fillStyle = "#00ffff"; 
+                                ctx.fillText("🏙️", x * TILE_W + TILE_W/2, y * TILE_H + TILE_H/2);
+                            } else if(poi.type === 'V') {
+                                ctx.fillStyle = "#ffff00";
+                                ctx.fillText("⚙️", x * TILE_W + TILE_W/2, y * TILE_H + TILE_H/2);
+                            }
+                        }
                     }
 
-                    // Optional: Spieler Info aktualisieren
                     if(isCurrent && details) {
                         details.innerHTML = `SEKTOR [${x},${y}]<br><span class="text-white">${biome.toUpperCase()}</span>`;
                     }
@@ -463,8 +455,7 @@ Object.assign(UI, {
         const px = Game.state.sector.x * TILE_W + TILE_W/2;
         const py = Game.state.sector.y * TILE_H + TILE_H/2;
         
-        // Pulsing Effect
-        const pulse = (Date.now() % 1000) / 1000; // 0 bis 1
+        const pulse = (Date.now() % 1000) / 1000;
         
         ctx.beginPath();
         ctx.arc(px, py, 4 + (pulse * 8), 0, Math.PI * 2);
@@ -479,7 +470,6 @@ Object.assign(UI, {
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        // Loop für Animation
         if(Game.state.view === 'worldmap') {
             requestAnimationFrame(() => this.renderWorldMap());
         }
@@ -859,7 +849,6 @@ Object.assign(UI, {
         this.toggleControls(false);
     },
     
-    // System Overlays (Manual / Changelog)
     showManualOverlay: async function() {
         const overlay = document.getElementById('manual-overlay');
         const content = document.getElementById('manual-content');
