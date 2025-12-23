@@ -398,73 +398,94 @@ Object.assign(UI, {
     },
     
     renderWorldMap: function() {
-        const grid = document.getElementById('world-grid');
-        const info = document.getElementById('sector-info');
-        if(!grid) return;
-        
-        grid.innerHTML = '';
-        
-        const colors = {
-            'wasteland': 'bg-gray-600 border-gray-500',
-            'forest': 'bg-green-800 border-green-600',
-            'desert': 'bg-yellow-600 border-yellow-500',
-            'swamp': 'bg-purple-900 border-purple-700',
-            'city': 'bg-cyan-700 border-cyan-500',
-            'vault': 'bg-blue-600 border-blue-400',
-            'mountain': 'bg-gray-800 border-gray-600'
+        const cvs = document.getElementById('world-map-canvas');
+        const details = document.getElementById('sector-details');
+        if(!cvs) return;
+        const ctx = cvs.getContext('2d');
+        const W = 8, H = 8; // Weltgröße in Sektoren
+        const TILE_W = cvs.width / W;
+        const TILE_H = cvs.height / H;
+
+        // Reset: Fog of War Hintergrund (Dunkelgrün/Schwarz)
+        ctx.fillStyle = "#050a05"; 
+        ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+        // Biome Colors
+        const biomeColors = {
+            'wasteland': '#4a4036', // Dunkles Braun
+            'forest': '#1a3300',    // Tiefes Dunkelgrün
+            'jungle': '#0f2405',    // Fast schwarzgrün
+            'desert': '#8b5a2b',    // Rostiges Orange
+            'swamp': '#1e1e11',     // Modriges Grau
+            'mountain': '#333333',  // Stein
+            'city': '#444455',      // Beton
+            'vault': '#002244'      // Vault-Tec Blau
         };
 
-        const currentBiome = WorldGen.getSectorBiome(Game.state.sector.x, Game.state.sector.y);
-        if(info) info.textContent = `${currentBiome.toUpperCase()} [${Game.state.sector.x}, ${Game.state.sector.y}]`;
-
-        for(let y=0; y<8; y++) {
-            for(let x=0; x<8; x++) {
-                const cell = document.createElement('div');
-                cell.className = "w-full h-full border text-[10px] flex items-center justify-center relative transition-all duration-300";
-                
+        for(let y=0; y<H; y++) {
+            for(let x=0; x<W; x++) {
                 const key = `${x},${y}`;
-                const isCurrent = (Game.state.sector.x === x && Game.state.sector.y === y);
-                const visited = Game.state.visitedSectors && Game.state.visitedSectors.includes(key);
-                
-                const biome = WorldGen.getSectorBiome(x, y);
-                
-                if (isCurrent) {
-                    cell.className += " bg-[#1aff1a] text-black font-bold border-white z-10 shadow-[0_0_15px_#1aff1a]";
-                    cell.innerHTML = '<span class="animate-pulse">YOU</span>';
-                } 
-                else if (visited) {
-                    const colorClass = colors[biome] || colors['wasteland'];
-                    cell.className += ` ${colorClass} text-white`;
+                const isVisited = Game.state.visitedSectors && Game.state.visitedSectors.includes(key);
+                const isCurrent = (x === Game.state.sector.x && y === Game.state.sector.y);
+
+                if(isVisited) {
+                    // Draw Biome Rect
+                    const biome = WorldGen.getSectorBiome(x, y);
+                    ctx.fillStyle = biomeColors[biome] || '#222';
                     
-                    // FIX: Icons für Städte & Vaults
-                    if (biome === 'city') {
-                        cell.innerHTML = '<span class="text-2xl">🏙️</span>'; // Stadt Icon
-                        cell.title = "Rusty Springs (Stadt)";
-                    } else if (biome === 'vault') {
-                        cell.innerHTML = '<span class="text-2xl">⚙️</span>'; // Vault Icon
-                        cell.title = "Vault 101";
+                    // Zeichne leicht überlappend, um "Raster"-Look zu vermeiden
+                    ctx.fillRect(x * TILE_W - 0.5, y * TILE_H - 0.5, TILE_W + 1, TILE_H + 1);
+
+                    // POI Icons (Nur wenn visited!)
+                    if(biome === 'city') {
+                        ctx.fillStyle = "#00ffff"; 
+                        ctx.font = "bold 20px monospace";
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        ctx.fillText("🏙️", x * TILE_W + TILE_W/2, y * TILE_H + TILE_H/2);
+                    } else if(biome === 'vault') {
+                         ctx.fillStyle = "#ffff00";
+                         ctx.font = "bold 20px monospace";
+                         ctx.textAlign = "center";
+                         ctx.textBaseline = "middle";
+                         ctx.fillText("⚙️", x * TILE_W + TILE_W/2, y * TILE_H + TILE_H/2);
                     }
-                } 
-                else {
-                    cell.className += " bg-black border-[#1aff1a] border-opacity-20";
-                    cell.style.backgroundImage = "radial-gradient(circle, rgba(0,50,0,0.5) 1px, transparent 1px)";
-                    cell.style.backgroundSize = "4px 4px";
-                }
-                
-                if(typeof Network !== 'undefined' && Network.otherPlayers) {
-                    for(let pid in Network.otherPlayers) {
-                        const p = Network.otherPlayers[pid];
-                        if(p.sector && p.sector.x === x && p.sector.y === y) {
-                            const dot = document.createElement('div');
-                            dot.className = "absolute -top-1 -right-1 w-3 h-3 bg-cyan-400 rounded-full border border-black z-20 shadow-[0_0_5px_cyan]";
-                            cell.appendChild(dot);
-                        }
+
+                    // Optional: Spieler Info aktualisieren
+                    if(isCurrent && details) {
+                        details.innerHTML = `SEKTOR [${x},${y}]<br><span class="text-white">${biome.toUpperCase()}</span>`;
                     }
+                } else {
+                    // Unvisited: Bleibt dunkel (Fog of War)
+                    // Optional: Schraffur oder leichtes Gitter andeuten?
+                    // Nein, "aufgedeckt mit laufen" wirkt besser wenn es wirklich schwarz ist.
                 }
-                
-                if (!cell.title) cell.title = `Sektor ${x},${y}`;
-                grid.appendChild(cell);
             }
+        }
+
+        // Draw Player Marker on top of everything
+        const px = Game.state.sector.x * TILE_W + TILE_W/2;
+        const py = Game.state.sector.y * TILE_H + TILE_H/2;
+        
+        // Pulsing Effect
+        const pulse = (Date.now() % 1000) / 1000; // 0 bis 1
+        
+        ctx.beginPath();
+        ctx.arc(px, py, 4 + (pulse * 8), 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(57, 255, 20, ${0.6 - pulse * 0.6})`;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(px, py, 4, 0, Math.PI * 2);
+        ctx.fillStyle = "#39ff14";
+        ctx.fill();
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Loop für Animation
+        if(Game.state.view === 'worldmap') {
+            requestAnimationFrame(() => this.renderWorldMap());
         }
     },
 
