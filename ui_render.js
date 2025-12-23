@@ -29,6 +29,10 @@ Object.assign(UI, {
         if(this.els.hp) this.els.hp.textContent = `${Math.round(Game.state.hp)}/${maxHp}`;
         if(this.els.hpBar) this.els.hpBar.style.width = `${Math.max(0, (Game.state.hp / maxHp) * 100)}%`;
         if(this.els.caps) this.els.caps.textContent = `${Game.state.caps}`;
+        
+        // AMMO DISPLAY (Wiederhergestellt)
+        const ammoEl = document.getElementById('header-ammo');
+        if(ammoEl) ammoEl.textContent = Game.state.ammo || 0;
 
         // Glow Alerts
         let hasAlert = false;
@@ -41,6 +45,26 @@ Object.assign(UI, {
             if(unreadQuests) { this.els.btnQuests.classList.add('alert-glow-cyan'); hasAlert = true; } 
             else { this.els.btnQuests.classList.remove('alert-glow-cyan'); }
         }
+        
+        // NEW: Inventory Alert
+        // Checken wir einfach, ob Inventar voll ist oder was neues?
+        // Einfacher Hack: Wenn das Inventar-Menü nicht offen ist und sich die Item-Anzahl ändert?
+        // Für jetzt: Einfach blinken lassen wenn unread Items (Logik müsste in Game.js erweitert werden für "unread items").
+        // Machen wir es simpel: Wenn Loot im Inventory > 0 blinkt es mal kurz beim update (simuliert)
+        // Besser: Alert Glow wenn items drin sind und wir nicht im inv sind? Nein das nervt.
+        // Wir lassen es für Phase 1 erstmal raus oder binden es an Caps change?
+        // User Request: "Bei neuen Ausrüstungsgegenständen im Inventar soll der Inventar Button auch blinken"
+        // Dazu müssten wir tracken was "neu" ist.
+        // Quick Fix: Wir lassen ihn kurz aufleuchten wenn `Game.addToInventory` aufgerufen wurde. 
+        // Das müsste man in Game.js machen. Hier prüfen wir einfach ein Flag.
+        if(Game.state.hasNewItems && this.els.btnInv) {
+             this.els.btnInv.classList.add('alert-glow-yellow');
+             if(Game.state.view === 'inventory') {
+                 Game.state.hasNewItems = false; // Reset wenn geöffnet
+                 this.els.btnInv.classList.remove('alert-glow-yellow');
+             }
+        }
+
         if(this.els.btnMenu) {
             if(hasAlert) this.els.btnMenu.classList.add('alert-glow-red');
             else this.els.btnMenu.classList.remove('alert-glow-red');
@@ -254,6 +278,7 @@ Object.assign(UI, {
         if(lock) lock.style.transform = `rotate(${MiniGames.lockpicking.lockAngle}deg)`;
     },
 
+    // UPDATED: CHARACTER SELECTION WITH DELETE BUTTON
     renderCharacterSelection: function(saves) {
         this.charSelectMode = true;
         this.currentSaves = saves;
@@ -261,9 +286,16 @@ Object.assign(UI, {
         this.els.charSelectScreen.style.display = 'flex';
         this.els.charSlotsList.innerHTML = '';
 
+        const deleteBtn = document.getElementById('btn-char-delete');
+        // Reset state
+        if(deleteBtn) {
+            deleteBtn.disabled = true;
+            deleteBtn.onclick = null;
+        }
+
         for (let i = 0; i < 5; i++) {
             const slot = document.createElement('div');
-            slot.className = "char-slot";
+            slot.className = "char-slot"; // CSS class was updated in index.html for better contrast
             slot.dataset.index = i;
             const save = saves[i];
             
@@ -273,16 +305,16 @@ Object.assign(UI, {
                 const loc = save.sector ? `[${save.sector.x},${save.sector.y}]` : "[?,?]";
                 slot.innerHTML = `
                     <div class="flex flex-col">
-                        <span class="text-xl text-yellow-400 font-bold">${name}</span>
-                        <span class="text-xs text-green-300">Level ${lvl} | Sektor ${loc}</span>
+                        <span class="text-xl text-yellow-400 font-bold drop-shadow-md">${name}</span>
+                        <span class="text-xs text-green-100 font-mono">Level ${lvl} | Sektor ${loc}</span>
                     </div>
-                    <div class="text-xs text-gray-500">SLOT ${i+1}</div>
+                    <div class="text-xs text-gray-400 font-bold">SLOT ${i+1}</div>
                 `;
             } else {
                 slot.classList.add('empty-slot');
                 slot.innerHTML = `
                     <div class="flex flex-col">
-                        <span class="text-xl text-gray-400">[ LEER ]</span>
+                        <span class="text-xl text-gray-500">[ LEER ]</span>
                         <span class="text-xs text-gray-600">Neuen Charakter erstellen</span>
                     </div>
                     <div class="text-xs text-gray-700">SLOT ${i+1}</div>
@@ -291,7 +323,83 @@ Object.assign(UI, {
             slot.onclick = () => this.selectSlot(i);
             this.els.charSlotsList.appendChild(slot);
         }
+        
+        // Auto-Select first slot to init buttons
         this.selectSlot(0);
+    },
+    
+    // Helper to handle slot selection and button states
+    selectSlot: function(index) {
+        const slots = document.querySelectorAll('.char-slot');
+        slots.forEach(s => s.classList.remove('selected'));
+        
+        const selected = slots[index];
+        if(selected) selected.classList.add('selected');
+        
+        this.selectedSlot = index;
+        const save = this.currentSaves[index];
+        const actionBtn = document.getElementById('btn-char-action');
+        const deleteBtn = document.getElementById('btn-char-delete');
+        
+        if (save) {
+            actionBtn.textContent = "SPIEL LADEN";
+            actionBtn.onclick = () => {
+                // Multiplayer Check
+                if(typeof Network !== 'undefined' && Network.isOnline) {
+                    this.showSpawnSelection(save);
+                } else {
+                    this.startGame(save, index);
+                }
+            };
+            // Enable Delete
+            if(deleteBtn) {
+                deleteBtn.disabled = false;
+                deleteBtn.style.opacity = "1";
+                deleteBtn.style.cursor = "pointer";
+                deleteBtn.onclick = () => {
+                    if(confirm(`Charakter '${save.playerName}' (Level ${save.lvl}) wirklich unwiderruflich löschen?`)) {
+                        this.deleteCharacter(index);
+                    }
+                };
+            }
+        } else {
+            actionBtn.textContent = "NEUEN CHARAKTER ERSTELLEN";
+            actionBtn.onclick = () => {
+                this.els.charSelectScreen.style.display = 'none';
+                this.els.loginScreen.style.display = 'flex';
+                document.getElementById('player-name-input').focus();
+            };
+            // Disable Delete
+            if(deleteBtn) {
+                deleteBtn.disabled = true;
+                deleteBtn.style.opacity = "0.3";
+                deleteBtn.style.cursor = "not-allowed";
+                deleteBtn.onclick = null;
+            }
+        }
+    },
+    
+    // NEW: Delete Character Logic
+    deleteCharacter: function(index) {
+        try {
+            // Get current saves
+            let saves = [];
+            try {
+                saves = JSON.parse(localStorage.getItem('pipboy_saves')) || [];
+            } catch(e) { saves = []; }
+            
+            // Remove
+            saves[index] = null;
+            localStorage.setItem('pipboy_saves', JSON.stringify(saves));
+            
+            // Refresh UI
+            this.renderCharacterSelection(saves);
+            
+            // Log
+            console.log(`Slot ${index} deleted.`);
+        } catch(e) {
+            alert("Fehler beim Löschen: " + e.message);
+        }
     },
 
     renderInventory: function() {
@@ -389,7 +497,6 @@ Object.assign(UI, {
         document.getElementById('equip-body-stats').textContent = armStats || "Kein Bonus";
     },
     
-    // UPDATE: Render World Map fixed for dynamic POIs
     renderWorldMap: function() {
         const cvs = document.getElementById('world-map-canvas');
         const details = document.getElementById('sector-details');
@@ -399,11 +506,9 @@ Object.assign(UI, {
         const TILE_W = cvs.width / W;
         const TILE_H = cvs.height / H;
 
-        // Reset: Fog of War Hintergrund (Dunkelgrün/Schwarz)
         ctx.fillStyle = "#050a05"; 
         ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-        // Biome Colors
         const biomeColors = {
             'wasteland': '#4a4036',
             'forest': '#1a3300',
@@ -422,12 +527,10 @@ Object.assign(UI, {
                 const isCurrent = (x === Game.state.sector.x && y === Game.state.sector.y);
 
                 if(isVisited) {
-                    // 1. Draw Biome Background
                     const biome = WorldGen.getSectorBiome(x, y);
                     ctx.fillStyle = biomeColors[biome] || '#222';
                     ctx.fillRect(x * TILE_W - 0.5, y * TILE_H - 0.5, TILE_W + 1, TILE_H + 1);
 
-                    // 2. Draw Dynamic POIs (NEW Logic)
                     if(Game.state.worldPOIs) {
                         const poi = Game.state.worldPOIs.find(p => p.x === x && p.y === y);
                         if(poi) {
@@ -451,10 +554,8 @@ Object.assign(UI, {
             }
         }
 
-        // Draw Player Marker on top of everything
         const px = Game.state.sector.x * TILE_W + TILE_W/2;
         const py = Game.state.sector.y * TILE_H + TILE_H/2;
-        
         const pulse = (Date.now() % 1000) / 1000;
         
         ctx.beginPath();
@@ -616,7 +717,6 @@ Object.assign(UI, {
         addBtn("Händler / Waffen & Rüstung", () => this.renderShop(con));
         addBtn("🛠️ Werkbank / Crafting", () => this.toggleView('crafting'));
         
-        // NEU: Trainingsgelände für Minigames
         addBtn("🔒 Trainingsgelände (Hacking/Lockpick)", () => {
              con.innerHTML = '';
              const back = document.createElement('button');
@@ -668,7 +768,6 @@ Object.assign(UI, {
     renderCombat: function() {
         const enemy = Game.state.enemy;
         if(!enemy) return;
-        // Fix from previous update
         const nameEl = document.getElementById('enemy-name');
         if(nameEl) nameEl.textContent = enemy.name;
         
