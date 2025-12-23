@@ -1,5 +1,12 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.3.3b] - 2025-12-22 19:55pm (World Map Overhaul)
+- Weltkarte: Komplett neues Design ohne Raster.
+- Fog of War: Weltkarte ist anfangs schwarz und wird Sektor für Sektor aufgedeckt.
+- POIs: Städte und Vaults werden erst auf der Karte sichtbar, wenn der Sektor besucht wurde.
+- Optik: Canvas-Rendering für flüssigere Darstellung und Scanlines-Overlay.
+
+
 [v0.3.4a-map-polish] - 2025-12-21 (World Map & Lore Fixes)
 ------------------------------------------------
 - LORE: Start-Bunker von "Vault 101" in "Vault 1337" umbenannt (in 'data.js', 'world_gen.js', 'ui_render.js').
