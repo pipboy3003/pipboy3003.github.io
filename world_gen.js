@@ -11,19 +11,15 @@ const WorldGen = {
         return (this._seed - 1) / 2147483646;
     },
     
-    // NEU: Zentrale Definition der Welt-Regionen
+    // NEU: Biome für 10x10 Welt
     getSectorBiome: function(x, y) {
-        // Fixe Orte
-        if (x === 3 && y === 3) return 'city';      // Rusty Springs
-        if (x === 4 && y === 4) return 'vault';     // Vault 1337 Area (Start)
+        // Logik für 0-9
+        if (x <= 2 && y <= 2) return 'forest';      // NW: Oasis
+        if (x >= 7 && y >= 7) return 'desert';      // SO: The Pitt
+        if (x >= 7 && y <= 2) return 'swamp';       // NO: Sumpf
+        if (x <= 2 && y >= 7) return 'mountain';    // SW: Gebirge
         
-        // Regionen Logik (Hardcoded für Konsistenz)
-        if (x <= 2 && y <= 2) return 'forest';      // NW: Oasis Dschungel
-        if (x >= 5 && y >= 5) return 'desert';      // SO: The Pitt Wüste
-        if (x >= 6 && y <= 1) return 'swamp';       // NO: Sumpfgebiet
-        if (x <= 1 && y >= 6) return 'mountain';    // SW: Gebirge
-        
-        return 'wasteland'; // Standard: Ödland
+        return 'wasteland'; // Standard
     },
 
     createSector: function(width, height, biomeType, poiList) {
