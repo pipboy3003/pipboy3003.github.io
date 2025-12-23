@@ -1,5 +1,6 @@
 const Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
+    WORLD_W: 10, WORLD_H: 10, // Definiert die Weltgröße
     
     colors: (typeof window.GameData !== 'undefined') ? window.GameData.colors : {},
     items: (typeof window.GameData !== 'undefined') ? window.GameData.items : {},
@@ -57,16 +58,41 @@ const Game = {
             let isNewGame = false;
             if (saveData) {
                 this.state = saveData;
+                // Kompatibilitäts-Checks für alte Saves
                 if(!this.state.explored || typeof this.state.explored !== 'object') this.state.explored = {};
                 if(!this.state.inDialog) this.state.inDialog = false; 
                 if(!this.state.view) this.state.view = 'map';
                 if(!this.state.visitedSectors) this.state.visitedSectors = [];
+                // Fallback für alte Saves ohne POIs (auf Standard setzen)
+                if(!this.state.worldPOIs) {
+                    this.state.worldPOIs = [
+                        {type: 'V', x: 4, y: 4}, 
+                        {type: 'C', x: 3, y: 3} 
+                    ];
+                }
                 this.state.saveSlot = slotIndex;
                 UI.log(">> Spielstand geladen.", "text-cyan-400");
             } else {
                 isNewGame = true;
-                let startSecX = 4; // Start bei 4,4 (Mitte)
-                let startSecY = 4;
+                
+                // STEP 2: Zufällige POIs generieren
+                const vX = Math.floor(Math.random() * this.WORLD_W);
+                const vY = Math.floor(Math.random() * this.WORLD_H);
+                
+                let cX, cY;
+                do {
+                    cX = Math.floor(Math.random() * this.WORLD_W);
+                    cY = Math.floor(Math.random() * this.WORLD_H);
+                } while(cX === vX && cY === vY); // Sicherstellen, dass Stadt nicht auf Vault liegt
+
+                const worldPOIs = [
+                    {type: 'V', x: vX, y: vY},
+                    {type: 'C', x: cX, y: cY}
+                ];
+
+                // Start immer an der Vault
+                let startSecX = vX;
+                let startSecY = vY;
                 let startX = 20;
                 let startY = 20;
 
@@ -81,7 +107,8 @@ const Game = {
                 this.state = {
                     saveSlot: slotIndex,
                     playerName: newName || "SURVIVOR",
-                    sector: {x: startSecX, y: startSecY}, startSector: {x: startSecX, y: startSecY}, 
+                    sector: {x: startSecX, y: startSecY}, startSector: {x: vX, y: vY},
+                    worldPOIs: worldPOIs, // POIs speichern
                     player: {x: startX, y: startY, rot: 0},
                     stats: { STR: 5, PER: 5, END: 5, INT: 5, AGI: 5, LUC: 5 }, 
                     equip: { weapon: this.items.fists, body: this.items.vault_suit },
@@ -89,6 +116,7 @@ const Game = {
                     hp: 100, maxHp: 100, xp: 0, lvl: 1, caps: 50, ammo: 10, statPoints: 0, 
                     view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, 
                     explored: {}, 
+                    sectorExploredCache: null, // Für Fog of War Fix
                     visitedSectors: [`${startSecX},${startSecY}`],
                     tempStatIncrease: {}, buffEndTime: 0,
                     cooldowns: {}, 
@@ -252,8 +280,7 @@ const Game = {
         if(px < 0) { sx--; newPx = this.MAP_W - 1; newPy = this.state.player.y; }
         else if(px >= this.MAP_W) { sx++; newPx = 0; newPy = this.state.player.y; }
 
-        // UPDATE: Grenzen auf 10 erweitert (0-9)
-        if(sx < 0 || sx > 9 || sy < 0 || sy > 9) { UI.log("Ende der Weltkarte.", "text-red-500"); return; } 
+        if(sx < 0 || sx >= this.WORLD_W || sy < 0 || sy >= this.WORLD_H) { UI.log("Ende der Weltkarte.", "text-red-500"); return; } 
         
         this.state.sector = {x: sx, y: sy}; 
         this.loadSector(sx, sy); 
@@ -275,7 +302,6 @@ const Game = {
         const rng = () => { return typeof WorldGen !== 'undefined' ? WorldGen.rand() : Math.random(); };
         
         if(!this.worldData[key]) { 
-            // UPDATE: Biome Logik in WorldGen auf 10x10 angepasst
             let biome = 'wasteland';
             if(typeof WorldGen !== 'undefined') {
                 biome = WorldGen.getSectorBiome(sx, sy);
@@ -284,16 +310,17 @@ const Game = {
             let poiList = [];
             let sectorPoiType = null;
 
-            // FIX: Beibehaltung der alten fixen POIs für Step 1
-            if(sx === 4 && sy === 4) { // Vault auf 4,4 (Mitte)
-                poiList.push({x:20, y:20, type:'V'}); 
-                sectorPoiType = 'V';
-            }
-            if(sx === 3 && sy === 3) { // Stadt auf 3,3
-                poiList.push({x:20, y:20, type:'C'});
-                sectorPoiType = 'C';
+            // STEP 2: Dynamische POIs verwenden
+            if(this.state.worldPOIs) {
+                this.state.worldPOIs.forEach(poi => {
+                    if(poi.x === sx && poi.y === sy) {
+                        poiList.push({x: 20, y: 20, type: poi.type});
+                        sectorPoiType = poi.type;
+                    }
+                });
             }
 
+            // Zufällige kleinere Orte (Höhlen/Supermärkte) nur wenn kein Haupt-POI da ist
             if(rng() < 0.35 && !sectorPoiType) { 
                 let type = null;
                 const r = rng(); 
@@ -340,11 +367,10 @@ const Game = {
     },
 
     fixMapBorders: function(map, sx, sy) {
-        // UPDATE: Grenzen auf 10 angepasst
         if(sy === 0) { for(let i=0; i<this.MAP_W; i++) map[0][i] = '#'; }
-        if(sy === 9) { for(let i=0; i<this.MAP_W; i++) map[this.MAP_H-1][i] = '#'; }
+        if(sy === this.WORLD_H - 1) { for(let i=0; i<this.MAP_W; i++) map[this.MAP_H-1][i] = '#'; }
         if(sx === 0) { for(let i=0; i<this.MAP_H; i++) map[i][0] = '#'; }
-        if(sx === 9) { for(let i=0; i<this.MAP_H; i++) map[i][this.MAP_W-1] = '#'; }
+        if(sx === this.WORLD_W - 1) { for(let i=0; i<this.MAP_H; i++) map[i][this.MAP_W-1] = '#'; }
     },
     
     findSafeSpawn: function() {
@@ -386,7 +412,11 @@ const Game = {
     },
 
     enterDungeon: function(type, level=1) {
-        if(level === 1) this.state.savedPosition = { x: this.state.player.x, y: this.state.player.y };
+        if(level === 1) {
+            this.state.savedPosition = { x: this.state.player.x, y: this.state.player.y };
+            // STEP 2 FOG FIX: Weltkarte speichern, bevor wir in den Dungeon gehen
+            this.state.sectorExploredCache = JSON.parse(JSON.stringify(this.state.explored));
+        }
         
         this.state.dungeonLevel = level;
         this.state.dungeonType = type;
@@ -411,7 +441,7 @@ const Game = {
         
         const typeName = type === "cave" ? "Dunkle Höhle" : "Supermarkt Ruine";
         this.state.zone = `${typeName} (Ebene ${level})`;
-        this.state.explored = {}; 
+        this.state.explored = {}; // Dungeon ist dunkel
         this.reveal(this.state.player.x, this.state.player.y);
         
         this.renderStaticMap();
@@ -448,6 +478,9 @@ const Game = {
 
     enterCity: function() {
         this.state.savedPosition = { x: this.state.player.x, y: this.state.player.y };
+        // STEP 2 FOG FIX: Weltkarte speichern
+        this.state.sectorExploredCache = JSON.parse(JSON.stringify(this.state.explored));
+
         if(typeof WorldGen !== 'undefined') {
             const map = WorldGen.generateCityLayout(this.MAP_W, this.MAP_H);
             this.state.currentMap = map;
@@ -474,7 +507,17 @@ const Game = {
             this.state.savedPosition = null;
         }
         this.state.dungeonLevel = 0; 
+        
         this.loadSector(this.state.sector.x, this.state.sector.y);
+        
+        // STEP 2 FOG FIX: Weltkarte wiederherstellen
+        if(this.state.sectorExploredCache) {
+            this.state.explored = this.state.sectorExploredCache;
+            this.state.sectorExploredCache = null;
+            // Aktuelle Position sofort wieder aufdecken, falls man sich bewegt hat
+            this.reveal(this.state.player.x, this.state.player.y);
+        }
+
         UI.log("Zurück im Ödland.", "text-green-400");
     },
 
@@ -674,8 +717,6 @@ const Game = {
                     
                     // FOG OF WAR CHECK
                     const tileKey = `${secKey}_${x},${y}`;
-                    
-                    // City is always visible
                     const isCity = (this.state.zone && this.state.zone.includes("Stadt")); 
                     
                     if(!isCity && !this.state.explored[tileKey]) {
@@ -741,12 +782,9 @@ const Game = {
         const ts = this.TILE; const px = x * ts; const py = y * ts; 
         let bg = this.colors['.']; if(['_', ',', ';', '=', 'W', 'M', '~', '|', 'B'].includes(type)) bg = this.colors[type]; 
         
-        // Base Color
         if (!['^','v','<','>'].includes(type) && type !== '#') { ctx.fillStyle = bg; ctx.fillRect(px, py, ts, ts); } 
-        // Grid Line
         if(!['^','v','<','>','M','W','~'].includes(type) && type !== '#') { ctx.strokeStyle = "rgba(40, 90, 40, 0.05)"; ctx.lineWidth = 1; ctx.strokeRect(px, py, ts, ts); } 
         
-        // Portals
         if(['^', 'v', '<', '>'].includes(type)) { 
             ctx.fillStyle = "#000"; ctx.fillRect(px, py, ts, ts); ctx.fillStyle = "#1aff1a"; ctx.strokeStyle = "#000"; ctx.beginPath(); 
             if (type === '^') { ctx.moveTo(px + ts/2, py + 5); ctx.lineTo(px + ts - 5, py + ts - 5); ctx.lineTo(px + 5, py + ts - 5); } 
