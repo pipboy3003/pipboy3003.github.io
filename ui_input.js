@@ -1,20 +1,24 @@
 const Input = {
     init: function() {
-        // PREVENT BROWSER SCROLLING on Arrow Keys & Space
+        // 1. PREVENT BROWSER SCROLLING on Arrow Keys & Space
         window.addEventListener('keydown', (e) => {
             if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].indexOf(e.code) > -1) {
+                // Nur verhindern, wenn wir NICHT in einem Textfeld sind
                 if(e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
                     e.preventDefault();
                 }
             }
         }, false);
 
+        // 2. GLOBAL KEY LISTENER
         document.addEventListener('keydown', (e) => {
-            // FIX: Allow Enter on Login Screen when Game.state is null
+            
+            // SPECIAL: LOGIN SCREEN ENTER KEY FIX
+            // Wenn Game.state noch null ist, sind wir im Login/Boot
             if (!Game.state) {
                 if (e.key === 'Enter') {
-                    // Prüfen ob wir im Login Screen sind (Input sichtbar?)
                     const input = document.getElementById('player-name-input');
+                    // Wenn das Input-Feld existiert und sichtbar ist (offsetParent != null)
                     if(input && input.offsetParent !== null) {
                         if(typeof UI.initGame === 'function') UI.initGame();
                     }
@@ -22,16 +26,20 @@ const Input = {
                 return;
             }
             
-            if (Game.state.isGameOver) return;
+            if (Game.state.isGameOver) {
+                if(e.key === 'Enter' || e.key === ' ') location.reload();
+                return;
+            }
             
             // ESC Menu
             if (e.key === 'Escape') {
-                if(document.getElementById('manual-overlay') && document.getElementById('manual-overlay').style.display !== 'none') {
-                    document.getElementById('manual-overlay').style.display = 'none';
-                    document.getElementById('manual-overlay').classList.add('hidden');
-                } else if(document.getElementById('changelog-overlay') && document.getElementById('changelog-overlay').style.display !== 'none') {
-                     document.getElementById('changelog-overlay').style.display = 'none';
-                     document.getElementById('changelog-overlay').classList.add('hidden');
+                const manual = document.getElementById('manual-overlay');
+                const log = document.getElementById('changelog-overlay');
+                
+                if(manual && manual.style.display !== 'none') {
+                    manual.style.display = 'none'; manual.classList.add('hidden');
+                } else if(log && log.style.display !== 'none') {
+                     log.style.display = 'none'; log.classList.add('hidden');
                 } else {
                     UI.toggleView('menu');
                 }
@@ -49,8 +57,16 @@ const Input = {
                 if (e.key === 's' || e.key === 'ArrowDown') Game.move(0, 1);
                 if (e.key === 'a' || e.key === 'ArrowLeft') Game.move(-1, 0);
                 if (e.key === 'd' || e.key === 'ArrowRight') Game.move(1, 0);
-            } else if (Game.state.view === 'lockpicking') {
+            } 
+            
+            // Lockpicking
+            else if (Game.state.view === 'lockpicking') {
                 if(e.key === ' ') MiniGames.lockpicking.rotateLock();
+            }
+            
+            // Hacking
+            else if (Game.state.view === 'hacking') {
+                if(e.key === 'Escape') MiniGames.hacking.end();
             }
         });
 
@@ -60,7 +76,7 @@ const Input = {
             }
         });
 
-        // Joystick Logic
+        // Joystick Logic (Touch)
         const joyBase = document.getElementById('joystick-base');
         const joyStick = document.getElementById('joystick-stick');
         let startX, startY, joyId = null;
@@ -71,21 +87,11 @@ const Input = {
             if(!cvs) return;
             const container = cvs.getBoundingClientRect();
             
-            // Nur aktivieren wenn innerhalb des Canvas Bereichs
             if(x < container.left || x > container.right || y < container.top || y > container.bottom) return;
 
-            if(joyBase) {
-                joyBase.style.display = 'block';
-                joyBase.style.left = (x - 50) + 'px';
-                joyBase.style.top = (y - 50) + 'px';
-            }
-            if(joyStick) {
-                joyStick.style.display = 'block';
-                joyStick.style.left = (x - 25) + 'px';
-                joyStick.style.top = (y - 25) + 'px';
-            }
-            startX = x;
-            startY = y;
+            if(joyBase) { joyBase.style.display = 'block'; joyBase.style.left = (x - 50) + 'px'; joyBase.style.top = (y - 50) + 'px'; }
+            if(joyStick) { joyStick.style.display = 'block'; joyStick.style.left = (x - 25) + 'px'; joyStick.style.top = (y - 25) + 'px'; }
+            startX = x; startY = y;
             
             if(joyId) clearInterval(joyId);
             joyId = setInterval(() => {
@@ -107,10 +113,7 @@ const Input = {
                 dx = Math.cos(angle) * 50;
                 dy = Math.sin(angle) * 50;
             }
-            if(joyStick) {
-                joyStick.style.left = (startX + dx - 25) + 'px';
-                joyStick.style.top = (startY + dy - 25) + 'px';
-            }
+            if(joyStick) { joyStick.style.left = (startX + dx - 25) + 'px'; joyStick.style.top = (startY + dy - 25) + 'px'; }
             
             if(Game.state && Game.state.view === 'lockpicking') {
                  const rect = document.body.getBoundingClientRect();
@@ -125,23 +128,12 @@ const Input = {
             if(joyId) clearInterval(joyId);
         };
 
-        // Mouse Events
         document.addEventListener('mousedown', e => { if(e.button === 0) handleStart(e.clientX, e.clientY); });
         document.addEventListener('mousemove', e => handleMove(e.clientX, e.clientY));
         document.addEventListener('mouseup', handleEnd);
 
-        // Touch Events
         document.addEventListener('touchstart', e => { if(e.touches.length === 1) handleStart(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
         document.addEventListener('touchmove', e => { if(e.touches.length === 1) { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY); }}, {passive: false});
         document.addEventListener('touchend', handleEnd);
-        
-        // Lockpicking Mouse Helper
-        document.addEventListener('mousemove', (e) => {
-             if(Game.state && Game.state.view === 'lockpicking') {
-                 const rect = document.body.getBoundingClientRect();
-                 const x = (e.clientX - rect.left) / rect.width;
-                 MiniGames.lockpicking.mouseMove((x * 2) - 1);
-             }
-        });
     }
 };
