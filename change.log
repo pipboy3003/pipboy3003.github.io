@@ -1,5 +1,15 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.3.5a] - 2025-12-23 04:30pm (Phase 1: Fixes & UI Core)
+- Fix: Browser-Scrolling durch Pfeiltasten im Kampf deaktiviert.
+- HUD: Munitionsanzeige (AMM 000) im Header wiederhergestellt.
+Char-Select:
+-  Design überarbeitet (besserer Kontrast).
+- "Abmelden" -> "ZURÜCK" (kehrt zum Login zurück).
+- Neuer Button "LÖSCHEN" hinzugefügt (neben Zurück).
+- Inventar: Button blinkt nun gelb, wenn neue Items im Inventar sind.
+
+
 [v0.3.4b] - 2025-12-23 03:05am (Step 2: Dynamic POIs & Fog Fix)
 - Dynamische POIs: Vault 101 und Rusty Springs werden bei neuem Spiel zufällig platziert.
 - Fog-Fix: Aufgedeckte Weltkarte bleibt gespeichert, wenn man Dungeons betritt/verlässt.
