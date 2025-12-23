@@ -1,3 +1,4 @@
+// [v0.4.0]
 const Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     WORLD_W: 10, WORLD_H: 10, // Definiert die Weltgröße
