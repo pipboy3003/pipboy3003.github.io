@@ -1,5 +1,4 @@
 🐛 Aktuelle Bugs & Anpassungen
-2. Munitions-Crafting: Gecraftete Munition wird nicht korrekt zum Inventar oder der Munitionsanzeige hinzugefügt.
 3. Browser-Scrolling verhindern: Das gesamte Fenster bewegt sich bei Pfeiltastennutzung im Kampf (muss im Event-Listener abgefangen werden).
 4. Kontrast Charakter-Auswahl: Infos zum ausgewählten Charakter sind schwer lesbar, Kontrast erhöhen.
 5. Button "Zurück": "Abmelden"-Button im Charakter-Menü zu "Zurück" ändern (Funktion & Label).
