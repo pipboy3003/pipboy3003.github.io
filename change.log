@@ -1,5 +1,10 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.4.6] - 2025-12-25 12:45am(Contrast Fix)
+------------------------------------------------
+- UI: Kontrast der Charakter-Auswahl verbessert (Aktiver Slot zeigt nun schwarzen Text auf grünem Grund).
+
+
 [v0.4.5] - 2025-12-25 12:35am(Input Fix)
 ------------------------------------------------
 - Fix: Browser-Scrolling durch Pfeiltasten und Leertaste verhindert.
