@@ -1,10 +1,13 @@
-// [v0.4.0]
+// [v0.4.2]
 // Extending UI object with Render methods
 Object.assign(UI, {
     
     // Updates HUD and Button States
     update: function() {
         if (!Game.state) return;
+        
+        // Lazy load ammo element if not in core map
+        if(!this.els.ammo) this.els.ammo = document.getElementById('val-ammo');
         
         // Header Info
         if(this.els.name && typeof Network !== 'undefined') {
@@ -30,6 +33,12 @@ Object.assign(UI, {
         if(this.els.hp) this.els.hp.textContent = `${Math.round(Game.state.hp)}/${maxHp}`;
         if(this.els.hpBar) this.els.hpBar.style.width = `${Math.max(0, (Game.state.hp / maxHp) * 100)}%`;
         if(this.els.caps) this.els.caps.textContent = `${Game.state.caps}`;
+        
+        // Ammo Update
+        if(this.els.ammo) {
+            const ammoItem = Game.state.inventory.find(i => i.id === 'ammo');
+            this.els.ammo.textContent = ammoItem ? ammoItem.count : 0;
+        }
 
         // Glow Alerts
         let hasAlert = false;
