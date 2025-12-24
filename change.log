@@ -1,5 +1,12 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.4.7] - 2025-12-25 12:50am(Character UI Update)
+------------------------------------------------
+- UI: Charakter-Auswahl-Screen Layout überarbeitet.
+- Feature: "Abmelden"-Button durch "ZURÜCK" ersetzt.
+- Feature: Löschen-Button wird nun neben "Zurück" angezeigt und ist bei leeren Slots deaktiviert (statt ausgeblendet).
+
+
 [v0.4.6] - 2025-12-25 12:45am(Contrast Fix)
 ------------------------------------------------
 - UI: Kontrast der Charakter-Auswahl verbessert (Aktiver Slot zeigt nun schwarzen Text auf grünem Grund).
