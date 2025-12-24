@@ -1,5 +1,11 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.4.2] - 2025-12-24 21:15pm(HUD Ammo Update)
+------------------------------------------------
+- Munitionsanzeige (MUN) oben im Header neben den Kronkorken hinzugefügt.
+- ui_render.js: Update-Logik erweitert, um Munitionsstand live anzuzeigen.
+
+
 [v0.4.1] - 2025-12-24 15:15pm(Login UI Update)
 ------------------------------------------------
 - Boot Animation (Vault Boy & Zahnrad) direkt im Login-Fenster integriert.
