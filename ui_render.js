@@ -1,4 +1,4 @@
-// [v0.4.3]
+// [v0.4.4]
 // Extending UI object with Render methods
 Object.assign(UI, {
     
@@ -12,7 +12,6 @@ Object.assign(UI, {
         // Header Info
         if(this.els.name) {
             const sectorStr = Game.state.sector ? ` [${Game.state.sector.x},${Game.state.sector.y}]` : "";
-            // FIX: Nutze Charakternamen statt Account-Namen, Fallback auf Network-Name oder SURVIVOR
             const displayName = Game.state.playerName || (typeof Network !== 'undefined' ? Network.myDisplayName : "SURVIVOR");
             this.els.name.textContent = displayName + sectorStr;
         }
@@ -36,10 +35,9 @@ Object.assign(UI, {
         if(this.els.hpBar) this.els.hpBar.style.width = `${Math.max(0, (Game.state.hp / maxHp) * 100)}%`;
         if(this.els.caps) this.els.caps.textContent = `${Game.state.caps}`;
         
-        // Ammo Update
+        // Ammo Update - FIX: Lese direkt aus state.ammo statt inventory
         if(this.els.ammo) {
-            const ammoItem = Game.state.inventory.find(i => i.id === 'ammo');
-            this.els.ammo.textContent = ammoItem ? ammoItem.count : 0;
+            this.els.ammo.textContent = Game.state.ammo || 0;
         }
 
         // Glow Alerts
@@ -317,6 +315,19 @@ Object.assign(UI, {
         capsDisplay.textContent = Game.state.caps;
         
         let totalItems = 0;
+        
+        // FIX: Munition manuell im Inventar anzeigen
+        if(Game.state.ammo > 0) {
+            totalItems += Game.state.ammo;
+            const ammoBtn = document.createElement('div');
+            ammoBtn.className = "relative border border-green-500 bg-green-900/30 w-full h-16 flex flex-col items-center justify-center cursor-default hover:bg-green-500 hover:text-black transition-colors group";
+            ammoBtn.innerHTML = `
+                <div class="text-2xl">🧨</div>
+                <div class="text-[10px] truncate max-w-full px-1 font-bold">Munition</div>
+                <div class="absolute top-0 right-0 bg-green-900 text-white text-[10px] px-1 font-mono">${Game.state.ammo}</div>
+            `;
+            list.appendChild(ammoBtn);
+        }
         
         const getIcon = (type) => {
             switch(type) {
