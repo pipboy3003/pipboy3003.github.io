@@ -1,5 +1,4 @@
 🐛 Aktuelle Bugs & Anpassungen
-1. Namensanzeige fixen: Ingame wird "Bobokopf" statt des korrekten Charakternamens angezeigt.
 2. Munitions-Crafting: Gecraftete Munition wird nicht korrekt zum Inventar oder der Munitionsanzeige hinzugefügt.
 3. Browser-Scrolling verhindern: Das gesamte Fenster bewegt sich bei Pfeiltastennutzung im Kampf (muss im Event-Listener abgefangen werden).
 4. Kontrast Charakter-Auswahl: Infos zum ausgewählten Charakter sind schwer lesbar, Kontrast erhöhen.
@@ -12,6 +11,7 @@
 11. Navigation Arzt: Nach dem Arztbesuch Fenster schließen, statt ins Stadtmenü zurückzukehren.
 12. Navigation Crafter: Nach dem Crafting Fenster schließen, statt ins Stadtmenü zurückzukehren.
 13. Händler-Menü: Menü soll sich (nur/neu?) öffnen, wenn die Konversation startet.
+14. In der Bootanzeige aktuelle Versions nummer mit einbinden, bzw Version x.x.x wird geladen anzeigen als extra zeile. 
 
 🚀 Ideen für die Zukunft (Roadmap)
 Perk-System: Alle 3-5 Level einen Skill wählen (z.B. "Mysteriöser Fremder", "Hacker").
