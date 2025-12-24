@@ -1,4 +1,4 @@
-// [v0.4.0] 
+// [v0.4.7] 
 const UI = {
     els: {},
     timerInterval: null,
@@ -121,6 +121,7 @@ const UI = {
             btnCreateCharConfirm: document.getElementById('btn-create-char'),
             btnCharSelectAction: document.getElementById('btn-char-select-action'),
             btnCharDeleteAction: document.getElementById('btn-char-delete-action'),
+            btnCharBack: document.getElementById('btn-char-back'),
             
             deleteOverlay: document.getElementById('delete-confirm-overlay'),
             deleteTargetName: document.getElementById('delete-target-name'),
@@ -266,19 +267,19 @@ const UI = {
         const save = this.currentSaves[index];
         if (this.els.btnCharSelectAction) {
             if (save) {
-                // CHANGED: " (Enter)" text removed
+                // UPDATE: Action Buttons Logic
                 this.els.btnCharSelectAction.textContent = "SPIEL LADEN";
                 this.els.btnCharSelectAction.className = "action-button w-full border-green-500 text-green-500 font-bold py-3 mb-2";
                 if(this.els.btnCharDeleteAction) {
-                    this.els.btnCharDeleteAction.classList.remove('hidden');
-                    this.els.btnCharDeleteAction.style.display = 'flex';
+                    this.els.btnCharDeleteAction.disabled = false;
+                    this.els.btnCharDeleteAction.classList.remove('opacity-50', 'cursor-not-allowed');
                 }
             } else {
                 this.els.btnCharSelectAction.textContent = "CHARAKTER ERSTELLEN";
                 this.els.btnCharSelectAction.className = "action-button w-full border-yellow-400 text-yellow-400 font-bold py-3 mb-2";
                 if(this.els.btnCharDeleteAction) {
-                    this.els.btnCharDeleteAction.classList.add('hidden');
-                    this.els.btnCharDeleteAction.style.display = 'none';
+                    this.els.btnCharDeleteAction.disabled = true;
+                    this.els.btnCharDeleteAction.classList.add('opacity-50', 'cursor-not-allowed');
                 }
             }
         }
