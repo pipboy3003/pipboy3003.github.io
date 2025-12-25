@@ -1,4 +1,4 @@
-// [v0.4.17]
+// [v0.4.23]
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     WORLD_W: 10, WORLD_H: 10, 
@@ -107,7 +107,14 @@ window.Game = {
                 if(typeof Network !== 'undefined') Network.updateHighscore(this.state);
             }
 
-            this.loadSector(this.state.sector.x, this.state.sector.y);
+            // FIX: Prevent overwriting current map (e.g. City/Dungeon) on load
+            if (isNewGame) {
+                this.loadSector(this.state.sector.x, this.state.sector.y);
+            } else {
+                // Restore the saved map visually without regenerating logic
+                if(this.renderStaticMap) this.renderStaticMap();
+                this.reveal(this.state.player.x, this.state.player.y);
+            }
 
             if(spawnTarget && !saveData) {
                 this.state.player.x = spawnTarget.x;
