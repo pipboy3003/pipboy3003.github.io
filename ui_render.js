@@ -1,4 +1,4 @@
-// [v0.4.15]
+// [v0.4.12]
 // Extending UI object with Render methods
 Object.assign(UI, {
     
@@ -93,18 +93,6 @@ Object.assign(UI, {
         this.focusIndex = -1;
 
         if(this.els.navMenu) {
-            // [v0.4.14] Highscore Button Injection if missing
-            if(this.els.navMenu.innerHTML.indexOf('Highscore') === -1) {
-                const menuList = this.els.navMenu.querySelector('div.flex-col');
-                if(menuList) {
-                    const hsBtn = document.createElement('button');
-                    hsBtn.className = "action-button text-left border-yellow-400 text-yellow-400 mb-2";
-                    hsBtn.textContent = "🏆 HIGHSCORE";
-                    hsBtn.onclick = () => { this.toggleMenu(); this.switchView('highscore'); };
-                    // Insert before Logout or at end
-                    menuList.insertBefore(hsBtn, menuList.lastElementChild);
-                }
-            }
             this.els.navMenu.classList.add('hidden');
             this.els.navMenu.style.display = 'none';
         }
@@ -140,16 +128,6 @@ Object.assign(UI, {
             Game.state.view = name;
             return;
         }
-        
-        // [v0.4.14] Highscore Switch Logic
-        if(name === 'highscore') {
-            this.renderHighscore('level'); // Default Sort: Level
-            Game.state.view = name;
-            this.restoreOverlay();
-            this.toggleControls(false);
-            this.updateButtonStates(name);
-            return;
-        }
 
         const path = `views/${name}.html?v=${ver}`;
         try {
@@ -177,8 +155,8 @@ Object.assign(UI, {
             if (name === 'city') this.renderCity();
             if (name === 'quests') this.renderQuests();
             if (name === 'crafting') this.renderCrafting();
-            if (name === 'shop') this.renderShop(document.getElementById('shop-list'));
-            if (name === 'clinic') this.renderClinic();
+            if (name === 'shop') this.renderShop(document.getElementById('shop-list')); // [v0.4.12]
+            if (name === 'clinic') this.renderClinic(); // [v0.4.12]
             
             this.updateButtonStates(name);
             this.update();
@@ -212,114 +190,6 @@ Object.assign(UI, {
     toggleControls: function(show) { if (!show && this.els.dialog) this.els.dialog.innerHTML = ''; },
 
     // --- RENDERERS ---
-
-    // [v0.4.15] Highscore Render - Full Logic
-    renderHighscore: function(sortBy = 'level') {
-        let scores = [];
-        
-        // 1. Lokalen Spieler hinzufügen
-        if(Game.state) {
-            scores.push({
-                name: Game.state.playerName,
-                lvl: Game.state.lvl,
-                kills: Game.state.kills || 0,
-                xp: Game.state.xp,
-                isDead: Game.state.isDead || false,
-                isLocal: true
-            });
-        }
-        
-        // 2. Andere Spieler (Network) hinzufügen
-        if(typeof Network !== 'undefined' && Network.otherPlayers) {
-            Object.values(Network.otherPlayers).forEach(p => {
-                scores.push({
-                    name: p.name || "Unknown",
-                    lvl: p.lvl || 1,
-                    kills: p.kills || 0,
-                    xp: p.xp || 0,
-                    isDead: p.isDead || false,
-                    isLocal: false
-                });
-            });
-        }
-
-        // 3. Sortierung
-        scores.sort((a, b) => {
-            if(sortBy === 'name') return a.name.localeCompare(b.name);
-            if(sortBy === 'level') return b.lvl - a.lvl;
-            if(sortBy === 'kills') return b.kills - a.kills;
-            if(sortBy === 'xp') return b.xp - a.xp;
-            return 0;
-        });
-
-        // 4. HTML Grundgerüst
-        this.els.view.innerHTML = `
-            <div class="w-full h-full flex flex-col p-4 bg-black text-green-500 font-mono relative">
-                <h2 class="text-3xl font-bold text-yellow-400 mb-4 text-center border-b-2 border-yellow-500 pb-2 tracking-widest">🏆 WASTELAND LEGENDS</h2>
-                
-                <div class="flex justify-between border-b border-green-700 pb-2 mb-2 text-sm font-bold text-green-300 select-none">
-                    <div class="w-10 text-center">#</div>
-                    <div class="w-1/3 cursor-pointer hover:text-white" onclick="UI.renderHighscore('name')">NAME ${sortBy === 'name' ? '▼' : ''}</div>
-                    <div class="w-1/6 text-center cursor-pointer hover:text-white" onclick="UI.renderHighscore('level')">LVL ${sortBy === 'level' ? '▼' : ''}</div>
-                    <div class="w-1/6 text-center cursor-pointer hover:text-white" onclick="UI.renderHighscore('kills')">KILLS ${sortBy === 'kills' ? '▼' : ''}</div>
-                    <div class="w-1/4 text-right cursor-pointer hover:text-white" onclick="UI.renderHighscore('xp')">EXP ${sortBy === 'xp' ? '▼' : ''}</div>
-                </div>
-                
-                <div id="highscore-list" class="flex-grow overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                </div>
-
-                <button class="action-button w-full mt-4 border-red-500 text-red-500 font-bold" onclick="UI.switchView('map')">ZURÜCK (ESC)</button>
-            </div>
-        `;
-
-        // 5. Liste rendern
-        const listEl = document.getElementById('highscore-list');
-        scores.forEach((s, index) => {
-            const rank = index + 1;
-            let rowClass = "border border-green-900 bg-green-900/10 text-green-400";
-            let rankIcon = `#${rank}`;
-
-            // Top 3 Styling
-            if(rank === 1) { 
-                rowClass = "border border-yellow-500 bg-yellow-900/30 text-yellow-400 font-bold shadow-[0_0_10px_#ffd700]"; 
-                rankIcon = "🥇"; 
-            }
-            else if(rank === 2) { 
-                rowClass = "border border-gray-400 bg-gray-800/30 text-gray-300 font-bold"; 
-                rankIcon = "🥈"; 
-            }
-            else if(rank === 3) { 
-                rowClass = "border border-orange-500 bg-orange-900/30 text-orange-400 font-bold"; 
-                rankIcon = "🥉"; 
-            }
-
-            // Dead Status
-            let nameDisplay = s.name;
-            if(s.isDead) {
-                nameDisplay = `☠️ ${s.name}`;
-                rowClass += " opacity-75 grayscale-[0.5]";
-            }
-            if(s.isLocal) {
-                nameDisplay += " (DU)";
-                if(rank > 3) rowClass = "border border-green-500 bg-green-900/40 text-green-300 font-bold";
-            }
-
-            const row = document.createElement('div');
-            row.className = `flex justify-between items-center p-2 rounded ${rowClass}`;
-            row.innerHTML = `
-                <div class="w-10 text-center text-lg">${rankIcon}</div>
-                <div class="w-1/3 truncate">${nameDisplay}</div>
-                <div class="w-1/6 text-center">${s.lvl}</div>
-                <div class="w-1/6 text-center">${s.kills}</div>
-                <div class="w-1/4 text-right">${s.xp}</div>
-            `;
-            listEl.appendChild(row);
-        });
-
-        if(scores.length === 0) {
-            listEl.innerHTML = '<div class="text-center text-gray-500 italic mt-10">Keine Daten verfügbar...</div>';
-        }
-    },
     
     renderHacking: function() {
         const h = MiniGames.hacking;
