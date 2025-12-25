@@ -1,4 +1,4 @@
-// [v0.4.11]
+// [v0.4.12]
 // Extending UI object with Render methods
 Object.assign(UI, {
     
@@ -147,6 +147,7 @@ Object.assign(UI, {
                 this.toggleControls(false);
             }
             
+            // Render logic based on view
             if (name === 'char') this.renderChar();
             if (name === 'inventory') this.renderInventory();
             if (name === 'wiki') this.renderWiki();
@@ -154,6 +155,8 @@ Object.assign(UI, {
             if (name === 'city') this.renderCity();
             if (name === 'quests') this.renderQuests();
             if (name === 'crafting') this.renderCrafting();
+            if (name === 'shop') this.renderShop(document.getElementById('shop-list')); // [v0.4.12]
+            if (name === 'clinic') this.renderClinic(); // [v0.4.12]
             
             this.updateButtonStates(name);
             this.update();
@@ -609,7 +612,6 @@ Object.assign(UI, {
                         if(item.baseDmg) details += ` | DMG: ${item.baseDmg}`;
                         if(item.bonus) details += ` | Bonus: ${JSON.stringify(item.bonus).replace(/["{}]/g, '').replace(/:/g, '+')}`;
                         
-                        // [v0.4.11] Drop Info
                         let droppedBy = [];
                         if(Game.monsters) {
                             Object.values(Game.monsters).forEach(m => {
@@ -698,9 +700,9 @@ Object.assign(UI, {
             if(disabled) { b.disabled = true; b.style.opacity = 0.5; }
             con.appendChild(b);
         };
-        addBtn("Heilen (25 Kronkorken)", () => Game.heal(), Game.state.caps < 25 || Game.state.hp >= Game.state.maxHp);
-        addBtn("Munition (10 Stk / 10 Kronkorken)", () => Game.buyAmmo(), Game.state.caps < 10);
-        addBtn("Händler / Waffen & Rüstung", () => this.renderShop(con));
+        // [v0.4.12] Direct actions via switchView for new screens
+        addBtn("Heilen (25 Kronkorken)", () => { UI.switchView('clinic'); }, Game.state.caps < 25 || Game.state.hp >= Game.state.maxHp);
+        addBtn("Munition & Ausrüstung", () => { UI.switchView('shop'); });
         addBtn("🛠️ Werkbank / Crafting", () => this.toggleView('crafting'));
         
         // NEU: Trainingsgelände für Minigames
@@ -728,12 +730,17 @@ Object.assign(UI, {
         addBtn("Stadt verlassen", () => this.switchView('map'));
     },
     
+    // [v0.4.12] Updated Render Shop for new view
     renderShop: function(container) {
+        if(!container) return;
         container.innerHTML = '';
         const backBtn = document.createElement('button');
         backBtn.className = "action-button w-full mb-4 text-center border-yellow-400 text-yellow-400";
-        backBtn.textContent = "ZURÜCK ZUM PLATZ";
-        backBtn.onclick = () => this.renderCity();
+        backBtn.textContent = "SPEICHERN & ZURÜCK";
+        backBtn.onclick = () => { 
+            Game.saveGame(); 
+            this.switchView('map'); // Back to walking city
+        };
         container.appendChild(backBtn);
         Object.keys(Game.items).forEach(key => {
             const item = Game.items[key];
@@ -750,6 +757,43 @@ Object.assign(UI, {
                 container.appendChild(btn);
             }
         });
+        
+        // Add Ammo Buy Option explicitly
+        const ammoBtn = document.createElement('button');
+        ammoBtn.className = "action-button w-full mb-2 flex justify-between text-sm border-blue-500 text-blue-300";
+        ammoBtn.innerHTML = `<span>10x Munition</span> <span>10 Kronkorken</span>`;
+        if(Game.state.caps < 10) { ammoBtn.disabled = true; ammoBtn.style.opacity = 0.5; }
+        else { ammoBtn.onclick = () => Game.buyAmmo(); }
+        container.appendChild(ammoBtn);
+    },
+
+    // [v0.4.12] Render Clinic View
+    renderClinic: function() {
+        // Clinic needs a container in clinic.html or injected
+        // Assuming clinic.html has a div id='clinic-list' or we inject into view
+        let container = document.getElementById('clinic-list');
+        if(!container) {
+             // Fallback if view not ready or id missing
+             this.els.view.innerHTML = `<div class="p-4 flex flex-col items-center"><h2 class="text-2xl text-green-500 mb-4">DR. ZIMMERMANN</h2><div id="clinic-list" class="w-full max-w-md"></div></div>`;
+             container = document.getElementById('clinic-list');
+        }
+        
+        container.innerHTML = '';
+        const backBtn = document.createElement('button');
+        backBtn.className = "action-button w-full mb-4 text-center border-yellow-400 text-yellow-400";
+        backBtn.textContent = "SPEICHERN & ZURÜCK";
+        backBtn.onclick = () => { Game.saveGame(); this.switchView('map'); };
+        container.appendChild(backBtn);
+
+        const healBtn = document.createElement('button');
+        healBtn.className = "action-button w-full mb-4 py-4 flex flex-col items-center border-red-500 text-red-500";
+        healBtn.innerHTML = `<span class="text-2xl mb-2">💊</span><span class="font-bold">VOLLSTÄNDIGE HEILUNG</span><span class="text-sm">25 Kronkorken</span>`;
+        if(Game.state.caps < 25 || Game.state.hp >= Game.state.maxHp) { 
+            healBtn.disabled = true; healBtn.style.opacity = 0.5; 
+            if(Game.state.hp >= Game.state.maxHp) healBtn.innerHTML += `<br><span class="text-xs text-green-500">(HP VOLL)</span>`;
+        }
+        else { healBtn.onclick = () => Game.heal(); }
+        container.appendChild(healBtn);
     },
 
     renderCombat: function() {
@@ -791,6 +835,13 @@ Object.assign(UI, {
         const container = document.getElementById('crafting-list');
         if(!container) return;
         container.innerHTML = '';
+        
+        // [v0.4.12] Back Button
+        const backBtn = document.createElement('button');
+        backBtn.className = "action-button w-full mb-4 text-center border-yellow-400 text-yellow-400";
+        backBtn.textContent = "SPEICHERN & ZURÜCK";
+        backBtn.onclick = () => { Game.saveGame(); this.switchView('map'); };
+        container.appendChild(backBtn);
         
         Game.recipes.forEach(recipe => {
             const outItem = recipe.out === 'AMMO' ? {name: "15x Munition"} : Game.items[recipe.out];
@@ -877,6 +928,69 @@ Object.assign(UI, {
         btnContainer.appendChild(btnYes); btnContainer.appendChild(btnNo);
         box.appendChild(btnContainer); this.els.dialog.appendChild(box);
         this.refreshFocusables();
+    },
+
+    // [v0.4.12] Wasteland Gamble Overlay
+    showWastelandGamble: function(callback) {
+        if(!this.els.dialog) this.restoreOverlay();
+        Game.state.inDialog = true;
+        this.els.dialog.innerHTML = '';
+        this.els.dialog.style.display = 'flex';
+        
+        const box = document.createElement('div');
+        box.className = "bg-black border-4 border-yellow-500 p-6 shadow-[0_0_40px_gold] max-w-sm text-center relative overflow-hidden";
+        
+        // Background Effect
+        const bg = document.createElement('div');
+        bg.className = "absolute inset-0 bg-yellow-900/20 z-0 pointer-events-none";
+        box.appendChild(bg);
+        
+        box.innerHTML += `
+            <h2 class="text-2xl font-bold text-yellow-400 mb-2 tracking-widest relative z-10">WASTELAND GAMBLE</h2>
+            <p class="text-green-300 text-xs mb-4 relative z-10">Würfle um dein Schicksal!</p>
+            
+            <div id="dice-container" class="flex justify-center gap-4 mb-6 relative z-10">
+                <div id="die-1" class="w-12 h-12 border-2 border-yellow-400 flex items-center justify-center text-3xl font-bold bg-black text-yellow-400 shadow-lg">?</div>
+                <div id="die-2" class="w-12 h-12 border-2 border-yellow-400 flex items-center justify-center text-3xl font-bold bg-black text-yellow-400 shadow-lg">?</div>
+                <div id="die-3" class="w-12 h-12 border-2 border-yellow-400 flex items-center justify-center text-3xl font-bold bg-black text-yellow-400 shadow-lg">?</div>
+            </div>
+            
+            <button id="btn-roll" class="action-button w-full border-green-500 text-green-500 font-bold text-xl py-3 hover:bg-green-900 relative z-10">WÜRFELN!</button>
+        `;
+        
+        this.els.dialog.appendChild(box);
+        
+        const btnRoll = document.getElementById('btn-roll');
+        btnRoll.onclick = () => {
+            btnRoll.disabled = true;
+            btnRoll.textContent = "ROLLING...";
+            
+            let rolls = 0;
+            const maxRolls = 20;
+            const interval = setInterval(() => {
+                const d1 = Math.floor(Math.random() * 6) + 1;
+                const d2 = Math.floor(Math.random() * 6) + 1;
+                const d3 = Math.floor(Math.random() * 6) + 1;
+                document.getElementById('die-1').textContent = d1;
+                document.getElementById('die-2').textContent = d2;
+                document.getElementById('die-3').textContent = d3;
+                rolls++;
+                
+                if(rolls >= maxRolls) {
+                    clearInterval(interval);
+                    const sum = parseInt(document.getElementById('die-1').textContent) + 
+                                parseInt(document.getElementById('die-2').textContent) + 
+                                parseInt(document.getElementById('die-3').textContent);
+                    
+                    btnRoll.textContent = `SUMME: ${sum}`;
+                    btnRoll.classList.add('animate-pulse');
+                    setTimeout(() => {
+                        this.leaveDialog();
+                        callback(sum);
+                    }, 1500);
+                }
+            }, 50);
+        };
     },
 
     showDungeonLocked: function(minutesLeft) {
