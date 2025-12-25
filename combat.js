@@ -1,4 +1,6 @@
-// [v0.4.12]
+// [v0.4.17]
+// [v0.4.17] - 2025-12-25 11:15pm(Highscore Tracking) ------------------------------------------------ 
+// - 'victory' Funktion erweitert: Zählt jetzt Kills für den Highscore.
 const Combat = {
     // V.A.T.S. Konfiguration
     VATS: [
@@ -134,6 +136,9 @@ const Combat = {
     },
 
     victory: function() {
+        // [v0.4.17] Kill Counter Increase
+        Game.state.kills = (Game.state.kills || 0) + 1;
+
         const enemy = Game.state.enemy; 
         Game.state.caps += enemy.loot; 
         UI.log(`Sieg! ${enemy.loot} Kronkorken.`, "text-yellow-400"); 
@@ -145,14 +150,14 @@ const Combat = {
             UI.log("★ LEGENDARY DEFEATED!", "text-yellow-400 font-bold"); 
             setTimeout(() => {
                  if(typeof UI.showWastelandGamble === 'function') {
-                     UI.showWastelandGamble((sum) => {
-                         Game.gambleLegendaryLoot(sum);
-                         this.end();
-                     });
+                      UI.showWastelandGamble((sum) => {
+                          Game.gambleLegendaryLoot(sum);
+                          this.end();
+                      });
                  } else {
-                     // Fallback falls UI fehlt
-                     Game.addToInventory('legendary_part', 1);
-                     this.end();
+                      // Fallback falls UI fehlt
+                      Game.addToInventory('legendary_part', 1);
+                      this.end();
                  }
             }, 1000);
             return; // Warte auf Gamble
