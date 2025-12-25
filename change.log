@@ -1,5 +1,10 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.4.16] - 2025-12-25 10:35pm(Game Logic Refactoring) 
+- game.js aufgeteilt in game_core.js, game_map.js, game_actions.js und game_render.js 
+- Modularisierung der Spiellogik abgeschlossen
+
+
 [v0.4.15] - 2025-12-25 10:25pm(UI Refactoring) 
 - ui_render.js aufgeteilt in ui_render_core.js, ui_render_views.js, ui_render_minigames.js und ui_render_overlays.js 
 - index.html Lade-Reihenfolge angepasst
