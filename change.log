@@ -1,5 +1,12 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.4.10] - 2025-12-25 02:00am(Mini-Game Tutorials)
+------------------------------------------------
+- Tutorials: Automatische Hilfe beim ersten Starten von Hacking & Lockpicking.
+- UI: '?' Button in Minigames hinzugefügt, um die Hilfe jederzeit aufzurufen.
+- Manual: Kapitel 6 'MINI-GAMES' im Handbuch hinzugefügt.
+
+
 [v0.4.9] - 2025-12-25 01:45am(Inventory Alert)
 ------------------------------------------------
 - UI: Der Inventar-Button blinkt nun gelb, wenn neue Ausrüstung (Waffen/Rüstung) gefunden oder gekauft wurde.
