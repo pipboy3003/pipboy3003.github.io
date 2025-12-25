@@ -1,4 +1,4 @@
-// [v0.4.0]
+// [v0.4.10]
 # ☢️ PIP-BOY 3003 HANDBUCH ☢️
 
 WILLKOMMEN IM ÖDLAND, BEWOHNER!
@@ -77,6 +77,25 @@ Vault-Tec Assisted Targeting System.
 ### WERKBANK
 In Städten (**C**) kannst du Schrott zu Munition verarbeiten.
 Sammle **Komponenten** von Robotern und **Junk** in Ruinen.
+
+---
+
+## 🔐 6. MINI-GAMES
+
+### TERMINAL HACKING 💻
+Finde das Passwort im Speicher-Dump.
+* Wähle ein Wort. Das System zeigt **TREFFER** (Likeness) an.
+* **TREFFER** = Anzahl Buchstaben an der **korrekten Position**.
+* **Beispiel**: Passwort ist `LOVE`. Du tippst `LIVE`.
+* Ergebnis: `3/4` (L, V, E sind richtig).
+* Du hast 4 Versuche. Ein Fehler sperrt das Terminal.
+
+### SCHLOSS KNACKEN 🔒
+Öffne Truhen und Türen mit einem Bobby-Pin.
+1. **DIETRICH DREHEN**: Bewege Maus oder Finger links/rechts.
+2. **SCHLOSS DREHEN**: Drücke Leertaste oder den Button.
+3. **Widerstand?** Wenn das Schloss wackelt, STOPP! Der Dietrich bricht sonst.
+4. Finde den "Sweet Spot", wo sich das Schloss komplett drehen lässt.
 
 ---
 
