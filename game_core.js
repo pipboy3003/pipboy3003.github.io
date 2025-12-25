@@ -1,4 +1,4 @@
-// [v0.4.16]
+// [v0.4.17]
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     WORLD_W: 10, WORLD_H: 10, 
@@ -50,6 +50,8 @@ window.Game = {
                 if(!this.state.view) this.state.view = 'map';
                 if(!this.state.visitedSectors) this.state.visitedSectors = [];
                 if(!this.state.tutorialsShown) this.state.tutorialsShown = { hacking: false, lockpicking: false };
+                // Highscore Support: Kills initialisieren falls nicht vorhanden
+                if(typeof this.state.kills === 'undefined') this.state.kills = 0;
 
                 if(!this.state.worldPOIs) {
                     this.state.worldPOIs = [ {type: 'V', x: 4, y: 4}, {type: 'C', x: 3, y: 3} ];
@@ -72,6 +74,11 @@ window.Game = {
                     UI.log(`>> Signal verfolgt: Sektor ${startSecX},${startSecY}`, "text-yellow-400");
                 }
 
+                // Highscore Check: Alten toten Charakter löschen wenn Name gleich ist
+                if(newName && typeof Network !== 'undefined') {
+                    Network.checkAndRemoveDeadChar(newName);
+                }
+
                 this.state = {
                     saveSlot: slotIndex,
                     playerName: newName || "SURVIVOR",
@@ -82,6 +89,7 @@ window.Game = {
                     equip: { weapon: this.items.fists, body: this.items.vault_suit },
                     inventory: [], 
                     hp: 100, maxHp: 100, xp: 0, lvl: 1, caps: 50, ammo: 10, statPoints: 0, 
+                    kills: 0, // NEW: Kill Counter
                     view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, 
                     explored: {}, sectorExploredCache: null, visitedSectors: [`${startSecX},${startSecY}`],
                     tutorialsShown: { hacking: false, lockpicking: false },
@@ -95,6 +103,8 @@ window.Game = {
                 
                 UI.log(">> Neuer Charakter erstellt.", "text-green-400");
                 this.saveGame(); 
+                // Initial Highscore Entry
+                if(typeof Network !== 'undefined') Network.updateHighscore(this.state);
             }
 
             this.loadSector(this.state.sector.x, this.state.sector.y);
@@ -117,7 +127,11 @@ window.Game = {
     },
 
     saveGame: function(force=false) {
-        if(typeof Network !== 'undefined') Network.save(this.state);
+        if(typeof Network !== 'undefined') {
+            Network.save(this.state);
+            // Auch Highscore updaten beim Speichern
+            if(!this.state.isGameOver) Network.updateHighscore(this.state);
+        }
         try { localStorage.setItem('pipboy_save', JSON.stringify(this.state)); } catch(e){}
     },
 
@@ -148,6 +162,7 @@ window.Game = {
             this.state.maxHp = this.calculateMaxHP(this.getStat('END'));
             this.state.hp = this.state.maxHp;
             UI.log(`LEVEL UP! Du bist jetzt Level ${this.state.lvl}`, "text-yellow-400 font-bold animate-pulse");
+            this.saveGame(); // Save on Level Up for Highscore
         }
     }
 };
