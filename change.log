@@ -1,11 +1,5 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
-[v0.4.8] - 2025-12-25 12:55am(Inventory Glow)
-------------------------------------------------
-- Feature: Inventar-Button blinkt nun, wenn neue Items erhalten wurden.
-- Logic: Status wird zurückgesetzt, sobald das Inventar geöffnet wird.
-
-
 [v0.4.7] - 2025-12-25 12:50am(Character UI Update)
 ------------------------------------------------
 - UI: Charakter-Auswahl-Screen Layout überarbeitet.
