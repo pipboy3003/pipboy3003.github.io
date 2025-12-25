@@ -1,19 +1,24 @@
-// [v0.4.20]
-// [v0.4.20] - 2025-12-25 11:55pm(Error Handling Update) ------------------------------------------------ 
-// - Verbesserte Fehleranzeige im Highscore-Menü bei fehlenden Berechtigungen
+// [v0.4.21]
+// [v0.4.21] - 2025-12-25 11:58pm(Highscore UI Fix) ------------------------------------------------ 
+// - Close-Button Funktionalität im Highscore-Screen verbessert
+// - Loading-Screen hat nun einen Abbrechen-Button
 Object.assign(UI, {
     
     showHighscoreBoard: async function() {
         if(!this.els.dialog) this.restoreOverlay();
         if(Game.state) Game.state.inDialog = true;
         
-        this.els.dialog.innerHTML = '<div class="text-green-500 animate-pulse text-2xl">EMPFANGE DATEN VOM HUB...</div>';
+        // Loading Screen mit Abbrechen Button
+        this.els.dialog.innerHTML = `
+            <div class="flex flex-col items-center justify-center p-6 border-2 border-green-500 bg-black shadow-[0_0_20px_green]">
+                <div class="text-green-500 animate-pulse text-2xl mb-6">EMPFANGE DATEN VOM HUB...</div>
+                <button class="action-button border-red-500 text-red-500 w-full" onclick="UI.leaveDialog()">ABBRECHEN</button>
+            </div>`;
         this.els.dialog.style.display = 'flex';
 
         try {
             const scores = await Network.getHighscores();
             
-            // Falls scores leer oder null ist (kann bei Permission-Fehler passieren bevor Catch greift)
             if(!scores) throw new Error("Keine Daten empfangen.");
 
             scores.sort((a,b) => b.lvl - a.lvl || b.xp - a.xp);
@@ -21,10 +26,12 @@ Object.assign(UI, {
             const box = document.createElement('div');
             box.className = "bg-black border-4 border-green-600 p-6 shadow-[0_0_30px_green] w-full max-w-2xl h-3/4 flex flex-col relative";
             
+            // Close Button
             const closeBtn = document.createElement('button');
-            closeBtn.className = "absolute top-2 right-2 text-green-500 text-xl border border-green-500 px-2 hover:bg-green-900";
+            closeBtn.className = "absolute top-2 right-2 text-green-500 text-xl border border-green-500 px-3 hover:bg-green-900 font-bold z-50";
             closeBtn.textContent = "X";
-            closeBtn.onclick = () => this.leaveDialog();
+            // WICHTIG: Direktes Zuweisen an UI.leaveDialog um Scope-Probleme zu vermeiden
+            closeBtn.onclick = function() { UI.leaveDialog(); }; 
             box.appendChild(closeBtn);
 
             box.innerHTML += `
@@ -42,11 +49,32 @@ Object.assign(UI, {
             this.els.dialog.innerHTML = '';
             this.els.dialog.appendChild(box);
             
+            // Close Button muss nach innerHTML+= neu gebunden werden, da er sonst verloren geht, 
+            // aber wir haben ihn mit appendChild hinzugefügt, das ist sicher. 
+            // Sicherheitshalber fügen wir ihn HINTERHER nochmal ein, falls innerHTML+= ihn überschrieben hat (was es tut).
+            // KORREKTUR: box.innerHTML += ... löscht vorherige EventListener auf children!
+            // Lösung: Erst HTML bauen, dann Button appenden.
+            
+            // Reset Content für sauberen Aufbau
+            box.innerHTML = `
+                <h2 class="text-4xl font-bold text-green-400 mb-4 text-center border-b-2 border-green-600 pb-2 tracking-widest">VAULT LEGENDS</h2>
+                <div class="flex justify-between mb-2 text-xs text-green-300 uppercase font-bold px-2">
+                    <span class="w-8">#</span>
+                    <span class="w-1/3 cursor-pointer hover:text-white" onclick="UI.renderHighscoreList(this.dataset.scores, 'name')">NAME</span>
+                    <span class="w-16 text-right cursor-pointer hover:text-white" onclick="UI.renderHighscoreList(this.dataset.scores, 'lvl')">LVL</span>
+                    <span class="w-16 text-right cursor-pointer hover:text-white" onclick="UI.renderHighscoreList(this.dataset.scores, 'kills')">KILLS</span>
+                    <span class="w-24 text-right cursor-pointer hover:text-white" onclick="UI.renderHighscoreList(this.dataset.scores, 'xp')">EXP</span>
+                </div>
+                <div id="highscore-list" class="flex-grow overflow-y-auto pr-2 custom-scrollbar"></div>
+            `;
+            box.appendChild(closeBtn); // Button jetzt sicher hinzufügen
+
             const listContainer = document.getElementById('highscore-list');
-            listContainer.dataset.rawScores = JSON.stringify(scores);
+            if(listContainer) listContainer.dataset.rawScores = JSON.stringify(scores);
             
             this.renderHighscoreList = (sortBy) => {
                 const container = document.getElementById('highscore-list');
+                if(!container) return;
                 let data = JSON.parse(container.dataset.rawScores);
                 
                 if(sortBy === 'name') data.sort((a,b) => a.name.localeCompare(b.name));
@@ -85,7 +113,7 @@ Object.assign(UI, {
         } catch(e) {
             let msg = e.message;
             if(msg && msg.toLowerCase().includes("permission_denied")) {
-                msg = "ZUGRIFF VERWEIGERT: FIREBASE REGELN BLOCKIEREN 'leaderboard'.<br><span class='text-xs text-yellow-500'>Bitte in Firebase Console freischalten!</span>";
+                msg = "ZUGRIFF VERWEIGERT: FIREBASE REGELN BLOCKIEREN 'leaderboard'.";
             }
             this.els.dialog.innerHTML = `
                 <div class="border-2 border-red-500 bg-black p-6 text-center shadow-[0_0_20px_red]">
@@ -330,6 +358,6 @@ Object.assign(UI, {
     leaveDialog: function() { 
         if(Game.state) Game.state.inDialog = false; 
         this.els.dialog.style.display = 'none'; 
-        this.update(); 
+        if(typeof this.update === 'function') this.update(); 
     }
 });
