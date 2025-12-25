@@ -1,30 +1,5 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
-[v0.4.15] - 2025-12-25 11:00am (Highscore Logic & Styling)
-------------------------------------------------
-- Highscore-Liste wird nun dynamisch mit Daten befüllt
-- Sortierfunktion (Name, Level, Kills, XP) implementiert
-- Top 3 Ränge erhalten spezielle Farben (Gold, Silber, Bronze)
-- 'Tote' Charaktere werden mit einem Totenkopf ☠️ markiert
-- Tabellen-Layout finalisiert
-
-
-[v0.4.14] - 2025-12-25 10:45am (Highscore View Base)
-------------------------------------------------
-- UI.renderHighscore() Grundgerüst implementiert
-- 'highscore' zur UI.switchView() Logik hinzugefügt
-- Button für Highscore im Hauptmenü (NavMenu) ergänzt
-- Version auf v0.4.14 erhöht
-
-
-[v0.4.13] - 2025-12-25 10:25am (Highscore Data Prep)
-------------------------------------------------
-- Game.state um 'kills' und 'isDead' erweitert
-- Game.addKill() Funktion hinzugefügt
-- Game.triggerDeath() implementiert (ersetzt sofortiges Löschen)
-- 'kills' werden beim Laden initialisiert
-
-
 [v0.4.11] - 2025-12-25 02:15am(Wiki Drop Info)
 ------------------------------------------------
 - Wiki: Bei Items wird nun angezeigt, von welchen Monstern sie gedroppt werden können (z.B. "Gedroppt von: Raider").
