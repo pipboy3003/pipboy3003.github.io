@@ -1,4 +1,4 @@
-// [v0.4.0]
+// [v0.4.12]
 const Combat = {
     // V.A.T.S. Konfiguration
     VATS: [
@@ -140,14 +140,22 @@ const Combat = {
         
         if(Game.gainExp) Game.gainExp(this.getRandomXP(enemy.xp)); 
         
+        // [v0.4.12] Wasteland Gamble Logic
         if(enemy.isLegendary) { 
-            Game.addToInventory('legendary_part', 1); 
-            UI.log("★ DROP: Legendäres Modul", "text-yellow-400 font-bold"); 
-            if(Math.random() < 0.5) { 
-                const bonusCaps = Game.state.lvl * 50; 
-                Game.state.caps += bonusCaps; 
-                UI.log(`★ BONUS: ${bonusCaps} KK`, "text-yellow-400"); 
-            } 
+            UI.log("★ LEGENDARY DEFEATED!", "text-yellow-400 font-bold"); 
+            setTimeout(() => {
+                 if(typeof UI.showWastelandGamble === 'function') {
+                     UI.showWastelandGamble((sum) => {
+                         Game.gambleLegendaryLoot(sum);
+                         this.end();
+                     });
+                 } else {
+                     // Fallback falls UI fehlt
+                     Game.addToInventory('legendary_part', 1);
+                     this.end();
+                 }
+            }, 1000);
+            return; // Warte auf Gamble
         } 
         
         if(enemy.drops) { 
@@ -157,6 +165,7 @@ const Combat = {
                 } 
             }); 
         } 
+        Game.saveGame();
         this.end();
     },
 
@@ -165,7 +174,6 @@ const Combat = {
         Game.state.inDialog = false; 
         this.active = false;
         UI.switchView('map'); 
-        Game.saveGame();
     },
 
     getRandomXP: function(xpData) { 
