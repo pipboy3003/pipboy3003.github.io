@@ -4,6 +4,8 @@
 - Scrollt immer noch beim laufen
 - Punkt auf der Weltkarte genauer (je nach Position im aktuellen Sektor auch so darstellen, nicht immer Mittig9
 - Würfelspiel soll auch nur bei 10% der Legendären Mobs kommen. 
+- Wenn in der Stadt gespeichert /ausgeloggt wird soll man auch wieder in der Stadt sich einloggen
+- Stadt optisch verschönern.
 
 needs testing: 
 - solange man im hädnler oder crafting menü ist wird nicht mehr gespeichert bei jeder aktion. Erst beim verlassen des händlers bitte
@@ -13,7 +15,7 @@ needs testing:
 - Legendäre Monster sollen weniger oft kommen. Dafür kommt nach dem Besiegen noch ein kleiner Bonus hinzu: 
 - Mini Animation mit 3 Wüfeln als Spiel ( so wie viel viel früher schonmal ). Punkte von 3 - 18, logisch aufteilen und 3 sinnvolle Bonis dazu. Bitte mache mir erst einen Vorschlag bevor wir was umsetzen.
 
-- Wenn in der Stadt gespeichert /ausgeloggt wird soll man auch wieder in der Stadt sich einloggen
+
 Ideen für die Zukunft (Roadmap)
 Hier sind ein paar Vorschläge, was wir als nächstes angehen könnten, um das Pip-Boy Feeling zu verstärken:
 1. Perk-System (Skills)
