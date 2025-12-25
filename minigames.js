@@ -1,4 +1,4 @@
-// [v0.4.0]
+// [v0.4.10]
 const MiniGames = {
     // --- HACKING ---
     hacking: {
@@ -25,6 +25,14 @@ const MiniGames = {
             
             UI.log("TERMINAL VERBINDUNG HERGESTELLT...", "text-green-500");
             UI.switchView('hacking');
+            
+            // [v0.4.10] First Time Tutorial
+            if(!Game.state.tutorialsShown) Game.state.tutorialsShown = {};
+            if(!Game.state.tutorialsShown.hacking) {
+                setTimeout(() => UI.showMiniGameHelp('hacking'), 500);
+                Game.state.tutorialsShown.hacking = true;
+                Game.saveGame();
+            }
         },
         
         checkWord: function(word) {
@@ -90,6 +98,14 @@ const MiniGames = {
             
             UI.log("Schloss knacken gestartet...", "text-yellow-400");
             UI.switchView('lockpicking');
+            
+            // [v0.4.10] First Time Tutorial
+            if(!Game.state.tutorialsShown) Game.state.tutorialsShown = {};
+            if(!Game.state.tutorialsShown.lockpicking) {
+                setTimeout(() => UI.showMiniGameHelp('lockpicking'), 500);
+                Game.state.tutorialsShown.lockpicking = true;
+                Game.saveGame();
+            }
         },
         
         rotatePin: function(delta) {
@@ -156,4 +172,3 @@ const MiniGames = {
         }
     }
 };
-
