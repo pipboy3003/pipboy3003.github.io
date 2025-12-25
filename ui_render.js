@@ -1,4 +1,4 @@
-// [v0.4.10]
+// [v0.4.11]
 // Extending UI object with Render methods
 Object.assign(UI, {
     
@@ -598,6 +598,7 @@ Object.assign(UI, {
             if (Game.items) {
                 Object.keys(Game.items).forEach(k => {
                     const i = Game.items[k];
+                    i._key = k; 
                     if(!categories[i.type]) categories[i.type] = [];
                     categories[i.type].push(i);
                 });
@@ -607,6 +608,20 @@ Object.assign(UI, {
                         let details = `Wert: ${item.cost}`;
                         if(item.baseDmg) details += ` | DMG: ${item.baseDmg}`;
                         if(item.bonus) details += ` | Bonus: ${JSON.stringify(item.bonus).replace(/["{}]/g, '').replace(/:/g, '+')}`;
+                        
+                        // [v0.4.11] Drop Info
+                        let droppedBy = [];
+                        if(Game.monsters) {
+                            Object.values(Game.monsters).forEach(m => {
+                                if(m.drops && m.drops.some(d => d.id === item._key)) {
+                                    droppedBy.push(m.name);
+                                }
+                            });
+                        }
+                        if(droppedBy.length > 0) {
+                            details += ` | <span class="text-red-300">Gedroppt von: ${droppedBy.join(', ')}</span>`;
+                        }
+
                         htmlBuffer += `
                             <div class="flex justify-between items-center border-b border-green-900/30 py-1">
                                 <span class="font-bold text-white">${item.name}</span>
