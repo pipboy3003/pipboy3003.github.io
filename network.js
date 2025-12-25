@@ -1,4 +1,4 @@
-// [v0.4.0]
+// [v0.4.17]
 const Network = {
     db: null,
     auth: null,
@@ -20,9 +20,7 @@ const Network = {
     },
 
     init: function() {
-        // FIX: Active immer auf true setzen, auch wenn DB schon da ist
         this.active = true;
-
         if (typeof firebase !== 'undefined' && !this.db) {
             try {
                 if (!firebase.apps.length) firebase.initializeApp(this.config);
@@ -50,16 +48,13 @@ const Network = {
     },
 
     login: async function(email, password) {
-        // Sicherstellen, dass wir aktiv sind
         this.init(); 
-        
         if (!this.active) throw new Error("Verbindung zu Vault-Tec unterbrochen.");
         try {
             const userCredential = await this.auth.signInWithEmailAndPassword(email, password);
             const user = userCredential.user;
             this.myId = user.uid;
             this.myDisplayName = user.displayName || "Unknown";
-
             const snapshot = await this.db.ref('saves/' + this.myId).once('value');
             return snapshot.val() || {}; 
         } catch(e) {
@@ -68,20 +63,76 @@ const Network = {
         }
     },
     
-    saveToSlot: function(slotIndex, gameState) {
-        if(!this.active || !this.myId) return;
+    // --- HIGHSCORE SYSTEM ---
+    updateHighscore: function(gameState) {
+        if(!this.active || !this.myId || !gameState) return;
+        // Speichert unter 'leaderboard/{uid}' 
+        // Wir nutzen die UID als Key, damit jeder User nur einen "aktiven" Eintrag pro Slot hat? 
+        // Oder besser: Wir nutzen den Charakternamen als Key?
+        // Anforderung: "Nach Tod sollen sie verbleiben... bis neuer Char mit selbem Namen erstellt wird"
+        // Also Key = CharacterName (sanitize it first)
         
-        const meta = {
+        const safeName = (gameState.playerName || "Unknown").replace(/[.#$/[\]]/g, "_");
+        const entry = {
             name: gameState.playerName || "Unknown",
             lvl: gameState.lvl,
-            sector: gameState.sector,
-            caps: gameState.caps
+            kills: gameState.kills || 0,
+            xp: gameState.xp + (gameState.lvl * 1000), // Approximate total XP score
+            status: 'alive',
+            owner: this.myId,
+            timestamp: Date.now()
         };
         
+        this.db.ref(`leaderboard/${safeName}`).update(entry);
+    },
+
+    registerDeath: function(gameState) {
+        if(!this.active || !gameState) return;
+        const safeName = (gameState.playerName || "Unknown").replace(/[.#$/[\]]/g, "_");
+        
+        const entry = {
+            name: gameState.playerName || "Unknown",
+            lvl: gameState.lvl,
+            kills: gameState.kills || 0,
+            xp: gameState.xp + (gameState.lvl * 1000),
+            status: 'dead', // Totenschädel flag
+            owner: this.myId,
+            deathTime: Date.now()
+        };
+        this.db.ref(`leaderboard/${safeName}`).set(entry);
+    },
+
+    checkAndRemoveDeadChar: async function(charName) {
+        if(!this.active) return;
+        const safeName = charName.replace(/[.#$/[\]]/g, "_");
+        const ref = this.db.ref(`leaderboard/${safeName}`);
+        
+        const snap = await ref.once('value');
+        if(snap.exists()) {
+            const val = snap.val();
+            // Wenn der Eintrag mir gehört und 'dead' ist, löschen wir ihn, da wir ihn "neu geboren" haben
+            if(val.owner === this.myId && val.status === 'dead') {
+                await ref.remove();
+            }
+        }
+    },
+
+    getHighscores: async function() {
+        if(!this.active) return [];
+        const snap = await this.db.ref('leaderboard').once('value');
+        const list = [];
+        snap.forEach(child => {
+            list.push(child.val());
+        });
+        return list;
+    },
+    // -------------------------
+
+    saveToSlot: function(slotIndex, gameState) {
+        if(!this.active || !this.myId) return;
         const saveObj = JSON.parse(JSON.stringify(gameState));
         const updates = {};
         updates[`saves/${this.myId}/${slotIndex}`] = saveObj;
-        
         this.db.ref().update(updates)
             .then(() => { if(typeof UI !== 'undefined') UI.log("SLOT " + (slotIndex+1) + " GESPEICHERT.", "text-cyan-400"); })
             .catch(e => console.error("Save Error:", e));
@@ -94,9 +145,7 @@ const Network = {
 
     startPresence: function() {
         if(!this.myId) return;
-        
         this.db.ref('players/' + this.myId).onDisconnect().remove();
-        
         this.db.ref('players').on('value', (snapshot) => {
             const rawData = snapshot.val() || {};
             const now = Date.now();
@@ -149,7 +198,6 @@ const Network = {
     disconnect: function() {
         if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
         if (this.auth) this.auth.signOut();
-        // WICHTIG: Active auf false setzen, damit man nicht versehentlich weiter funkt
         this.active = false;
         this.myId = null;
     },
