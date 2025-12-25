@@ -1,4 +1,4 @@
-// [v0.4.25]
+// [v0.4.26]
 // Main View Renderers (Inventory, Map, Screens)
 Object.assign(UI, {
     
@@ -118,7 +118,7 @@ Object.assign(UI, {
         
         grid.innerHTML = statOrder.map(k => {
             const val = Game.getStat(k);
-            const btn = Game.state.statPoints > 0 ? `<button class="w-12 h-12 border-2 border-green-500 bg-green-900/50 text-green-400 font-bold ml-2 flex items-center justify-center hover:bg-green-500 hover:text-black transition-colors" onclick="Game.upgradeStat('${k}')" style="font-size: 1.5rem;">+</button>` : '';
+            const btn = Game.state.statPoints > 0 ? `<button class="w-12 h-12 border-2 border-green-500 bg-green-900/50 text-green-400 font-bold ml-2 flex items-center justify-center hover:bg-green-500 hover:text-black transition-colors" onclick="Game.upgradeStat('${k}', event)" style="font-size: 1.5rem;">+</button>` : '';
             const label = (typeof window.GameData !== 'undefined' && window.GameData.statLabels && window.GameData.statLabels[k]) ? window.GameData.statLabels[k] : k;
             return `<div class="flex justify-between items-center border-b border-green-900/30 py-1 h-14"><span>${label}</span> <div class="flex items-center"><span class="text-yellow-400 font-bold mr-4 text-xl">${val}</span>${btn}</div></div>`;
         }).join('');
@@ -379,8 +379,6 @@ Object.assign(UI, {
         const con = document.getElementById('city-options');
         if(!con) return;
         con.innerHTML = '';
-        
-        // HELPER: Fancy Button Creator
         const addBtn = (icon, title, subtitle, cb, disabled=false) => {
             const b = document.createElement('button');
             b.className = "action-button w-full mb-3 p-3 flex items-center justify-between group bg-black/40 hover:bg-green-900/50 border-l-4 border-transparent hover:border-green-500 transition-all";
@@ -390,7 +388,7 @@ Object.assign(UI, {
                     <span class="text-3xl filter grayscale group-hover:grayscale-0 transition-all">${icon}</span>
                     <div class="flex flex-col items-start text-left">
                         <span class="text-lg sm:text-xl font-bold text-green-400 group-hover:text-yellow-400 tracking-wider">${title}</span>
-                        <span class="text-[10px] sm:text-xs text-green-600 group-hover:text-green-200 font-mono">${subtitle}</span>
+                        <span class="text-xs text-green-600 group-hover:text-green-200 font-mono">${subtitle}</span>
                     </div>
                 </div>
                 <div class="text-xl text-green-800 group-hover:text-green-400 transition-transform group-hover:translate-x-1">▶</div>
@@ -402,13 +400,11 @@ Object.assign(UI, {
                 b.disabled = true; 
                 b.classList.add('opacity-40', 'cursor-not-allowed', 'filter', 'grayscale');
                 b.classList.remove('hover:bg-green-900/50', 'hover:border-green-500');
-                // Remove hover interaction for disabled
                 b.innerHTML = b.innerHTML.replace('group-hover:text-yellow-400', '').replace('group-hover:translate-x-1', '');
             }
             con.appendChild(b);
         };
         
-        // Buttons
         const healCost = 25;
         const canHeal = Game.state.caps >= healCost && Game.state.hp < Game.state.maxHp;
         let healSub = `HP wiederherstellen (${healCost} KK)`;
@@ -416,15 +412,11 @@ Object.assign(UI, {
         else if(Game.state.caps < healCost) healSub = "Zu wenig Kronkorken";
         
         addBtn("🏥", "KLINIK", healSub, () => UI.switchView('clinic'), !canHeal);
-        
         addBtn("🛒", "MARKTPLATZ", "Waffen, Rüstung & Munition", () => UI.switchView('shop'));
-        
         addBtn("🛠️", "WERKBANK", "Gegenstände herstellen", () => this.toggleView('crafting'));
         
         addBtn("🎯", "TRAININGSGELÄNDE", "Hacking & Schlossknacken üben", () => {
              con.innerHTML = '';
-             
-             // Back Button styled simply
              const backBtn = document.createElement('button');
              backBtn.className = "w-full py-2 mb-4 border border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black font-bold tracking-widest";
              backBtn.textContent = "<< ZURÜCK ZUR STADT";
