@@ -1,4 +1,4 @@
-// [v0.4.0]
+// [v0.4.9]
 const Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     WORLD_W: 10, WORLD_H: 10, // Definiert die Weltgröße
@@ -528,8 +528,15 @@ const Game = {
         const existing = this.state.inventory.find(i => i.id === id); 
         if(existing) existing.count += count; 
         else this.state.inventory.push({id: id, count: count}); 
-        const itemName = this.items[id] ? this.items[id].name : id;
+        
+        const itemDef = this.items[id];
+        const itemName = itemDef ? itemDef.name : id;
         UI.log(`+ ${itemName} (${count})`, "text-green-400"); 
+
+        // [v0.4.9] Alert für neue Ausrüstung (Waffe/Rüstung)
+        if(itemDef && (itemDef.type === 'weapon' || itemDef.type === 'body')) {
+            if(typeof UI !== 'undefined' && UI.triggerInventoryAlert) UI.triggerInventoryAlert();
+        }
     }, 
     
     useItem: function(id) { 
