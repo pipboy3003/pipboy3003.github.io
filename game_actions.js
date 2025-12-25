@@ -1,4 +1,4 @@
-// [v0.4.16]
+// [v0.4.26]
 // Interactions, Combat, Crafting & Inventory
 Object.assign(Game, {
     rest: function() { 
@@ -194,7 +194,8 @@ Object.assign(Game, {
         this.saveGame();
     },
 
-    upgradeStat: function(key) { 
+    upgradeStat: function(key, e) { 
+        if(e) e.stopPropagation(); // FIX: Prevent menu closing because button is removed from DOM
         if(this.state.statPoints > 0) { 
             this.state.stats[key]++; 
             this.state.statPoints--; 
