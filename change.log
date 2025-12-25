@@ -1,5 +1,11 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.4.11] - 2025-12-25 02:15am(Wiki Drop Info)
+------------------------------------------------
+- Wiki: Bei Items wird nun angezeigt, von welchen Monstern sie gedroppt werden können (z.B. "Gedroppt von: Raider").
+- Logic: Rückwärtssuche in der Monster-Datenbank für Item-Drops implementiert.
+
+
 [v0.4.10] - 2025-12-25 02:00am(Mini-Game Tutorials)
 ------------------------------------------------
 - Tutorials: Automatische Hilfe beim ersten Starten von Hacking & Lockpicking.
