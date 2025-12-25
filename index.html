@@ -1,4 +1,4 @@
-<!-- [v0.4.11] -->
+<!-- [v0.4.12] -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -348,7 +348,9 @@
             if(verDisplay) { verDisplay.textContent = ver; verDisplay.classList.remove('animate-pulse'); }
             if(loginVerDisplay) { loginVerDisplay.textContent = ver; }
             console.log("Loading V:", ver);
-            loadScript('data.js?v=' + ver)
+            loadScript('data_core.js?v=' + ver)
+                .then(() => loadScript('data_items.js?v=' + ver))
+                .then(() => loadScript('data_monsters.js?v=' + ver))
                 .then(() => loadScript('world_gen.js?v=' + ver))
                 .then(() => loadScript('network.js?v=' + ver))
                 .then(() => loadScript('minigames.js?v=' + ver))
@@ -362,4 +364,4 @@
     };
 </script>
 </body>
-</html
+</html>
