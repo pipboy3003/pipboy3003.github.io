@@ -1,5 +1,9 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.4.14] - 2025-12-25 10:15pm(CSS Refactoring)
+- Styles aus index.html in style.css ausgelagert - index.html bereinigt und Link zu style.css hinzugefügt
+
+
 [v0.4.12] - 2025-12-25 09:10pm(Data Structure Refactoring) 
 - data.js in data_core.js, data_items.js und data_monsters.js aufgeteilt 
 - Lade-Reihenfolge in index.html angepasst
