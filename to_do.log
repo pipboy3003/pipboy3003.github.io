@@ -1,9 +1,4 @@
 🐛 Aktuelle Bugs & Anpassungen:
-- Nach einloggen "Log nachricht" "Terminal Link : Bobokopf", hier sollte der Charaktername ausgelesen werden, nicht immer Bobokopf.
-- Spiel scrollt immer noch im Kampfmenü. Drücken der Pfeiltasten nach recht links und hoch runter lässt den bildschirm wandern.
-- Wenn in der Stadt gespeichert /ausgeloggt wird soll man auch wieder in der Stadt sich einloggen
-- Punkt auf der Weltkarte genauer (je nach Position im aktuellen Sektor auch so darstellen, nicht immer Mittig9
-- Stadt optisch verschönern.
 - Statuspunkte vergeben schmeißt einen aus dem Charaktermenü. Soll möglich sein alle Punkte zu vergeben und trzd im menü zu bleiben.
 - Händler Menü verbessern + Perk-System. im Ödland, außer in Truhen bei Dungeons, ist nur rostiges droppbar. Normale Waffen können gekauft werden Und andere sachen gecraftet. 
 Dazu bitte alles anpassen + Anleitung erweitern.
