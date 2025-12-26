@@ -1,5 +1,12 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.5.0] - 2025-12-26 09:00am (Major Update: Economy & Combat)
+	• NEW data_items.js: "Rostige" Waffen hinzugefügt (Pistole, Gewehr, Messer). Preise und Werte angepasst.
+	• UPDATE combat.js:
+	• Loot-System überarbeitet: Im Ödland (Open World) droppen nun primär Schrott oder rostige Waffen. Hochwertige Ausrüstung gibt es nur noch beim Händler, in Dungeons oder durch Crafting.
+	• Legendary Gamble: Das Würfelspiel erscheint nur noch mit 10% Wahrscheinlichkeit bei legendären Gegnern (vorher 100%).
+	• UPDATE ui_render_views.js: renderShop komplett neu gestaltet. Kategorien, Icons und bessere Übersicht (ähnlich dem City-Menü).
+
 [v0.4.27] - 2025-12-26 12:57am (Movement Bugfix & Minigames Update)
 	• ui_render_core.js: switchView('map') setzt nun explizit Game.state.inDialog = false und entfernt den Fokus von Buttons (blur), um blockierte Steuerung zu verhindern.
 	• minigames.js: Update auf v0.4.27. end() Methoden gesichert.
