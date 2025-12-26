@@ -1,5 +1,9 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.4.27] - 2025-12-26 12:57am (Movement Bugfix & Minigames Update)
+	• ui_render_core.js: switchView('map') setzt nun explizit Game.state.inDialog = false und entfernt den Fokus von Buttons (blur), um blockierte Steuerung zu verhindern.
+	• minigames.js: Update auf v0.4.27. end() Methoden gesichert.
+
 [v0.4.26] - 2025-12-26 12:55am (Char Menu Focus Fix)
     - game_actions.js: upgradeStat erweitert, um das Click-Event abzufangen und stopPropagation() auszuführen.
     - ui_render_views.js: renderChar angepasst, damit onclick="Game.upgradeStat(..., event)" das Event explizit weitergibt.
