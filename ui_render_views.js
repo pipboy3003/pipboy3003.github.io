@@ -1,4 +1,4 @@
-// [v0.6.0]
+// [v0.6.1]
 // Main View Renderers (Inventory, Map, Screens)
 Object.assign(UI, {
     
@@ -80,8 +80,16 @@ Object.assign(UI, {
 
         Game.state.inventory.forEach((entry) => {
             if(entry.count <= 0) return;
-            totalItems += entry.count;
+            
+            // FIX: Check if item exists in database to prevent crash
             const item = Game.items[entry.id];
+            if(!item) {
+                console.warn("Item not found in DB:", entry.id);
+                // Optional: Remove broken item or show fallback
+                return; 
+            }
+
+            totalItems += entry.count;
             
             const btn = document.createElement('div');
             btn.className = "relative border border-green-500 bg-green-900/30 w-full h-16 flex flex-col items-center justify-center cursor-pointer hover:bg-green-500 hover:text-black transition-colors group";
@@ -559,6 +567,21 @@ Object.assign(UI, {
         
         document.getElementById('enemy-hp-text').textContent = `${Math.max(0, enemy.hp)}/${enemy.maxHp} TP`;
         document.getElementById('enemy-hp-bar').style.width = `${Math.max(0, (enemy.hp/enemy.maxHp)*100)}%`;
+        
+        // UPDATE VATS CHANCES
+        if(typeof Combat !== 'undefined' && typeof Combat.calculateHitChance === 'function') {
+             const cHead = Combat.calculateHitChance(0);
+             const cTorso = Combat.calculateHitChance(1);
+             const cLegs = Combat.calculateHitChance(2);
+             
+             const elHead = document.getElementById('chance-vats-0');
+             const elTorso = document.getElementById('chance-vats-1');
+             const elLegs = document.getElementById('chance-vats-2');
+             
+             if(elHead) elHead.textContent = cHead + "%";
+             if(elTorso) elTorso.textContent = cTorso + "%";
+             if(elLegs) elLegs.textContent = cLegs + "%";
+        }
     },
     
     renderSpawnList: function(players) {
