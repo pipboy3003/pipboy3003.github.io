@@ -1,4 +1,4 @@
-// [v0.5.0]
+// [v0.6.0]
 // Main View Renderers (Inventory, Map, Screens)
 Object.assign(UI, {
     
@@ -193,13 +193,17 @@ Object.assign(UI, {
                             ctx.font = "bold 20px monospace";
                             ctx.textAlign = "center";
                             ctx.textBaseline = "middle";
-                            if(poi.type === 'C') {
-                                ctx.fillStyle = "#00ffff"; 
-                                ctx.fillText("🏙️", x * TILE_W + TILE_W/2, y * TILE_H + TILE_H/2);
-                            } else if(poi.type === 'V') {
-                                ctx.fillStyle = "#ffff00";
-                                ctx.fillText("⚙️", x * TILE_W + TILE_W/2, y * TILE_H + TILE_H/2);
-                            }
+                            let icon = "❓";
+                            let color = "#fff";
+                            
+                            if(poi.type === 'C') { icon = "🏙️"; color = "#00ffff"; }
+                            else if(poi.type === 'V') { icon = "⚙️"; color = "#ffff00"; }
+                            else if(poi.type === 'M') { icon = "🏰"; color = "#ff5555"; } // Militär
+                            else if(poi.type === 'R') { icon = "☠️"; color = "#ffaa00"; } // Raider
+                            else if(poi.type === 'T') { icon = "📡"; color = "#55ff55"; } // Turm
+
+                            ctx.fillStyle = color;
+                            ctx.fillText(icon, x * TILE_W + TILE_W/2, y * TILE_H + TILE_H/2);
                         }
                     }
 
