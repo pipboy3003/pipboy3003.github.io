@@ -1,4 +1,4 @@
-// [v0.4.26]
+// [v0.5.0]
 // Main View Renderers (Inventory, Map, Screens)
 Object.assign(UI, {
     
@@ -431,38 +431,94 @@ Object.assign(UI, {
     },
     
     renderShop: function(container) {
+        if(!container) container = document.getElementById('shop-list');
         if(!container) return;
+        
         container.innerHTML = '';
+        
+        // Header / Back Button
         const backBtn = document.createElement('button');
-        backBtn.className = "action-button w-full mb-4 text-center border-yellow-400 text-yellow-400";
-        backBtn.textContent = "SPEICHERN & ZURÜCK";
+        backBtn.className = "w-full py-3 mb-4 border border-yellow-400 text-yellow-400 font-bold hover:bg-yellow-400 hover:text-black transition-colors uppercase tracking-widest";
+        backBtn.textContent = "<< Speichern & Zurück";
         backBtn.onclick = () => { 
             Game.saveGame(); 
-            this.switchView('map'); 
+            this.switchView('city'); // Back to city menu instead of map directly
         };
         container.appendChild(backBtn);
-        Object.keys(Game.items).forEach(key => {
+
+        // Helper for Shop Items
+        const addShopItem = (itemKey, item) => {
+            const canAfford = Game.state.caps >= item.cost;
+            const isEquipped = (Game.state.equip[item.slot] && Game.state.equip[item.slot].name === item.name);
+            
+            const div = document.createElement('div');
+            div.className = `flex justify-between items-center p-3 mb-2 border ${canAfford ? 'border-green-500 bg-green-900/20' : 'border-red-900 bg-black/40'} transition-all hover:bg-green-900/40`;
+            
+            // Icon Logic
+            let icon = "📦";
+            if(item.type === 'weapon') icon = "🔫";
+            if(item.type === 'body') icon = "🛡️";
+            if(item.type === 'consumable') icon = "💊";
+
+            div.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">${icon}</span>
+                    <div class="flex flex-col">
+                        <span class="font-bold ${canAfford ? 'text-green-400' : 'text-gray-500'}">${item.name}</span>
+                        <span class="text-xs text-green-600">${item.desc || item.type}</span>
+                    </div>
+                </div>
+                <div class="flex flex-col items-end">
+                    <span class="font-mono text-yellow-400 font-bold">${item.cost} KK</span>
+                </div>
+            `;
+            
+            // Interaction
+            if(isEquipped) {
+                div.innerHTML += `<div class="absolute inset-0 flex justify-center items-center bg-black/60 text-green-500 font-bold border border-green-500 rotate-[-5deg]">AUSGERÜSTET</div>`;
+                div.style.position = 'relative';
+                div.style.opacity = '0.7';
+            } else if (!canAfford) {
+                div.style.opacity = '0.5';
+                div.style.cursor = 'not-allowed';
+            } else {
+                div.style.cursor = 'pointer';
+                div.onclick = () => Game.buyItem(itemKey);
+            }
+            
+            container.appendChild(div);
+        };
+
+        // --- MUNITION (Special) ---
+        const ammoDiv = document.createElement('div');
+        ammoDiv.className = "flex justify-between items-center p-3 mb-4 border border-blue-500 bg-blue-900/20 cursor-pointer hover:bg-blue-900/40";
+        const canBuyAmmo = Game.state.caps >= 10;
+        ammoDiv.innerHTML = `
+             <div class="flex items-center gap-3">
+                <span class="text-2xl">🧨</span>
+                <div class="flex flex-col">
+                    <span class="font-bold text-blue-300">10x Munition</span>
+                    <span class="text-xs text-blue-500">Standard Kaliber</span>
+                </div>
+            </div>
+            <span class="font-mono text-yellow-400 font-bold">10 KK</span>
+        `;
+        if(!canBuyAmmo) { ammoDiv.style.opacity = 0.5; }
+        else { ammoDiv.onclick = () => Game.buyAmmo(); }
+        container.appendChild(ammoDiv);
+
+        // --- ITEMS LIST ---
+        // Sort by cost
+        const sortedKeys = Object.keys(Game.items).sort((a,b) => Game.items[a].cost - Game.items[b].cost);
+        
+        sortedKeys.forEach(key => {
             const item = Game.items[key];
-            if(item.cost > 0 && Game.state.lvl >= (item.requiredLevel || 0) - 2) {
-                const canAfford = Game.state.caps >= item.cost;
-                const isEquipped = (Game.state.equip[item.slot] && Game.state.equip[item.slot].name === item.name);
-                let label = `<span>${item.name}</span> <span>${item.cost} Kronkorken</span>`;
-                if(isEquipped) label = `<span class="text-green-500">[AUSGERÜSTET]</span>`;
-                const btn = document.createElement('button');
-                btn.className = "action-button w-full mb-2 flex justify-between text-sm";
-                btn.innerHTML = label;
-                if(!canAfford || isEquipped) { btn.disabled = true; btn.style.opacity = 0.5; }
-                else { btn.onclick = () => Game.buyItem(key); }
-                container.appendChild(btn);
+            // Filter: Only show items with cost > 0 and reasonable level logic
+            // Hide "Rusty" items from shop (Starter Loot)
+            if(item.cost > 0 && !key.startsWith('rusty_')) {
+                addShopItem(key, item);
             }
         });
-        
-        const ammoBtn = document.createElement('button');
-        ammoBtn.className = "action-button w-full mb-2 flex justify-between text-sm border-blue-500 text-blue-300";
-        ammoBtn.innerHTML = `<span>10x Munition</span> <span>10 Kronkorken</span>`;
-        if(Game.state.caps < 10) { ammoBtn.disabled = true; ammoBtn.style.opacity = 0.5; }
-        else { ammoBtn.onclick = () => Game.buyAmmo(); }
-        container.appendChild(ammoBtn);
     },
 
     renderClinic: function() {
