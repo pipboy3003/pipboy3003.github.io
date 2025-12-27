@@ -1,4 +1,4 @@
-// [v0.6.0]
+// [v0.7.0]
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     WORLD_W: 10, WORLD_H: 10, 
@@ -44,13 +44,12 @@ window.Game = {
             let isNewGame = false;
             
             // Standard POIs definieren (werden für New Game und Legacy Fix genutzt)
-            // Vault (V), City (C), Military (M), Raider (R), Tower (T)
             const defaultPOIs = [ 
                 {type: 'V', x: 4, y: 4}, 
                 {type: 'C', x: 3, y: 3},
-                {type: 'M', x: 8, y: 1}, // Militärbasis (Schwer)
-                {type: 'R', x: 1, y: 8}, // Raider Festung (Mittel)
-                {type: 'T', x: 9, y: 9}  // Funkturm (Spezial)
+                {type: 'M', x: 8, y: 1}, // Militärbasis
+                {type: 'R', x: 1, y: 8}, // Raider Festung
+                {type: 'T', x: 9, y: 9}  // Funkturm
             ];
 
             if (saveData) {
@@ -61,10 +60,13 @@ window.Game = {
                 if(!this.state.view) this.state.view = 'map';
                 if(!this.state.visitedSectors) this.state.visitedSectors = [];
                 if(!this.state.tutorialsShown) this.state.tutorialsShown = { hacking: false, lockpicking: false };
-                // Highscore Support: Kills initialisieren falls nicht vorhanden
                 if(typeof this.state.kills === 'undefined') this.state.kills = 0;
 
-                // Legacy Fix: Falls alte Saves keine oder nur alte POIs haben
+                // [v0.7.0] Neue States initialisieren falls fehlen
+                if(!this.state.knownRecipes) this.state.knownRecipes = [];
+                if(!this.state.hiddenItems) this.state.hiddenItems = {};
+
+                // Legacy Fix: Falls alte Saves keine POIs haben
                 if(!this.state.worldPOIs || this.state.worldPOIs.length <= 2) {
                     this.state.worldPOIs = defaultPOIs;
                 }
@@ -73,10 +75,7 @@ window.Game = {
                 UI.log(">> Spielstand geladen.", "text-cyan-400");
             } else {
                 isNewGame = true;
-                const vX = 4; // Vault Position Fixed to 4,4 based on defaultPOIs logic or random if desired
-                const vY = 4;
-                
-                // Wir nutzen jetzt feste Startsektoren für Konsistenz mit den POIs
+                const vX = 4; const vY = 4;
                 let startSecX = 4, startSecY = 4, startX = 20, startY = 20;
 
                 if (spawnTarget && spawnTarget.sector) {
@@ -85,7 +84,6 @@ window.Game = {
                     UI.log(`>> Signal verfolgt: Sektor ${startSecX},${startSecY}`, "text-yellow-400");
                 }
 
-                // Highscore Check: Alten toten Charakter löschen wenn Name gleich ist
                 if(newName && typeof Network !== 'undefined') {
                     Network.checkAndRemoveDeadChar(newName);
                 }
@@ -106,6 +104,8 @@ window.Game = {
                     tutorialsShown: { hacking: false, lockpicking: false },
                     tempStatIncrease: {}, buffEndTime: 0, cooldowns: {}, 
                     quests: [ { id: "q1", title: "Der Weg nach Hause", text: "Suche Zivilisation und finde Vault 101.", read: false } ], 
+                    knownRecipes: [], // NEU: Leer starten
+                    hiddenItems: {},  // NEU: Versteckte Items
                     startTime: Date.now(), savedPosition: null
                 };
                 this.addToInventory('stimpack', 1);
@@ -114,15 +114,12 @@ window.Game = {
                 
                 UI.log(">> Neuer Charakter erstellt.", "text-green-400");
                 this.saveGame(); 
-                // Initial Highscore Entry
                 if(typeof Network !== 'undefined') Network.updateHighscore(this.state);
             }
 
-            // FIX: Prevent overwriting current map (e.g. City/Dungeon) on load
             if (isNewGame) {
                 this.loadSector(this.state.sector.x, this.state.sector.y);
             } else {
-                // Restore the saved map visually without regenerating logic
                 if(this.renderStaticMap) this.renderStaticMap();
                 this.reveal(this.state.player.x, this.state.player.y);
             }
@@ -147,7 +144,6 @@ window.Game = {
     saveGame: function(force=false) {
         if(typeof Network !== 'undefined') {
             Network.save(this.state);
-            // Auch Highscore updaten beim Speichern
             if(!this.state.isGameOver) Network.updateHighscore(this.state);
         }
         try { localStorage.setItem('pipboy_save', JSON.stringify(this.state)); } catch(e){}
@@ -180,7 +176,7 @@ window.Game = {
             this.state.maxHp = this.calculateMaxHP(this.getStat('END'));
             this.state.hp = this.state.maxHp;
             UI.log(`LEVEL UP! Du bist jetzt Level ${this.state.lvl}`, "text-yellow-400 font-bold animate-pulse");
-            this.saveGame(); // Save on Level Up for Highscore
+            this.saveGame(); 
         }
     }
 };
