@@ -1,4 +1,4 @@
-// [v0.4.16]
+// [v0.7.0]
 // Canvas Rendering Logic
 Object.assign(Game, {
     renderStaticMap: function() { 
@@ -60,6 +60,17 @@ Object.assign(Game, {
                     if(['V', 'S', 'C', 'G', 'H', '^', 'v', '<', '>', '$', '&', 'P', 'E', 'F', 'X'].includes(t)) { 
                         this.drawTile(ctx, x, y, t, pulse); 
                     } 
+                    
+                    // --- HIDDEN ITEM SHIMMER (NEU) ---
+                    if(this.state.hiddenItems && this.state.hiddenItems[`${x},${y}`]) {
+                        const shimmer = (Math.sin(Date.now() / 200) + 1) / 2;
+                        ctx.globalAlpha = 0.3 + (shimmer * 0.5);
+                        ctx.fillStyle = "#ffffff";
+                        ctx.beginPath();
+                        ctx.arc(x * this.TILE + this.TILE/2, y * this.TILE + this.TILE/2, 4 + shimmer * 2, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.globalAlpha = 1.0;
+                    }
                 } 
             } 
         } 
