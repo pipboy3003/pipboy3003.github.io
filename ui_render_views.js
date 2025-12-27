@@ -1,4 +1,4 @@
-// [v0.6.2]
+// [v0.7.0]
 // Main View Renderers (Inventory, Map, Screens)
 Object.assign(UI, {
     
@@ -74,6 +74,7 @@ Object.assign(UI, {
                 case 'junk': return '⚙️';
                 case 'component': return '🔩';
                 case 'rare': return '⭐';
+                case 'blueprint': return '📜'; // Neues Icon für Blueprints
                 default: return '📦';
             }
         };
@@ -81,7 +82,7 @@ Object.assign(UI, {
         Game.state.inventory.forEach((entry) => {
             if(entry.count <= 0) return;
             
-            // FIX: Crash Prevention falls Item nicht in DB
+            // FIX: Check if item exists
             const item = Game.items[entry.id];
             if(!item) return;
 
@@ -98,7 +99,7 @@ Object.assign(UI, {
             
             btn.onclick = () => {
                  if(item.type === 'junk' || item.type === 'component' || item.type === 'rare') {
-                     // Passive item
+                     // Passive
                  } else {
                      this.showItemConfirm(entry.id);
                  }
@@ -162,20 +163,15 @@ Object.assign(UI, {
         const TILE_W = cvs.width / W;
         const TILE_H = cvs.height / H;
 
-        // Reset: Fog of War Hintergrund
+        // Reset
         ctx.fillStyle = "#050a05"; 
         ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-        // Biome Colors
+        // Biomes
         const biomeColors = {
-            'wasteland': '#4a4036',
-            'forest': '#1a3300',
-            'jungle': '#0f2405',
-            'desert': '#8b5a2b',
-            'swamp': '#1e1e11',
-            'mountain': '#333333',
-            'city': '#444455',
-            'vault': '#002244'
+            'wasteland': '#4a4036', 'forest': '#1a3300', 'jungle': '#0f2405',
+            'desert': '#8b5a2b', 'swamp': '#1e1e11', 'mountain': '#333333',
+            'city': '#444455', 'vault': '#002244'
         };
 
         for(let y=0; y<H; y++) {
@@ -185,7 +181,6 @@ Object.assign(UI, {
                 const isCurrent = (x === Game.state.sector.x && y === Game.state.sector.y);
 
                 if(isVisited) {
-                    // Draw Biome
                     const biome = WorldGen.getSectorBiome(x, y);
                     ctx.fillStyle = biomeColors[biome] || '#222';
                     ctx.fillRect(x * TILE_W - 0.5, y * TILE_H - 0.5, TILE_W + 1, TILE_H + 1);
@@ -328,8 +323,8 @@ Object.assign(UI, {
                 }
             }
         } else if (category === 'crafting') {
-            // FIX: Safety check for recipes
-            if (Game.recipes) {
+            // FIX: Safety Check
+            if (Game.recipes && Game.recipes.length > 0) {
                 Game.recipes.forEach(r => {
                     const outName = r.out === "AMMO" ? "Munition x15" : (Game.items[r.out] ? Game.items[r.out].name : r.out);
                     const reqs = Object.keys(r.req).map(rid => {
@@ -343,7 +338,7 @@ Object.assign(UI, {
                         </div>`;
                 });
             } else {
-                htmlBuffer = '<div class="text-red-500">Keine Baupläne geladen.</div>';
+                htmlBuffer = '<div class="text-center text-gray-500 mt-10">Keine Baupläne in Datenbank.</div>';
             }
         } else if (category === 'locs') {
              const locs = [
@@ -620,8 +615,15 @@ Object.assign(UI, {
         
         // FIX: Safety check for recipes array
         const recipes = Game.recipes || [];
-        
+        let knownCount = 0; // Zähler für bekannte Rezepte
+
         recipes.forEach(recipe => {
+            // FILTER: Zeige nur bekannte Rezepte (oder alle im Debug Mode)
+            if(Game.state.knownRecipes && !Game.state.knownRecipes.includes(recipe.id)) {
+                return; // Überspringen
+            }
+            knownCount++;
+
             const outItem = recipe.out === 'AMMO' ? {name: "15x Munition"} : Game.items[recipe.out];
             const div = document.createElement('div');
             div.className = "border border-green-900 bg-green-900/10 p-3 mb-2";
@@ -646,8 +648,8 @@ Object.assign(UI, {
             container.appendChild(div);
         });
         
-        if(recipes.length === 0) {
-            container.innerHTML += '<div class="text-gray-500 italic mt-4 text-center">Keine Baupläne verfügbar.</div>';
+        if(knownCount === 0) {
+            container.innerHTML += '<div class="text-gray-500 italic mt-10 text-center border-t border-gray-800 pt-4">Du hast noch keine Baupläne gelernt.<br><span class="text-xs text-green-700">Suche in Dungeons oder der Wildnis nach Blueprints!</span></div>';
         }
     }
 });
