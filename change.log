@@ -1,5 +1,17 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.7.3] - 2025-12-28 10:45am (Perk System Alpha)
+------------------------------------------------
+- Feature: Perk-System implementiert (To-Do #1).
+- Logic: Alle 3 Level erhält der Spieler nun einen 'Perk-Punkt'.
+- Content: 4 Neue Perks hinzugefügt:
+  1. 'Zähigkeit': Erhöht Max HP sofort um +20.
+  2. 'Sanitäter': Stimpacks heilen +50% mehr.
+  3. 'Schatzsucher': Gegner droppen 20-50% mehr Kronkorken.
+  4. 'Mysteriöser Fremder': 10% Chance auf kritischen Schaden (x2) im Kampf.
+- UI: 'views/char.html' erweitert um einen "PERKS"-Tab.
+- UI: 'ui_render_views.js' zeigt nun verfügbare Perks an und ermöglicht das Lernen.
+
 [v0.7.0] - 2025-12-26 03:00pm (Blueprints & Secret Loot Update)
 ------------------------------------------------
 - Feature: Crafting-System komplett überarbeitet. Rezepte sind nicht mehr von Anfang an verfügbar, sondern müssen durch das Finden von "Bauplänen" (Blueprints) in der Welt gelernt werden.
