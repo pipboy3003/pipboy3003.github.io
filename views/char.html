@@ -6,8 +6,8 @@
             <button id="btn-show-perks" class="flex-1 py-2 font-bold bg-black text-gray-500 border border-gray-700 hover:text-green-400 transition-colors ml-[-1px]" onclick="UI.renderChar('perks')">PERKS</button>
         </div>
 
-        <div id="stat-grid" class="space-y-2 w-full">
-            <div class="w-full border-2 border-green-900 bg-black/50 p-2 mb-4 relative">
+        <div id="char-header-info" class="w-full">
+             <div class="w-full border-2 border-green-900 bg-black/50 p-2 mb-4 relative">
                 <div class="absolute top-0 left-0 bg-green-900 text-black px-2 py-0.5 font-bold text-xs tracking-widest">AUSRÜSTUNG</div>
                 
                 <div class="flex justify-between items-center mt-6 mb-2">
@@ -53,8 +53,9 @@
                 </div>
                 <div class="text-[10px] text-right opacity-70 mb-4">EXP: <span id="char-exp">0</span> / <span id="char-next">100</span></div>
             </div>
-            
-            </div>
+        </div>
+
+        <div id="stat-grid" class="space-y-2 w-full"></div>
 
         <div id="perk-container" class="w-full hidden space-y-2"></div>
 
