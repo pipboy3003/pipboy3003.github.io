@@ -1,4 +1,4 @@
-// [v0.7.3]
+// [v0.8.0]
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     WORLD_W: 10, WORLD_H: 10, 
@@ -68,6 +68,9 @@ window.Game = {
                 if(!this.state.perks) this.state.perks = [];
                 if(typeof this.state.perkPoints === 'undefined') this.state.perkPoints = 0;
 
+                // [v0.8.0] Camp State
+                if(!this.state.camp) this.state.camp = null;
+
                 // Legacy Fix
                 if(!this.state.worldPOIs || this.state.worldPOIs.length <= 2) {
                     this.state.worldPOIs = defaultPOIs;
@@ -100,7 +103,8 @@ window.Game = {
                     equip: { weapon: this.items.fists, body: this.items.vault_suit },
                     inventory: [], 
                     hp: 100, maxHp: 100, xp: 0, lvl: 1, caps: 50, ammo: 10, statPoints: 0, 
-                    perkPoints: 0, perks: [], // NEU
+                    perkPoints: 0, perks: [], 
+                    camp: null, // [v0.8.0] NEU
                     kills: 0, 
                     view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, 
                     explored: {}, sectorExploredCache: null, visitedSectors: [`${startSecX},${startSecY}`],
