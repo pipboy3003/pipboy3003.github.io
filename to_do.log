@@ -1,12 +1,15 @@
 🐛 Aktuelle Bugs & Anpassungen:
 
 Ideen für die Zukunft (Roadmap)
-Hier sind ein paar Vorschläge, was wir als nächstes angehen könnten, um das Pip-Boy Feeling zu verstärken:
-1. Perk-System (Skills)
-• Alle 3 oder 5 Level darf man einen "Perk" wählen (z.B. "Mysteriöser Fremder" = Chance auf Instant-Kill, "Hacker" = Computer Terminals hacken für Loot).
+1. Perk-System (Skills) [ERLEDIGT v0.7.3]
+• Alle 3 oder 5 Level darf man einen "Perk" wählen.
+
 2. Radio-Stationen
 • Ein kleiner Tab "RADIO", der (lizenzfreie) Retro-Musik oder einfach atmosphärische Ödland-Geräusche abspielt.
+
 3. Item-Präfixe (Loot-Generierung)
-• Waffen nicht nur als "Pistole", sondern dynamisch generiert: "Rostige Pistole" (-Dmg), "Gehärtete Pistole" (+Dmg), "Bestrahlte Pistole" (+Rad Dmg).
-4. Camp-System (Housing)
-• Man kann im Ödland ein kleines Lager aufschlagen (Zelt), wo man sich heilen kann, ohne zur Stadt zurückzumüssen. Upgradebar mit Schrott.
+• Waffen nicht nur als "Pistole", sondern dynamisch generiert: "Rostige Pistole" (-Dmg), "Gehärtete Pistole" (+Dmg).
+
+4. Camp-System (Housing) [ERLEDIGT v0.8.0]
+• Man kann im Ödland ein kleines Lager aufschlagen (Zelt), wo man sich heilen kann.
+• Upgradebar mit Schrott.
