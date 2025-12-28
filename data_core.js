@@ -1,5 +1,13 @@
-// [v0.4.12]
+// [v0.7.3]
 window.GameData = window.GameData || {};
+
+// --- PERKS (NEU) ---
+window.GameData.perks = [
+    { id: 'toughness', name: 'Zähigkeit', desc: '+20 Max HP dauerhaft.', icon: '🛡️' },
+    { id: 'medic', name: 'Sanitäter', desc: 'Stimpacks heilen +50% mehr HP.', icon: '💉' },
+    { id: 'fortune_finder', name: 'Schatzsucher', desc: 'Mehr Kronkorken in Loot.', icon: '💰' },
+    { id: 'mysterious_stranger', name: 'Mysteriöser Fremder', desc: '10% Chance auf kritischen Treffer.', icon: '🕵️' }
+];
 
 // --- FARBPALETTE ---
 window.GameData.colors = { 
