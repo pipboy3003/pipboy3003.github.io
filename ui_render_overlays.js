@@ -1,5 +1,8 @@
-// [v0.6.3]
-// [v0.6.3] - Map Legend & Fixes
+// [v0.7.2]
+// [v0.7.2] - 2025-12-28 10:30am (UI & Combat Fixes)
+// ------------------------------------------------
+// - Fixed Dungeon Completion Overlay (Added Close Button)
+
 Object.assign(UI, {
     
     showMapLegend: function() {
@@ -282,7 +285,8 @@ Object.assign(UI, {
             <h2 class="text-4xl font-bold text-yellow-400 mb-2 tracking-widest text-shadow-gold">VICTORY!</h2>
             <p class="text-yellow-200 mb-4 font-bold text-lg">DUNGEON (LVL ${lvl}) GECLEARED!</p>
             <div class="text-2xl text-white font-bold border-t border-b border-yellow-500 py-2 mb-4 bg-yellow-900/30">+${caps} KRONKORKEN</div>
-            <p class="text-xs text-yellow-600">Komme in 10 Minuten wieder!</p>
+            <p class="text-xs text-yellow-600 mb-4">Komme in 10 Minuten wieder!</p>
+            <button class="action-button w-full border-yellow-500 text-yellow-500 font-bold hover:bg-yellow-900" onclick="UI.leaveDialog()">ZURÜCK ZUR KARTE</button>
         `;
         this.els.dialog.appendChild(box);
     },
