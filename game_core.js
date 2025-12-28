@@ -1,4 +1,4 @@
-// [v0.7.0]
+// [v0.7.3]
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     WORLD_W: 10, WORLD_H: 10, 
@@ -7,6 +7,7 @@ window.Game = {
     items: (typeof window.GameData !== 'undefined') ? window.GameData.items : {},
     monsters: (typeof window.GameData !== 'undefined') ? window.GameData.monsters : {},
     recipes: (typeof window.GameData !== 'undefined') ? window.GameData.recipes : [],
+    perkDefs: (typeof window.GameData !== 'undefined') ? window.GameData.perks : [],
 
     state: null, worldData: {}, ctx: null, loopId: null, camera: { x: 0, y: 0 }, cacheCanvas: null, cacheCtx: null,
 
@@ -43,13 +44,12 @@ window.Game = {
         try {
             let isNewGame = false;
             
-            // Standard POIs definieren (werden für New Game und Legacy Fix genutzt)
             const defaultPOIs = [ 
                 {type: 'V', x: 4, y: 4}, 
                 {type: 'C', x: 3, y: 3},
-                {type: 'M', x: 8, y: 1}, // Militärbasis
-                {type: 'R', x: 1, y: 8}, // Raider Festung
-                {type: 'T', x: 9, y: 9}  // Funkturm
+                {type: 'M', x: 8, y: 1}, 
+                {type: 'R', x: 1, y: 8}, 
+                {type: 'T', x: 9, y: 9} 
             ];
 
             if (saveData) {
@@ -62,11 +62,13 @@ window.Game = {
                 if(!this.state.tutorialsShown) this.state.tutorialsShown = { hacking: false, lockpicking: false };
                 if(typeof this.state.kills === 'undefined') this.state.kills = 0;
 
-                // [v0.7.0] Neue States initialisieren falls fehlen
+                // [v0.7.3] Perks States initialisieren
                 if(!this.state.knownRecipes) this.state.knownRecipes = [];
                 if(!this.state.hiddenItems) this.state.hiddenItems = {};
+                if(!this.state.perks) this.state.perks = [];
+                if(typeof this.state.perkPoints === 'undefined') this.state.perkPoints = 0;
 
-                // Legacy Fix: Falls alte Saves keine POIs haben
+                // Legacy Fix
                 if(!this.state.worldPOIs || this.state.worldPOIs.length <= 2) {
                     this.state.worldPOIs = defaultPOIs;
                 }
@@ -98,14 +100,15 @@ window.Game = {
                     equip: { weapon: this.items.fists, body: this.items.vault_suit },
                     inventory: [], 
                     hp: 100, maxHp: 100, xp: 0, lvl: 1, caps: 50, ammo: 10, statPoints: 0, 
+                    perkPoints: 0, perks: [], // NEU
                     kills: 0, 
                     view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, 
                     explored: {}, sectorExploredCache: null, visitedSectors: [`${startSecX},${startSecY}`],
                     tutorialsShown: { hacking: false, lockpicking: false },
                     tempStatIncrease: {}, buffEndTime: 0, cooldowns: {}, 
                     quests: [ { id: "q1", title: "Der Weg nach Hause", text: "Suche Zivilisation und finde Vault 101.", read: false } ], 
-                    knownRecipes: [], // NEU: Leer starten
-                    hiddenItems: {},  // NEU: Versteckte Items
+                    knownRecipes: [], 
+                    hiddenItems: {},
                     startTime: Date.now(), savedPosition: null
                 };
                 this.addToInventory('stimpack', 1);
@@ -152,7 +155,12 @@ window.Game = {
     hardReset: function() { if(typeof Network !== 'undefined') Network.deleteSave(); this.state = null; location.reload(); },
 
     // --- STATS ---
-    calculateMaxHP: function(end) { return 100 + (end - 5) * 10; }, 
+    calculateMaxHP: function(end) { 
+        let bonus = 0;
+        // Perk: Toughness
+        if(this.state && this.state.perks && this.state.perks.includes('toughness')) bonus += 20;
+        return 100 + (end - 5) * 10 + bonus; 
+    }, 
     
     getStat: function(key) {
         if(!this.state) return 5;
@@ -173,6 +181,13 @@ window.Game = {
             this.state.lvl++;
             this.state.xp -= next;
             this.state.statPoints++;
+            
+            // [v0.7.3] Perk Point Logic (Alle 3 Level)
+            if(this.state.lvl % 3 === 0) {
+                this.state.perkPoints++;
+                UI.log("🌟 NEUER PERK PUNKT VERFÜGBAR! 🌟", "text-yellow-400 font-bold animate-pulse text-lg");
+            }
+
             this.state.maxHp = this.calculateMaxHP(this.getStat('END'));
             this.state.hp = this.state.maxHp;
             UI.log(`LEVEL UP! Du bist jetzt Level ${this.state.lvl}`, "text-yellow-400 font-bold animate-pulse");
