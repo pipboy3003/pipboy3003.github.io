@@ -1,5 +1,12 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.7.4] - 2025-12-28 11:20am (UI Crash Fix)
+------------------------------------------------
+- CRITICAL FIX: Absturz im Charakter-Menü ("null is not an object") behoben.
+- Fix: HTML-Struktur in 'views/char.html' getrennt. Statische Infos (XP, Level, Ausrüstung) liegen nun sicher AUSSERHALB des dynamischen 'stat-grid' Containers.
+- Logic: 'ui_render_views.js' aktualisiert, damit der Wechsel zwischen Stats und Perks die Header-Infos nicht mehr zerstört.
+- Visual: Aktiver Tab (S.P.E.C.I.A.L. / PERKS) wird nun visuell hervorgehoben.
+
 [v0.7.3] - 2025-12-28 10:45am (Perk System Alpha)
 ------------------------------------------------
 - Feature: Perk-System implementiert (To-Do #1).
