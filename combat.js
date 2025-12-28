@@ -1,7 +1,8 @@
-// [v0.7.2]
-// [v0.7.2] - 2025-12-28 10:30am (UI & Combat Fixes)
+// [v0.7.5]
+// [v0.7.5] - 2025-12-28 02:00pm (Ammo & Perk Update)
 // ------------------------------------------------
-// - Updated Combat Victory (Auto-close without click)
+// - Ammo consumption implemented
+// - Mysterious Stranger Perk integrated
 
 const Combat = {
     enemy: null,
@@ -30,9 +31,6 @@ const Combat = {
         const per = Game.getStat('PER');
         let baseChance = 50 + (per * 5); // Base 50% + 5% per PER
         
-        // Distanz-Einfluss (simuliert)
-        // Je nach Waffe andere Präzision?
-        
         // Modifier pro Körperteil
         if(partIndex === 0) baseChance -= 25; // Kopf ist schwerer (Headshot)
         if(partIndex === 1) baseChance += 10; // Torso ist leicht
@@ -43,7 +41,6 @@ const Combat = {
 
     selectPart: function(partIndex) {
         this.selectedPart = partIndex;
-        // Visual Feedback could happen here
     },
     
     confirmSelection: function() {
@@ -53,6 +50,29 @@ const Combat = {
 
     playerAttack: function(aimPart) {
         if(!this.enemy || this.enemy.hp <= 0) return;
+        
+        const wpn = Game.state.equip.weapon || {name: "Fäuste", baseDmg: 2};
+
+        // --- AMMO LOGIC (NEU) ---
+        // Liste der Waffen, die KEINE Munition brauchen
+        const meleeKeywords = ["Fäuste", "Messer", "Schläger", "Axt", "Speer", "Hammer", "Klinge", "Rohr"];
+        const isMelee = meleeKeywords.some(kw => wpn.name.includes(kw));
+
+        if(!isMelee) {
+            // Es ist eine Schusswaffe
+            if(Game.state.ammo > 0) {
+                Game.state.ammo--; 
+                // Visuelles Feedback im Log ist optional, um Spam zu vermeiden, 
+                // aber wir könnten Ammo-Count im UI updaten, falls sichtbar.
+            } else {
+                UI.log("> CLICK! Keine Munition!", "text-red-500 font-bold");
+                UI.shakeView();
+                // Zug verloren, weil leer geschossen
+                setTimeout(() => this.enemyTurn(), 800);
+                return;
+            }
+        }
+        // ------------------------
         
         const hitChance = this.calculateHitChance(aimPart);
         const roll = Math.random() * 100;
@@ -64,33 +84,48 @@ const Combat = {
             return;
         }
 
-        // TREFFER
-        let dmg = 1; 
-        const wpn = Game.state.equip.weapon;
-        if(wpn) dmg = wpn.baseDmg || 2;
+        // TREFFER BERECHNUNG
+        let dmg = wpn.baseDmg || 2;
         
-        // Stats Bonus (STR)
+        // Stats Bonus (STR) - wirkt stärker im Nahkampf, aber auch minimal auf Rückstoßkontrolle/Wucht
         const str = Game.getStat('STR');
         dmg += Math.floor(str * 0.5);
         
-        // Crit Chance (LUC) oder Headshot
+        // Crit Chance (LUC)
         const luc = Game.getStat('LUC');
-        let isCrit = Math.random() < (luc * 0.02); 
+        let critChance = luc * 0.02; // 2% pro Luck Punkt
+
+        // PERK: Mysteriöser Fremder (+10% Crit Chance)
+        if(Game.state.perks && Game.state.perks.includes('mysterious_stranger')) {
+            critChance += 0.10;
+        }
+
+        let isCrit = Math.random() < critChance; 
         
         if(aimPart === 0) { // HEADSHOT
             dmg = Math.floor(dmg * 2.0);
             UI.log(`> BOOM! HEADSHOT! ${dmg} DMG`, "text-red-500 font-bold");
         } else if(aimPart === 2) { // LEGS (Cripple)
-            // Beinschuss könnte Gegner verlangsamen (hier: weniger DMG, aber Crit Chance höher?)
-            if(Math.random() < 0.5) { 
+            // Beinschuss: Chance Gegner auszusetzen
+            if(Math.random() < 0.4) { 
                 UI.log("> BEINTREFFER! Gegner strauchelt.", "text-yellow-400");
-                // TODO: Skip enemy turn?
+                dmg = Math.floor(dmg * 0.8);
+                // Gegner verliert seinen Zug!
+                this.enemy.hp -= dmg;
+                UI.shakeView();
+                if(this.enemy.hp <= 0) this.victory();
+                else this.render(); // Kein enemyTurn()
+                return;
             }
             dmg = Math.floor(dmg * 0.8);
         } else {
             if(isCrit) {
                 dmg *= 2;
-                UI.log(`> KRITISCHER TREFFER! ${dmg} Schaden.`, "text-yellow-400");
+                if(Game.state.perks && Game.state.perks.includes('mysterious_stranger')) {
+                    UI.log(`> DER FREMDE ERSCHEINT! ${dmg} KRITISCHER SCHADEN!`, "text-yellow-400 font-bold");
+                } else {
+                    UI.log(`> KRITISCHER TREFFER! ${dmg} Schaden.`, "text-yellow-400");
+                }
             } else {
                 UI.log(`> Treffer: ${dmg} Schaden.`, "text-green-400");
             }
@@ -118,6 +153,11 @@ const Combat = {
             def += Game.state.equip.body.bonus.END;
         }
         
+        // Perk: Zähigkeit (Toughness) - reduziert Schaden direkt
+        if(Game.state.perks && Game.state.perks.includes('toughness')) {
+            def += 1; // Kleiner Flat Bonus
+        }
+
         dmg = Math.max(1, dmg - def);
         
         Game.state.hp -= dmg;
@@ -159,18 +199,32 @@ const Combat = {
         if(Game.state.kills === undefined) Game.state.kills = 0;
         Game.state.kills++;
         
-        // Loot logic (simplified for fix)
-        const caps = Math.floor(Math.random() * (this.enemy.loot || 5)) + 1;
+        // Loot logic
+        let caps = Math.floor(Math.random() * (this.enemy.loot || 5)) + 1;
+        
+        // Perk: Schatzsucher (Fortune Finder)
+        if(Game.state.perks && Game.state.perks.includes('fortune_finder')) {
+            caps = Math.floor(caps * 1.5) + 2;
+            UI.log(`> Schatzsucher: +${caps} KK gefunden!`, "text-yellow-300 text-xs");
+        }
+        
         Game.state.caps += caps;
         
-        // Save & Return
+        // Rare Drop Check (Skorpionfleisch etc.)
+        if(this.enemy.drops) {
+            this.enemy.drops.forEach(drop => {
+                if(Math.random() <= drop.c) {
+                    Game.addToInventory(drop.id, 1);
+                }
+            });
+        }
+
         Game.saveGame();
         
-        // Auto-close after 1 second
         setTimeout(() => {
              UI.log("Kampf gewonnen. Kehre zur Karte zurück...", "text-green-500");
              UI.switchView('map');
-        }, 1000);
+        }, 1200);
     },
 
     defeat: function() {
@@ -180,18 +234,15 @@ const Combat = {
         setTimeout(() => { if(UI.els.gameOver) UI.els.gameOver.classList.remove('hidden'); }, 1000);
     },
 
-    // Compat for Key Controls (Space/Enter)
     confirmSelection: function() {
         if(this.selectedPart === undefined) this.selectedPart = 1; 
         this.playerAttack(this.selectedPart);
     },
     
     moveSelection: function(dir) {
-        // Toggle parts
         if(!this.selectedPart) this.selectedPart = 1;
         this.selectedPart += dir;
         if(this.selectedPart < 0) this.selectedPart = 2;
         if(this.selectedPart > 2) this.selectedPart = 0;
-        // Could add visual focus here
     }
 };
