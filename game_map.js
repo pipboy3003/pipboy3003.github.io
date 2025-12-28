@@ -1,4 +1,5 @@
-// [v0.7.0]
+// [v0.7.1]
+// Map Logic, Movement & Transitions
 Object.assign(Game, {
     reveal: function(px, py) { 
         if(!this.state) return;
@@ -31,11 +32,12 @@ Object.assign(Game, {
         const tile = this.state.currentMap[ny][nx];
         const posKey = `${nx},${ny}`;
 
-        // --- HIDDEN ITEM CHECK (NEU) ---
+        // --- HIDDEN ITEM CHECK ---
         if(this.state.hiddenItems && this.state.hiddenItems[posKey]) {
             const itemId = this.state.hiddenItems[posKey];
             this.addToInventory(itemId, 1);
-            const iName = this.items[itemId] ? this.items[itemId].name : itemId;
+            // Safety check for display name
+            const iName = (this.items && this.items[itemId]) ? this.items[itemId].name : itemId;
             UI.log(`Gefunden: ${iName}!`, "text-yellow-400 font-bold animate-pulse");
             UI.shakeView(); 
             delete this.state.hiddenItems[posKey]; 
@@ -51,11 +53,11 @@ Object.assign(Game, {
 
         // --- KOLLISION ---
         if(['M', 'W', '#', 'U', 't', 'o', 'Y', '|', 'F', 'T', 'R'].includes(tile) && tile !== 'M' && tile !== 'R' && tile !== 'T') { 
-            // Sonderfall: Suche im Objekt, auch wenn man nicht drauf gehen kann
+            // Sonderfall: Suche im Objekt
             if(this.state.hiddenItems && this.state.hiddenItems[posKey]) {
                  const itemId = this.state.hiddenItems[posKey];
                  this.addToInventory(itemId, 1);
-                 const iName = this.items[itemId] ? this.items[itemId].name : itemId;
+                 const iName = (this.items && this.items[itemId]) ? this.items[itemId].name : itemId;
                  UI.log(`Im Objekt gefunden: ${iName}!`, "text-yellow-400 font-bold");
                  delete this.state.hiddenItems[posKey];
                  return; 
@@ -166,10 +168,10 @@ Object.assign(Game, {
             this.state.visitedSectors.push(key);
         }
         
-        // --- SPAWN HIDDEN BLUEPRINTS (NEU) ---
+        // --- SPAWN HIDDEN BLUEPRINTS ---
         this.state.hiddenItems = {}; 
         
-        if(Math.random() < 0.3) { // 30% Chance pro Sektor
+        if(Math.random() < 0.3) { 
             let hiddenX, hiddenY;
             let attempts = 0;
             do {
@@ -182,7 +184,7 @@ Object.assign(Game, {
                 const bps = ['bp_ammo', 'bp_rusty_pistol', 'bp_machete', 'bp_leather_armor'];
                 const bp = bps[Math.floor(Math.random() * bps.length)];
                 
-                // Prüfen ob wir das Rezept schon kennen
+                // Safe check if item exists
                 if(this.items && this.items[bp]) {
                     const recipeId = this.items[bp].recipeId;
                     if(!this.state.knownRecipes.includes(recipeId)) {
@@ -275,6 +277,7 @@ Object.assign(Game, {
             this.state.player.y = data.startY;
 
             if(level < 3) {
+                // Ensure there is an exit (stairs)
                 for(let y=0; y<this.MAP_H; y++) {
                     for(let x=0; x<this.MAP_W; x++) {
                         if(this.state.currentMap[y][x] === 'X') {
@@ -316,15 +319,22 @@ Object.assign(Game, {
         this.state.caps += caps;
         this.addToInventory('legendary_part', 1 * multiplier);
         
-        // --- BLUEPRINT DROP CHANCE (NEU) ---
-        if(Math.random() < 0.4) { // 40% Chance in Truhen
+        // --- BLUEPRINT DROP CHANCE ---
+        if(Math.random() < 0.4) { 
             const bps = ['bp_stimpack', 'bp_metal_armor', 'bp_ammo'];
             const bp = bps[Math.floor(Math.random() * bps.length)];
-            const rid = this.items[bp].recipeId;
-            if(!this.state.knownRecipes.includes(rid)) {
-                this.addToInventory(bp, 1);
-                UI.log("BAUPLAN GEFUNDEN!", "text-cyan-400 font-bold");
+            
+            // FIX: Check if items DB exists and item key exists
+            if(this.items && this.items[bp]) {
+                const rid = this.items[bp].recipeId;
+                if(!this.state.knownRecipes.includes(rid)) {
+                    this.addToInventory(bp, 1);
+                    UI.log("BAUPLAN GEFUNDEN!", "text-cyan-400 font-bold");
+                } else {
+                    this.addToInventory('screws', 5);
+                }
             } else {
+                // Fallback if DB missing
                 this.addToInventory('screws', 5);
             }
         }
