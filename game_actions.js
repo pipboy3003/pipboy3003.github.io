@@ -1,4 +1,4 @@
-// [v0.7.0]
+// [v0.7.3]
 Object.assign(Game, {
     rest: function() { 
         if(!this.state) return;
@@ -61,7 +61,6 @@ Object.assign(Game, {
         const invItem = this.state.inventory.find(i => i.id === id); 
         if(!invItem || invItem.count <= 0) return; 
         
-        // --- BLUEPRINT LOGIC (NEU) ---
         if(itemDef.type === 'blueprint') {
             if(!this.state.knownRecipes.includes(itemDef.recipeId)) {
                 this.state.knownRecipes.push(itemDef.recipeId);
@@ -69,16 +68,21 @@ Object.assign(Game, {
                 invItem.count--;
             } else {
                 UI.log("Du kennst diesen Bauplan bereits.", "text-gray-500");
-                // Nicht verbrauchen
                 return;
             }
         }
         else if(itemDef.type === 'consumable') { 
             if(itemDef.effect === 'heal') { 
-                const healAmt = itemDef.val; 
+                let healAmt = itemDef.val; 
+                // Perk: Medic
+                if(this.state.perks && this.state.perks.includes('medic')) {
+                    healAmt = Math.floor(healAmt * 1.5);
+                    UI.log("Sanitäter Perk: +50% Heilung", "text-blue-300 text-xs");
+                }
+                
                 if(this.state.hp >= this.state.maxHp) { UI.log("Gesundheit voll.", "text-gray-500"); return; } 
                 this.state.hp = Math.min(this.state.maxHp, this.state.hp + healAmt); 
-                UI.log(`Verwendet: ${itemDef.name}`, "text-blue-400"); 
+                UI.log(`Verwendet: ${itemDef.name} (+${healAmt} HP)`, "text-blue-400"); 
                 invItem.count--; 
             } 
         } else if (itemDef.type === 'weapon' || itemDef.type === 'body') { 
@@ -156,6 +160,11 @@ Object.assign(Game, {
         enemy.dmg = Math.floor(enemy.dmg * difficultyMult);
         enemy.loot = Math.floor(enemy.loot * difficultyMult);
 
+        // Perk: Fortune Finder
+        if(this.state.perks && this.state.perks.includes('fortune_finder')) {
+            enemy.loot = Math.floor(enemy.loot * 1.5);
+        }
+
         const isLegendary = Math.random() < 0.05; 
         if(isLegendary) { 
             enemy.isLegendary = true; 
@@ -215,5 +224,26 @@ Object.assign(Game, {
             UI.update(); 
             this.saveGame(); 
         } 
+    },
+
+    choosePerk: function(perkId) {
+        if(this.state.perkPoints > 0 && !this.state.perks.includes(perkId)) {
+            const perk = this.perkDefs.find(p => p.id === perkId);
+            if(!perk) return;
+
+            this.state.perks.push(perkId);
+            this.state.perkPoints--;
+            UI.log(`Perk gelernt: ${perk.name}`, "text-yellow-400 font-bold");
+
+            // Sofort-Effekte
+            if(perkId === 'toughness') {
+                this.state.maxHp = this.calculateMaxHP(this.getStat('END'));
+                this.state.hp += 20;
+            }
+
+            UI.renderChar();
+            UI.update();
+            this.saveGame();
+        }
     }
 });
