@@ -1,6 +1,6 @@
-// [v0.7.1] - FIX: Crash bei Item-Initialisierung behoben
+// [v0.8.0]
 if(typeof window.GameData === 'undefined') window.GameData = {};
-if(typeof window.GameData.items === 'undefined') window.GameData.items = {}; // WICHTIG: Initialsierung
+if(typeof window.GameData.items === 'undefined') window.GameData.items = {}; 
 
 Object.assign(window.GameData.items, {
     // --- BLUEPRINTS ---
@@ -11,7 +11,11 @@ Object.assign(window.GameData.items, {
     bp_metal_armor: { name: "Bauplan: Metallrüstung", type: "blueprint", recipeId: "craft_metal", cost: 250, desc: "Schweres Blech." },
     bp_machete: { name: "Bauplan: Machete", type: "blueprint", recipeId: "craft_machete", cost: 150, desc: "Scharfer Stahl." },
     
-    // --- WAFFEN & ITEMS (Basis-Set sicherstellen) ---
+    // --- CAMP ITEMS (NEU) ---
+    camp_kit: { name: "Zelt-Bausatz", type: "tool", cost: 150, desc: "Errichtet ein Lager im Ödland.", weight: 5 },
+    cloth: { name: "Stoff", type: "component", cost: 2, desc: "Material für Zelte und Kleidung." },
+
+    // --- WAFFEN & ITEMS ---
     fists: { name: "Fäuste", type: "weapon", slot: "weapon", baseDmg: 2, cost: 0, desc: "Deine bloßen Hände." },
     rusty_knife: { name: "Rostiges Messer", type: "weapon", slot: "weapon", baseDmg: 4, cost: 10, desc: "Alt, aber spitz." },
     rusty_pistol: { name: "Rostige Pistole", type: "weapon", slot: "weapon", baseDmg: 6, cost: 25, desc: "Klemmt manchmal." },
