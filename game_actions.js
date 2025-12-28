@@ -1,4 +1,4 @@
-// [v0.7.3]
+// [v0.8.0]
 Object.assign(Game, {
     rest: function() { 
         if(!this.state) return;
@@ -61,6 +61,12 @@ Object.assign(Game, {
         const invItem = this.state.inventory.find(i => i.id === id); 
         if(!invItem || invItem.count <= 0) return; 
         
+        // --- CAMP LOGIC ---
+        if(id === 'camp_kit') {
+            this.buildCamp();
+            return;
+        }
+
         if(itemDef.type === 'blueprint') {
             if(!this.state.knownRecipes.includes(itemDef.recipeId)) {
                 this.state.knownRecipes.push(itemDef.recipeId);
@@ -98,7 +104,14 @@ Object.assign(Game, {
                 this.state.hp += (this.state.maxHp - oldMax); 
             } 
         } 
-        if(invItem.count <= 0) { this.state.inventory = this.state.inventory.filter(i => i.id !== id); } 
+        
+        // Count update logic
+        if(id !== 'camp_kit' && invItem.count <= 0) { 
+            this.state.inventory = this.state.inventory.filter(i => i.id !== id); 
+        } else if(invItem.count <= 0) { // Falls Camp Kit durch Fehler 0 ist
+            this.state.inventory = this.state.inventory.filter(i => i.id !== id);
+        }
+
         UI.update(); 
         if(this.state.view === 'inventory') UI.renderInventory(); 
         this.saveGame(); 
@@ -244,6 +257,113 @@ Object.assign(Game, {
             UI.renderChar();
             UI.update();
             this.saveGame();
+        }
+    },
+
+    // --- CAMP ACTIONS (NEU) ---
+    buildCamp: function() {
+        if(this.state.camp) {
+            UI.log(`Du hast bereits ein Lager bei [${this.state.camp.sector.x},${this.state.camp.sector.y}].`, "text-red-500");
+            UI.log("Baue das alte Lager erst ab.", "text-gray-500");
+            return;
+        }
+
+        const currentBiome = this.worldData[`${this.state.sector.x},${this.state.sector.y}`]?.biome;
+        if(currentBiome === 'city' || currentBiome === 'vault') {
+             UI.log("Hier ist kein Platz für ein Lager.", "text-red-500");
+             return;
+        }
+
+        this.state.camp = {
+            x: this.state.player.x,
+            y: this.state.player.y,
+            sector: { ...this.state.sector },
+            level: 1,
+            storage: []
+        };
+
+        const kit = this.state.inventory.find(i => i.id === 'camp_kit');
+        if(kit) {
+            kit.count--;
+            if(kit.count <= 0) this.state.inventory = this.state.inventory.filter(i => i.id !== 'camp_kit');
+        }
+
+        UI.log("⛺ Lager errichtet!", "text-green-400 font-bold");
+        UI.update();
+        UI.renderWorldMap(); 
+        this.saveGame();
+    },
+
+    enterCamp: function() {
+        if(!this.state.camp) return;
+        const c = this.state.camp;
+        if(c.sector.x !== this.state.sector.x || c.sector.y !== this.state.sector.y || 
+           Math.abs(c.x - this.state.player.x) > 1 || Math.abs(c.y - this.state.player.y) > 1) {
+            UI.log("Du bist zu weit weg.", "text-red-500");
+            return;
+        }
+
+        UI.switchView('camp');
+    },
+
+    restInCamp: function() {
+        if(!this.state.camp) return;
+        
+        let healPct = 0.5;
+        if(this.state.camp.level >= 2) healPct = 1.0;
+
+        const amount = Math.floor(this.state.maxHp * healPct);
+        const missing = this.state.maxHp - this.state.hp;
+        
+        if(missing <= 0) {
+            UI.log("Du bist bereits ausgeruht.", "text-gray-500");
+            return;
+        }
+
+        this.state.hp = Math.min(this.state.maxHp, this.state.hp + amount);
+        UI.log(`Ausgeruht. +${amount} HP regeneriert.`, "text-green-400");
+        
+        this.saveGame();
+        UI.update();
+        UI.renderCamp();
+    },
+
+    upgradeCamp: function() {
+        if(!this.state.camp) return;
+        const lvl = this.state.camp.level;
+        
+        let costScrap = 0;
+        
+        if(lvl === 1) { costScrap = 10; }
+        else if(lvl === 2) { costScrap = 25; } 
+
+        const scrapItem = this.state.inventory.find(i => i.id === 'junk_metal');
+        
+        if(!scrapItem || scrapItem.count < costScrap) {
+            UI.log(`Benötigt ${costScrap}x Schrott.`, "text-red-500");
+            return;
+        }
+
+        scrapItem.count -= costScrap;
+        if(scrapItem.count <= 0) this.state.inventory = this.state.inventory.filter(i => i.id !== 'junk_metal');
+
+        this.state.camp.level++;
+        UI.log(`Lager auf Level ${this.state.camp.level} verbessert!`, "text-yellow-400 font-bold");
+        this.saveGame();
+        UI.renderCamp();
+    },
+
+    breakCamp: function() {
+        if(confirm("Lager abbauen? (Ressourcen gehen verloren)")) {
+            this.state.camp = null;
+            if(Math.random() < 0.5) {
+                this.addToInventory('camp_kit', 1);
+                UI.log("Zelt-Bausatz geborgen.", "text-green-400");
+            } else {
+                UI.log("Zelt beim Abbau zerstört.", "text-red-400");
+                this.addToInventory('cloth', 2); 
+            }
+            UI.switchView('map');
         }
     }
 });
