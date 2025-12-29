@@ -1,4 +1,4 @@
-// [v0.8.0]
+// [v0.8.1]
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     WORLD_W: 10, WORLD_H: 10, 
@@ -62,13 +62,13 @@ window.Game = {
                 if(!this.state.tutorialsShown) this.state.tutorialsShown = { hacking: false, lockpicking: false };
                 if(typeof this.state.kills === 'undefined') this.state.kills = 0;
 
-                // [v0.7.3] Perks States initialisieren
-                if(!this.state.knownRecipes) this.state.knownRecipes = [];
+                // Perks States initialisieren
+                if(!this.state.knownRecipes) this.state.knownRecipes = ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp']; // [v0.8.1] Fallback für alte Saves
                 if(!this.state.hiddenItems) this.state.hiddenItems = {};
                 if(!this.state.perks) this.state.perks = [];
                 if(typeof this.state.perkPoints === 'undefined') this.state.perkPoints = 0;
 
-                // [v0.8.0] Camp State
+                // Camp State
                 if(!this.state.camp) this.state.camp = null;
 
                 // Legacy Fix
@@ -104,14 +104,15 @@ window.Game = {
                     inventory: [], 
                     hp: 100, maxHp: 100, xp: 0, lvl: 1, caps: 50, ammo: 10, statPoints: 0, 
                     perkPoints: 0, perks: [], 
-                    camp: null, // [v0.8.0] NEU
+                    camp: null, 
                     kills: 0, 
                     view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, 
                     explored: {}, sectorExploredCache: null, visitedSectors: [`${startSecX},${startSecY}`],
                     tutorialsShown: { hacking: false, lockpicking: false },
                     tempStatIncrease: {}, buffEndTime: 0, cooldowns: {}, 
                     quests: [ { id: "q1", title: "Der Weg nach Hause", text: "Suche Zivilisation und finde Vault 101.", read: false } ], 
-                    knownRecipes: [], 
+                    // [v0.8.1] Start-Rezepte (Munition, Einfaches Stimpack, Zelt)
+                    knownRecipes: ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp'], 
                     hiddenItems: {},
                     startTime: Date.now(), savedPosition: null
                 };
@@ -147,7 +148,7 @@ window.Game = {
             if(UI.error) UI.error("GAME INIT FAIL: " + e.message);
         }
     },
-
+    // ... Rest unverändert (saveGame, hardReset etc.) ...
     saveGame: function(force=false) {
         if(typeof Network !== 'undefined') {
             Network.save(this.state);
