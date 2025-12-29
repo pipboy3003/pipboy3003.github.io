@@ -1,5 +1,7 @@
-// [v0.8.0]
+// [v0.9.0]
 Object.assign(Game, {
+    
+    // --- BASIC ACTIONS ---
     rest: function() { 
         if(!this.state) return;
         this.state.hp = this.state.maxHp; 
@@ -41,31 +43,62 @@ Object.assign(Game, {
         } 
     },
 
-    addToInventory: function(id, count=1) { 
+    // [v0.9.0] Updated: Supports item objects with props (Unique Loot)
+    addToInventory: function(idOrItem, count=1) { 
         if(!this.state.inventory) this.state.inventory = []; 
-        const existing = this.state.inventory.find(i => i.id === id); 
-        if(existing) existing.count += count; 
-        else this.state.inventory.push({id: id, count: count}); 
         
-        const itemDef = this.items[id];
-        const itemName = itemDef ? itemDef.name : id;
-        UI.log(`+ ${itemName} (${count})`, "text-green-400"); 
+        let itemId, props = null;
 
+        if(typeof idOrItem === 'object') {
+            // Es ist ein komplexes Item (Loot)
+            itemId = idOrItem.id;
+            props = idOrItem.props;
+            count = idOrItem.count || 1;
+        } else {
+            // Normaler ID String
+            itemId = idOrItem;
+        }
+
+        const itemDef = this.items[itemId];
+        
+        if (props) {
+            // Unique Items stapeln nicht -> Einfach hinzufügen
+            this.state.inventory.push({ id: itemId, count: count, props: props });
+            const colorClass = props.color ? props.color.split(' ')[0] : "text-green-400"; // Simple extract
+            UI.log(`+ ${props.name}`, colorClass);
+        } else {
+            // Standard Item -> Stapeln
+            const existing = this.state.inventory.find(i => i.id === itemId && !i.props); 
+            if(existing) existing.count += count; 
+            else this.state.inventory.push({id: itemId, count: count});
+            
+            const itemName = itemDef ? itemDef.name : itemId;
+            UI.log(`+ ${itemName} (${count})`, "text-green-400"); 
+        }
+        
         if(itemDef && (itemDef.type === 'weapon' || itemDef.type === 'body')) {
             if(typeof UI !== 'undefined' && UI.triggerInventoryAlert) UI.triggerInventoryAlert();
         }
     }, 
     
-    useItem: function(id) { 
-        const itemDef = this.items[id]; 
-        const invItem = this.state.inventory.find(i => i.id === id); 
-        if(!invItem || invItem.count <= 0) return; 
+    // [v0.9.0] Updated: Handles Inventory Index for unique items
+    useItem: function(invIndexOrId) { 
+        let invItem, index;
+        
+        // Wenn String übergeben wird (Quick Slots/Shop/Legacy), suchen wir das erste passende
+        if(typeof invIndexOrId === 'string') {
+            index = this.state.inventory.findIndex(i => i.id === invIndexOrId);
+        } else {
+            index = invIndexOrId;
+        }
+
+        if(index === -1 || !this.state.inventory[index]) return;
+        invItem = this.state.inventory[index];
+        
+        const itemDef = this.items[invItem.id];
         
         // --- CAMP LOGIC ---
-        if(id === 'camp_kit') {
-            this.buildCamp();
-            return;
-        }
+        if(invItem.id === 'camp_kit') { this.buildCamp(); return; }
 
         if(itemDef.type === 'blueprint') {
             if(!this.state.knownRecipes.includes(itemDef.recipeId)) {
@@ -80,38 +113,53 @@ Object.assign(Game, {
         else if(itemDef.type === 'consumable') { 
             if(itemDef.effect === 'heal') { 
                 let healAmt = itemDef.val; 
-                // Perk: Medic
                 if(this.state.perks && this.state.perks.includes('medic')) {
                     healAmt = Math.floor(healAmt * 1.5);
                     UI.log("Sanitäter Perk: +50% Heilung", "text-blue-300 text-xs");
                 }
-                
                 if(this.state.hp >= this.state.maxHp) { UI.log("Gesundheit voll.", "text-gray-500"); return; } 
                 this.state.hp = Math.min(this.state.maxHp, this.state.hp + healAmt); 
                 UI.log(`Verwendet: ${itemDef.name} (+${healAmt} HP)`, "text-blue-400"); 
                 invItem.count--; 
             } 
-        } else if (itemDef.type === 'weapon' || itemDef.type === 'body') { 
-            const oldItemName = this.state.equip[itemDef.slot].name; 
-            const oldItemKey = Object.keys(this.items).find(key => this.items[key].name === oldItemName); 
-            if(oldItemKey && oldItemKey !== 'fists' && oldItemKey !== 'vault_suit') { this.addToInventory(oldItemKey, 1); } 
-            this.state.equip[itemDef.slot] = itemDef; 
-            invItem.count--; 
-            UI.log(`Ausgerüstet: ${itemDef.name}`, "text-yellow-400"); 
-            if(itemDef.slot === 'body') { 
+        } 
+        else if (itemDef.type === 'weapon' || itemDef.type === 'body') { 
+            const slot = itemDef.slot;
+            
+            // Altes Item zurücklegen
+            let oldEquip = this.state.equip[slot];
+            
+            if(oldEquip && oldEquip.name !== "Fäuste" && oldEquip.name !== "Vault-Anzug") {
+                if(oldEquip._fromInv) {
+                    // Unique Item zurückgeben
+                    this.addToInventory(oldEquip._fromInv);
+                } else {
+                    // Legacy Item zurückgeben
+                    const oldKey = Object.keys(this.items).find(k => this.items[k].name === oldEquip.name);
+                    if(oldKey) this.addToInventory(oldKey, 1);
+                }
+            } 
+            
+            // Neues Item ausrüsten (mit Props speichern)
+            const equipObject = { ...itemDef, ...invItem.props, _fromInv: invItem }; 
+            this.state.equip[slot] = equipObject;
+            
+            const displayName = invItem.props ? invItem.props.name : itemDef.name;
+            UI.log(`Ausgerüstet: ${displayName}`, "text-yellow-400"); 
+            
+            if(slot === 'body') { 
                 const oldMax = this.state.maxHp; 
                 this.state.maxHp = this.calculateMaxHP(this.getStat('END')); 
                 this.state.hp += (this.state.maxHp - oldMax); 
-            } 
+            }
+            invItem.count--; 
         } 
         
-        // Count update logic
-        if(id !== 'camp_kit' && invItem.count <= 0) { 
-            this.state.inventory = this.state.inventory.filter(i => i.id !== id); 
-        } else if(invItem.count <= 0) { // Falls Camp Kit durch Fehler 0 ist
-            this.state.inventory = this.state.inventory.filter(i => i.id !== id);
-        }
-
+        // Item entfernen wenn leer
+        if(invItem.count <= 0) { 
+            this.state.inventory.splice(index, 1); 
+        } 
+        
         UI.update(); 
         if(this.state.view === 'inventory') UI.renderInventory(); 
         this.saveGame(); 
@@ -125,10 +173,7 @@ Object.assign(Game, {
         for(let reqId in recipe.req) {
             const countNeeded = recipe.req[reqId];
             const invItem = this.state.inventory.find(i => i.id === reqId);
-            let hasEquipped = false;
-            if (this.state.equip.weapon && Object.keys(this.items).find(k => this.items[k].name === this.state.equip.weapon.name) === reqId) hasEquipped = true;
-            if (this.state.equip.body && Object.keys(this.items).find(k => this.items[k].name === this.state.equip.body.name) === reqId) hasEquipped = true;
-            if (hasEquipped || !invItem || invItem.count < countNeeded) { UI.log(`Material fehlt: ${this.items[reqId].name}`, "text-red-500"); return; }
+            if (!invItem || invItem.count < countNeeded) { UI.log(`Material fehlt: ${this.items[reqId].name}`, "text-red-500"); return; }
         }
         for(let reqId in recipe.req) {
             const countNeeded = recipe.req[reqId];
@@ -173,7 +218,6 @@ Object.assign(Game, {
         enemy.dmg = Math.floor(enemy.dmg * difficultyMult);
         enemy.loot = Math.floor(enemy.loot * difficultyMult);
 
-        // Perk: Fortune Finder
         if(this.state.perks && this.state.perks.includes('fortune_finder')) {
             enemy.loot = Math.floor(enemy.loot * 1.5);
         }
@@ -218,11 +262,23 @@ Object.assign(Game, {
             UI.log("Gewinn: 150 KK + Stimpack + Schrott", "text-blue-400");
         }
         else {
-            this.addToInventory('legendary_part', 1);
+            // [v0.9.0] Jackpot Drop Update
+            const rareId = this.items['plasma_rifle'] ? 'plasma_rifle' : 'hunting_rifle';
+            
+            // Generate Legendary Item
+            const item = Game.generateLoot(rareId);
+            item.props = { 
+                prefix: 'legendary', 
+                name: `Legendäres ${this.items[rareId].name}`, 
+                dmgMult: 1.5, 
+                valMult: 3.0, 
+                bonus: {LUC: 2}, 
+                color: 'text-yellow-400 font-bold' 
+            };
+            
+            this.addToInventory(item);
             this.state.caps += 300;
-            const rare = this.items['plasma_rifle'] ? 'plasma_rifle' : 'hunting_rifle';
-            this.addToInventory(rare, 1);
-            UI.log("JACKPOT! Modul + 300 KK + Waffe!", "text-yellow-400 font-bold animate-pulse");
+            UI.log("JACKPOT! Legendäre Waffe + 300 KK!", "text-yellow-400 font-bold animate-pulse");
         }
         this.saveGame();
     },
@@ -248,7 +304,6 @@ Object.assign(Game, {
             this.state.perkPoints--;
             UI.log(`Perk gelernt: ${perk.name}`, "text-yellow-400 font-bold");
 
-            // Sofort-Effekte
             if(perkId === 'toughness') {
                 this.state.maxHp = this.calculateMaxHP(this.getStat('END'));
                 this.state.hp += 20;
@@ -260,11 +315,10 @@ Object.assign(Game, {
         }
     },
 
-    // --- CAMP ACTIONS (NEU) ---
+    // --- CAMP ACTIONS ---
     buildCamp: function() {
         if(this.state.camp) {
             UI.log(`Du hast bereits ein Lager bei [${this.state.camp.sector.x},${this.state.camp.sector.y}].`, "text-red-500");
-            UI.log("Baue das alte Lager erst ab.", "text-gray-500");
             return;
         }
 
@@ -302,7 +356,6 @@ Object.assign(Game, {
             UI.log("Du bist zu weit weg.", "text-red-500");
             return;
         }
-
         UI.switchView('camp');
     },
 
@@ -333,7 +386,6 @@ Object.assign(Game, {
         const lvl = this.state.camp.level;
         
         let costScrap = 0;
-        
         if(lvl === 1) { costScrap = 10; }
         else if(lvl === 2) { costScrap = 25; } 
 
@@ -365,5 +417,20 @@ Object.assign(Game, {
             }
             UI.switchView('map');
         }
+    },
+
+    // --- RADIO ACTIONS (NEU) ---
+    toggleRadio: function() {
+        this.state.radio.on = !this.state.radio.on;
+        UI.renderRadio();
+    },
+    tuningRadio: function(dir) {
+        if(!this.state.radio.on) return;
+        let next = this.state.radio.station + dir;
+        if(next < 0) next = this.radioStations.length - 1;
+        if(next >= this.radioStations.length) next = 0;
+        this.state.radio.station = next;
+        this.state.radio.trackIndex = 0;
+        UI.renderRadio();
     }
 });
