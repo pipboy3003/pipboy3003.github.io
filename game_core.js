@@ -1,4 +1,4 @@
-// [v0.9.0]
+// [v0.9.1]
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     WORLD_W: 10, WORLD_H: 10, 
@@ -86,7 +86,8 @@ window.Game = {
         this.initCache();
         try {
             let isNewGame = false;
-            const defaultPOIs = [ {type: 'V', x: 4, y: 4}, {type: 'C', x: 3, y: 3}, {type: 'M', x: 8, y: 1}, {type: 'R', x: 1, y: 8}, {type: 'T', x: 9, y: 9} ];
+            // [v0.9.1] Fixed POI IDs: A=Army(Military), K=Kommunikation(Tower)
+            const defaultPOIs = [ {type: 'V', x: 4, y: 4}, {type: 'C', x: 3, y: 3}, {type: 'A', x: 8, y: 1}, {type: 'R', x: 1, y: 8}, {type: 'K', x: 9, y: 9} ];
 
             if (saveData) {
                 this.state = saveData;
