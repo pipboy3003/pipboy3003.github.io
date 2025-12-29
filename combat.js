@@ -1,8 +1,8 @@
-// [v0.7.5]
-// [v0.7.5] - 2025-12-28 02:00pm (Ammo & Perk Update)
+// [v0.9.0]
+// [v0.9.0] - 2025-12-28 10:30pm (Dynamic Loot & Radio Support)
 // ------------------------------------------------
-// - Ammo consumption implemented
-// - Mysterious Stranger Perk integrated
+// - Integrated Dynamic Loot drops in Victory
+// - Weapon Damage now respects 'props.dmgMult'
 
 const Combat = {
     enemy: null,
@@ -24,17 +24,15 @@ const Combat = {
     },
 
     // --- VATS SYSTEM ---
-    // 0 = Head, 1 = Torso, 2 = Legs
     calculateHitChance: function(partIndex) {
         if(!this.enemy) return 0;
         
         const per = Game.getStat('PER');
-        let baseChance = 50 + (per * 5); // Base 50% + 5% per PER
+        let baseChance = 50 + (per * 5); 
         
-        // Modifier pro Körperteil
-        if(partIndex === 0) baseChance -= 25; // Kopf ist schwerer (Headshot)
-        if(partIndex === 1) baseChance += 10; // Torso ist leicht
-        if(partIndex === 2) baseChance -= 10; // Beine mittel
+        if(partIndex === 0) baseChance -= 25; 
+        if(partIndex === 1) baseChance += 10; 
+        if(partIndex === 2) baseChance -= 10; 
         
         return Math.min(95, Math.max(0, Math.floor(baseChance)));
     },
@@ -44,7 +42,7 @@ const Combat = {
     },
     
     confirmSelection: function() {
-        if(this.selectedPart === undefined) this.selectedPart = 1; // Default Torso
+        if(this.selectedPart === undefined) this.selectedPart = 1; 
         this.playerAttack(this.selectedPart);
     },
 
@@ -53,26 +51,20 @@ const Combat = {
         
         const wpn = Game.state.equip.weapon || {name: "Fäuste", baseDmg: 2};
 
-        // --- AMMO LOGIC (NEU) ---
-        // Liste der Waffen, die KEINE Munition brauchen
+        // --- AMMO LOGIC ---
         const meleeKeywords = ["Fäuste", "Messer", "Schläger", "Axt", "Speer", "Hammer", "Klinge", "Rohr"];
         const isMelee = meleeKeywords.some(kw => wpn.name.includes(kw));
 
         if(!isMelee) {
-            // Es ist eine Schusswaffe
             if(Game.state.ammo > 0) {
                 Game.state.ammo--; 
-                // Visuelles Feedback im Log ist optional, um Spam zu vermeiden, 
-                // aber wir könnten Ammo-Count im UI updaten, falls sichtbar.
             } else {
                 UI.log("> CLICK! Keine Munition!", "text-red-500 font-bold");
                 UI.shakeView();
-                // Zug verloren, weil leer geschossen
                 setTimeout(() => this.enemyTurn(), 800);
                 return;
             }
         }
-        // ------------------------
         
         const hitChance = this.calculateHitChance(aimPart);
         const roll = Math.random() * 100;
@@ -87,34 +79,34 @@ const Combat = {
         // TREFFER BERECHNUNG
         let dmg = wpn.baseDmg || 2;
         
-        // Stats Bonus (STR) - wirkt stärker im Nahkampf, aber auch minimal auf Rückstoßkontrolle/Wucht
+        // [v0.9.0] Check Props Damage Multiplier (Dynamic Loot)
+        if(wpn.props && wpn.props.dmgMult) {
+            dmg = Math.floor(dmg * wpn.props.dmgMult);
+        }
+
         const str = Game.getStat('STR');
         dmg += Math.floor(str * 0.5);
         
-        // Crit Chance (LUC)
         const luc = Game.getStat('LUC');
-        let critChance = luc * 0.02; // 2% pro Luck Punkt
+        let critChance = luc * 0.02; 
 
-        // PERK: Mysteriöser Fremder (+10% Crit Chance)
         if(Game.state.perks && Game.state.perks.includes('mysterious_stranger')) {
             critChance += 0.10;
         }
 
         let isCrit = Math.random() < critChance; 
         
-        if(aimPart === 0) { // HEADSHOT
+        if(aimPart === 0) { 
             dmg = Math.floor(dmg * 2.0);
             UI.log(`> BOOM! HEADSHOT! ${dmg} DMG`, "text-red-500 font-bold");
-        } else if(aimPart === 2) { // LEGS (Cripple)
-            // Beinschuss: Chance Gegner auszusetzen
+        } else if(aimPart === 2) { 
             if(Math.random() < 0.4) { 
                 UI.log("> BEINTREFFER! Gegner strauchelt.", "text-yellow-400");
                 dmg = Math.floor(dmg * 0.8);
-                // Gegner verliert seinen Zug!
                 this.enemy.hp -= dmg;
                 UI.shakeView();
                 if(this.enemy.hp <= 0) this.victory();
-                else this.render(); // Kein enemyTurn()
+                else this.render(); 
                 return;
             }
             dmg = Math.floor(dmg * 0.8);
@@ -153,9 +145,8 @@ const Combat = {
             def += Game.state.equip.body.bonus.END;
         }
         
-        // Perk: Zähigkeit (Toughness) - reduziert Schaden direkt
         if(Game.state.perks && Game.state.perks.includes('toughness')) {
-            def += 1; // Kleiner Flat Bonus
+            def += 1; 
         }
 
         dmg = Math.max(1, dmg - def);
@@ -174,7 +165,7 @@ const Combat = {
     
     flee: function() {
         const agi = Game.getStat('AGI');
-        const chance = 30 + (agi * 5); // Base 30% + 5% per AGI
+        const chance = 30 + (agi * 5); 
         
         if(Math.random() * 100 < chance) {
             UI.log("FLUCHT ERFOLGREICH!", "text-green-400");
@@ -199,10 +190,8 @@ const Combat = {
         if(Game.state.kills === undefined) Game.state.kills = 0;
         Game.state.kills++;
         
-        // Loot logic
         let caps = Math.floor(Math.random() * (this.enemy.loot || 5)) + 1;
         
-        // Perk: Schatzsucher (Fortune Finder)
         if(Game.state.perks && Game.state.perks.includes('fortune_finder')) {
             caps = Math.floor(caps * 1.5) + 2;
             UI.log(`> Schatzsucher: +${caps} KK gefunden!`, "text-yellow-300 text-xs");
@@ -210,11 +199,20 @@ const Combat = {
         
         Game.state.caps += caps;
         
-        // Rare Drop Check (Skorpionfleisch etc.)
+        // [v0.9.0] Dynamic Loot Logic
         if(this.enemy.drops) {
             this.enemy.drops.forEach(drop => {
                 if(Math.random() <= drop.c) {
-                    Game.addToInventory(drop.id, 1);
+                    // Check if it's a weapon/armor for special loot generation
+                    const itemDef = Game.items[drop.id];
+                    if(itemDef && (itemDef.type === 'weapon' || itemDef.type === 'body')) {
+                        // Generate dynamic loot
+                        const dynamicItem = Game.generateLoot(drop.id);
+                        Game.addToInventory(dynamicItem);
+                    } else {
+                        // Standard drop
+                        Game.addToInventory(drop.id, 1);
+                    }
                 }
             });
         }
