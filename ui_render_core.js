@@ -1,4 +1,4 @@
-// [v0.4.27]
+// [v0.9.3]
 // Core Rendering & Logic (HUD, View Switching)
 Object.assign(UI, {
     
@@ -38,6 +38,21 @@ Object.assign(UI, {
         // Ammo Update
         if(this.els.ammo) {
             this.els.ammo.textContent = Game.state.ammo || 0;
+        }
+
+        // [v0.9.3] Camp Button Visibility Logic
+        // Check if camp exists AND we are in the same sector
+        const campBtn = document.getElementById('btn-enter-camp');
+        if(campBtn) {
+            const hasCampHere = Game.state.camp && 
+                                Game.state.camp.sector.x === Game.state.sector.x && 
+                                Game.state.camp.sector.y === Game.state.sector.y;
+            
+            if(hasCampHere) {
+                campBtn.classList.remove('hidden');
+            } else {
+                campBtn.classList.add('hidden');
+            }
         }
 
         // Glow Alerts
@@ -102,17 +117,23 @@ Object.assign(UI, {
         const ver = verDisplay ? verDisplay.textContent.trim() : Date.now();
         
         if (name === 'map') {
+            // [v0.9.3] Added Camp Button Container (Left Side)
             this.els.view.innerHTML = `
                 <div id="map-view" class="w-full h-full flex justify-center items-center bg-black relative">
                     <canvas id="game-canvas" class="w-full h-full object-contain" style="image-rendering: pixelated;"></canvas>
+                    
                     <button onclick="UI.switchView('worldmap')" class="absolute top-4 right-4 bg-black/80 border-2 border-green-500 text-green-500 p-2 rounded-full hover:bg-green-900 hover:text-white transition-all z-20 shadow-[0_0_15px_#39ff14] animate-pulse cursor-pointer" title="Weltkarte öffnen">
                         <span class="text-2xl">🌍</span>
+                    </button>
+
+                    <button id="btn-enter-camp" onclick="UI.switchView('camp')" class="absolute top-4 left-4 hidden bg-black/80 border-2 border-yellow-500 text-yellow-500 p-2 rounded-lg hover:bg-yellow-900 hover:text-white transition-all z-20 shadow-[0_0_15px_#ffd700] animate-bounce cursor-pointer flex flex-col items-center">
+                        <span class="text-2xl">⛺</span>
+                        <span class="text-xs font-bold">Lager</span>
                     </button>
                 </div>`;
             Game.state.view = name;
             
             // FIX: Ensure Dialog state is cleared and focus is reset to Body
-            // This prevents "stuck" controls after leaving menus
             if(Game.state) Game.state.inDialog = false;
             if(document.activeElement) document.activeElement.blur();
             
