@@ -1,5 +1,14 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v0.9.0] - 2025-12-28 10:30pm (Radio & Loot Update)
+------------------------------------------------
+- Feature: 'Radio' Tab hinzugefügt (To-Do #2).
+- Radio: 3 Stationen (Galaxy News, Enclave, Klassik) mit wechselnden Tracks/Nachrichten.
+- Feature: Dynamisches Loot-System (To-Do #3).
+- Loot: Waffen können nun Präfixe haben (Rostig, Gehärtet, Präzise, etc.), die Schaden und Wert verändern.
+- Logic: 'addToInventory' unterstützt nun einzigartige Items, die nicht gestapelt werden.
+- UI: Inventar zeigt nun spezielle Namen (z.B. "Gehärtete 10mm Pistole") farblich an.
+
 [v0.8.2] - 2025-12-28 09:00pm (Hotfix - Missing Functions)
 ------------------------------------------------
 - CRITICAL FIX: 'renderCombat', 'renderClinic' und 'renderSpawnList' wiederhergestellt.
