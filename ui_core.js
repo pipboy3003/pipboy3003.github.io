@@ -1,4 +1,4 @@
-// [v0.9.5] 
+// [v0.9.6] - Fix: Loading Screen Hang
 const UI = {
     els: {},
     timerInterval: null,
@@ -16,7 +16,7 @@ const UI = {
     // Focus System
     focusIndex: -1,
     focusableEls: [],
-    inputMethod: 'touch', // 'touch' by default to avoid auto-focus on mobile
+    inputMethod: 'touch', 
 
     // Utils
     log: function(msg, color="text-green-500") {
@@ -95,7 +95,6 @@ const UI = {
             btnMap: document.getElementById('btn-map'),
             btnChar: document.getElementById('btn-char'),
             btnQuests: document.getElementById('btn-quests'),
-            // [v0.9.1] NEU
             btnRadio: document.getElementById('btn-radio'),
             
             btnSave: document.getElementById('btn-save'),
@@ -181,7 +180,7 @@ const UI = {
         if(this.isMobile()) {
             this.showMobileControlsHint();
         }
-        Network.startPresence();
+        if(typeof Network !== 'undefined') Network.startPresence();
     },
 
     logout: function(msg) {
@@ -273,18 +272,20 @@ const UI = {
     
     // [v0.9.5] Tap-to-Load Logic
     selectSlot: function(index) {
-        // If clicking the ALREADY selected slot -> Load Game
+        // If clicking the ALREADY selected slot -> Load Game immediately
         if(this.selectedSlot === index) {
             this.triggerCharSlot();
             return;
         }
 
         this.selectedSlot = index;
-        const slots = this.els.charSlotsList.children;
-        for(let s of slots) s.classList.remove('active-slot');
-        if(slots[index]) slots[index].classList.add('active-slot');
+        if(this.els.charSlotsList && this.els.charSlotsList.children) {
+            const slots = this.els.charSlotsList.children;
+            for(let s of slots) s.classList.remove('active-slot');
+            if(slots[index]) slots[index].classList.add('active-slot');
+        }
         
-        const save = this.currentSaves[index];
+        const save = this.currentSaves ? this.currentSaves[index] : null;
         if (this.els.btnCharSelectAction) {
             if (save) {
                 // HIDE the load button (user wants to tap)
@@ -349,3 +350,5 @@ const UI = {
         this.els.charSelectScreen.focus();
     }
 };
+
+console.log("UI Core Loaded successfully.");
