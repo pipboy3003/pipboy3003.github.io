@@ -7,9 +7,12 @@ strahlung ins spiel einfpgen. bei Strahlung wird ser TP Balken von rechts kleine
 
 
 
+
+
 Ideen für die Zukunft (Roadmap)
-1. Perk-System (Skills) [ERLEDIGT v0.7.3]
-• Alle 3 oder 5 Level darf man einen "Perk" wählen.
+
+1. mehr Ausrüstungs Variation  und mehr ausrüstungsplätze am Charakter. Arme, Hose, Schuhe, brustpanzer, helm etc. 
+2. Waffen Verbesserungen, Schalldämpfer, Fernrohr Zielen etc. 
 
 2. Radio-Stationen
 • Ein kleiner Tab "RADIO", der (lizenzfreie) Retro-Musik oder einfach atmosphärische Ödland-Geräusche abspielt.
@@ -17,6 +20,4 @@ Ideen für die Zukunft (Roadmap)
 3. Item-Präfixe (Loot-Generierung)
 • Waffen nicht nur als "Pistole", sondern dynamisch generiert: "Rostige Pistole" (-Dmg), "Gehärtete Pistole" (+Dmg).
 
-4. Camp-System (Housing) [ERLEDIGT v0.8.0]
-• Man kann im Ödland ein kleines Lager aufschlagen (Zelt), wo man sich heilen kann.
-• Upgradebar mit Schrott.
+
