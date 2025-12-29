@@ -1,4 +1,4 @@
-// [v0.9.3]
+// [v0.9.4]
 // Core Rendering & Logic (HUD, View Switching)
 Object.assign(UI, {
     
@@ -117,7 +117,7 @@ Object.assign(UI, {
         const ver = verDisplay ? verDisplay.textContent.trim() : Date.now();
         
         if (name === 'map') {
-            // [v0.9.3] Added Camp Button Container (Left Side)
+            // [v0.9.4] Removed animate-bounce from Camp Button
             this.els.view.innerHTML = `
                 <div id="map-view" class="w-full h-full flex justify-center items-center bg-black relative">
                     <canvas id="game-canvas" class="w-full h-full object-contain" style="image-rendering: pixelated;"></canvas>
@@ -126,7 +126,7 @@ Object.assign(UI, {
                         <span class="text-2xl">🌍</span>
                     </button>
 
-                    <button id="btn-enter-camp" onclick="UI.switchView('camp')" class="absolute top-4 left-4 hidden bg-black/80 border-2 border-yellow-500 text-yellow-500 p-2 rounded-lg hover:bg-yellow-900 hover:text-white transition-all z-20 shadow-[0_0_15px_#ffd700] animate-bounce cursor-pointer flex flex-col items-center">
+                    <button id="btn-enter-camp" onclick="UI.switchView('camp')" class="absolute top-4 left-4 hidden bg-black/80 border-2 border-yellow-500 text-yellow-500 p-2 rounded-lg hover:bg-yellow-900 hover:text-white transition-all z-20 shadow-[0_0_15px_#ffd700] cursor-pointer flex flex-col items-center">
                         <span class="text-2xl">⛺</span>
                         <span class="text-xs font-bold">Lager</span>
                     </button>
