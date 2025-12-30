@@ -1,6 +1,6 @@
 🐛 Aktuelle Bugs & Anpassungen:
 
-- auf der Weltkarte soll die kachel leuchten wenn es zugslls dungeons gibt. 
+- Wir benötigen mal ein paar richtig sinnvolle quests mit tracking funktion + Levelabhängig
 - Stimpk benutzen soll fragen ob nur 1 oder so viele (anzahl x, bis TP voll)  bis man komplett geheilt ist 
 - handelsposten muss besser sortiert und übersichtlicher sein + stats von waffen etc sollen sichtbar sein beim draufklicken, wie beim Inventar.
 - Werkbank button oben : Speichern & zurück entfernen. FUnktioniert eh nicht.
@@ -12,6 +12,7 @@ Ideen für die Zukunft (Roadmap)
 
 2. Radio-Stationen
 • Ein kleiner Tab "RADIO", der (lizenzfreie) Retro-Musik oder einfach atmosphärische Ödland-Geräusche abspielt.
+wurde umgesetzt, aber wohl nur optisch? Kein Radio & sonstige geräusche.
 
 3. Item-Präfixe (Loot-Generierung)
 • Waffen nicht nur als "Pistole", sondern dynamisch generiert: "Rostige Pistole" (-Dmg), "Gehärtete Pistole" (+Dmg).
