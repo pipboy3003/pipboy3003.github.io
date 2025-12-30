@@ -1,13 +1,6 @@
 🐛 Aktuelle Bugs & Anpassungen:
 
-- auf der Weltkarte soll die kachel leuchten wenn es ein zufalls dungeon gibt
-- Nuka Cola gibt Tp und ein Kronkornen pro benutzen
-- Charakter auswahl über nochmals draufdrücken, also auch ohne button drücken.
-
-
-- Rad Away muss funktionsfähig werden. overlay über TP. 
-strahlung ins spiel einfpgen. bei Strahlung wird ser TP Balken von rechts kleiner und rot als strahlung angezeigt. 
-
+- auf der Weltkarte soll die kachel leuchten wenn es zugslls dungeons gibt. 
 - Stimpk benutzen soll fragen ob nur 1 oder so viele (anzahl x, bis TP voll)  bis man komplett geheilt ist 
 
 
