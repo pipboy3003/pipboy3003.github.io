@@ -1,4 +1,4 @@
-// [v0.9.1]
+// [v0.9.9]
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     WORLD_W: 10, WORLD_H: 10, 
@@ -97,6 +97,9 @@ window.Game = {
                 
                 // [v0.9.0] Init Radio State
                 if(!this.state.radio) this.state.radio = { on: false, station: 0, trackIndex: 0 };
+                
+                // [v0.9.9] Init Radiation State for old saves
+                if(typeof this.state.rads === 'undefined') this.state.rads = 0;
 
                 if(!this.state.camp) this.state.camp = null;
                 if(!this.state.knownRecipes) this.state.knownRecipes = ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp']; 
@@ -120,6 +123,8 @@ window.Game = {
                     camp: null, 
                     // [v0.9.0] Radio Init
                     radio: { on: false, station: 0, trackIndex: 0 },
+                    // [v0.9.9] Radiation Init
+                    rads: 0,
                     kills: 0, 
                     view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, 
                     explored: {}, visitedSectors: ["4,4"],
