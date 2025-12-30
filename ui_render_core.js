@@ -1,4 +1,4 @@
-// [v0.9.4]
+// [v0.9.9]
 // Core Rendering & Logic (HUD, View Switching)
 Object.assign(UI, {
     
@@ -24,15 +24,32 @@ Object.assign(UI, {
             }
         }
 
-        // Bars
+        // [v0.9.9] HP & Radiation Bars
+        const maxHp = Game.state.maxHp;
+        const hp = Game.state.hp;
+        const rads = Game.state.rads || 0;
+        
+        if(this.els.hp) this.els.hp.textContent = `${Math.round(hp)}/${maxHp}`;
+        
+        if(this.els.hpBar) {
+            // HP Bar (Green)
+            const hpPct = Math.max(0, (hp / maxHp) * 100);
+            this.els.hpBar.style.width = `${hpPct}%`;
+        }
+        
+        // New: Rad Bar Logic (Dynamic Element Lookup)
+        const radBar = document.getElementById('bar-rads');
+        if(radBar) {
+            const radPct = Math.min(100, (rads / maxHp) * 100);
+            radBar.style.width = `${radPct}%`;
+        }
+
+        // XP Bar
         const nextXp = Game.expToNextLevel(Game.state.lvl);
         const expPct = Math.min(100, Math.floor((Game.state.xp / nextXp) * 100));
         if(this.els.xpTxt) this.els.xpTxt.textContent = expPct;
         if(this.els.expBarTop) this.els.expBarTop.style.width = `${expPct}%`;
         
-        const maxHp = Game.state.maxHp;
-        if(this.els.hp) this.els.hp.textContent = `${Math.round(Game.state.hp)}/${maxHp}`;
-        if(this.els.hpBar) this.els.hpBar.style.width = `${Math.max(0, (Game.state.hp / maxHp) * 100)}%`;
         if(this.els.caps) this.els.caps.textContent = `${Game.state.caps}`;
         
         // Ammo Update
@@ -41,7 +58,6 @@ Object.assign(UI, {
         }
 
         // [v0.9.3] Camp Button Visibility Logic
-        // Check if camp exists AND we are in the same sector
         const campBtn = document.getElementById('btn-enter-camp');
         if(campBtn) {
             const hasCampHere = Game.state.camp && 
@@ -117,7 +133,6 @@ Object.assign(UI, {
         const ver = verDisplay ? verDisplay.textContent.trim() : Date.now();
         
         if (name === 'map') {
-            // [v0.9.4] Removed animate-bounce from Camp Button
             this.els.view.innerHTML = `
                 <div id="map-view" class="w-full h-full flex justify-center items-center bg-black relative">
                     <canvas id="game-canvas" class="w-full h-full object-contain" style="image-rendering: pixelated;"></canvas>
