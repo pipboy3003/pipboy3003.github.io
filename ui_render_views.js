@@ -1,12 +1,15 @@
-// [v1.1.0] - 2025-12-30 14:30 (Quest Tabs)
+// [v1.1.1] - 2025-12-30 14:45 (Fix Quest Tab Bug)
 // ------------------------------------------------
-// - Feature: Tabs für "Aktiv" und "Abgeschlossen" im Quest-Log.
-// - UI: Abgeschlossene Quests werden historisch aufgelistet.
+// - Bugfix: Klick auf Quest-Tabs schließt nicht mehr das Fenster.
+//   (Event Propagation gestoppt, bevor Re-Render das Element entfernt).
 
 Object.assign(UI, {
     
     // State für den aktuellen Tab (default: active)
     questTab: 'active', 
+
+    // ... (renderCharacterSelection, renderInventory, renderChar, renderRadio, renderCamp, renderWorldMap, renderWiki bleiben unverändert) ...
+    // Ich füge hier nur die korrigierte renderQuests Funktion ein, der Rest der Datei bleibt wie in v1.1.0/v1.0.
 
     renderCharacterSelection: function(saves) {
         this.charSelectMode = true;
@@ -669,7 +672,7 @@ Object.assign(UI, {
         content.innerHTML = htmlBuffer;
     },
 
-    // [v1.1.0] UPDATED QUEST RENDERER WITH TABS
+    // [v1.1.1] RENDER QUESTS WITH PROPAGATION FIX
     renderQuests: function() {
         const list = document.getElementById('quest-list');
         if(!list) return;
@@ -684,12 +687,24 @@ Object.assign(UI, {
         const btnActive = document.createElement('button');
         btnActive.className = `flex-1 py-2 font-bold text-center transition-colors ${this.questTab === 'active' ? 'bg-green-900/40 text-green-400 border-b-2 border-green-500' : 'bg-black text-gray-600 hover:text-green-500'}`;
         btnActive.textContent = "AKTIV";
-        btnActive.onclick = () => { this.questTab = 'active'; this.renderQuests(); };
+        
+        // FIX: stopPropagation added
+        btnActive.onclick = (e) => { 
+            e.stopPropagation(); 
+            this.questTab = 'active'; 
+            this.renderQuests(); 
+        };
         
         const btnCompleted = document.createElement('button');
         btnCompleted.className = `flex-1 py-2 font-bold text-center transition-colors ${this.questTab === 'completed' ? 'bg-green-900/40 text-green-400 border-b-2 border-green-500' : 'bg-black text-gray-600 hover:text-green-500'}`;
         btnCompleted.textContent = "ERLEDIGT";
-        btnCompleted.onclick = () => { this.questTab = 'completed'; this.renderQuests(); };
+        
+        // FIX: stopPropagation added
+        btnCompleted.onclick = (e) => { 
+            e.stopPropagation(); 
+            this.questTab = 'completed'; 
+            this.renderQuests(); 
+        };
         
         tabsContainer.appendChild(btnActive);
         tabsContainer.appendChild(btnCompleted);
