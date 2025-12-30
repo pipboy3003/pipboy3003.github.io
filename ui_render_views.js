@@ -1,7 +1,13 @@
-// [v1.0] - 2025-12-30 14:15 (Inventory Overlay & Style Update)
-// Main View Renderers (Inventory, Map, Screens, Radio)
+// [v1.1.0] - 2025-12-30 14:30 (Quest Tabs)
+// ------------------------------------------------
+// - Feature: Tabs für "Aktiv" und "Abgeschlossen" im Quest-Log.
+// - UI: Abgeschlossene Quests werden historisch aufgelistet.
+
 Object.assign(UI, {
     
+    // State für den aktuellen Tab (default: active)
+    questTab: 'active', 
+
     renderCharacterSelection: function(saves) {
         this.charSelectMode = true;
         this.currentSaves = saves;
@@ -108,27 +114,20 @@ Object.assign(UI, {
                 <div class="absolute top-0 right-0 bg-green-900 text-white text-[10px] px-1 font-mono">${entry.count}</div>
             `;
             
-            // --- NEW: EQUIPPED / ACTIVE OVERLAY ---
+            // --- OVERLAY: EQUIPPED / ACTIVE ---
             let isEquipped = false;
             let label = "AUSGERÜSTET";
             
-            // Check Weapon
             if(Game.state.equip.weapon && Game.state.equip.weapon.name === displayName) isEquipped = true;
-            // Check Body
             if(Game.state.equip.body && Game.state.equip.body.name === displayName) isEquipped = true;
-            // Check Camp (Zelt)
-            if(item.id === 'camp_kit' && Game.state.camp) {
-                isEquipped = true;
-                label = "AUFGEBAUT";
-            }
+            if(item.id === 'camp_kit' && Game.state.camp) { isEquipped = true; label = "AUFGEBAUT"; }
 
             if(isEquipped) {
-                // Style: Gerade, vollflächig, halbtransparent
                 const overlay = document.createElement('div');
                 overlay.className = "absolute inset-0 bg-black/60 border-2 border-green-500 flex items-center justify-center text-green-500 font-bold tracking-widest text-[10px] pointer-events-none";
                 overlay.textContent = label;
                 btn.appendChild(overlay);
-                btn.style.borderColor = "#39ff14"; // Helleres Grün für Rand
+                btn.style.borderColor = "#39ff14"; 
             }
             // -------------------------------------
             
@@ -363,7 +362,6 @@ Object.assign(UI, {
         if(restBtn) restBtn.onclick = () => Game.restInCamp();
     },
 
-    // [v0.9.11] UPDATED RENDER WORLD MAP (SCANNER)
     renderWorldMap: function() {
         const cvs = document.getElementById('world-map-canvas');
         const details = document.getElementById('sector-details');
@@ -671,52 +669,95 @@ Object.assign(UI, {
         content.innerHTML = htmlBuffer;
     },
 
-    // [v0.9.12] UPDATED QUEST RENDERER
+    // [v1.1.0] UPDATED QUEST RENDERER WITH TABS
     renderQuests: function() {
         const list = document.getElementById('quest-list');
         if(!list) return;
         list.innerHTML = '';
         
-        // Combine active (tracked) and legacy quests
-        const quests = Game.state.activeQuests || [];
-        
-        if(quests.length === 0) {
-            list.innerHTML = '<div class="text-gray-500 italic text-center mt-10">Keine aktiven Aufgaben.<br><span class="text-xs">Erkunde die Welt, um Quests zu finden!</span></div>';
-            return;
-        }
+        // --- 1. Tabs Rendern ---
+        if(!this.questTab) this.questTab = 'active';
 
-        quests.forEach(q => {
-            // Find Definition
-            const def = Game.questDefs ? Game.questDefs.find(d => d.id === q.id) : null;
-            const title = def ? def.title : "Unbekannte Quest";
-            const desc = def ? def.desc : "???";
+        const tabsContainer = document.createElement('div');
+        tabsContainer.className = "flex w-full border-b border-green-900 mb-4";
+        
+        const btnActive = document.createElement('button');
+        btnActive.className = `flex-1 py-2 font-bold text-center transition-colors ${this.questTab === 'active' ? 'bg-green-900/40 text-green-400 border-b-2 border-green-500' : 'bg-black text-gray-600 hover:text-green-500'}`;
+        btnActive.textContent = "AKTIV";
+        btnActive.onclick = () => { this.questTab = 'active'; this.renderQuests(); };
+        
+        const btnCompleted = document.createElement('button');
+        btnCompleted.className = `flex-1 py-2 font-bold text-center transition-colors ${this.questTab === 'completed' ? 'bg-green-900/40 text-green-400 border-b-2 border-green-500' : 'bg-black text-gray-600 hover:text-green-500'}`;
+        btnCompleted.textContent = "ERLEDIGT";
+        btnCompleted.onclick = () => { this.questTab = 'completed'; this.renderQuests(); };
+        
+        tabsContainer.appendChild(btnActive);
+        tabsContainer.appendChild(btnCompleted);
+        list.appendChild(tabsContainer);
+
+        // --- 2. Listen Rendern ---
+        if(this.questTab === 'active') {
+            const quests = Game.state.activeQuests || [];
             
-            // Progress Calculation
-            const pct = Math.min(100, Math.floor((q.progress / q.max) * 100));
-            
-            const div = document.createElement('div');
-            div.className = "border border-green-900 bg-green-900/10 p-3 mb-2 relative overflow-hidden";
-            
-            div.innerHTML = `
-                <div class="font-bold text-yellow-400 text-lg mb-1 flex justify-between">
-                    <span>${title}</span>
-                    <span class="text-xs text-gray-400 border border-gray-600 px-1 rounded">LVL ${def ? def.minLvl : 1}</span>
-                </div>
-                <div class="text-green-200 text-sm leading-relaxed mb-3">${desc}</div>
+            if(quests.length === 0) {
+                list.innerHTML += '<div class="text-gray-500 italic text-center mt-10">Keine aktiven Aufgaben.<br><span class="text-xs">Erkunde die Welt, um Quests zu finden!</span></div>';
+                return;
+            }
+
+            quests.forEach(q => {
+                const def = Game.questDefs ? Game.questDefs.find(d => d.id === q.id) : null;
+                const title = def ? def.title : "Unbekannte Quest";
+                const desc = def ? def.desc : "???";
+                const pct = Math.min(100, Math.floor((q.progress / q.max) * 100));
                 
-                <div class="w-full bg-black border border-green-700 h-4 relative">
-                    <div class="bg-green-600 h-full transition-all duration-500" style="width: ${pct}%"></div>
-                    <div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white text-shadow-black">
-                        ${q.progress} / ${q.max} (${pct}%)
+                const div = document.createElement('div');
+                div.className = "border border-green-900 bg-green-900/10 p-3 mb-2 relative overflow-hidden";
+                div.innerHTML = `
+                    <div class="font-bold text-yellow-400 text-lg mb-1 flex justify-between">
+                        <span>${title}</span>
+                        <span class="text-xs text-gray-400 border border-gray-600 px-1 rounded">LVL ${def ? def.minLvl : 1}</span>
                     </div>
-                </div>
-                
-                <div class="mt-2 text-right text-xs text-yellow-600">
-                    Belohnung: ${def && def.reward ? (def.reward.caps ? def.reward.caps + ' KK, ' : '') + def.reward.xp + ' XP' : '?'}
-                </div>
-            `;
-            list.appendChild(div);
-        });
+                    <div class="text-green-200 text-sm leading-relaxed mb-3">${desc}</div>
+                    
+                    <div class="w-full bg-black border border-green-700 h-4 relative">
+                        <div class="bg-green-600 h-full transition-all duration-500" style="width: ${pct}%"></div>
+                        <div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white text-shadow-black">
+                            ${q.progress} / ${q.max} (${pct}%)
+                        </div>
+                    </div>
+                    
+                    <div class="mt-2 text-right text-xs text-yellow-600">
+                        Belohnung: ${def && def.reward ? (def.reward.caps ? def.reward.caps + ' KK, ' : '') + def.reward.xp + ' XP' : '?'}
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+
+        } else {
+            // COMPLETED TAB
+            const completedIds = Game.state.completedQuests || [];
+            
+            if(completedIds.length === 0) {
+                list.innerHTML += '<div class="text-gray-500 italic text-center mt-10">Noch keine Aufgaben abgeschlossen.<br><span class="text-xs">Streng dich an, Ödlander!</span></div>';
+                return;
+            }
+
+            completedIds.forEach(qId => {
+                const def = Game.questDefs ? Game.questDefs.find(d => d.id === qId) : null;
+                if(!def) return;
+
+                const div = document.createElement('div');
+                div.className = "border border-gray-800 bg-black p-3 mb-2 opacity-70 hover:opacity-100 transition-opacity";
+                div.innerHTML = `
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-bold text-gray-400 line-through decoration-green-500 decoration-2">${def.title}</span>
+                        <span class="text-[10px] bg-green-900 text-green-300 px-2 py-0.5 rounded">ERLEDIGT</span>
+                    </div>
+                    <div class="text-gray-600 text-xs italic">${def.desc}</div>
+                `;
+                list.appendChild(div);
+            });
+        }
     },
 
     renderCity: function() {
@@ -968,16 +1009,4 @@ Object.assign(UI, {
             if(Game.state.lvl < recipe.lvl) { canCraft = false; reqHtml += `<div class="text-red-500 text-xs mt-1">Benötigt Level ${recipe.lvl}</div>`; }
             div.innerHTML = `
                 <div class="flex justify-between items-start mb-2">
-                    <div class="font-bold text-yellow-400 text-lg">${outItem.name}</div>
-                    <button class="action-button text-sm px-3" onclick="Game.craftItem('${recipe.id}')" ${canCraft ? '' : 'disabled'}>FERTIGEN</button>
-                </div>
-                <div class="pl-2 border-l-2 border-green-900">${reqHtml}</div>
-            `;
-            container.appendChild(div);
-        });
-        
-        if(knownCount === 0) {
-            container.innerHTML += '<div class="text-gray-500 italic mt-10 text-center border-t border-gray-800 pt-4">Du hast noch keine Baupläne gelernt.<br><span class="text-xs text-green-700">Suche in Dungeons oder der Wildnis nach Blueprints!</span></div>';
-        }
-    }
-});
+                    <div class="font-bold text-yellow-400 text-lg">${out
