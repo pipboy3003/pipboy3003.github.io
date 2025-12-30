@@ -1,4 +1,4 @@
-// [v0.9.0]
+// [v0.9.10]
 // Main View Renderers (Inventory, Map, Screens, Radio)
 Object.assign(UI, {
     
@@ -42,7 +42,7 @@ Object.assign(UI, {
         this.selectSlot(0);
     },
 
-    // [v0.9.0] Updated Inventory: Displays Prefixes & Colors
+    // [v0.9.10] Updated Inventory: Re-enabled Popup Confirm
     renderInventory: function() {
         const list = document.getElementById('inventory-list');
         const countDisplay = document.getElementById('inv-count');
@@ -100,7 +100,7 @@ Object.assign(UI, {
             if(entry.props) {
                 displayName = entry.props.name;
                 if(entry.props.color) {
-                    extraClass = entry.props.color; // z.B. "text-yellow-400"
+                    extraClass = entry.props.color;
                 }
             }
 
@@ -110,13 +110,9 @@ Object.assign(UI, {
                 <div class="absolute top-0 right-0 bg-green-900 text-white text-[10px] px-1 font-mono">${entry.count}</div>
             `;
             
-            // Nutze den Index für useItem, um das korrekte Item (auch Uniques) zu erwischen
+            // [v0.9.10] FIX: Use Show Item Confirm Dialog
             btn.onclick = () => {
-                 if(item.type === 'junk' || item.type === 'component' || item.type === 'rare') {
-                     // Passiv Items
-                 } else {
-                     Game.useItem(index);
-                 }
+                 UI.showItemConfirm(index);
             };
 
             list.appendChild(btn);
@@ -256,7 +252,7 @@ Object.assign(UI, {
         }
     },
     
-    // [v0.9.0] Radio Renderer (NEU)
+    // [v0.9.0] Radio Renderer
     renderRadio: function() {
         const btnToggle = document.getElementById('btn-radio-toggle');
         const stationName = document.getElementById('radio-station-name');
@@ -265,7 +261,7 @@ Object.assign(UI, {
         const track = document.getElementById('radio-track');
         const waves = document.getElementById('radio-waves');
 
-        if(!btnToggle) return; // Nicht auf Radio View
+        if(!btnToggle) return;
 
         const isOn = Game.state.radio.on;
         
@@ -279,13 +275,11 @@ Object.assign(UI, {
             if(status) status.textContent = "SIGNAL STABLE - STEREO";
             if(hz) hz.textContent = currentStation.freq;
             
-            // Track Simulation
             const trackList = currentStation.tracks;
-            const now = Math.floor(Date.now() / 10000); // Demo: Track change alle 10s
+            const now = Math.floor(Date.now() / 10000); 
             const tIndex = now % trackList.length;
             if(track) track.textContent = "♪ " + trackList[tIndex] + " ♪";
             
-            // Visualizer Animation
             if(waves) {
                 waves.innerHTML = '';
                 for(let i=0; i<20; i++) {
@@ -309,7 +303,6 @@ Object.assign(UI, {
             if(waves) waves.innerHTML = '';
         }
         
-        // Loop render if on
         if(isOn && Game.state.view === 'radio') {
             setTimeout(() => this.renderRadio(), 200); 
         }
