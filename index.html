@@ -10,7 +10,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=0.9.1">
+    <script>document.write('<link rel="stylesheet" href="style.css?v=' + Date.now() + '">');</script>
     <script>window.onerror=function(m,u,l){console.error("ERR:",m);if(typeof UI!=='undefined'&&UI.error)UI.error(m);return false;};</script>
 </head>
 <body>
@@ -178,11 +178,11 @@
         const bootLines = [
             "ROBCO INDUSTRIES UNIFIED OPERATING SYSTEM",
             "COPYRIGHT 2075-2077 ROBCO INDUSTRIES",
-            "SERVER: ONLINE",
-            'LOADING SYSTEM VERSION ${ver || 'DETECTING...'}...',
-            "MEMORY: 64KB OK",
-            "BIO-METRICS: NOT FOUND",
-            "INITIALIZING PIP-BOY 3003 INTERFACE..."
+            "- SERVER: ONLINE",
+            `- LOADING SYSTEM VERSION ${ver || 'DETECTING...'}...`,
+            "- MEMORY: 64KB OK",
+            "- BIO-METRICS: NOT FOUND",
+            "- INITIALIZING PIP-BOY 3003 INTERFACE..."
         ];
         const log = document.getElementById('boot-log');
         const bootSeq = document.getElementById('boot-sequence');
@@ -207,37 +207,42 @@
         }, delay + 1000);
     }
 
+    // [v0.9.8] MAIN INIT - FORCE NO CACHE
     window.onload = function() {
         const verDisplay = document.getElementById('version-display');
         const loginVerDisplay = document.getElementById('login-version-display'); 
         
-        // Erst Version holen, DANN Boot-Sequence starten, damit die Version im Log steht
-        fetch('Version?t=' + Date.now()).then(res => res.text()).then(v => {
-            const ver = v.trim();
-            
-            // Start Boot Sequence WITH version
-            runBootSequence(ver);
+        // Use current timestamp as version to force re-fetch
+        const devVer = Date.now();
+        console.log("[PipBoy3003] Dev Mode Active. Force Loading ID:", devVer);
 
-            if(verDisplay) { verDisplay.textContent = ver; verDisplay.classList.remove('animate-pulse'); }
-            if(loginVerDisplay) { loginVerDisplay.textContent = ver; }
-            console.log("Loading V:", ver);
-            loadScript('data_core.js?v=' + ver)
-                .then(() => loadScript('data_items.js?v=' + ver))
-                .then(() => loadScript('data_monsters.js?v=' + ver))
-                .then(() => loadScript('world_gen.js?v=' + ver))
-                .then(() => loadScript('network.js?v=' + ver))
-                .then(() => loadScript('minigames.js?v=' + ver))
-                .then(() => loadScript('combat.js?v=' + ver))
-                .then(() => loadScript('game_core.js?v=' + ver))
-                .then(() => loadScript('game_map.js?v=' + ver))
-                .then(() => loadScript('game_actions.js?v=' + ver))
-                .then(() => loadScript('game_render.js?v=' + ver))
-                .then(() => loadScript('ui_core.js?v=' + ver))
-                .then(() => loadScript('ui_render_core.js?v=' + ver))
-                .then(() => loadScript('ui_render_views.js?v=' + ver))
-                .then(() => loadScript('ui_render_minigames.js?v=' + ver))
-                .then(() => loadScript('ui_render_overlays.js?v=' + ver))
-                .then(() => loadScript('ui_input.js?v=' + ver))
+        // Fetch Version file purely for display purposes
+        fetch('Version?t=' + devVer).then(res => res.text()).then(v => {
+            const displayVer = v.trim(); // Version string from file (e.g. 0.9.7)
+            
+            runBootSequence(displayVer);
+
+            if(verDisplay) { verDisplay.textContent = displayVer; verDisplay.classList.remove('animate-pulse'); }
+            if(loginVerDisplay) { loginVerDisplay.textContent = displayVer; }
+            
+            // LOAD SCRIPTS WITH TIMESTAMP (devVer) TO IGNORE CACHE
+            loadScript('data_core.js?v=' + devVer)
+                .then(() => loadScript('data_items.js?v=' + devVer))
+                .then(() => loadScript('data_monsters.js?v=' + devVer))
+                .then(() => loadScript('world_gen.js?v=' + devVer))
+                .then(() => loadScript('network.js?v=' + devVer))
+                .then(() => loadScript('minigames.js?v=' + devVer))
+                .then(() => loadScript('combat.js?v=' + devVer))
+                .then(() => loadScript('game_core.js?v=' + devVer))
+                .then(() => loadScript('game_map.js?v=' + devVer))
+                .then(() => loadScript('game_actions.js?v=' + devVer))
+                .then(() => loadScript('game_render.js?v=' + devVer))
+                .then(() => loadScript('ui_core.js?v=' + devVer))
+                .then(() => loadScript('ui_render_core.js?v=' + devVer))
+                .then(() => loadScript('ui_render_views.js?v=' + devVer))
+                .then(() => loadScript('ui_render_minigames.js?v=' + devVer))
+                .then(() => loadScript('ui_render_overlays.js?v=' + devVer))
+                .then(() => loadScript('ui_input.js?v=' + devVer))
                 .then(() => { if(typeof UI !== 'undefined') UI.init(); console.log("System Ready."); })
                 .catch(err => {
                     console.error("Critical Load Error:", err);
