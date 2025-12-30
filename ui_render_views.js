@@ -1,4 +1,4 @@
-// [v0.9.12] - Quest System UI Update
+// [v1.0] - 2025-12-30 14:15 (Inventory Overlay & Style Update)
 // Main View Renderers (Inventory, Map, Screens, Radio)
 Object.assign(UI, {
     
@@ -107,6 +107,30 @@ Object.assign(UI, {
                 <div class="text-[10px] truncate max-w-full px-1 font-bold ${extraClass}">${displayName}</div>
                 <div class="absolute top-0 right-0 bg-green-900 text-white text-[10px] px-1 font-mono">${entry.count}</div>
             `;
+            
+            // --- NEW: EQUIPPED / ACTIVE OVERLAY ---
+            let isEquipped = false;
+            let label = "AUSGERÜSTET";
+            
+            // Check Weapon
+            if(Game.state.equip.weapon && Game.state.equip.weapon.name === displayName) isEquipped = true;
+            // Check Body
+            if(Game.state.equip.body && Game.state.equip.body.name === displayName) isEquipped = true;
+            // Check Camp (Zelt)
+            if(item.id === 'camp_kit' && Game.state.camp) {
+                isEquipped = true;
+                label = "AUFGEBAUT";
+            }
+
+            if(isEquipped) {
+                // Style: Gerade, vollflächig, halbtransparent
+                const overlay = document.createElement('div');
+                overlay.className = "absolute inset-0 bg-black/60 border-2 border-green-500 flex items-center justify-center text-green-500 font-bold tracking-widest text-[10px] pointer-events-none";
+                overlay.textContent = label;
+                btn.appendChild(overlay);
+                btn.style.borderColor = "#39ff14"; // Helleres Grün für Rand
+            }
+            // -------------------------------------
             
             btn.onclick = () => {
                  UI.showItemConfirm(index);
@@ -793,9 +817,10 @@ Object.assign(UI, {
             `;
             
             if(isEquipped) {
-                div.innerHTML += `<div class="absolute inset-0 flex justify-center items-center bg-black/60 text-green-500 font-bold border border-green-500 rotate-[-5deg] pointer-events-none">AUSGERÜSTET</div>`;
+                // FIXED OVERLAY STYLE: No slant, full cover
+                div.innerHTML += `<div class="absolute inset-0 flex justify-center items-center bg-black/60 text-green-500 font-bold border border-green-500 pointer-events-none">AUSGERÜSTET</div>`;
                 div.style.position = 'relative';
-                div.style.opacity = '0.7';
+                div.style.opacity = '0.9';
             } else if (!canAfford) {
                 div.style.opacity = '0.5';
                 div.style.cursor = 'not-allowed';
