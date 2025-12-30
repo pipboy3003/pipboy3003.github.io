@@ -1,4 +1,4 @@
-// [v0.9.9]
+// [v0.9.12] - Quest Logic Integration
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     WORLD_W: 10, WORLD_H: 10, 
@@ -8,6 +8,7 @@ window.Game = {
     monsters: (typeof window.GameData !== 'undefined') ? window.GameData.monsters : {},
     recipes: (typeof window.GameData !== 'undefined') ? window.GameData.recipes : [],
     perkDefs: (typeof window.GameData !== 'undefined') ? window.GameData.perks : [],
+    questDefs: (typeof window.GameData !== 'undefined') ? window.GameData.questDefs : [],
 
     // [v0.9.0] Radio Data
     radioStations: [
@@ -86,26 +87,25 @@ window.Game = {
         this.initCache();
         try {
             let isNewGame = false;
-            // [v0.9.1] Fixed POI IDs: A=Army(Military), K=Kommunikation(Tower)
             const defaultPOIs = [ {type: 'V', x: 4, y: 4}, {type: 'C', x: 3, y: 3}, {type: 'A', x: 8, y: 1}, {type: 'R', x: 1, y: 8}, {type: 'K', x: 9, y: 9} ];
 
             if (saveData) {
                 this.state = saveData;
-                // Checks
                 if(!this.state.explored) this.state.explored = {};
                 if(!this.state.view) this.state.view = 'map';
-                
-                // [v0.9.0] Init Radio State
                 if(!this.state.radio) this.state.radio = { on: false, station: 0, trackIndex: 0 };
-                
-                // [v0.9.9] Init Radiation State for old saves
                 if(typeof this.state.rads === 'undefined') this.state.rads = 0;
+                
+                // [v0.9.12] Init new Quest System if missing
+                if(!this.state.activeQuests) this.state.activeQuests = [];
+                if(!this.state.completedQuests) this.state.completedQuests = [];
 
                 if(!this.state.camp) this.state.camp = null;
                 if(!this.state.knownRecipes) this.state.knownRecipes = ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp']; 
                 if(!this.state.perks) this.state.perks = [];
                 
                 this.state.saveSlot = slotIndex;
+                this.checkNewQuests(); // Check for available quests on load
                 UI.log(">> Spielstand geladen.", "text-cyan-400");
             } else {
                 isNewGame = true;
@@ -121,15 +121,16 @@ window.Game = {
                     hp: 100, maxHp: 100, xp: 0, lvl: 1, caps: 50, ammo: 10, statPoints: 0, 
                     perkPoints: 0, perks: [], 
                     camp: null, 
-                    // [v0.9.0] Radio Init
                     radio: { on: false, station: 0, trackIndex: 0 },
-                    // [v0.9.9] Radiation Init
                     rads: 0,
                     kills: 0, 
                     view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, 
                     explored: {}, visitedSectors: ["4,4"],
                     tutorialsShown: { hacking: false, lockpicking: false },
-                    quests: [ { id: "q1", title: "Der Weg nach Hause", text: "Suche Zivilisation und finde Vault 101.", read: false } ], 
+                    // [v0.9.12] New Quest Arrays
+                    activeQuests: [], 
+                    completedQuests: [],
+                    quests: [], // Legacy backup
                     knownRecipes: ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp'], 
                     hiddenItems: {},
                     startTime: Date.now()
@@ -138,6 +139,7 @@ window.Game = {
                 this.state.hp = this.calculateMaxHP(this.getStat('END')); 
                 this.state.maxHp = this.state.hp;
                 
+                this.checkNewQuests(); // Start first quest
                 UI.log(">> Neuer Charakter erstellt.", "text-green-400");
                 this.saveGame(); 
             }
@@ -170,19 +172,13 @@ window.Game = {
     getStat: function(key) {
         if(!this.state) return 5;
         let val = this.state.stats[key] || 5;
-        
-        // Check Armor Bonus
         if(this.state.equip.body && this.state.equip.body.bonus && this.state.equip.body.bonus[key]) 
             val += this.state.equip.body.bonus[key];
-        
-        // Check Weapon Bonus (NEU: Präfixe können auch Bonus geben)
         const wpn = this.state.equip.weapon;
         if(wpn) {
             if(wpn.bonus && wpn.bonus[key]) val += wpn.bonus[key];
-            // Präzise Waffe?
             if(wpn.props && wpn.props.bonus && wpn.props.bonus[key]) val += wpn.props.bonus[key];
         }
-
         return val;
     },
 
@@ -203,43 +199,111 @@ window.Game = {
             this.state.maxHp = this.calculateMaxHP(this.getStat('END'));
             this.state.hp = this.state.maxHp;
             UI.log(`LEVEL UP! Du bist jetzt Level ${this.state.lvl}`, "text-yellow-400 font-bold animate-pulse");
+            this.checkNewQuests(); // Check quests on level up
             this.saveGame(); 
         }
     },
 
-    // [v0.9.0] LOOT GENERATOR
+    // [v0.9.12] QUEST SYSTEM LOGIC
+    checkNewQuests: function() {
+        if(!this.questDefs || !this.state) return;
+        this.questDefs.forEach(def => {
+            // Check requirement
+            if(this.state.lvl >= def.minLvl) {
+                // Check if already active or completed
+                const active = this.state.activeQuests.find(q => q.id === def.id);
+                const completed = this.state.completedQuests.includes(def.id);
+                
+                if(!active && !completed) {
+                    this.state.activeQuests.push({
+                        id: def.id,
+                        progress: 0,
+                        max: def.amount,
+                        type: def.type,
+                        target: def.target
+                    });
+                    UI.log(`QUEST: "${def.title}" erhalten!`, "text-cyan-400 font-bold animate-pulse");
+                }
+            }
+        });
+    },
+
+    updateQuestProgress: function(type, target, value=1) {
+        if(!this.state || !this.state.activeQuests) return;
+        
+        let updated = false;
+        
+        // Use a loop because multiple quests might track the same thing
+        for(let i = this.state.activeQuests.length - 1; i >= 0; i--) {
+            const q = this.state.activeQuests[i];
+            if(q.type === type) {
+                // Match Logic
+                let match = false;
+                if(type === 'collect') match = (q.target === target); // Item ID match
+                if(type === 'kill') match = (q.target === target); // Monster ID match
+                if(type === 'visit') match = (q.target === target); // "x,y" string match
+                
+                if(match) {
+                    q.progress += value;
+                    updated = true;
+                    // Check completion
+                    if(q.progress >= q.max) {
+                        this.completeQuest(i);
+                    } else {
+                        // Optional: Mini Notify progress
+                        // UI.log(`Quest Fortschritt: ${q.progress}/${q.max}`, "text-cyan-300 text-xs");
+                    }
+                }
+            }
+        }
+        
+        if(updated) UI.update();
+    },
+
+    completeQuest: function(index) {
+        const q = this.state.activeQuests[index];
+        const def = this.questDefs.find(d => d.id === q.id);
+        
+        if(def) {
+            UI.log(`QUEST ERFÜLLT: ${def.title}!`, "text-yellow-400 font-bold animate-bounce text-lg");
+            
+            // Rewards
+            if(def.reward) {
+                if(def.reward.xp) this.gainExp(def.reward.xp);
+                if(def.reward.caps) {
+                    this.state.caps += def.reward.caps;
+                    UI.log(`Belohnung: ${def.reward.caps} Kronkorken`, "text-yellow-200");
+                }
+                if(def.reward.items) {
+                    def.reward.items.forEach(item => {
+                        this.addToInventory(item.id, item.c || 1);
+                    });
+                }
+            }
+            
+            this.state.completedQuests.push(q.id);
+        }
+        
+        this.state.activeQuests.splice(index, 1);
+        this.saveGame();
+    },
+
+    // [v0.9.0] LOOT GENERATOR (unchanged)
     generateLoot: function(baseId) {
         const itemDef = this.items[baseId];
         if(!itemDef || itemDef.type !== 'weapon') return { id: baseId, count: 1 };
-
         const roll = Math.random();
         let prefixKey = null;
-
-        // Chances
-        if(roll < 0.3) prefixKey = 'rusty';      // 30% Rostig
-        else if(roll < 0.45) prefixKey = 'precise'; // 15% Präzise
-        else if(roll < 0.55) prefixKey = 'hardened';// 10% Gehärtet
-        else if(roll < 0.58) prefixKey = 'radiated';// 3% Verstrahlt
-        else if(roll < 0.60) prefixKey = 'legendary';// 2% Legendär (sehr selten)
-        
-        if(!prefixKey) return { id: baseId, count: 1 }; // Normal
-
+        if(roll < 0.3) prefixKey = 'rusty';      
+        else if(roll < 0.45) prefixKey = 'precise'; 
+        else if(roll < 0.55) prefixKey = 'hardened';
+        else if(roll < 0.58) prefixKey = 'radiated';
+        else if(roll < 0.60) prefixKey = 'legendary';
+        if(!prefixKey) return { id: baseId, count: 1 }; 
         const prefixDef = this.lootPrefixes[prefixKey];
-        
-        // Neues Item Objekt bauen
-        const newItem = {
-            id: baseId,
-            count: 1,
-            props: {
-                prefix: prefixKey,
-                name: `${prefixDef.name} ${itemDef.name}`,
-                dmgMult: prefixDef.dmgMult || 1,
-                valMult: prefixDef.valMult || 1,
-                bonus: prefixDef.bonus || null,
-                color: prefixDef.color
-            }
+        return {
+            id: baseId, count: 1,
+            props: { prefix: prefixKey, name: `${prefixDef.name} ${itemDef.name}`, dmgMult: prefixDef.dmgMult || 1, valMult: prefixDef.valMult || 1, bonus: prefixDef.bonus || null, color: prefixDef.color }
         };
-        
-        return newItem;
     }
 };
