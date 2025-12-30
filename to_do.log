@@ -1,5 +1,5 @@
 🐛 Aktuelle Bugs & Anpassungen:
-- Waffen & Austrüstung die angelget wurde soll nicht aus dem Inventar verschwinden, hier das selbe Overlay wie im HÄndler mit "ausgerüstet", gleiches für das Zelt. 
+- Waffen & Austrüstung die angelget wurde soll nicht aus dem Inventar verschwinden, hier das selbe Overlay wie im HÄndler mit "ausgerüstet", gleiches für das Zelt. Overlay bitte allgemein OHNE SCHRÄGE, hier herscht verwirrung mit anderen Items. Einfach direkt gleichgröß drüber.
 - Zelt bauplan logik ändern, Bauplan muss gekauft werden und dann für jedes auf und abbauen 100 Kronkorken.
 - Wir benötigen mal ein paar richtig sinnvolle quests mit tracking funktion + Levelabhängig
 - Neue Ausrüstung lässt ja den Inventar Button blinken, soll auch im Inventar selst mit einem leichtne glow effekt ohne pulsierend hervorgehoben werden bis angeklickt, oder drüber gehovert wurde.
