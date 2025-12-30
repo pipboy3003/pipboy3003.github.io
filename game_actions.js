@@ -1,10 +1,12 @@
-// [v1.3.0] - 2025-12-30 15:15 (Camp Cost & Workbench Fix)
+// [v1.3.1] - 2025-12-30 15:30 (Fix Camp Crash)
 // ------------------------------------------------
-// - Logic Update: Zelt aufstellen kostet nun 100 Kronkorken.
-// - UI Fix: 'Speichern & Zurück' Button aus der Werkbank entfernt.
+// - Bugfix: Zelt-Datenstruktur korrigiert (sector: {x,y} statt sx,sy).
+// - System: Verhindert Abstürze bei existierenden, fehlerhaften Zelt-Daten.
 
 Object.assign(Game, {
     
+    // ... (addRadiation, rest, heal, buyAmmo, buyItem, addToInventory, removeFromInventory, useItem, craftItem, startCombat, gambleLegendaryLoot, upgradeStat, choosePerk bleiben unverändert) ...
+
     // Helper: Strahlung hinzufügen/entfernen
     addRadiation: function(amount) {
         if(!this.state) return;
@@ -28,7 +30,6 @@ Object.assign(Game, {
         UI.update();
     },
 
-    // --- BASIC ACTIONS ---
     rest: function() { 
         if(!this.state) return;
         const effectiveMax = this.state.maxHp - (this.state.rads || 0);
@@ -137,10 +138,8 @@ Object.assign(Game, {
         invItem = this.state.inventory[index];
         const itemDef = this.items[invItem.id];
         
-        // --- CAMP LOGIC ---
         if(invItem.id === 'camp_kit') { this.deployCamp(index); return; }
 
-        // --- SPECIFIC ITEM LOGIC ---
         if(invItem.id === 'nuka_cola') {
             const effectiveMax = this.state.maxHp - (this.state.rads || 0);
             this.state.hp = Math.min(this.state.hp + 15, effectiveMax);
@@ -277,7 +276,6 @@ Object.assign(Game, {
         enemy.dmg = Math.floor(enemy.dmg * difficultyMult);
         enemy.loot = Math.floor(enemy.loot * difficultyMult);
 
-        // Check Fortune Finder
         if(this.state.perks && this.state.perks.includes('fortune_finder')) {
             enemy.loot = Math.floor(enemy.loot * 1.5);
         }
@@ -356,7 +354,6 @@ Object.assign(Game, {
         if(this.state.camp) { UI.log("Lager existiert bereits!", "text-red-500"); return; }
         if(this.state.zone.includes("Stadt") || this.state.dungeonLevel > 0) { UI.log("Hier nicht möglich!", "text-red-500"); return; }
         
-        // [v1.3.0] COST LOGIC ADDED
         const cost = 100;
         if(this.state.caps < cost) {
             UI.log(`Benötigt ${cost} Kronkorken für Aufbau.`, "text-red-500");
@@ -364,7 +361,14 @@ Object.assign(Game, {
         }
 
         this.state.caps -= cost;
-        this.state.camp = { sx: this.state.sector.x, sy: this.state.sector.y, x: this.state.player.x, y: this.state.player.y, level: 1 };
+        
+        // [v1.3.1] FIXED STRUCTURE HERE
+        this.state.camp = { 
+            sector: { x: this.state.sector.x, y: this.state.sector.y }, 
+            x: this.state.player.x, 
+            y: this.state.player.y, 
+            level: 1 
+        };
         
         UI.log(`Lager aufgeschlagen! (-${cost} KK)`, "text-green-400 font-bold");
         UI.switchView('camp');
@@ -374,7 +378,6 @@ Object.assign(Game, {
     packCamp: function() {
         if(!this.state.camp) return;
         this.state.camp = null;
-        // Camp Kit is already in inventory
         UI.log("Lager eingepackt.", "text-yellow-400");
         UI.switchView('map');
         this.saveGame();
