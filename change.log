@@ -1,4 +1,11 @@
-CHANGE LOG - PIP-BOY 3000 Mk-V
+[v2.2] - 2025-12-31 16:30pm (Refactoring)
+• Aufteilung der ui_render_views.js in 5 Module für bessere Wartbarkeit
+• ui_view_inv.js: Inventar, Stats, Perks
+• ui_view_world.js: Map, Camp (inkl. Kochen), Radio
+• ui_view_town.js: Stadt, Shop, Klinik, Crafting
+• ui_view_journal.js: Quests, Wiki
+• ui_render_views.js: Enthält jetzt nur noch Menü-Systeme und Combat
+
 [v2.1] - 2025-12-31 16:15pm (Consumables Update & Loot Fix) 
 - Fix für 'Invisible Loot': Fehlende Item-Definitionen (Fleisch, Schrott) ergänzt 
 - Kochen im Lager hinzugefügt (neuer Button 'KOCHEN') 
