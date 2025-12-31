@@ -1,11 +1,10 @@
-// [v1.5.0] - 2025-12-30 17:00 (Shop Overhaul - Confirm Dialog)
+// [v0.9.14] - 2025-12-31 12:00pm (Visual Polish & Fixes)
 // ------------------------------------------------
-// - Feature: Neuer 'showShopConfirm' Dialog für den Handelsposten.
-// - UI: Zeigt Item-Stats, Typ und Beschreibung vor dem Kauf an.
+// - Visual: Dungeon Victory Banner bounce entfernt.
 
 Object.assign(UI, {
     
-    // ... (showMapLegend, showHighscoreBoard bleiben unverändert) ...
+    // ... (showMapLegend, showHighscoreBoard, showShopConfirm, showItemConfirm, showDungeonWarning, showWastelandGamble, showDungeonLocked bleiben unverändert) ...
 
     showMapLegend: function() {
         if(!this.els.dialog) this.restoreOverlay();
@@ -135,7 +134,6 @@ Object.assign(UI, {
         }
     },
 
-    // [v1.5.0] New Shop Confirm Dialog
     showShopConfirm: function(itemKey) {
         if(!this.els.dialog) this.restoreOverlay();
         
@@ -300,8 +298,6 @@ Object.assign(UI, {
         this.refreshFocusables();
     },
 
-    // ... (showDungeonWarning, showWastelandGamble, showDungeonLocked, showDungeonVictory, showPermadeathWarning, showGameOver, showManualOverlay, showChangelogOverlay, enterVault, leaveDialog bleiben unverändert) ...
-
     showDungeonWarning: function(callback) {
         if(!this.els.dialog) this.restoreOverlay();
         if(Game.state) Game.state.inDialog = true;
@@ -413,8 +409,9 @@ Object.assign(UI, {
         overlay.id = "victory-overlay";
         overlay.className = "fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/95 animate-fadeIn";
         
+        // [v0.9.14] REMOVED 'animate-bounce' class from container
         overlay.innerHTML = `
-            <div class="bg-black border-4 border-yellow-400 p-6 shadow-[0_0_30px_gold] max-w-md text-center mb-4 animate-bounce relative">
+            <div class="bg-black border-4 border-yellow-400 p-6 shadow-[0_0_30px_gold] max-w-md text-center mb-4 relative">
                 <div class="text-6xl mb-2">👑⚔️</div>
                 <h2 class="text-4xl font-bold text-yellow-400 mb-2 tracking-widest text-shadow-gold">VICTORY!</h2>
                 <p class="text-yellow-200 mb-4 font-bold text-lg">DUNGEON (LVL ${lvl}) GECLEARED!</p>
