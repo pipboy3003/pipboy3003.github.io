@@ -1,4 +1,4 @@
-// [v1.7.1] - 2025-12-31 14:30pm (Visual Tweak)
+// [v1.7.2] - 2025-12-31 15:15pm (Combat UI Fix) - Added null checks for combat DOM elements to prevent crashes during view transitions.
 // ------------------------------------------------
 // Enthält alle View-Funktionen: Inventory, Char, Map, Shop, etc.
 
@@ -1010,8 +1010,12 @@ Object.assign(UI, {
         const nameEl = document.getElementById('enemy-name');
         if(nameEl) nameEl.textContent = enemy.name;
         
-        document.getElementById('enemy-hp-text').textContent = `${Math.max(0, enemy.hp)}/${enemy.maxHp} TP`;
-        document.getElementById('enemy-hp-bar').style.width = `${Math.max(0, (enemy.hp/enemy.maxHp)*100)}%`;
+        // [v1.7.2] FIX: Safe DOM access
+        const hpText = document.getElementById('enemy-hp-text');
+        const hpBar = document.getElementById('enemy-hp-bar');
+        
+        if(hpText) hpText.textContent = `${Math.max(0, enemy.hp)}/${enemy.maxHp} TP`;
+        if(hpBar) hpBar.style.width = `${Math.max(0, (enemy.hp/enemy.maxHp)*100)}%`;
         
         if(typeof Combat !== 'undefined' && typeof Combat.calculateHitChance === 'function') {
              const cHead = Combat.calculateHitChance(0);
