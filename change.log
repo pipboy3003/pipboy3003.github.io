@@ -1,5 +1,66 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v1.6.0] - 2025-12-31 13:30 (Visual Polish & Bugfixes)
+------------------------------------------------
+- Visual: 'Victory' Banner im Dungeon bounct nicht mehr (nervige Animation entfernt).
+- Visual: Grid-Linien (Glow) bei Treppen und Truhen auf der Map entfernt für sauberere Optik.
+- Bugfix: Werkbank-Logik korrigiert – gelernte Baupläne werden nun zuverlässig in der Liste angezeigt.
+
+[v1.5.0] - 2025-12-30 05:00pm (Shop Overhaul & Categories) ------------------------------------------------ 
+- UI: Handelsposten komplett überarbeitet und in Kategorien (Waffen, Kleidung, Hilfsmittel) unterteilt. 
+- Feature: Detail-Ansicht beim Anklicken (Stats & Beschreibung) vor dem Kauf. 
+- UX: 'Im Besitz'-Markierung für bereits vorhandene oder ausgerüstete Gegenstände hinzugefügt.
+- Feature: Neuer 'showShopConfirm' Dialog für den Handelsposten implementiert.
+
+[v1.4.1] - 2025-12-30 04:45pm (Fix Stimpack Dialog) ------------------------------------------------ 
+- Bugfix: Stimpack-Dialog erscheint nun korrekt (Prüfung auf invItem.id statt item.id korrigiert).
+
+[v1.4.0] - 2025-12-30 04:30pm (Stimpack Logic) ------------------------------------------------ 
+- UI Update: Spezieller Dialog für Stimpacks hinzugefügt.
+- Feature: Auswahl zwischen "1x Benutzen" und "Auto-Heal (Max)".
+- Logic: 'useItem' unterstützt nun 'max' mode für automatisches Heilen bis HP voll sind.
+
+[v1.3.4] - 2025-12-30 04:15pm (Camp Limit & Overlay Text) ------------------------------------------------ 
+- Logic: Maximal 1 Zeltbausatz im Inventar erlaubt (Kauf/Loot blockiert bei Besitz).
+- Logic: buyItem prüft nun Besitz vor Abzug der Kronkorken.
+- UI Change: Zelt-Status im Inventar von 'AUFGEBAUT' zu 'AUFGESTELLT' geändert.
+
+[v1.3.3] - 2025-12-30 03:55pm (Fix Rest in Camp & Item Safety) ------------------------------------------------ 
+- Bugfix: Fehlende Funktion 'restInCamp' hinzugefügt (Heilt 50% bei Lvl 1, 100% bei Lvl 2).
+- Bugfix: Absturzschutz beim Item-Wechsel (Undefined checks für Geister-Items).
+
+[v1.3.2] - 2025-12-30 03:45pm (Fix Crash & Camp Overlay) ------------------------------------------------ 
+- Bugfix: Absturz bei unbekannten Item-IDs im 'useItem' Safety-Check behoben.
+- Bugfix: Zelt-Overlay (AUFGEBAUT) wird nun korrekt angezeigt (ID-Prüfung korrigiert).
+
+[v1.3.1] - 2025-12-30 03:30pm (Fix Camp Crash) ------------------------------------------------ 
+- Bugfix: Zelt-Datenstruktur korrigiert (sector: {x,y} statt sx,sy).
+- System: Verhindert Abstürze bei existierenden, fehlerhaften Zelt-Daten.
+- Logic Update: Render-Funktion repariert defekte Zelt-Objekte automatisch "on-the-fly".
+
+[v1.3.0] - 2025-12-30 03:15pm (Camp Cost & Workbench Fix) ------------------------------------------------ 
+- Logic Update: Zelt aufstellen kostet nun 100 Kronkorken.
+- UI Fix: 'Speichern & Zurück' Button aus der Werkbank entfernt.
+
+[v1.2.0] - 2025-12-30 03:00pm (New Item Glow) ------------------------------------------------ 
+- Feature: Neue Items erhalten das Flag 'isNew = true', um im Inventar hervorzustechen.
+- UI Update: Inventar-Items mit 'isNew'-Flag erhalten einen statischen Glow-Effekt.
+- UI Update: Hover über ein neues Item entfernt den Glow-Effekt.
+
+[v1.1.1] - 2025-12-30 02:45pm (Fix Quest Tab Bug) ------------------------------------------------ 
+- Bugfix: Klick auf Quest-Tabs schließt nicht mehr das Fenster (Event Propagation gestoppt).
+
+[v1.1.0] - 2025-12-30 02:30pm (Quest Tabs) ------------------------------------------------ 
+- Feature: Tabs für "Aktiv" und "Abgeschlossen" im Quest-Log hinzugefügt.
+- UI: Abgeschlossene Quests werden historisch (ausgegraut) aufgelistet.
+
+[v1.0] - 2025-12-30 02:15pm (Inventory Persistence & Camp Update) ------------------------------------------------ 
+- Logic Update: Waffen & Rüstung bleiben beim Ausrüsten im Inventar sichtbar.
+- Logic Update: Zelt-Kit wird beim Aufbau nicht mehr entfernt (Vorbereitung für Bauplan-Logik).
+- UI: Ausgerüstete Items erhalten ein "AUSGERÜSTET" Overlay.
+- UI: Overlay-Design begradigt (keine Schräge mehr).
+- Safety: Legacy-Support beim Item-Wechsel hinzugefügt.
+
 [v0.9.13] - 2025-12-30 14:00 (Fix Combat Crash & VATS Selection) 
 - Bugfix: Fehlende Funktion 'moveSelection' in combat.js hinzugefügt. 
 - Feature: Visuelle Auswahl (Hervorhebung) der Körperteile im Kampf-Modus hinzugefügt. 
