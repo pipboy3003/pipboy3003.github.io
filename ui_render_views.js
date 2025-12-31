@@ -1,4 +1,4 @@
-// [v1.7.2] - 2025-12-31 15:15pm (Combat UI Fix) - Added null checks for combat DOM elements to prevent crashes during view transitions.
+// [v2.0] - 2025-12-31 16:00pm (Radio Update) - Added Audio Visualizer to renderRadio.
 // ------------------------------------------------
 // Enthält alle View-Funktionen: Inventory, Char, Map, Shop, etc.
 
@@ -331,7 +331,7 @@ Object.assign(UI, {
             
             const currentStation = Game.radioStations[Game.state.radio.station];
             if(stationName) stationName.textContent = currentStation.name;
-            if(status) status.textContent = "SIGNAL STABLE - STEREO";
+            if(status) status.textContent = "SIGNAL FOUND - STEREO";
             if(hz) hz.textContent = currentStation.freq;
             
             const trackList = currentStation.tracks;
@@ -339,15 +339,27 @@ Object.assign(UI, {
             const tIndex = now % trackList.length;
             if(track) track.textContent = "♪ " + trackList[tIndex] + " ♪";
             
-            if(waves) {
+            // [v2.0] REAL AUDIO VISUALIZER
+            if(waves && Game.Audio && Game.Audio.analyser) {
                 waves.innerHTML = '';
+                const data = Game.Audio.getVisualData(); // get Array
+                // We use only a few bins for the retro bars look
+                const step = Math.floor(data.length / 20);
+                
                 for(let i=0; i<20; i++) {
-                    const h = Math.floor(Math.random() * 80) + 10;
+                    // Average value for this bar range
+                    const val = data[i * step];
+                    const h = Math.max(10, (val / 255) * 100);
+                    
                     const bar = document.createElement('div');
-                    bar.className = "w-1 bg-green-500 transition-all duration-100";
+                    bar.className = "w-1 bg-green-500 transition-all duration-75";
                     bar.style.height = `${h}%`;
+                    bar.style.opacity = 0.5 + (val/500); // Glow brighter with volume
                     waves.appendChild(bar);
                 }
+            } else {
+                 // Fallback if audio failed
+                 if(waves) waves.innerHTML = '<div class="text-xs text-red-500">AUDIO ERR</div>';
             }
 
         } else {
@@ -363,7 +375,7 @@ Object.assign(UI, {
         }
         
         if(isOn && Game.state.view === 'radio') {
-            setTimeout(() => this.renderRadio(), 200); 
+            requestAnimationFrame(() => this.renderRadio());
         }
     },
 
