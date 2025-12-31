@@ -1,76 +1,100 @@
-# PIP-BOY 3000 MARK IV - HANDBUCH
-> Version: 0.8.1
-> Status: SYSTEM ONLINE
+# 📟 PIP-BOY 3003 - BENUTZERHANDBUCH
+> **System:** ROBCO UNIFIED OS v2.2
+> **Status:** ONLINE
+> **Vault-Tec Freigabe:** ERTEILT
 
-Willkommen, Bewohner. Dies ist dein interaktiver Survival-Guide für das Ödland.
+Willkommen, Bewohner! Dieses Terminal ist dein Schlüssel zum Überleben im Ödland. Bitte verinnerliche die folgenden Instruktionen, um deinen vorzeitigen Tod zu vermeiden.
+
+---
+
+## 📋 INHALTSVERZEICHNIS
+1.  [Grundlagen & Steuerung](#1-grundlagen)
+2.  [Interface (HUD)](#2-interface)
+3.  [Kampfsystem (V.A.T.S.)](#3-kampfsystem)
+4.  [Überleben: Camp & Kochen](#4-überleben)
+5.  [Crafting & Handel](#5-crafting)
+6.  [Radio & Signale](#6-radio)
+
+---
 
 ## 1. GRUNDLAGEN
-**Ziel:** Überlebe so lange wie möglich. Erkunde Sektoren, sammle Loot, besiege Gegner und verbessere deinen Charakter.
+**Ziel:** Erkunde die prozedural generierte Welt, sammle Ressourcen, verbessere deinen Charakter und überlebe die Gefahren der verstrahlten Zone.
 
-**Permadeath:**
-⚠️ ACHTUNG: Wenn deine HP auf 0 fallen, ist das Spiel vorbei. Dein Spielstand wird gelöscht. Sei vorsichtig!
+### ⚠️ PERMADEATH WARNUNG
+Das Pip-Boy 3003 System verfügt über keine Wiederbelebungs-Matrix.
+* **HP = 0 bedeutet TOD.**
+* Dein Spielstand wird **unwiderruflich gelöscht**.
+* Dein Highscore wird in die *Hall of Heroes* hochgeladen.
 
-**Steuerung:**
-* **Maus/Touch:** Interagiere mit Buttons und der Karte.
-* **Menü:** Nutze die Navigation unten (INV, MAP, DATA, etc.), um Ansichten zu wechseln.
-
----
-
-## 2. KAMPF & GEGNER
-Der Kampf ist rundenbasiert. Du greifst zuerst an, dann der Gegner.
-
-**V.A.T.S. System:**
-Klicke auf die Körperteile des Gegners, um gezielt anzugreifen:
-* **KOPF (Head):** Geringe Trefferchance, aber massiver Schaden (2x).
-* **TORSO:** Hohe Trefferchance, normaler Schaden.
-* **BEINE (Legs):** Mittlere Chance. Kann Gegner verlangsamen (Schaden reduziert).
-
-**Munition:**
-Fernkampfwaffen (Pistolen, Gewehre) verbrauchen Munition.
-* Keine Munition? Du hörst ein "CLICK" und verlierst deinen Zug.
-* Nahkampfwaffen (Fäuste, Messer, Machete) brauchen keine Munition.
+### STEUERUNG
+Das System ist für Touch- und Maus-Eingabe optimiert.
+* **Bewegen:** Joystick (Touch) oder Klicken auf Nachbar-Sektoren.
+* **Interaktion:** Tippe auf Buttons oder Menü-Reiter.
+* **Menü:** Die untere Leiste (INV, MAP, RADIO...) schaltet die Ansichten um.
 
 ---
 
-## 3. CRAFTING & ITEMS
-In der **Werkbank** (in Städten oder gefundenen Stationen) kannst du Gegenstände herstellen.
+## 2. INTERFACE (HUD)
+Dein Bildschirm liefert lebenswichtige Daten in Echtzeit.
 
-**Rezepte lernen:**
-Du startest mit wenigen Basis-Rezepten. Um bessere Ausrüstung (Rüstungen, Waffen) zu bauen, musst du **Baupläne (Blueprints)** finden und im Inventar "Benutzen".
-
-**Ressourcen:**
-Sammle alles!
-* **Schrottmetall & Schrauben:** Für Waffen/Rüstungen.
-* **Stoff:** Für Zelte/Kleidung.
-* **Klebeband:** Hält das Universum zusammen.
+* **HP (Grüner Balken):** Deine Lebenspunkte. Halte sie über 0!
+* **RADS (Roter Balken):** Strahlung. Sie verringert deine maximalen HP. Nutze *RadAway*, um sie zu senken.
+* **XP (Gelber Balken):** Fortschritt zum nächsten Level.
+* **Lager-Icon (⛺):** Zeigt an, dass du dich in deinem eigenen Camp befindest.
 
 ---
 
-## 4. CAMP SYSTEM (NEU)
-Du kannst im Ödland ein eigenes Lager aufschlagen, um dich zu heilen.
+## 3. KAMPFSYSTEM
+Triffst du auf Gegner, wechselt der Pip-Boy in den **V.A.T.S. Modus**.
 
-1.  **Bauen:** Du benötigst einen `Zelt-Bausatz` (Craftbar an der Werkbank).
-2.  **Nutzen:** Gehe in dein Inventar und benutze den Bausatz. Ein ⛺ Icon erscheint auf der Karte.
-3.  **Betreten:** Wenn du auf dem Sektor deines Camps bist, erscheint auf der Karte ein Button "LAGER BETRETEN".
-4.  **Upgrades:** Investiere Schrott, um dein Lager zu verbessern (mehr Heilung).
+### TREFFERZONEN
+Klicke auf die Körperteile, um anzugreifen:
+* 🎯 **KOPF:** Geringe Trefferchance, aber **doppelter Schaden**.
+* 🛡️ **TORSO:** Hohe Trefferchance, Standard-Schaden.
+* 🦵 **BEINE:** Mittlere Chance.
 
----
-
-## 5. SKILLS & PERKS
-Alle **3 Level** erhältst du einen Perk-Punkt. Gehe ins Charakter-Menü (STATS) und wähle den Reiter "PERKS".
-
-**Verfügbare Perks:**
-* 🛡️ **Zähigkeit:** +20 Max HP sofort.
-* 💉 **Sanitäter:** Stimpacks heilen +50% mehr.
-* 💰 **Schatzsucher:** Du findest mehr Kronkorken.
-* 🕵️ **Mysteriöser Fremder:** Erhöht die Chance auf kritische Treffer drastisch.
+### MUNITION
+* **Nahkampf** (Fäuste, Messer, Machete) kostet **keine** Munition.
+* **Fernkampf** (Pistolen, Gewehre) benötigt Patronen. Hast du keine Munition, setzt du eine Runde aus ("CLICK!").
 
 ---
 
-## 6. TIPPS VOM AUFSEHER
-* Gehe nicht zu weit nach Osten, bevor du Level 5 bist.
-* Besuche **Rusty Springs** bei [3,3] für Handel und Heilung.
-* Nutze das **Radio** (geplant), um die Moral zu heben.
-* Vault 101 [4,4] ist immer ein sicherer Hafen.
+## 4. ÜBERLEBEN: CAMP & KOCHEN
+Das Ödland ist unbarmherzig. Baue dir einen Zufluchtsort.
 
-> "War... War never changes."
+### LAGER AUFSCHLAGEN
+1.  Sammle **Stoff** und **Schrott**.
+2.  Baue einen **Zelt-Bausatz** an einer Werkbank.
+3.  Gehe ins Inventar (INV) und nutze den Bausatz im Ödland (nicht in Städten!).
+4.  Dein Camp erscheint als **⛺** auf der Weltkarte.
+
+### KOCHEN (NEU in v2.1)
+Rohes Fleisch ist gefährlich! In deinem Lager kannst du den Button **KOCHEN** nutzen.
+* **Zutaten:** Erlege Tiere (Kakerlaken, Ratten, Skorpione), um Fleisch zu erhalten.
+* **Effekt:** Gekochtes Essen heilt viele HP, gibt aber minimale Strahlung.
+
+---
+
+## 5. CRAFTING & HANDEL
+Besuche **Rusty Springs** [3,3] oder finde Werkbänke in Ruinen.
+
+### WERKBANK
+Hier erstellst du Munition, Stimpacks und Ausrüstung.
+> **TIPP:** Du startest nur mit Basis-Wissen. Finde **Baupläne (Blueprints)** in Dungeons, um bessere Waffen (z.B. *Kampfflinte*) oder Rüstungen (z.B. *Metallrüstung*) bauen zu können.
+
+### HANDEL
+Händler akzeptieren nur **Kronkorken (KK)**.
+* Verkaufe Beute, um reich zu werden.
+* Das Inventar des Händlers erneuert sich alle 15 Minuten.
+* Achte auf Sonderangebote!
+
+---
+
+## 6. RADIO & SIGNALE
+Bleib nicht allein.
+
+* **📻 RADIO:** Schalte im RADIO-Tab Sender ein (Galaxy News, Enclave, Klassik). Das hebt die Stimmung und bietet atmosphärische Musik/Geräusche.
+* **📡 SIGNALE:** Siehst du andere Spielernamen auf der Karte oder im Log? Das sind echte andere Überlebende, die gerade online sind (Asynchrones Multiplayer-Feature).
+
+---
+*RobCo Industries wünscht einen angenehmen Aufenthalt im Ödland!*
