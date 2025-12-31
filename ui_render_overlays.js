@@ -1,7 +1,6 @@
-// [v1.4.0] - 2025-12-30 16:30 (Stimpack Logic UI)
+// [v1.4.1] - 2025-12-30 16:45 (Fix Stimpack Dialog)
 // ------------------------------------------------
-// - UI Update: Spezieller Dialog für Stimpacks hinzugefügt.
-// - Feature: Auswahl zwischen "1 Benutzen" und "Auto-Heal (Max)".
+// - Bugfix: Stimpack-Dialog erscheint nun korrekt (Prüfung auf invItem.id statt item.id).
 
 Object.assign(UI, {
     
@@ -152,8 +151,8 @@ Object.assign(UI, {
         const box = document.createElement('div');
         box.className = "bg-black border-2 border-green-500 p-4 shadow-[0_0_15px_green] max-w-sm text-center mb-4 w-full";
 
-        // --- [v1.4.0] SPECIAL STIMPACK DIALOG ---
-        if (item.id === 'stimpack') {
+        // --- [v1.4.1] FIX: Use invItem.id instead of item.id ---
+        if (invItem.id === 'stimpack') {
              box.innerHTML = `
                 <h2 class="text-xl font-bold text-green-400 mb-2 border-b border-green-500 pb-2">${item.name}</h2>
                 <div class="text-xs text-green-200 mb-4 bg-green-900/20 p-2">
