@@ -1,6 +1,7 @@
-// [v1.4.1] - 2025-12-30 16:45 (Fix Stimpack Dialog)
+// [v1.5.0] - 2025-12-30 17:00 (Shop Overhaul - Confirm Dialog)
 // ------------------------------------------------
-// - Bugfix: Stimpack-Dialog erscheint nun korrekt (Prüfung auf invItem.id statt item.id).
+// - Feature: Neuer 'showShopConfirm' Dialog für den Handelsposten.
+// - UI: Zeigt Item-Stats, Typ und Beschreibung vor dem Kauf an.
 
 Object.assign(UI, {
     
@@ -134,10 +135,88 @@ Object.assign(UI, {
         }
     },
 
+    // [v1.5.0] New Shop Confirm Dialog
+    showShopConfirm: function(itemKey) {
+        if(!this.els.dialog) this.restoreOverlay();
+        
+        const item = Game.items[itemKey];
+        if(!item) return;
+
+        if(Game.state) Game.state.inDialog = true;
+        this.els.dialog.innerHTML = '';
+        this.els.dialog.style.display = 'flex';
+        
+        // Calculate Stats Text
+        let statsText = "";
+        let typeLabel = item.type.toUpperCase();
+        
+        if(item.type === 'consumable') {
+            statsText = `Effekt: ${item.effect} (${item.val})`;
+            typeLabel = "VERBRAUCHSGEGENSTAND";
+        } else if(item.type === 'weapon') {
+            statsText = `Schaden: ${item.baseDmg}`;
+            typeLabel = "WAFFE";
+        } else if(item.type === 'body') {
+            const bonus = item.bonus ? Object.entries(item.bonus).map(([k,v]) => `+${v} ${k}`).join(', ') : 'Keine';
+            statsText = `Rüstung: ${bonus}`;
+            typeLabel = "KLEIDUNG / RÜSTUNG";
+        } else if(item.type === 'junk' || item.type === 'component') {
+            statsText = "Material für Handwerk";
+            typeLabel = "SCHROTT / MATERIAL";
+        } else if(item.type === 'tool' || item.type === 'blueprint') {
+            statsText = "Bauplan / Werkzeug";
+            typeLabel = "AUSRÜSTUNG";
+        }
+
+        const canAfford = Game.state.caps >= item.cost;
+        const costColor = canAfford ? "text-yellow-400" : "text-red-500";
+
+        const box = document.createElement('div');
+        box.className = "bg-black border-2 border-green-500 p-4 shadow-[0_0_15px_green] max-w-sm text-center mb-4 w-full";
+        box.innerHTML = `
+            <div class="border-b border-green-500 pb-2 mb-2">
+                <h2 class="text-xl font-bold text-green-400">${item.name}</h2>
+                <div class="text-[10px] text-green-600 tracking-widest">${typeLabel}</div>
+            </div>
+            
+            <div class="text-sm text-green-200 mb-4 bg-green-900/20 p-3 text-left">
+                <div class="mb-1 text-xs italic text-green-400">${item.desc || "Standard Ausrüstung."}</div>
+                <div class="w-full h-px bg-green-900/50 my-2"></div>
+                <div class="font-bold text-yellow-200">${statsText}</div>
+            </div>
+
+            <div class="flex justify-between items-center bg-black border border-green-900 p-2 mb-4">
+                <span class="text-xs text-gray-400">PREIS:</span>
+                <span class="font-mono font-bold text-xl ${costColor}">${item.cost} KK</span>
+            </div>
+            
+            <div class="flex flex-col gap-2 w-full">
+                <button id="btn-buy" class="action-button border-green-500 text-green-500 hover:bg-green-900 py-3 font-bold" ${!canAfford ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
+                    ${canAfford ? 'KAUFEN' : 'ZU TEUER'}
+                </button>
+                <button id="btn-cancel" class="action-button border-red-500 text-red-500 hover:bg-red-900 py-2 font-bold">
+                    ABBRUCH
+                </button>
+            </div>
+        `;
+        
+        this.els.dialog.appendChild(box);
+        
+        const btnBuy = document.getElementById('btn-buy');
+        if(canAfford) {
+            btnBuy.onclick = () => { 
+                Game.buyItem(itemKey); 
+                this.leaveDialog(); 
+            };
+        }
+        
+        document.getElementById('btn-cancel').onclick = () => this.leaveDialog();
+        this.refreshFocusables();
+    },
+
     showItemConfirm: function(invIndex) {
         if(!this.els.dialog) this.restoreOverlay();
         
-        // Safety checks
         if(!Game.state.inventory || !Game.state.inventory[invIndex]) return;
         const invItem = Game.state.inventory[invIndex];
         const item = Game.items[invItem.id];
@@ -151,7 +230,7 @@ Object.assign(UI, {
         const box = document.createElement('div');
         box.className = "bg-black border-2 border-green-500 p-4 shadow-[0_0_15px_green] max-w-sm text-center mb-4 w-full";
 
-        // --- [v1.4.1] FIX: Use invItem.id instead of item.id ---
+        // Stimpack Dialog
         if (invItem.id === 'stimpack') {
              box.innerHTML = `
                 <h2 class="text-xl font-bold text-green-400 mb-2 border-b border-green-500 pb-2">${item.name}</h2>
@@ -185,7 +264,6 @@ Object.assign(UI, {
             this.refreshFocusables();
             return;
         }
-        // ---------------------------------------
 
         let statsText = "";
         let displayName = item.name;
