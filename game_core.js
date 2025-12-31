@@ -1,4 +1,4 @@
-// [v1.7.2] - 2025-12-31 15:45pm (Init Fix) - Ensured quest and notification arrays are initialized to empty arrays if missing in save.
+// [v2.0] - 2025-12-31 16:00pm (Radio Update) - Implemented Web Audio API for real sound generation (Static + Synth Stations).
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     WORLD_W: 10, WORLD_H: 10, 
@@ -10,42 +10,152 @@ window.Game = {
     perkDefs: (typeof window.GameData !== 'undefined') ? window.GameData.perks : [],
     questDefs: (typeof window.GameData !== 'undefined') ? window.GameData.questDefs : [],
 
-    // [v0.9.0] Radio Data
+    // [v2.0] Radio Data - Now with Synth Properties
     radioStations: [
         {
             name: "GALAXY NEWS",
             freq: "101.5",
+            synthType: "square", // Retro Game Sound
+            pitch: 220, // Base Frequency
             tracks: [
                 "Nachrichten: Supermutanten in Sektor 7 gesichtet...",
                 "Song: 'I Don't Want to Set the World on Fire'",
                 "Three Dog: 'Kämpft den guten Kampf!'",
-                "Song: 'Maybe'",
                 "Werbung: Nuka Cola - Trink das Strahlen!"
             ]
         },
         {
             name: "ENCLAVE RADIO",
             freq: "98.2",
+            synthType: "sawtooth", // Aggressive/Militaristic
+            pitch: 110,
             tracks: [
                 "Präsident Eden: 'Die Wiederherstellung Amerikas...'",
                 "Marschmusik: 'Stars and Stripes Forever'",
-                "Präsident Eden: 'Vertraut eurem Präsidenten.'",
                 "Hymne: 'America the Beautiful'"
             ]
         },
         {
             name: "KLASSIK FM",
             freq: "88.0",
+            synthType: "sine", // Smooth/Calm
+            pitch: 440,
             tracks: [
                 "Agatha: 'Eine Melodie für das Ödland...'",
                 "Violin Solo No. 4",
-                "Bach: Cello Suite",
-                "Stille (Rauschen)"
+                "Bach: Cello Suite"
             ]
         }
     ],
 
-    // [v0.9.0] Loot Prefixes
+    // [v2.0] NEW AUDIO SYSTEM
+    Audio: {
+        ctx: null,
+        masterGain: null,
+        noiseNode: null,
+        noiseGain: null,
+        osc: null,
+        oscGain: null,
+        analyser: null,
+        dataArray: null,
+
+        init: function() {
+            if(this.ctx) return;
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            this.ctx = new AudioContext();
+            
+            // Master Volume
+            this.masterGain = this.ctx.createGain();
+            this.masterGain.gain.value = 0.4;
+            this.masterGain.connect(this.ctx.destination);
+
+            // Analyser for Visualizer
+            this.analyser = this.ctx.createAnalyser();
+            this.analyser.fftSize = 64; // Low res for retro look
+            this.masterGain.connect(this.analyser);
+            const bufferLength = this.analyser.frequencyBinCount;
+            this.dataArray = new Uint8Array(bufferLength);
+        },
+
+        toggle: function(isOn, stationIndex) {
+            this.init();
+            if(this.ctx.state === 'suspended') this.ctx.resume();
+
+            if(isOn) {
+                this.startStatic();
+                this.playStation(stationIndex);
+            } else {
+                this.stopAll();
+            }
+        },
+
+        startStatic: function() {
+            if(this.noiseNode) return;
+            const bufferSize = this.ctx.sampleRate * 2; // 2 seconds buffer
+            const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+
+            this.noiseNode = this.ctx.createBufferSource();
+            this.noiseNode.buffer = buffer;
+            this.noiseNode.loop = true;
+            
+            this.noiseGain = this.ctx.createGain();
+            this.noiseGain.gain.value = 0.05; // Low volume static background
+
+            this.noiseNode.connect(this.noiseGain);
+            this.noiseGain.connect(this.masterGain);
+            this.noiseNode.start();
+        },
+
+        playStation: function(index) {
+            // Stop old synth if running
+            if(this.osc) { this.osc.stop(); this.osc = null; }
+
+            const station = Game.radioStations[index];
+            if(!station) return;
+
+            // Simple Synth Tone for Station (Placeholder for real MP3s)
+            this.osc = this.ctx.createOscillator();
+            this.osc.type = station.synthType || 'sine';
+            this.osc.frequency.setValueAtTime(station.pitch || 440, this.ctx.currentTime);
+            
+            // LFO for "Signal" effect (Modulation)
+            // Dies lässt den Ton "schwanken" wie ein Radiosignal
+            const lfo = this.ctx.createOscillator();
+            lfo.frequency.value = 2; // 2Hz wobble
+            const lfoGain = this.ctx.createGain();
+            lfoGain.gain.value = 10;
+            lfo.connect(lfoGain);
+            lfoGain.connect(this.osc.frequency);
+            lfo.start();
+
+            this.oscGain = this.ctx.createGain();
+            this.oscGain.gain.value = 0.1;
+            
+            this.osc.connect(this.oscGain);
+            this.oscGain.connect(this.masterGain);
+            this.osc.start();
+
+            // NOTE: Hier könnte man später echte MP3s abspielen:
+            // const audio = new Audio(`music/${station.name}.mp3`);
+            // audio.play();
+        },
+
+        stopAll: function() {
+            if(this.noiseNode) { this.noiseNode.stop(); this.noiseNode = null; }
+            if(this.osc) { this.osc.stop(); this.osc = null; }
+        },
+
+        getVisualData: function() {
+            if(!this.analyser) return [0,0,0,0,0];
+            this.analyser.getByteFrequencyData(this.dataArray);
+            return this.dataArray;
+        }
+    },
+
     lootPrefixes: {
         'rusty': { name: 'Rostige', dmgMult: 0.8, valMult: 0.5, color: 'text-gray-500' },
         'hardened': { name: 'Gehärtete', dmgMult: 1.2, valMult: 1.3, color: 'text-gray-300' },
@@ -99,7 +209,6 @@ window.Game = {
                 // [v0.9.12] Init new Quest System if missing
                 if(!this.state.activeQuests) this.state.activeQuests = [];
                 if(!this.state.completedQuests) this.state.completedQuests = [];
-                // [v1.7.2] Fix for missing quests notification array
                 if(!this.state.quests) this.state.quests = [];
 
                 if(!this.state.camp) this.state.camp = null;
@@ -137,7 +246,6 @@ window.Game = {
                     quests: [], 
                     knownRecipes: ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp'], 
                     hiddenItems: {},
-                    // [v1.7.0] Shop Init
                     shop: { nextRestock: 0, stock: {} },
                     startTime: Date.now()
                 };
@@ -210,7 +318,6 @@ window.Game = {
         }
     },
 
-    // [v0.9.12] QUEST SYSTEM LOGIC
     checkNewQuests: function() {
         if(!this.questDefs || !this.state) return;
         this.questDefs.forEach(def => {
@@ -273,7 +380,6 @@ window.Game = {
         this.saveGame();
     },
     
-    // [v1.7.0] SHOP RESTOCK LOGIC
     checkShopRestock: function() {
         const now = Date.now();
         if(!this.state.shop) this.state.shop = { nextRestock: 0, stock: {} };
@@ -285,8 +391,8 @@ window.Game = {
             stock['radaway'] = 1 + Math.floor(Math.random() * 3);
             stock['nuka_cola'] = 3 + Math.floor(Math.random() * 5);
             
-            // Ammo Packs (simulated as ID 'ammo_pack' or just separate count)
-            this.state.shop.ammoStock = 5 + Math.floor(Math.random() * 10); // 10er Packs
+            // Ammo Packs
+            this.state.shop.ammoStock = 5 + Math.floor(Math.random() * 10); 
 
             // Random Equipment
             const weapons = Object.keys(this.items).filter(k => this.items[k].type === 'weapon' && !k.includes('legendary') && !k.startsWith('rusty'));
