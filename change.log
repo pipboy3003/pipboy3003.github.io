@@ -1,0 +1,32 @@
+[v1.7.2] - 2025-12-31 02:10pm (Code Cleanup & Refactor)
+------------------------------------------------
+- System: Changelog bereinigt (Ältere Versionen < v1.5.0 archiviert).
+- Refactor: `game_core.js` und `ui_core.js` von alten Versions-Kommentaren bereinigt ("Noise Reduction").
+- Struktur: Vorbereitung für weitere Modularisierung.
+
+[v1.7.1] - 2025-12-31 14:30pm (Visual Tweak)
+------------------------------------------------
+- Visual: Glow-Effekt für neue Items im Inventar verstärkt (von 8px/0.6 auf 20px/1.0).
+
+[v1.7.0] - 2025-12-31 14:00 (Equipment & Economy Update)
+------------------------------------------------
+- Feature: Ausrüstung kann nun im Charakter-Menü abgelegt werden (kleines 'X' neben dem Item).
+- Economy: Händler haben nun begrenzte Vorräte (Stock).
+- Economy: Händler füllen ihre Ware alle 15 Minuten automatisch auf.
+- Balance: Händler verkaufen keine Baupläne mehr (nur noch Loot).
+- Balance: Munitionskauf ist nun auch begrenzt.
+
+[v1.6.0] - 2025-12-31 13:30 (Visual Polish & Bugfixes)
+------------------------------------------------
+- Visual: 'Victory' Banner im Dungeon bounct nicht mehr.
+- Visual: Grid-Linien (Glow) bei Treppen und Truhen auf der Map entfernt.
+- Bugfix: Werkbank-Logik korrigiert – gelernte Baupläne werden nun zuverlässig angezeigt.
+
+[v1.5.0] - 2025-12-30 05:00pm (Shop Overhaul & Categories) 
+------------------------------------------------ 
+- UI: Handelsposten komplett überarbeitet und in Kategorien unterteilt.
+- Feature: Detail-Ansicht beim Anklicken (Stats & Beschreibung) vor dem Kauf.
+- UX: 'Im Besitz'-Markierung für bereits vorhandene Gegenstände.
+- Feature: Neuer 'showShopConfirm' Dialog.
+
+[... Ältere Versionen archiviert ...]
