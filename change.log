@@ -1,3 +1,9 @@
+[v1.7.3] - 2025-12-31 02:20pm (Data Centralization)
+------------------------------------------------
+- Refactor: `radioStations` und `lootPrefixes` von `game_core.js` nach `data_core.js` verschoben.
+- Cleanup: `ui_render_views.js` von alten Kommentaren bereinigt.
+
+- System: Zentrale Datenhaltung verbessert, `game_core.js` fokussiert sich nun rein auf Logik.
 [v1.7.2] - 2025-12-31 02:10pm (Code Cleanup & Refactor)
 ------------------------------------------------
 - System: Changelog bereinigt (Ältere Versionen < v1.5.0 archiviert).
