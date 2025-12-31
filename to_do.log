@@ -1,16 +1,8 @@
 🐛 Aktuelle Bugs & Anpassungen:
-- Waffen & Austrüstung die angelget wurde soll nicht aus dem Inventar verschwinden, hier das selbe Overlay wie im HÄndler mit "ausgerüstet", gleiches für das Zelt. Overlay bitte allgemein OHNE SCHRÄGE, hier herscht verwirrung mit anderen Items. Einfach direkt gleichgröß drüber.
-- Zelt bauplan logik ändern, Bauplan muss gekauft werden und dann für jedes auf und abbauen 100 Kronkorken.
-- Wir benötigen mal ein paar richtig sinnvolle quests mit tracking funktion + Levelabhängig
-- Neue Ausrüstung lässt ja den Inventar Button blinken, soll auch im Inventar selst mit einem leichtne glow effekt ohne pulsierend hervorgehoben werden bis angeklickt, oder drüber gehovert wurde.
-- Stimpk benutzen soll fragen ob nur 1 oder so viele (anzahl x, bis TP voll)  bis man komplett geheilt ist 
-- handelsposten muss besser sortiert und übersichtlicher sein + stats von waffen etc sollen sichtbar sein beim draufklicken, wie beim Inventar.
-- Werkbank button oben : Speichern & zurück entfernen. FUnktioniert eh nicht.
-
-- dungeons victory banner ohnr bounce
-- treppen und Truhen haben nebendran so ein glow streifen, der soll weg. 
+- dungeons victory banner ohne bounce
+- dungeon treppen und Truhen haben nebendran so ein glow streifen, der soll weg. 
 - Gelernte Baupläne tauchen nicht bei der Werkbank auf.
-- items anzahö beim händler begrenz & nach Gewisserzeit erneuert
+- items Anzahl beim händler begrenz & nach Gewisserzeit erneuert + keine Baupläne mehr beim Händler außer dem Zelt für 500Kornkorken
 
 Ideen für die Zukunft (Roadmap)
 
