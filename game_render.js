@@ -1,4 +1,4 @@
-// [v0.7.0]
+// [v0.9.14]
 // Canvas Rendering Logic
 Object.assign(Game, {
     renderStaticMap: function() { 
@@ -120,8 +120,9 @@ Object.assign(Game, {
         const ts = this.TILE; const px = x * ts; const py = y * ts; 
         let bg = this.colors['.']; if(['_', ',', ';', '=', 'W', 'M', '~', '|', 'B'].includes(type)) bg = this.colors[type]; 
         
+        // [v0.9.14] FIX: Stairs and Chests (X) no longer get grid stroke
         if (!['^','v','<','>'].includes(type) && type !== '#') { ctx.fillStyle = bg; ctx.fillRect(px, py, ts, ts); } 
-        if(!['^','v','<','>','M','W','~'].includes(type) && type !== '#') { ctx.strokeStyle = "rgba(40, 90, 40, 0.05)"; ctx.lineWidth = 1; ctx.strokeRect(px, py, ts, ts); } 
+        if(!['^','v','<','>','M','W','~','X'].includes(type) && type !== '#') { ctx.strokeStyle = "rgba(40, 90, 40, 0.05)"; ctx.lineWidth = 1; ctx.strokeRect(px, py, ts, ts); } 
         
         if(['^', 'v', '<', '>'].includes(type)) { 
             ctx.fillStyle = "#000"; ctx.fillRect(px, py, ts, ts); ctx.fillStyle = "#1aff1a"; ctx.strokeStyle = "#000"; ctx.beginPath(); 
