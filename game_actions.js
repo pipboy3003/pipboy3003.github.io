@@ -1,7 +1,6 @@
-// [v1.7.0] - Unequip & Shop Stock Actions
+// [v2.0] - 2025-12-31 16:00pm (Radio Update) - Connected Radio Controls to Audio System
 Object.assign(Game, {
     
-    // ... (addRadiation, rest, restInCamp, heal bleiben gleich) ...
     addRadiation: function(amount) {
         if(!this.state) return;
         if(typeof this.state.rads === 'undefined') this.state.rads = 0;
@@ -53,7 +52,6 @@ Object.assign(Game, {
     },
     
     buyAmmo: function() { 
-        // [v1.7.0] Stock Check
         if(this.state.shop && this.state.shop.ammoStock <= 0) {
             UI.log("Händler: 'Keine Munition mehr vorrätig!'", "text-red-500");
             return;
@@ -62,9 +60,7 @@ Object.assign(Game, {
         if(this.state.caps >= 10) { 
             this.state.caps -= 10; 
             this.state.ammo += 10; 
-            
             if(this.state.shop) this.state.shop.ammoStock--;
-            
             UI.log("Munition gekauft.", "text-green-400"); 
             const con = document.getElementById('shop-list');
             if(con) UI.renderShop(con);
@@ -75,7 +71,6 @@ Object.assign(Game, {
     buyItem: function(key) { 
         const item = this.items[key]; 
         
-        // [v1.7.0] Stock Check Logic
         if(this.state.shop && this.state.shop.stock) {
             const stock = this.state.shop.stock[key] || 0;
             if(stock <= 0) {
@@ -92,12 +87,9 @@ Object.assign(Game, {
         if(this.state.caps >= item.cost) { 
             this.state.caps -= item.cost; 
             this.addToInventory(key, 1); 
-            
-            // Decrease Stock
             if(this.state.shop && this.state.shop.stock && this.state.shop.stock[key] > 0) {
                 this.state.shop.stock[key]--;
             }
-
             UI.log(`Gekauft: ${item.name}`, "text-green-400"); 
             const con = document.getElementById('shop-list');
             if(con) UI.renderShop(con);
@@ -153,25 +145,21 @@ Object.assign(Game, {
         return false;
     },
 
-    // [v1.7.0] Unequip Function
     unequipItem: function(slot) {
         if(!this.state.equip[slot]) return;
         const item = this.state.equip[slot];
 
-        // Standard Items cannot be fully unequipped to 'nothing' if they are defaults
         if(item.name === "Fäuste" || item.name === "Vault-Anzug") {
              UI.log("Das kann nicht abgelegt werden.", "text-gray-500");
              return;
         }
 
-        // Try to reconstruct item for inventory
         let itemToAdd = item._fromInv || item.id;
         if (!itemToAdd && item.id) itemToAdd = item.id;
         if (!item._fromInv && item.props) itemToAdd = { id: item.id, count: 1, props: item.props };
 
         this.addToInventory(itemToAdd, 1);
         
-        // Restore Defaults
         if(slot === 'weapon') this.state.equip.weapon = this.items.fists;
         if(slot === 'body') {
             this.state.equip.body = this.items.vault_suit;
@@ -289,8 +277,6 @@ Object.assign(Game, {
         this.saveGame(); 
     }, 
     
-    // ... (craftItem, startCombat, gambleLegendaryLoot, upgradeStat, choosePerk, deployCamp, packCamp, upgradeCamp, toggleRadio, tuningRadio bleiben unverändert) ...
-
     craftItem: function(recipeId) {
         const recipe = this.recipes.find(r => r.id === recipeId);
         if(!recipe) return;
@@ -447,7 +433,18 @@ Object.assign(Game, {
         UI.renderCamp();
     },
 
-    toggleRadio: function() { this.state.radio.on = !this.state.radio.on; UI.renderRadio(); },
+    // [v2.0] RADIO AUDIO CONTROLS
+    toggleRadio: function() { 
+        this.state.radio.on = !this.state.radio.on; 
+        
+        // Trigger Audio System
+        if(Game.Audio) {
+            Game.Audio.toggle(this.state.radio.on, this.state.radio.station);
+        }
+
+        UI.renderRadio(); 
+    },
+
     tuningRadio: function(dir) {
         if(!this.state.radio.on) return;
         let next = this.state.radio.station + dir;
@@ -455,6 +452,12 @@ Object.assign(Game, {
         if(next >= this.radioStations.length) next = 0;
         this.state.radio.station = next;
         this.state.radio.trackIndex = 0;
+        
+        // Trigger Audio Change
+        if(Game.Audio && this.state.radio.on) {
+            Game.Audio.playStation(next);
+        }
+
         UI.renderRadio();
     }
 });
