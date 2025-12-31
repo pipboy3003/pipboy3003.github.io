@@ -1,7 +1,4 @@
-// [v1.7.1] - 2025-12-31 14:30pm (Visual Tweak)
-// ------------------------------------------------
-// Enthält alle View-Funktionen: Inventory, Char, Map, Shop, etc.
-
+// [v1.7.3] - 2025-12-31 (View Cleanup)
 Object.assign(UI, {
     
     renderCharacterSelection: function(saves) {
@@ -94,10 +91,9 @@ Object.assign(UI, {
             const btn = document.createElement('div');
             btn.className = "relative border border-green-500 bg-green-900/30 w-full h-16 flex flex-col items-center justify-center cursor-pointer hover:bg-green-500 hover:text-black transition-colors group";
             
-            // [v1.7.1] Stronger Glow for New Items
             if(entry.isNew) {
-                btn.style.boxShadow = "0 0 20px rgba(57, 255, 20, 1.0)"; // Much stronger glow
-                btn.style.zIndex = "10"; // Bring to front
+                btn.style.boxShadow = "0 0 20px rgba(57, 255, 20, 1.0)";
+                btn.style.zIndex = "10";
                 btn.classList.replace('border-green-500', 'border-green-300'); 
                 btn.onmouseenter = () => {
                     if(entry.isNew) {
@@ -125,7 +121,6 @@ Object.assign(UI, {
                 <div class="absolute top-0 right-0 bg-green-900 text-white text-[10px] px-1 font-mono">${entry.count}</div>
             `;
             
-            // --- OVERLAY: EQUIPPED / ACTIVE ---
             let isEquipped = false;
             let label = "AUSGERÜSTET";
             
@@ -196,14 +191,13 @@ Object.assign(UI, {
 
         if(elWpnName) {
             elWpnName.textContent = wpn.props ? wpn.props.name : wpn.name;
-            // Add Unequip Button if not default
             const existingBtn = document.getElementById('btn-unequip-weapon');
             if(existingBtn) existingBtn.remove();
             
             if(wpn.name !== "Fäuste") {
                 const btn = document.createElement('button');
                 btn.id = 'btn-unequip-weapon';
-                btn.innerHTML = "&#10006;"; // X symbol
+                btn.innerHTML = "&#10006;"; 
                 btn.title = "Waffe ablegen";
                 btn.className = "ml-2 text-red-500 hover:text-white font-bold bg-black border border-red-900 px-1 rounded text-xs";
                 btn.onclick = (e) => { e.stopPropagation(); Game.unequipItem('weapon'); };
@@ -220,7 +214,6 @@ Object.assign(UI, {
 
         if(elArmName) {
             elArmName.textContent = arm.props ? arm.props.name : arm.name;
-            // Add Unequip Button if not default
             const existingBtn = document.getElementById('btn-unequip-body');
             if(existingBtn) existingBtn.remove();
             
@@ -240,14 +233,14 @@ Object.assign(UI, {
             elArmStats.textContent = armStats || "Kein Bonus";
         }
         
-        // Perks Button Update
+        // Perks Button
         const perkPoints = Game.state.perkPoints || 0;
         const perkBtn = document.getElementById('btn-show-perks');
         if(perkBtn) {
              perkBtn.innerHTML = `PERKS ${perkPoints > 0 ? `<span class="bg-yellow-400 text-black px-1 ml-1 text-xs animate-pulse">${perkPoints}</span>` : ''}`;
         }
         
-        // Toggle Buttons Style
+        // Toggle Buttons
         const btnStats = document.getElementById('btn-show-stats');
         if(btnStats && perkBtn) {
              if(mode === 'stats') {
@@ -426,7 +419,7 @@ Object.assign(UI, {
         };
 
         const pulse = (Date.now() % 1000) / 1000;
-        const glowAlpha = 0.3 + (Math.sin(Date.now() / 200) + 1) * 0.2; // 0.3 to 0.7
+        const glowAlpha = 0.3 + (Math.sin(Date.now() / 200) + 1) * 0.2; 
         
         if(Game.state.camp && !Game.state.camp.sector && Game.state.camp.sx !== undefined) {
              Game.state.camp.sector = { x: Game.state.camp.sx, y: Game.state.camp.sy };
@@ -438,7 +431,7 @@ Object.assign(UI, {
                 const isVisited = Game.state.visitedSectors && Game.state.visitedSectors.includes(key);
                 const isCurrent = (x === Game.state.sector.x && y === Game.state.sector.y);
 
-                // --- DETECT DUNGEONS & POIS ---
+                // --- DETECT POIS ---
                 let fixedPOI = null;
                 let randomDungeon = null;
 
@@ -453,8 +446,8 @@ Object.assign(UI, {
                         const rng = () => WorldGen.rand();
                         if(rng() < 0.35) {
                             const r = rng();
-                            if(r < 0.3) randomDungeon = 'S'; // Supermarket
-                            else if(r < 0.6) randomDungeon = 'H'; // Cave
+                            if(r < 0.3) randomDungeon = 'S'; 
+                            else if(r < 0.6) randomDungeon = 'H'; 
                         }
                     }
                 }
@@ -469,7 +462,7 @@ Object.assign(UI, {
                     ctx.fillRect(x * TILE_W, y * TILE_H, TILE_W, TILE_H);
                 }
 
-                // DRAW POI ICONS / GLOW
+                // DRAW POI
                 const cx = x * TILE_W + TILE_W/2;
                 const cy = y * TILE_H + TILE_H/2;
 
@@ -500,8 +493,8 @@ Object.assign(UI, {
                     }
                 }
                 else if (randomDungeon) {
-                    let color = "#a020f0"; // Purple for Mystery
-                    let icon = randomDungeon === 'S' ? '🛒' : '🦇'; // Hint if visited
+                    let color = "#a020f0"; 
+                    let icon = randomDungeon === 'S' ? '🛒' : '🦇'; 
                     
                     if(isVisited) {
                         ctx.shadowBlur = 15;
@@ -510,7 +503,7 @@ Object.assign(UI, {
                         ctx.fillText(icon, cx, cy);
                         ctx.shadowBlur = 0;
                     } else {
-                        ctx.fillStyle = `rgba(160, 32, 240, ${glowAlpha})`; // Pulsing Purple
+                        ctx.fillStyle = `rgba(160, 32, 240, ${glowAlpha})`;
                         ctx.fillRect(x * TILE_W + 2, y * TILE_H + 2, TILE_W - 4, TILE_H - 4);
                         ctx.fillStyle = "#fff";
                         ctx.font = "10px monospace";
@@ -669,10 +662,7 @@ Object.assign(UI, {
         } else if (category === 'crafting') {
             if (Game.recipes && Game.recipes.length > 0) {
                 Game.recipes.forEach(r => {
-                    // Zeige nur bekannte Rezepte
-                    if(Game.state.knownRecipes && !Game.state.knownRecipes.includes(r.id)) {
-                        return; // Überspringen
-                    }
+                    if(Game.state.knownRecipes && !Game.state.knownRecipes.includes(r.id)) return;
                     
                     const outName = r.out === "AMMO" ? "Munition x15" : (Game.items[r.out] ? Game.items[r.out].name : r.out);
                     const reqs = Object.keys(r.req).map(rid => {
@@ -714,7 +704,6 @@ Object.assign(UI, {
         if(!list) return;
         list.innerHTML = '';
         
-        // --- 1. Tabs Rendern ---
         if(!this.questTab) this.questTab = 'active';
 
         const tabsContainer = document.createElement('div');
@@ -744,7 +733,6 @@ Object.assign(UI, {
         tabsContainer.appendChild(btnCompleted);
         list.appendChild(tabsContainer);
 
-        // --- 2. Listen Rendern ---
         if(this.questTab === 'active') {
             const quests = Game.state.activeQuests || [];
             
@@ -783,7 +771,6 @@ Object.assign(UI, {
             });
 
         } else {
-            // COMPLETED TAB
             const completedIds = Game.state.completedQuests || [];
             
             if(completedIds.length === 0) {
@@ -846,9 +833,7 @@ Object.assign(UI, {
         else if(Game.state.caps < healCost) healSub = "Zu wenig Kronkorken";
         
         addBtn("🏥", "KLINIK", healSub, () => UI.switchView('clinic'), !canHeal);
-        
         addBtn("🛒", "MARKTPLATZ", "Waffen, Rüstung & Munition", () => UI.switchView('shop').then(() => UI.renderShop()));
-        
         addBtn("🛠️", "WERKBANK", "Gegenstände herstellen", () => this.toggleView('crafting'));
         
         addBtn("🎯", "TRAININGSGELÄNDE", "Hacking & Schlossknacken üben", () => {
@@ -866,12 +851,10 @@ Object.assign(UI, {
         addBtn("🚪", "STADT VERLASSEN", "Zurück in das Ödland", () => this.switchView('map'));
     },
     
-    // [v1.7.0] UPDATED RENDER SHOP WITH STOCK SYSTEM
     renderShop: function(container) {
         if(!container) container = document.getElementById('shop-list');
         if(!container) return;
         
-        // [v1.7.0] Check Restock Logic on Open
         Game.checkShopRestock();
 
         container.innerHTML = '';
@@ -896,8 +879,7 @@ Object.assign(UI, {
         const sortedKeys = Object.keys(Game.items).sort((a,b) => Game.items[a].cost - Game.items[b].cost);
         sortedKeys.forEach(key => {
             const item = Game.items[key];
-            if(item.cost > 0 && !key.startsWith('rusty_') && item.type !== 'blueprint') { // No Blueprints
-                // [v1.7.0] Only add if in Stock
+            if(item.cost > 0 && !key.startsWith('rusty_') && item.type !== 'blueprint') {
                 if(Game.state.shop.stock && Game.state.shop.stock[key] > 0) {
                      if(categories[item.type]) { categories[item.type].items.push({key, ...item}); } 
                      else { categories['misc'].items.push({key, ...item}); }
@@ -958,7 +940,6 @@ Object.assign(UI, {
         header.textContent = "MUNITION & SPECIALS";
         container.appendChild(header);
 
-        // [v1.7.0] Ammo with Stock
         const ammoStock = Game.state.shop.ammoStock || 0;
         const ammoDiv = document.createElement('div');
         ammoDiv.className = "flex justify-between items-center p-2 mb-4 border border-blue-500 bg-blue-900/20 cursor-pointer hover:bg-blue-900/40 h-16 w-full";
@@ -1058,15 +1039,11 @@ Object.assign(UI, {
         container.innerHTML = '';
         
         const recipes = Game.recipes || [];
-        // [v0.9.14] FIX: Ensure knownRecipes is treated as an array even if missing
         const known = Game.state.knownRecipes || [];
         let knownCount = 0; 
 
         recipes.forEach(recipe => {
-            // [v0.9.14] FIX: Check if recipe is known. Safe logic.
-            if(!known.includes(recipe.id)) {
-                return; // Not known yet
-            }
+            if(!known.includes(recipe.id)) return;
             knownCount++;
 
             const outItem = recipe.out === 'AMMO' ? {name: "15x Munition"} : Game.items[recipe.out];
