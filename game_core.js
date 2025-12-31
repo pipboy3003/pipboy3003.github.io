@@ -1,4 +1,4 @@
-// [v0.9.12] - Quest Logic Integration
+// [v1.7.0] - Economy & Restock Logic
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     WORLD_W: 10, WORLD_H: 10, 
@@ -104,6 +104,9 @@ window.Game = {
                 if(!this.state.knownRecipes) this.state.knownRecipes = ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp']; 
                 if(!this.state.perks) this.state.perks = [];
                 
+                // [v1.7.0] Init Shop State
+                if(!this.state.shop) this.state.shop = { nextRestock: 0, stock: {} };
+
                 this.state.saveSlot = slotIndex;
                 this.checkNewQuests(); // Check for available quests on load
                 UI.log(">> Spielstand geladen.", "text-cyan-400");
@@ -127,19 +130,20 @@ window.Game = {
                     view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, 
                     explored: {}, visitedSectors: ["4,4"],
                     tutorialsShown: { hacking: false, lockpicking: false },
-                    // [v0.9.12] New Quest Arrays
                     activeQuests: [], 
                     completedQuests: [],
-                    quests: [], // Legacy backup
+                    quests: [], 
                     knownRecipes: ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp'], 
                     hiddenItems: {},
+                    // [v1.7.0] Shop Init
+                    shop: { nextRestock: 0, stock: {} },
                     startTime: Date.now()
                 };
                 this.addToInventory('stimpack', 1);
                 this.state.hp = this.calculateMaxHP(this.getStat('END')); 
                 this.state.maxHp = this.state.hp;
                 
-                this.checkNewQuests(); // Start first quest
+                this.checkNewQuests(); 
                 UI.log(">> Neuer Charakter erstellt.", "text-green-400");
                 this.saveGame(); 
             }
@@ -208,19 +212,12 @@ window.Game = {
     checkNewQuests: function() {
         if(!this.questDefs || !this.state) return;
         this.questDefs.forEach(def => {
-            // Check requirement
             if(this.state.lvl >= def.minLvl) {
-                // Check if already active or completed
                 const active = this.state.activeQuests.find(q => q.id === def.id);
                 const completed = this.state.completedQuests.includes(def.id);
-                
                 if(!active && !completed) {
                     this.state.activeQuests.push({
-                        id: def.id,
-                        progress: 0,
-                        max: def.amount,
-                        type: def.type,
-                        target: def.target
+                        id: def.id, progress: 0, max: def.amount, type: def.type, target: def.target
                     });
                     UI.log(`QUEST: "${def.title}" erhalten!`, "text-cyan-400 font-bold animate-pulse");
                 }
@@ -230,44 +227,32 @@ window.Game = {
 
     updateQuestProgress: function(type, target, value=1) {
         if(!this.state || !this.state.activeQuests) return;
-        
         let updated = false;
-        
-        // Use a loop because multiple quests might track the same thing
         for(let i = this.state.activeQuests.length - 1; i >= 0; i--) {
             const q = this.state.activeQuests[i];
             if(q.type === type) {
-                // Match Logic
                 let match = false;
-                if(type === 'collect') match = (q.target === target); // Item ID match
-                if(type === 'kill') match = (q.target === target); // Monster ID match
-                if(type === 'visit') match = (q.target === target); // "x,y" string match
+                if(type === 'collect') match = (q.target === target); 
+                if(type === 'kill') match = (q.target === target); 
+                if(type === 'visit') match = (q.target === target); 
                 
                 if(match) {
                     q.progress += value;
                     updated = true;
-                    // Check completion
                     if(q.progress >= q.max) {
                         this.completeQuest(i);
-                    } else {
-                        // Optional: Mini Notify progress
-                        // UI.log(`Quest Fortschritt: ${q.progress}/${q.max}`, "text-cyan-300 text-xs");
                     }
                 }
             }
         }
-        
         if(updated) UI.update();
     },
 
     completeQuest: function(index) {
         const q = this.state.activeQuests[index];
         const def = this.questDefs.find(d => d.id === q.id);
-        
         if(def) {
             UI.log(`QUEST ERFÜLLT: ${def.title}!`, "text-yellow-400 font-bold animate-bounce text-lg");
-            
-            // Rewards
             if(def.reward) {
                 if(def.reward.xp) this.gainExp(def.reward.xp);
                 if(def.reward.caps) {
@@ -280,15 +265,50 @@ window.Game = {
                     });
                 }
             }
-            
             this.state.completedQuests.push(q.id);
         }
-        
         this.state.activeQuests.splice(index, 1);
         this.saveGame();
     },
+    
+    // [v1.7.0] SHOP RESTOCK LOGIC
+    checkShopRestock: function() {
+        const now = Date.now();
+        if(!this.state.shop) this.state.shop = { nextRestock: 0, stock: {} };
+        
+        if(now >= this.state.shop.nextRestock) {
+            const stock = {};
+            // Basics
+            stock['stimpack'] = 2 + Math.floor(Math.random() * 4);
+            stock['radaway'] = 1 + Math.floor(Math.random() * 3);
+            stock['nuka_cola'] = 3 + Math.floor(Math.random() * 5);
+            
+            // Ammo Packs (simulated as ID 'ammo_pack' or just separate count)
+            this.state.shop.ammoStock = 5 + Math.floor(Math.random() * 10); // 10er Packs
 
-    // [v0.9.0] LOOT GENERATOR (unchanged)
+            // Random Equipment
+            const weapons = Object.keys(this.items).filter(k => this.items[k].type === 'weapon' && !k.includes('legendary') && !k.startsWith('rusty'));
+            const armor = Object.keys(this.items).filter(k => this.items[k].type === 'body');
+            
+            for(let i=0; i<3; i++) {
+                const w = weapons[Math.floor(Math.random() * weapons.length)];
+                if(w) stock[w] = 1;
+            }
+            for(let i=0; i<2; i++) {
+                const a = armor[Math.floor(Math.random() * armor.length)];
+                if(a) stock[a] = 1;
+            }
+            
+            // Fixed Tools
+            stock['lockpick'] = 5;
+            stock['camp_kit'] = 1;
+
+            this.state.shop.stock = stock;
+            this.state.shop.nextRestock = now + (15 * 60 * 1000); // 15 Min
+            UI.log("INFO: Der Händler hat neue Ware erhalten.", "text-green-500 italic");
+        }
+    },
+
     generateLoot: function(baseId) {
         const itemDef = this.items[baseId];
         if(!itemDef || itemDef.type !== 'weapon') return { id: baseId, count: 1 };
