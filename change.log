@@ -1,5 +1,10 @@
 CHANGE LOG - PIP-BOY 3000 Mk-V
 
+[v2.0] - 2025-12-31 16:00pm (Radio Update) 
+- Implementierung der Web Audio API für echte Klangerzeugung (Statisches Rauschen & Synth-Sounds pro Sender) 
+- Neuer Audio-Visualizer im Radio-Screen der auf Frequenzen reagiert 
+- Erweiterte Datenstruktur für Radiosender und Verbindung der UI-Controls mit dem Audio-System
+
 [v1.7.1] - 2025-12-31 14:30pm (Visual Tweak)
 ------------------------------------------------
 - Visual: Glow-Effekt für neue Items im Inventar verstärkt (von 8px/0.6 auf 20px/1.0).
