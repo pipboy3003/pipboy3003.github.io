@@ -230,6 +230,7 @@
             // LOAD SCRIPTS WITH TIMESTAMP (devVer) TO IGNORE CACHE
             loadScript('data_core.js?v=' + devVer)
                 .then(() => loadScript('data_items.js?v=' + devVer))
+                .then(() => loadScript('data_recipes.js?v=' + devVer))
                 .then(() => loadScript('data_monsters.js?v=' + devVer))
                 .then(() => loadScript('world_gen.js?v=' + devVer))
                 .then(() => loadScript('network.js?v=' + devVer))
@@ -241,6 +242,13 @@
                 .then(() => loadScript('game_render.js?v=' + devVer))
                 .then(() => loadScript('ui_core.js?v=' + devVer))
                 .then(() => loadScript('ui_render_core.js?v=' + devVer))
+                
+                // NEW UI MODULES
+                .then(() => loadScript('ui_view_inv.js?v=' + devVer))
+                .then(() => loadScript('ui_view_world.js?v=' + devVer))
+                .then(() => loadScript('ui_view_town.js?v=' + devVer))
+                .then(() => loadScript('ui_view_journal.js?v=' + devVer))
+                
                 .then(() => loadScript('ui_render_views.js?v=' + devVer))
                 .then(() => loadScript('ui_render_minigames.js?v=' + devVer))
                 .then(() => loadScript('ui_render_overlays.js?v=' + devVer))
