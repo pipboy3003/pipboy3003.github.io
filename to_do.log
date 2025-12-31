@@ -1,19 +1,15 @@
 🐛 Aktuelle Bugs & Anpassungen:
-- dungeons victory banner ohne bounce
-- dungeon treppen und Truhen haben nebendran so ein glow streifen, der soll weg. 
-- Gelernte Baupläne tauchen nicht bei der Werkbank auf.
-- items Anzahl beim händler begrenz & nach Gewisserzeit erneuert + keine Baupläne mehr beim Händler außer dem Zelt für 500Kornkorken
+
+-
+
 
 Ideen für die Zukunft (Roadmap)
-
 1. mehr Ausrüstungs Variation  und mehr ausrüstungsplätze am Charakter. Arme, Hose, Schuhe, brustpanzer, helm etc. 
 2. Waffen Verbesserungen, Schalldämpfer, Fernrohr Zielen etc. 
-
-2. Radio-Stationen
+3. Radio-Stationen
 • Ein kleiner Tab "RADIO", der (lizenzfreie) Retro-Musik oder einfach atmosphärische Ödland-Geräusche abspielt.
 wurde umgesetzt, aber wohl nur optisch? Kein Radio & sonstige geräusche.
-
-3. Item-Präfixe (Loot-Generierung)
+4. Item-Präfixe (Loot-Generierung)
 • Waffen nicht nur als "Pistole", sondern dynamisch generiert: "Rostige Pistole" (-Dmg), "Gehärtete Pistole" (+Dmg).
 
 
