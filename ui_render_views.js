@@ -1,7 +1,4 @@
-// [v2.0] - 2025-12-31 16:00pm (Radio Update) - Added Audio Visualizer to renderRadio.
-// ------------------------------------------------
-// Enthält alle View-Funktionen: Inventory, Char, Map, Shop, etc.
-
+// [v2.1] - 2025-12-31 16:15pm (Camp Cooking UI) - Added Cooking Menu to Camp and filtered it from Workbench.
 Object.assign(UI, {
     
     renderCharacterSelection: function(saves) {
@@ -94,10 +91,9 @@ Object.assign(UI, {
             const btn = document.createElement('div');
             btn.className = "relative border border-green-500 bg-green-900/30 w-full h-16 flex flex-col items-center justify-center cursor-pointer hover:bg-green-500 hover:text-black transition-colors group";
             
-            // [v1.7.1] Stronger Glow for New Items
             if(entry.isNew) {
-                btn.style.boxShadow = "0 0 20px rgba(57, 255, 20, 1.0)"; // Much stronger glow
-                btn.style.zIndex = "10"; // Bring to front
+                btn.style.boxShadow = "0 0 20px rgba(57, 255, 20, 1.0)"; 
+                btn.style.zIndex = "10";
                 btn.classList.replace('border-green-500', 'border-green-300'); 
                 btn.onmouseenter = () => {
                     if(entry.isNew) {
@@ -125,7 +121,6 @@ Object.assign(UI, {
                 <div class="absolute top-0 right-0 bg-green-900 text-white text-[10px] px-1 font-mono">${entry.count}</div>
             `;
             
-            // --- OVERLAY: EQUIPPED / ACTIVE ---
             let isEquipped = false;
             let label = "AUSGERÜSTET";
             
@@ -196,7 +191,6 @@ Object.assign(UI, {
 
         if(elWpnName) {
             elWpnName.textContent = wpn.props ? wpn.props.name : wpn.name;
-            // Add Unequip Button if not default
             const existingBtn = document.getElementById('btn-unequip-weapon');
             if(existingBtn) existingBtn.remove();
             
@@ -220,7 +214,6 @@ Object.assign(UI, {
 
         if(elArmName) {
             elArmName.textContent = arm.props ? arm.props.name : arm.name;
-            // Add Unequip Button if not default
             const existingBtn = document.getElementById('btn-unequip-body');
             if(existingBtn) existingBtn.remove();
             
@@ -240,14 +233,12 @@ Object.assign(UI, {
             elArmStats.textContent = armStats || "Kein Bonus";
         }
         
-        // Perks Button Update
         const perkPoints = Game.state.perkPoints || 0;
         const perkBtn = document.getElementById('btn-show-perks');
         if(perkBtn) {
              perkBtn.innerHTML = `PERKS ${perkPoints > 0 ? `<span class="bg-yellow-400 text-black px-1 ml-1 text-xs animate-pulse">${perkPoints}</span>` : ''}`;
         }
         
-        // Toggle Buttons Style
         const btnStats = document.getElementById('btn-show-stats');
         if(btnStats && perkBtn) {
              if(mode === 'stats') {
@@ -331,7 +322,7 @@ Object.assign(UI, {
             
             const currentStation = Game.radioStations[Game.state.radio.station];
             if(stationName) stationName.textContent = currentStation.name;
-            if(status) status.textContent = "SIGNAL FOUND - STEREO";
+            if(status) status.textContent = "SIGNAL STABLE - STEREO";
             if(hz) hz.textContent = currentStation.freq;
             
             const trackList = currentStation.tracks;
@@ -339,27 +330,20 @@ Object.assign(UI, {
             const tIndex = now % trackList.length;
             if(track) track.textContent = "♪ " + trackList[tIndex] + " ♪";
             
-            // [v2.0] REAL AUDIO VISUALIZER
             if(waves && Game.Audio && Game.Audio.analyser) {
                 waves.innerHTML = '';
-                const data = Game.Audio.getVisualData(); // get Array
-                // We use only a few bins for the retro bars look
+                const data = Game.Audio.getVisualData(); 
                 const step = Math.floor(data.length / 20);
                 
                 for(let i=0; i<20; i++) {
-                    // Average value for this bar range
                     const val = data[i * step];
                     const h = Math.max(10, (val / 255) * 100);
-                    
                     const bar = document.createElement('div');
                     bar.className = "w-1 bg-green-500 transition-all duration-75";
                     bar.style.height = `${h}%`;
-                    bar.style.opacity = 0.5 + (val/500); // Glow brighter with volume
+                    bar.style.opacity = 0.5 + (val/500);
                     waves.appendChild(bar);
                 }
-            } else {
-                 // Fallback if audio failed
-                 if(waves) waves.innerHTML = '<div class="text-xs text-red-500">AUDIO ERR</div>';
             }
 
         } else {
@@ -387,6 +371,7 @@ Object.assign(UI, {
         const statusEl = document.getElementById('camp-status');
         const upgradeBtn = document.getElementById('btn-camp-upgrade');
         const restBtn = document.getElementById('btn-camp-rest');
+        const cookBtn = document.getElementById('btn-camp-cook'); // NEW
 
         if(lvlEl) lvlEl.textContent = camp.level;
         
@@ -415,8 +400,127 @@ Object.assign(UI, {
         }
 
         if(restBtn) restBtn.onclick = () => Game.restInCamp();
+        
+        // [v2.1] Cooking Button Logic
+        if(!cookBtn) {
+            // If button doesn't exist in HTML yet, insert it (Fallback)
+            // Ideally, HTML is updated, but here we inject.
+            const actionsDiv = document.querySelector('#view-container .grid');
+            if(actionsDiv && !document.getElementById('btn-camp-cook')) {
+                const b = document.createElement('button');
+                b.id = 'btn-camp-cook';
+                b.className = "border border-yellow-500 p-4 hover:bg-yellow-900/30 flex flex-col items-center justify-center transition-all group";
+                b.innerHTML = `<span class="text-3xl mb-2 group-hover:scale-110 transition-transform">🍖</span><span class="font-bold text-yellow-400">KOCHEN</span><span class="text-xs text-yellow-600">Essen zubereiten</span>`;
+                b.onclick = () => UI.renderCampCooking();
+                // Insert before 'Lager abbauen' (usually last)
+                actionsDiv.insertBefore(b, actionsDiv.lastElementChild);
+            }
+        } else {
+             cookBtn.onclick = () => UI.renderCampCooking();
+        }
     },
 
+    // [v2.1] New Cooking Menu
+    renderCampCooking: function() {
+        const view = this.els.view;
+        view.innerHTML = `
+            <div class="p-4 w-full max-w-2xl mx-auto flex flex-col h-full">
+                <h2 class="text-3xl font-bold text-yellow-500 mb-4 border-b-2 border-yellow-900 pb-2 flex items-center gap-2">
+                    <span>🔥</span> LAGERFEUER
+                </h2>
+                <div id="cooking-list" class="flex-grow overflow-y-auto pr-2 custom-scrollbar"></div>
+                <button onclick="UI.switchView('camp')" class="mt-4 border border-yellow-500 text-yellow-500 py-3 font-bold hover:bg-yellow-900/40 uppercase tracking-widest">
+                    << Zurück zum Zelt
+                </button>
+            </div>
+        `;
+        
+        const list = document.getElementById('cooking-list');
+        const recipes = Game.recipes || [];
+        const cookingRecipes = recipes.filter(r => r.type === 'cooking');
+
+        if(cookingRecipes.length === 0) {
+            list.innerHTML = '<div class="text-gray-500 italic text-center mt-10">Du kennst noch keine Rezepte.</div>';
+            return;
+        }
+
+        cookingRecipes.forEach(recipe => {
+            const outItem = Game.items[recipe.out];
+            const div = document.createElement('div');
+            div.className = "border border-yellow-900 bg-yellow-900/10 p-3 mb-2 flex justify-between items-center";
+            
+            let reqHtml = '';
+            let canCraft = true;
+            for(let reqId in recipe.req) {
+                const countNeeded = recipe.req[reqId];
+                const invItem = Game.state.inventory.find(i => i.id === reqId);
+                const countHave = invItem ? invItem.count : 0;
+                let color = "text-yellow-500";
+                if (countHave < countNeeded) { canCraft = false; color = "text-red-500"; }
+                const ingredientName = Game.items[reqId] ? Game.items[reqId].name : reqId;
+                reqHtml += `<span class="${color} text-xs mr-2">• ${ingredientName}: ${countHave}/${countNeeded}</span>`;
+            }
+
+            div.innerHTML = `
+                <div class="flex flex-col">
+                    <span class="font-bold text-yellow-400 text-lg">${outItem.name}</span>
+                    <span class="text-xs text-yellow-600 italic">${outItem.desc}</span>
+                    <div class="mt-1">${reqHtml}</div>
+                </div>
+                <button class="border border-yellow-500 text-yellow-500 px-4 py-2 font-bold hover:bg-yellow-500 hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
+                    onclick="Game.craftItem('${recipe.id}')" ${canCraft ? '' : 'disabled'}>
+                    BRATEN
+                </button>
+            `;
+            list.appendChild(div);
+        });
+    },
+
+    renderCrafting: function() {
+        const container = document.getElementById('crafting-list');
+        if(!container) return;
+        container.innerHTML = '';
+        
+        const recipes = Game.recipes || [];
+        const known = Game.state.knownRecipes || [];
+        let knownCount = 0; 
+
+        recipes.forEach(recipe => {
+            // [v2.1] Filter out Cooking Recipes from Workbench
+            if(recipe.type === 'cooking') return;
+
+            if(!known.includes(recipe.id)) return; 
+            knownCount++;
+
+            const outItem = recipe.out === 'AMMO' ? {name: "15x Munition"} : Game.items[recipe.out];
+            const div = document.createElement('div');
+            div.className = "border border-green-900 bg-green-900/10 p-3 mb-2";
+            let reqHtml = '';
+            let canCraft = true;
+            for(let reqId in recipe.req) {
+                const countNeeded = recipe.req[reqId];
+                const invItem = Game.state.inventory.find(i => i.id === reqId);
+                const countHave = invItem ? invItem.count : 0;
+                let color = "text-green-500";
+                if (countHave < countNeeded) { canCraft = false; color = "text-red-500"; }
+                reqHtml += `<div class="${color} text-xs">• ${Game.items[reqId].name}: ${countHave}/${countNeeded}</div>`;
+            }
+            if(Game.state.lvl < recipe.lvl) { canCraft = false; reqHtml += `<div class="text-red-500 text-xs mt-1">Benötigt Level ${recipe.lvl}</div>`; }
+            div.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    <div class="font-bold text-yellow-400 text-lg">${outItem.name}</div>
+                    <button class="action-button text-sm px-3" onclick="Game.craftItem('${recipe.id}')" ${canCraft ? '' : 'disabled'}>FERTIGEN</button>
+                </div>
+                <div class="pl-2 border-l-2 border-green-900">${reqHtml}</div>
+            `;
+            container.appendChild(div);
+        });
+        
+        if(knownCount === 0) {
+            container.innerHTML += '<div class="text-gray-500 italic mt-10 text-center border-t border-gray-800 pt-4">Du hast noch keine Baupläne gelernt.<br><span class="text-xs text-green-700">Suche in Dungeons oder der Wildnis nach Blueprints!</span></div>';
+        }
+    },
+    
     renderWorldMap: function() {
         const cvs = document.getElementById('world-map-canvas');
         const details = document.getElementById('sector-details');
@@ -426,11 +530,9 @@ Object.assign(UI, {
         const TILE_W = cvs.width / W;
         const TILE_H = cvs.height / H;
 
-        // Reset
         ctx.fillStyle = "#050a05"; 
         ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-        // Biomes
         const biomeColors = {
             'wasteland': '#4a4036', 'forest': '#1a3300', 'jungle': '#0f2405',
             'desert': '#8b5a2b', 'swamp': '#1e1e11', 'mountain': '#333333',
@@ -438,7 +540,7 @@ Object.assign(UI, {
         };
 
         const pulse = (Date.now() % 1000) / 1000;
-        const glowAlpha = 0.3 + (Math.sin(Date.now() / 200) + 1) * 0.2; // 0.3 to 0.7
+        const glowAlpha = 0.3 + (Math.sin(Date.now() / 200) + 1) * 0.2; 
         
         if(Game.state.camp && !Game.state.camp.sector && Game.state.camp.sx !== undefined) {
              Game.state.camp.sector = { x: Game.state.camp.sx, y: Game.state.camp.sy };
@@ -450,7 +552,6 @@ Object.assign(UI, {
                 const isVisited = Game.state.visitedSectors && Game.state.visitedSectors.includes(key);
                 const isCurrent = (x === Game.state.sector.x && y === Game.state.sector.y);
 
-                // --- DETECT DUNGEONS & POIS ---
                 let fixedPOI = null;
                 let randomDungeon = null;
 
@@ -465,13 +566,12 @@ Object.assign(UI, {
                         const rng = () => WorldGen.rand();
                         if(rng() < 0.35) {
                             const r = rng();
-                            if(r < 0.3) randomDungeon = 'S'; // Supermarket
-                            else if(r < 0.6) randomDungeon = 'H'; // Cave
+                            if(r < 0.3) randomDungeon = 'S'; 
+                            else if(r < 0.6) randomDungeon = 'H'; 
                         }
                     }
                 }
 
-                // DRAW TILE
                 if(isVisited) {
                     const biome = WorldGen.getSectorBiome(x, y);
                     ctx.fillStyle = biomeColors[biome] || '#222';
@@ -481,7 +581,6 @@ Object.assign(UI, {
                     ctx.fillRect(x * TILE_W, y * TILE_H, TILE_W, TILE_H);
                 }
 
-                // DRAW POI ICONS / GLOW
                 const cx = x * TILE_W + TILE_W/2;
                 const cy = y * TILE_H + TILE_H/2;
 
@@ -512,8 +611,8 @@ Object.assign(UI, {
                     }
                 }
                 else if (randomDungeon) {
-                    let color = "#a020f0"; // Purple for Mystery
-                    let icon = randomDungeon === 'S' ? '🛒' : '🦇'; // Hint if visited
+                    let color = "#a020f0"; 
+                    let icon = randomDungeon === 'S' ? '🛒' : '🦇'; 
                     
                     if(isVisited) {
                         ctx.shadowBlur = 15;
@@ -522,7 +621,7 @@ Object.assign(UI, {
                         ctx.fillText(icon, cx, cy);
                         ctx.shadowBlur = 0;
                     } else {
-                        ctx.fillStyle = `rgba(160, 32, 240, ${glowAlpha})`; // Pulsing Purple
+                        ctx.fillStyle = `rgba(160, 32, 240, ${glowAlpha})`; 
                         ctx.fillRect(x * TILE_W + 2, y * TILE_H + 2, TILE_W - 4, TILE_H - 4);
                         ctx.fillStyle = "#fff";
                         ctx.font = "10px monospace";
@@ -530,7 +629,6 @@ Object.assign(UI, {
                     }
                 }
 
-                // DRAW CAMP ICON
                 if(Game.state.camp && Game.state.camp.sector && Game.state.camp.sector.x === x && Game.state.camp.sector.y === y) {
                     ctx.font = "bold 20px monospace";
                     ctx.fillStyle = "#ffffff";
@@ -545,7 +643,6 @@ Object.assign(UI, {
             }
         }
 
-        // Draw Player Marker
         const relX = Game.state.player.x / Game.MAP_W; 
         const relY = Game.state.player.y / Game.MAP_H; 
         
@@ -565,7 +662,6 @@ Object.assign(UI, {
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        // Show Enter Button
         const camp = Game.state.camp;
         const btnCamp = document.getElementById('btn-map-enter-camp');
         
@@ -681,9 +777,8 @@ Object.assign(UI, {
         } else if (category === 'crafting') {
             if (Game.recipes && Game.recipes.length > 0) {
                 Game.recipes.forEach(r => {
-                    // Zeige nur bekannte Rezepte
                     if(Game.state.knownRecipes && !Game.state.knownRecipes.includes(r.id)) {
-                        return; // Überspringen
+                        return; 
                     }
                     
                     const outName = r.out === "AMMO" ? "Munition x15" : (Game.items[r.out] ? Game.items[r.out].name : r.out);
@@ -719,106 +814,6 @@ Object.assign(UI, {
             });
         }
         content.innerHTML = htmlBuffer;
-    },
-
-    renderQuests: function() {
-        const list = document.getElementById('quest-list');
-        if(!list) return;
-        list.innerHTML = '';
-        
-        // --- 1. Tabs Rendern ---
-        if(!this.questTab) this.questTab = 'active';
-
-        const tabsContainer = document.createElement('div');
-        tabsContainer.className = "flex w-full border-b border-green-900 mb-4";
-        
-        const btnActive = document.createElement('button');
-        btnActive.className = `flex-1 py-2 font-bold text-center transition-colors ${this.questTab === 'active' ? 'bg-green-900/40 text-green-400 border-b-2 border-green-500' : 'bg-black text-gray-600 hover:text-green-500'}`;
-        btnActive.textContent = "AKTIV";
-        
-        btnActive.onclick = (e) => { 
-            e.stopPropagation(); 
-            this.questTab = 'active'; 
-            this.renderQuests(); 
-        };
-        
-        const btnCompleted = document.createElement('button');
-        btnCompleted.className = `flex-1 py-2 font-bold text-center transition-colors ${this.questTab === 'completed' ? 'bg-green-900/40 text-green-400 border-b-2 border-green-500' : 'bg-black text-gray-600 hover:text-green-500'}`;
-        btnCompleted.textContent = "ERLEDIGT";
-        
-        btnCompleted.onclick = (e) => { 
-            e.stopPropagation(); 
-            this.questTab = 'completed'; 
-            this.renderQuests(); 
-        };
-        
-        tabsContainer.appendChild(btnActive);
-        tabsContainer.appendChild(btnCompleted);
-        list.appendChild(tabsContainer);
-
-        // --- 2. Listen Rendern ---
-        if(this.questTab === 'active') {
-            const quests = Game.state.activeQuests || [];
-            
-            if(quests.length === 0) {
-                list.innerHTML += '<div class="text-gray-500 italic text-center mt-10">Keine aktiven Aufgaben.<br><span class="text-xs">Erkunde die Welt, um Quests zu finden!</span></div>';
-                return;
-            }
-
-            quests.forEach(q => {
-                const def = Game.questDefs ? Game.questDefs.find(d => d.id === q.id) : null;
-                const title = def ? def.title : "Unbekannte Quest";
-                const desc = def ? def.desc : "???";
-                const pct = Math.min(100, Math.floor((q.progress / q.max) * 100));
-                
-                const div = document.createElement('div');
-                div.className = "border border-green-900 bg-green-900/10 p-3 mb-2 relative overflow-hidden";
-                div.innerHTML = `
-                    <div class="font-bold text-yellow-400 text-lg mb-1 flex justify-between">
-                        <span>${title}</span>
-                        <span class="text-xs text-gray-400 border border-gray-600 px-1 rounded">LVL ${def ? def.minLvl : 1}</span>
-                    </div>
-                    <div class="text-green-200 text-sm leading-relaxed mb-3">${desc}</div>
-                    
-                    <div class="w-full bg-black border border-green-700 h-4 relative">
-                        <div class="bg-green-600 h-full transition-all duration-500" style="width: ${pct}%"></div>
-                        <div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white text-shadow-black">
-                            ${q.progress} / ${q.max} (${pct}%)
-                        </div>
-                    </div>
-                    
-                    <div class="mt-2 text-right text-xs text-yellow-600">
-                        Belohnung: ${def && def.reward ? (def.reward.caps ? def.reward.caps + ' KK, ' : '') + def.reward.xp + ' XP' : '?'}
-                    </div>
-                `;
-                list.appendChild(div);
-            });
-
-        } else {
-            // COMPLETED TAB
-            const completedIds = Game.state.completedQuests || [];
-            
-            if(completedIds.length === 0) {
-                list.innerHTML += '<div class="text-gray-500 italic text-center mt-10">Noch keine Aufgaben abgeschlossen.<br><span class="text-xs">Streng dich an, Ödlander!</span></div>';
-                return;
-            }
-
-            completedIds.forEach(qId => {
-                const def = Game.questDefs ? Game.questDefs.find(d => d.id === qId) : null;
-                if(!def) return;
-
-                const div = document.createElement('div');
-                div.className = "border border-gray-800 bg-black p-3 mb-2 opacity-70 hover:opacity-100 transition-opacity";
-                div.innerHTML = `
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="font-bold text-gray-400 line-through decoration-green-500 decoration-2">${def.title}</span>
-                        <span class="text-[10px] bg-green-900 text-green-300 px-2 py-0.5 rounded">ERLEDIGT</span>
-                    </div>
-                    <div class="text-gray-600 text-xs italic">${def.desc}</div>
-                `;
-                list.appendChild(div);
-            });
-        }
     },
 
     renderCity: function() {
@@ -878,12 +873,10 @@ Object.assign(UI, {
         addBtn("🚪", "STADT VERLASSEN", "Zurück in das Ödland", () => this.switchView('map'));
     },
     
-    // [v1.7.0] UPDATED RENDER SHOP WITH STOCK SYSTEM
     renderShop: function(container) {
         if(!container) container = document.getElementById('shop-list');
         if(!container) return;
         
-        // [v1.7.0] Check Restock Logic on Open
         Game.checkShopRestock();
 
         container.innerHTML = '';
@@ -908,8 +901,7 @@ Object.assign(UI, {
         const sortedKeys = Object.keys(Game.items).sort((a,b) => Game.items[a].cost - Game.items[b].cost);
         sortedKeys.forEach(key => {
             const item = Game.items[key];
-            if(item.cost > 0 && !key.startsWith('rusty_') && item.type !== 'blueprint') { // No Blueprints
-                // [v1.7.0] Only add if in Stock
+            if(item.cost > 0 && !key.startsWith('rusty_') && item.type !== 'blueprint') { 
                 if(Game.state.shop.stock && Game.state.shop.stock[key] > 0) {
                      if(categories[item.type]) { categories[item.type].items.push({key, ...item}); } 
                      else { categories['misc'].items.push({key, ...item}); }
@@ -970,7 +962,6 @@ Object.assign(UI, {
         header.textContent = "MUNITION & SPECIALS";
         container.appendChild(header);
 
-        // [v1.7.0] Ammo with Stock
         const ammoStock = Game.state.shop.ammoStock || 0;
         const ammoDiv = document.createElement('div');
         ammoDiv.className = "flex justify-between items-center p-2 mb-4 border border-blue-500 bg-blue-900/20 cursor-pointer hover:bg-blue-900/40 h-16 w-full";
@@ -1022,7 +1013,6 @@ Object.assign(UI, {
         const nameEl = document.getElementById('enemy-name');
         if(nameEl) nameEl.textContent = enemy.name;
         
-        // [v1.7.2] FIX: Safe DOM access
         const hpText = document.getElementById('enemy-hp-text');
         const hpBar = document.getElementById('enemy-hp-bar');
         
@@ -1065,52 +1055,6 @@ Object.assign(UI, {
                 Game.changeSector(p.sector.x, p.sector.y);
             };
             this.els.spawnList.appendChild(btn);
-        }
-    },
-
-    renderCrafting: function() {
-        const container = document.getElementById('crafting-list');
-        if(!container) return;
-        container.innerHTML = '';
-        
-        const recipes = Game.recipes || [];
-        // [v0.9.14] FIX: Ensure knownRecipes is treated as an array even if missing
-        const known = Game.state.knownRecipes || [];
-        let knownCount = 0; 
-
-        recipes.forEach(recipe => {
-            // [v0.9.14] FIX: Check if recipe is known. Safe logic.
-            if(!known.includes(recipe.id)) {
-                return; // Not known yet
-            }
-            knownCount++;
-
-            const outItem = recipe.out === 'AMMO' ? {name: "15x Munition"} : Game.items[recipe.out];
-            const div = document.createElement('div');
-            div.className = "border border-green-900 bg-green-900/10 p-3 mb-2";
-            let reqHtml = '';
-            let canCraft = true;
-            for(let reqId in recipe.req) {
-                const countNeeded = recipe.req[reqId];
-                const invItem = Game.state.inventory.find(i => i.id === reqId);
-                const countHave = invItem ? invItem.count : 0;
-                let color = "text-green-500";
-                if (countHave < countNeeded) { canCraft = false; color = "text-red-500"; }
-                reqHtml += `<div class="${color} text-xs">• ${Game.items[reqId].name}: ${countHave}/${countNeeded}</div>`;
-            }
-            if(Game.state.lvl < recipe.lvl) { canCraft = false; reqHtml += `<div class="text-red-500 text-xs mt-1">Benötigt Level ${recipe.lvl}</div>`; }
-            div.innerHTML = `
-                <div class="flex justify-between items-start mb-2">
-                    <div class="font-bold text-yellow-400 text-lg">${outItem.name}</div>
-                    <button class="action-button text-sm px-3" onclick="Game.craftItem('${recipe.id}')" ${canCraft ? '' : 'disabled'}>FERTIGEN</button>
-                </div>
-                <div class="pl-2 border-l-2 border-green-900">${reqHtml}</div>
-            `;
-            container.appendChild(div);
-        });
-        
-        if(knownCount === 0) {
-            container.innerHTML += '<div class="text-gray-500 italic mt-10 text-center border-t border-gray-800 pt-4">Du hast noch keine Baupläne gelernt.<br><span class="text-xs text-green-700">Suche in Dungeons oder der Wildnis nach Blueprints!</span></div>';
         }
     }
 });
