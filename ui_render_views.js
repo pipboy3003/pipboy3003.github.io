@@ -1,11 +1,10 @@
-// [v1.3.1] - 2025-12-30 15:30 (Fix Camp Crash in Render)
+// [v1.3.4] - 2025-12-30 16:15 (Update Overlay Text)
 // ------------------------------------------------
-// - Logic Update: Render-Funktion repariert defekte Zelt-Objekte automatisch, um Abstürze zu verhindern.
+// - UI Change: Zelt-Status im Inventar von 'AUFGEBAUT' zu 'AUFGESTELLT' geändert.
 
 Object.assign(UI, {
     
-    // ... (renderCharacterSelection, renderInventory, renderChar, renderPerksList, renderRadio, renderCamp, renderWiki, renderQuests, renderCity, renderShop, renderClinic, renderCombat, renderSpawnList, renderCrafting bleiben unverändert) ...
-    // HIER nur renderWorldMap mit dem Fix:
+    // ... (renderCharacterSelection, renderChar, renderPerksList, renderRadio, renderCamp, renderWorldMap, renderWiki, renderQuests, renderCity, renderShop, renderClinic, renderCombat, renderSpawnList, renderCrafting bleiben unverändert) ...
 
     renderCharacterSelection: function(saves) {
         this.charSelectMode = true;
@@ -99,7 +98,7 @@ Object.assign(UI, {
             
             if(entry.isNew) {
                 btn.style.boxShadow = "0 0 8px rgba(57, 255, 20, 0.6)";
-                btn.classList.replace('border-green-500', 'border-green-300'); // Hellerer Rahmen
+                btn.classList.replace('border-green-500', 'border-green-300'); 
                 btn.onmouseenter = () => {
                     if(entry.isNew) {
                         entry.isNew = false;
@@ -131,7 +130,9 @@ Object.assign(UI, {
             
             if(Game.state.equip.weapon && Game.state.equip.weapon.name === displayName) isEquipped = true;
             if(Game.state.equip.body && Game.state.equip.body.name === displayName) isEquipped = true;
-            if(item.id === 'camp_kit' && Game.state.camp) { isEquipped = true; label = "AUFGEBAUT"; }
+            
+            // [v1.3.4] UPDATE TEXT
+            if(entry.id === 'camp_kit' && Game.state.camp) { isEquipped = true; label = "AUFGESTELLT"; }
 
             if(isEquipped) {
                 const overlay = document.createElement('div');
@@ -371,7 +372,7 @@ Object.assign(UI, {
 
         if(restBtn) restBtn.onclick = () => Game.restInCamp();
     },
-    
+
     renderWorldMap: function() {
         const cvs = document.getElementById('world-map-canvas');
         const details = document.getElementById('sector-details');
@@ -395,7 +396,6 @@ Object.assign(UI, {
         const pulse = (Date.now() % 1000) / 1000;
         const glowAlpha = 0.3 + (Math.sin(Date.now() / 200) + 1) * 0.2; // 0.3 to 0.7
         
-        // [v1.3.1] SAFETY FIX FOR CAMP
         if(Game.state.camp && !Game.state.camp.sector && Game.state.camp.sx !== undefined) {
              console.log("Fixing broken camp object...");
              Game.state.camp.sector = { x: Game.state.camp.sx, y: Game.state.camp.sy };
