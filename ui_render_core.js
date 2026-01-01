@@ -1,5 +1,4 @@
-// [v0.9.18] - 2025-12-31 15:55pm (UI/UX Update) - Removed 'LVL UP' text. Name and Level now pulse when stat points are available.
-// Core Rendering & Logic (HUD, View Switching)
+// [v2.4] - 2026-01-01 16:30pm (Mobile UI Overhaul) - Added Update Logic for Mobile XP Bar
 Object.assign(UI, {
     
     // Updates HUD and Button States
@@ -9,7 +8,7 @@ Object.assign(UI, {
         // Lazy load ammo element if not in core map
         if(!this.els.ammo) this.els.ammo = document.getElementById('val-ammo');
         
-        // [v0.9.18] Global Level-Up Check
+        // Global Level-Up Check
         const hasPoints = Game.state.statPoints > 0;
 
         // Header Info
@@ -18,20 +17,17 @@ Object.assign(UI, {
             const displayName = Game.state.playerName || (typeof Network !== 'undefined' ? Network.myDisplayName : "SURVIVOR");
             this.els.name.textContent = displayName + sectorStr;
 
-            // [v0.9.18] Name Glow on Level Up
             if(hasPoints) this.els.name.classList.add('lvl-ready-glow');
             else this.els.name.classList.remove('lvl-ready-glow');
         }
 
         if(this.els.lvl) {
-            // [v0.9.18] Removed 'LVL UP' Span, added Glow Class
             this.els.lvl.textContent = Game.state.lvl;
-
             if(hasPoints) this.els.lvl.classList.add('lvl-ready-glow');
             else this.els.lvl.classList.remove('lvl-ready-glow');
         }
 
-        // [v0.9.9] HP & Radiation Bars
+        // HP & Radiation Bars
         const maxHp = Game.state.maxHp;
         const hp = Game.state.hp;
         const rads = Game.state.rads || 0;
@@ -39,32 +35,33 @@ Object.assign(UI, {
         if(this.els.hp) this.els.hp.textContent = `${Math.round(hp)}/${maxHp}`;
         
         if(this.els.hpBar) {
-            // HP Bar (Green)
             const hpPct = Math.max(0, (hp / maxHp) * 100);
             this.els.hpBar.style.width = `${hpPct}%`;
         }
         
-        // New: Rad Bar Logic (Dynamic Element Lookup)
         const radBar = document.getElementById('bar-rads');
         if(radBar) {
             const radPct = Math.min(100, (rads / maxHp) * 100);
             radBar.style.width = `${radPct}%`;
         }
 
-        // XP Bar
+        // XP Bar (Standard & Mobile)
         const nextXp = Game.expToNextLevel(Game.state.lvl);
         const expPct = Math.min(100, Math.floor((Game.state.xp / nextXp) * 100));
+        
         if(this.els.xpTxt) this.els.xpTxt.textContent = expPct;
         if(this.els.expBarTop) this.els.expBarTop.style.width = `${expPct}%`;
         
+        // [v2.4] Update Mobile Bar
+        if(this.els.expBarMobile) this.els.expBarMobile.style.width = `${expPct}%`;
+        
         if(this.els.caps) this.els.caps.textContent = `${Game.state.caps}`;
         
-        // Ammo Update
         if(this.els.ammo) {
             this.els.ammo.textContent = Game.state.ammo || 0;
         }
 
-        // [v0.9.3] Camp Button Visibility Logic
+        // Camp Button Visibility Logic
         const campBtn = document.getElementById('btn-enter-camp');
         if(campBtn) {
             const hasCampHere = Game.state.camp && 
@@ -85,7 +82,6 @@ Object.assign(UI, {
             else { this.els.btnChar.classList.remove('alert-glow-yellow'); }
         } 
         
-        // [v0.9.16] FIX: Safety check for missing quests array to prevent crash
         const questsList = Game.state.quests || [];
         const unreadQuests = questsList.some(q => !q.read);
         
@@ -98,7 +94,6 @@ Object.assign(UI, {
             else this.els.btnMenu.classList.remove('alert-glow-red');
         }
 
-        // DISABLE BUTTONS DURING COMBAT
         const inCombat = Game.state.view === 'combat';
         [this.els.btnWiki, this.els.btnMap, this.els.btnChar, this.els.btnQuests, this.els.btnSave, this.els.btnLogout, this.els.btnInv].forEach(btn => {
             if(btn) {
@@ -159,7 +154,6 @@ Object.assign(UI, {
                 </div>`;
             Game.state.view = name;
             
-            // FIX: Ensure Dialog state is cleared and focus is reset to Body
             if(Game.state) Game.state.inDialog = false;
             if(document.activeElement) document.activeElement.blur();
             
@@ -200,7 +194,6 @@ Object.assign(UI, {
                 this.toggleControls(false);
             }
             
-            // Render logic based on view
             if (name === 'char') this.renderChar();
             if (name === 'inventory') this.renderInventory();
             if (name === 'wiki') this.renderWiki();
