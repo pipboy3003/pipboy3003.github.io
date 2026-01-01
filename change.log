@@ -1,3 +1,10 @@
+[v2.8] - 2026-01-01 17:45pm (Sector & Header Update)
+- Sektor-Anzeige aus dem Header entfernt und als Overlay mittig auf die Karte (Map View) verschoben.
+- Header-Layout komplett getrennt für Mobile vs. Desktop.
+- Mobile: HP-Leiste direkt neben dem Namen positioniert, Level darunter für kompaktere Ansicht.
+- Desktop: Klassische Ansicht mit voller Info-Dichte (Name, Level, KK, Mun, HP, XP).
+- ui_render_core.js: Update-Logik erweitert, um Desktop- und Mobile-Elemente (Doppelung im DOM) synchron zu halten.
+
 [v2.7] - 2026-01-01 17:30pm (Mobile UI & Header Overhaul)
 - Responsive Header Design (Konzept A) implementiert
 - Desktop: Volle Info-Dichte (Name, Lvl, KK, Mun, HP-Balken, XP-Balken)
