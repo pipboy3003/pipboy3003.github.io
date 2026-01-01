@@ -1,4 +1,4 @@
-// [v2.8] - 2026-01-01 17:45pm (Sector & Header Update) - Sector moved to Map Overlay - Header Layout split for Mobile/Desktop
+// [v2.8a] - 2026-01-01 17:55pm (UI Polish) - Renamed HP to TP - Mobile Bar full width & with text
 Object.assign(UI, {
     
     // Updates HUD and Button States
@@ -12,16 +12,14 @@ Object.assign(UI, {
         // Global Level-Up Check
         const hasPoints = Game.state.statPoints > 0;
 
-        // 1. NAME UPDATE (Mobile & Desktop targets)
+        // 1. NAME UPDATE
         const displayName = Game.state.playerName || (typeof Network !== 'undefined' ? Network.myDisplayName : "SURVIVOR");
         
-        // Mobile ID
         if(this.els.name) {
             this.els.name.textContent = displayName;
             if(hasPoints) this.els.name.classList.add('lvl-ready-glow');
             else this.els.name.classList.remove('lvl-ready-glow');
         }
-        // Desktop Class Target (da ID unique sein muss, nutzen wir hier Klassen für Desktop Duplikate wenn nötig oder ID update)
         const dtName = document.querySelector('.desktop-name-target');
         if(dtName) dtName.textContent = displayName;
 
@@ -33,7 +31,7 @@ Object.assign(UI, {
         }
 
         // 3. LEVEL UPDATE
-        if(this.els.lvl) { // Mobile ID
+        if(this.els.lvl) { 
             this.els.lvl.textContent = Game.state.lvl;
             if(hasPoints) this.els.lvl.classList.add('lvl-ready-glow');
             else this.els.lvl.classList.remove('lvl-ready-glow');
@@ -41,26 +39,28 @@ Object.assign(UI, {
         const dtLvl = document.querySelector('.desktop-lvl-target');
         if(dtLvl) dtLvl.textContent = Game.state.lvl;
 
-        // 4. HP & RADS UPDATE
+        // 4. TP (HP) & RADS UPDATE
         const maxHp = Game.state.maxHp;
         const hp = Game.state.hp;
         const rads = Game.state.rads || 0;
         const hpPct = Math.max(0, (hp / maxHp) * 100);
         const radPct = Math.min(100, (rads / maxHp) * 100);
+        const hpText = `${Math.round(hp)}/${maxHp}`;
         
-        // Text Val
-        if(this.els.hp) this.els.hp.textContent = `${Math.round(hp)}/${maxHp}`;
-        
-        // Desktop Bars
+        // Desktop
+        if(this.els.hp) this.els.hp.textContent = hpText;
         if(this.els.hpBar) this.els.hpBar.style.width = `${hpPct}%`;
         const radBar = document.getElementById('bar-rads');
         if(radBar) radBar.style.width = `${radPct}%`;
 
-        // Mobile Bars (New IDs)
+        // Mobile Bars (Full Width)
         const mobHp = document.getElementById('bar-hp-mobile');
         const mobRad = document.getElementById('bar-rads-mobile');
+        const mobText = document.getElementById('val-hp-mobile-text');
+        
         if(mobHp) mobHp.style.width = `${hpPct}%`;
         if(mobRad) mobRad.style.width = `${radPct}%`;
+        if(mobText) mobText.textContent = hpText;
 
         // 5. XP UPDATE
         const nextXp = Game.expToNextLevel(Game.state.lvl);
@@ -153,7 +153,6 @@ Object.assign(UI, {
         const ver = verDisplay ? verDisplay.textContent.trim() : Date.now();
         
         if (name === 'map') {
-            // [v2.8] Added Sector Display Overlay here
             this.els.view.innerHTML = `
                 <div id="map-view" class="w-full h-full flex justify-center items-center bg-black relative">
                     <canvas id="game-canvas" class="w-full h-full object-contain" style="image-rendering: pixelated;"></canvas>
