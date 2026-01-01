@@ -1,14 +1,12 @@
 🐛 Aktuelle Bugs & Anpassungen:
 
-- LVL UP neben dem LVL soll entferntwerden. Dafür leuchten und pulsieren dann Name + Lvl selbst um zu zeigen das Punkte zum vergeben da sind. 
-
+- Anfangsvault (symbol und schrift) zu klein auf der Karte, muss größer und. schöner werden 
 
 Ideen für die Zukunft (Roadmap)
 1. mehr Ausrüstungs Variation  und mehr ausrüstungsplätze am Charakter. Arme, Hose, Schuhe, brustpanzer, helm etc. 
 2. Waffen Verbesserungen, Schalldämpfer, Fernrohr Zielen etc. 
 3. Radio-Stationen
-• Ein kleiner Tab "RADIO", der (lizenzfreie) Retro-Musik oder einfach atmosphärische Ödland-Geräusche abspielt.
-wurde umgesetzt, aber wohl nur optisch? Kein Radio & sonstige geräusche.
+• Ein kleiner Tab "RADIO", der (lizenzfreie) Retro-Musik, speicherplatz ist vorhanden auf github. 
 4. Item-Präfixe (Loot-Generierung)
 • Waffen nicht nur als "Pistole", sondern dynamisch generiert: "Rostige Pistole" (-Dmg), "Gehärtete Pistole" (+Dmg).
 
