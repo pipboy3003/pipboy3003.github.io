@@ -1,5 +1,4 @@
-// [v0.9.15] - 2025-12-31 15:15pm (Crash Fix) - Added safety check for invalid map rows in draw loop to prevent undefined property access.
-// [v2.9.1] - Map Tile Update (Vault Gear)
+// [v2.9.3] - 2026-01-02 18:55pm (Render Crash Fix) - Added safety check for missing currentMap
 // Canvas Rendering Logic
 Object.assign(Game, {
     renderStaticMap: function() { 
@@ -7,9 +6,13 @@ Object.assign(Game, {
         const ctx = this.cacheCtx; 
         ctx.fillStyle = "#000"; 
         ctx.fillRect(0, 0, this.cacheCanvas.width, this.cacheCanvas.height); 
+        
+        // Safety check for Static Render
+        if(!this.state.currentMap) return;
+
         for(let y=0; y<this.MAP_H; y++) {
             for(let x=0; x<this.MAP_W; x++) {
-                if(this.state.currentMap && this.state.currentMap[y]) {
+                if(this.state.currentMap[y]) {
                     this.drawTile(ctx, x, y, this.state.currentMap[y][x]); 
                 }
             }
@@ -18,6 +21,10 @@ Object.assign(Game, {
 
     draw: function() { 
         if(!this.ctx || !this.cacheCanvas) return; 
+        
+        // [CRASH FIX] Wenn keine Map da ist (z.B. beim Laden oder Netzwerk-Sync), brich ab!
+        if(!this.state.currentMap) return;
+
         const ctx = this.ctx; const cvs = ctx.canvas; 
         
         let targetCamX = (this.state.player.x * this.TILE) - (cvs.width / 2); 
@@ -57,6 +64,7 @@ Object.assign(Game, {
                         continue; 
                     }
 
+                    // [CRASH FIX] Prüfen ob die Zeile existiert, bevor wir darauf zugreifen
                     if(!this.state.currentMap[y]) continue; 
 
                     const t = this.state.currentMap[y][x]; 
@@ -151,7 +159,7 @@ Object.assign(Game, {
             case '=': ctx.strokeStyle = "#5d4037"; ctx.lineWidth = 2; ctx.moveTo(px, py+5); ctx.lineTo(px+ts, py+5); ctx.moveTo(px, py+25); ctx.lineTo(px+ts, py+25); ctx.stroke(); break;
             case 'U': ctx.fillStyle = "#000"; ctx.arc(px+ts/2, py+ts/2, ts/3, 0, Math.PI, true); ctx.fill(); break;
             
-            // [MOD] START VAULT TILE FIX
+            // [MOD] START VAULT TILE FIX (Included)
             case 'V': 
                 ctx.globalAlpha = pulse; 
                 ctx.fillStyle = "#444"; 
