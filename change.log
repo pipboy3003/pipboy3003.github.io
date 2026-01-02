@@ -1,3 +1,7 @@
+[v2.9.1] - 2026-01-02 17:50pm (Map Visuals Fix)
+- WORLDMAP: Vault-Icon auf 40px vergrößert und Schriftzug "VAULT 101" hinzugefügt.
+- RENDER: Lokales Vault-Tile (V) zu einem Zahnrad-Design mit großem "101" Text geändert.
+
 [v2.9] - 2026-01-02 17:35pm(Equipment Overhaul)
 - CORE: Neue Ausrüstungs-Slots hinzugefügt: Kopf, Arme, Beine, Füße.
 - ITEMS: Neue Items (Helme, Hosen, Stiefel, Armschienen) in die Datenbank eingepflegt.
