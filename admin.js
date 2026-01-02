@@ -1,4 +1,5 @@
 // [v2.8] - ADMIN DASHBOARD (With Ghost Protocol / Bulk Delete)
+// [v2.9.7] - Added Logout Function
 const Admin = {
     config: {
         apiKey: "AIzaSyCgSK4nJ3QOVMBd7m9RSmURflSRWN4ejBY",
@@ -17,7 +18,6 @@ const Admin = {
     currentData: null,
     adminEmail: "admin@pipboy-system.com",
     
-    // Speicher für gefundene Geister-Pfade
     ghostPaths: [],
 
     init: function() {
@@ -29,219 +29,136 @@ const Admin = {
         this.auth.onAuthStateChanged(user => {
             if (user && user.email === this.adminEmail) {
                 document.getElementById('login-overlay').style.display = 'none';
-                document.getElementById('dashboard').classList.remove('hidden');
+                document.getElementById('admin-panel').classList.remove('hidden');
+                document.getElementById('admin-panel').style.display = 'flex';
                 this.fetchUsers();
-            } else if (user) {
-                document.getElementById('login-msg').textContent = "ERROR: NOT AN ADMIN ACCOUNT.";
-                this.auth.signOut();
+            } else {
+                document.getElementById('login-overlay').style.display = 'flex';
+                document.getElementById('admin-panel').classList.add('hidden');
+                if(user) {
+                    document.getElementById('login-msg').textContent = "ACCESS DENIED. ADMINS ONLY.";
+                    this.auth.signOut();
+                }
             }
         });
     },
 
     login: function() {
-        const passVal = document.getElementById('admin-pass').value;
+        const email = document.getElementById('admin-email').value;
+        const pass = document.getElementById('admin-pass').value;
         const msg = document.getElementById('login-msg');
+        
         msg.textContent = "AUTHENTICATING...";
-        msg.className = "text-yellow-400 mt-2 animate-pulse";
-
-        if (!firebase.apps.length) this.init(); 
-
-        this.auth.signInWithEmailAndPassword(this.adminEmail, passVal)
-            .catch((error) => {
-                msg.textContent = "ACCESS DENIED.";
-                msg.className = "text-red-500 mt-2 font-bold blink-red";
+        
+        this.auth.signInWithEmailAndPassword(email, pass)
+            .catch(error => {
+                msg.textContent = "ERROR: " + error.message;
             });
     },
 
+    // [NEW] Logout Function
     logout: function() {
-        if(this.auth) this.auth.signOut();
-        location.reload();
+        this.auth.signOut().then(() => {
+            // UI reset wird durch onAuthStateChanged erledigt
+            document.getElementById('login-msg').textContent = "";
+            document.getElementById('admin-email').value = "";
+            document.getElementById('admin-pass').value = "";
+        });
     },
 
     fetchUsers: function() {
         const list = document.getElementById('user-list');
-        list.innerHTML = '<div class="animate-pulse text-yellow-400">>> SCANNING DATABASE...</div>';
-
-        this.db.ref('saves').once('value').then(snap => {
-            const data = snap.val();
+        list.innerHTML = '<div class="text-center animate-pulse">SCANNING DATABASE...</div>';
+        
+        this.db.ref('saves').once('value').then(snapshot => {
             list.innerHTML = '';
+            const data = snapshot.val();
+            if(!data) { list.innerHTML = "NO DATA FOUND."; return; }
 
-            if(!data) {
-                list.innerHTML = '<div class="text-gray-500">Datenbank leer.</div>';
-                return;
-            }
-
-            let count = 0;
-            for(let uid in data) {
-                const userSaves = data[uid]; 
-                for(let slotIdx in userSaves) {
-                    const save = userSaves[slotIdx];
-                    if(!save) continue;
-
-                    count++;
-                    const btn = document.createElement('div');
-                    btn.className = "border border-green-900 p-2 cursor-pointer hover:bg-green-900 transition-colors mb-1 bg-[#001100] group relative";
-                    
-                    const name = save.playerName || "Unbekannt";
-                    const lvl = save.lvl || 1;
-                    const email = save._userEmail ? `<span class="text-blue-300">${save._userEmail}</span>` : '<span class="text-red-500 italic">GHOST (No Email)</span>';
-                    const lastSeen = save._lastSeen ? new Date(save._lastSeen).toLocaleDateString() : "Unbekannt";
-
-                    btn.innerHTML = `
-                        <div class="flex justify-between items-center">
-                            <span class="font-bold text-yellow-400">${name}</span>
-                            <span class="text-xs text-gray-500 font-mono">${uid.substr(0,4)}...</span>
-                        </div>
-                        <div class="text-xs mb-1">${email}</div>
-                        <div class="text-xs text-green-300">Lvl ${lvl} | Slot ${parseInt(slotIdx)+1} | ${lastSeen}</div>
-                    `;
-                    
-                    btn.onclick = () => this.selectUser(uid, slotIdx, save);
-                    list.appendChild(btn);
-                }
-            }
-            if(count === 0) list.innerHTML = "Keine Savegames gefunden.";
-        });
-    },
-
-    // --- NEU: GHOST PROTOCOL ---
-    scanGhosts: function() {
-        const status = document.getElementById('ghost-status');
-        const btnPurge = document.getElementById('btn-purge');
-        
-        status.textContent = "SCANNING...";
-        this.ghostPaths = [];
-
-        this.db.ref('saves').once('value').then(snap => {
-            const data = snap.val();
-            if(!data) { status.textContent = "DB EMPTY."; return; }
-
-            for(let uid in data) {
+            // Iterate UIDs
+            Object.keys(data).forEach(uid => {
                 const userSaves = data[uid];
-                for(let slotIdx in userSaves) {
-                    const save = userSaves[slotIdx];
-                    // Das Kriterium: Hat KEINE E-Mail gespeichert
-                    if (!save._userEmail) {
-                        this.ghostPaths.push(`saves/${uid}/${slotIdx}`);
+                // Iterate Slots (0-4)
+                Object.keys(userSaves).forEach(slot => {
+                    const save = userSaves[slot];
+                    // Basic validation
+                    if(save && save.playerName) {
+                        this.renderUserItem(uid, slot, save, list);
                     }
-                }
-            }
-
-            if (this.ghostPaths.length > 0) {
-                status.innerHTML = `<span class="text-red-500 font-bold">${this.ghostPaths.length} GHOSTS FOUND.</span>`;
-                btnPurge.disabled = false;
-                btnPurge.classList.remove('opacity-50', 'cursor-not-allowed');
-                btnPurge.textContent = `PURGE ${this.ghostPaths.length} GHOSTS`;
-            } else {
-                status.innerHTML = `<span class="text-green-500">CLEAN. NO GHOSTS.</span>`;
-                btnPurge.disabled = true;
-            }
+                });
+            });
         });
     },
 
-    purgeGhosts: function() {
-        if(this.ghostPaths.length === 0) return;
-        
-        const confirmMsg = `ACHTUNG: Du bist dabei ${this.ghostPaths.length} Spielstände zu löschen, die keine E-Mail-Adresse hinterlegt haben.\n\nBist du sicher? (Tipp: Warte ein paar Tage nach dem Update, damit aktive Spieler speichern können!)`;
-        
-        if(!confirm(confirmMsg)) return;
-        if(!confirm("Wirklich sicher? Dies ist unwiderruflich!")) return;
-
-        const updates = {};
-        this.ghostPaths.forEach(path => {
-            updates[path] = null; // null löscht den Eintrag in Firebase
-        });
-
-        this.db.ref().update(updates)
-            .then(() => {
-                alert("SYSTEM PURGE COMPLETE. GHOSTS ELIMINATED.");
-                this.ghostPaths = [];
-                document.getElementById('btn-purge').disabled = true;
-                document.getElementById('ghost-status').textContent = "CLEANUP DONE.";
-                this.fetchUsers(); // Liste aktualisieren
-            })
-            .catch(e => alert("Purge Error: " + e.message));
+    renderUserItem: function(uid, slot, save, container) {
+        const div = document.createElement('div');
+        div.className = "border border-green-900 p-2 hover:bg-green-900/30 cursor-pointer transition-colors";
+        div.innerHTML = `
+            <div class="flex justify-between items-center">
+                <span class="font-bold text-yellow-400">${save.playerName}</span>
+                <span class="text-xs text-gray-500">Lvl ${save.lvl}</span>
+            </div>
+            <div class="text-xs font-mono text-green-700 truncate">${uid} [Slot ${slot}]</div>
+            <div class="text-[10px] text-gray-600">Last Seen: ${save.lastSeen ? new Date(save.lastSeen).toLocaleString() : 'N/A'}</div>
+            <div class="text-[10px] text-blue-400">Email: ${save.email || 'GHOST (No Email)'}</div>
+        `;
+        div.onclick = () => this.loadEditor(uid, slot, save);
+        container.appendChild(div);
     },
-    // ---------------------------
 
-    selectUser: function(uid, slot, data) {
+    loadEditor: function(uid, slot, save) {
         this.currentUid = uid;
         this.currentSlot = slot;
-        this.currentData = data;
+        this.currentData = save;
 
         document.getElementById('editor-placeholder').classList.add('hidden');
         document.getElementById('editor-area').classList.remove('hidden');
-        
-        const emailInfo = data._userEmail ? `[${data._userEmail}]` : '[GHOST DATA]';
-        document.getElementById('edit-title').innerHTML = `EDIT: <span class="text-white">${data.playerName}</span> <br><span class="text-xs text-blue-400">${emailInfo}</span>`;
 
-        const setVal = (id, val) => document.getElementById(id).value = val !== undefined ? val : 0;
-        setVal('inp-name', data.playerName || "Survivor");
-        setVal('inp-lvl', data.lvl);
-        setVal('inp-xp', data.xp);
-        setVal('inp-caps', data.caps);
-        setVal('inp-hp', data.hp);
-        setVal('inp-maxhp', data.maxHp);
-        setVal('inp-ammo', data.ammo);
-        setVal('inp-rads', data.rads);
-
-        this.renderInvPreview();
-    },
-
-    renderInvPreview: function() {
-        const div = document.getElementById('inv-preview');
-        if(!this.currentData.inventory || this.currentData.inventory.length === 0) {
-            div.innerHTML = '<span class="text-gray-600 italic">Rucksack leer.</span>';
-            return;
-        }
-        div.innerHTML = this.currentData.inventory.map((i) => {
-            let n = i.id;
-            if(window.GameData && window.GameData.items[i.id]) n = window.GameData.items[i.id].name;
-            if(i.props && i.props.name) n = i.props.name;
-            return `<div class="flex justify-between border-b border-gray-800 py-1"><span>${n}</span><span class="text-yellow-500 font-bold">x${i.count}</span></div>`;
-        }).join('');
+        document.getElementById('inp-name').value = save.playerName;
+        document.getElementById('inp-lvl').value = save.lvl;
+        document.getElementById('inp-caps').value = save.caps;
+        document.getElementById('inp-xp').value = save.xp;
+        document.getElementById('inp-hp').value = save.hp;
+        document.getElementById('inp-maxhp').value = save.maxHp;
+        document.getElementById('inp-ammo').value = save.ammo || 0;
+        document.getElementById('inp-rads').value = save.rads || 0;
     },
 
     populateItems: function() {
         const sel = document.getElementById('item-select');
-        if(typeof window.GameData === 'undefined' || !window.GameData.items) {
-            sel.innerHTML = '<option>Lade Items...</option>';
-            setTimeout(() => this.populateItems(), 500);
-            return;
-        }
-        sel.innerHTML = '';
+        if(!sel || typeof window.GameData === 'undefined') return;
+        
         const sorted = Object.keys(window.GameData.items).sort();
         sorted.forEach(key => {
             const item = window.GameData.items[key];
             const opt = document.createElement('option');
             opt.value = key;
-            opt.textContent = `${item.name} (${key})`;
+            opt.textContent = item.name;
             sel.appendChild(opt);
         });
     },
 
     addItem: function() {
         if(!this.currentData) return;
-        const itemId = document.getElementById('item-select').value;
+        const key = document.getElementById('item-select').value;
         const count = parseInt(document.getElementById('item-count').value) || 1;
+        if(!key) return;
+
         if(!this.currentData.inventory) this.currentData.inventory = [];
-        const existing = this.currentData.inventory.find(i => i.id === itemId && !i.props);
-        if(existing) { existing.count += count; } 
-        else { this.currentData.inventory.push({ id: itemId, count: count, isNew: true }); }
-        const btn = document.querySelector('button[onclick="Admin.addItem()"]');
-        const originalText = btn.textContent;
-        btn.textContent = "OK!";
-        btn.classList.add('bg-green-500', 'text-black');
-        setTimeout(() => { btn.textContent = originalText; btn.classList.remove('bg-green-500', 'text-black'); }, 1000);
-        this.renderInvPreview();
+        
+        // Simple Add (no stack logic for admin simplicity, just push)
+        this.currentData.inventory.push({ id: key, count: count });
+        alert(`${count}x ${key} hinzugefügt. (Speichern nicht vergessen!)`);
     },
 
     saveChanges: function() {
-        if(!this.currentUid || !this.currentData) return;
+        if(!this.currentUid || !this.currentSlot) return;
+        
+        // Read values back
         this.currentData.playerName = document.getElementById('inp-name').value;
         this.currentData.lvl = parseInt(document.getElementById('inp-lvl').value);
-        this.currentData.xp = parseInt(document.getElementById('inp-xp').value);
         this.currentData.caps = parseInt(document.getElementById('inp-caps').value);
+        this.currentData.xp = parseInt(document.getElementById('inp-xp').value);
         this.currentData.hp = parseInt(document.getElementById('inp-hp').value);
         this.currentData.maxHp = parseInt(document.getElementById('inp-maxhp').value);
         this.currentData.ammo = parseInt(document.getElementById('inp-ammo').value);
@@ -272,7 +189,62 @@ const Admin = {
                 this.fetchUsers();
             })
             .catch(e => alert("Fehler: " + e.message));
+    },
+
+    // --- GHOST PROTOCOL ---
+    scanGhosts: function() {
+        const status = document.getElementById('ghost-status');
+        status.textContent = "SCANNING...";
+        this.ghostPaths = [];
+
+        this.db.ref('saves').once('value').then(snapshot => {
+            const data = snapshot.val();
+            let ghostCount = 0;
+            let totalCount = 0;
+
+            if(data) {
+                Object.keys(data).forEach(uid => {
+                    const userSlots = data[uid];
+                    Object.keys(userSlots).forEach(slot => {
+                        totalCount++;
+                        const save = userSlots[slot];
+                        // CRITERIA: No Email attached to save object
+                        if (!save.email) {
+                            ghostCount++;
+                            this.ghostPaths.push(`saves/${uid}/${slot}`);
+                        }
+                    });
+                });
+            }
+
+            status.textContent = `FOUND: ${ghostCount} / ${totalCount}`;
+            const btnPurge = document.getElementById('btn-purge');
+            if(ghostCount > 0) {
+                btnPurge.disabled = false;
+                btnPurge.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnPurge.textContent = `2. PURGE (${ghostCount})`;
+            } else {
+                btnPurge.disabled = true;
+                btnPurge.textContent = "NO GHOSTS";
+            }
+        });
+    },
+
+    purgeGhosts: function() {
+        if(this.ghostPaths.length === 0) return;
+        if(!confirm(`⚠️ WARNING ⚠️\n\nDeleting ${this.ghostPaths.length} ghost records.\nThis cannot be undone.`)) return;
+
+        const updates = {};
+        this.ghostPaths.forEach(path => {
+            updates[path] = null; // Setting to null removes it in Firebase
+        });
+
+        this.db.ref().update(updates)
+            .then(() => {
+                alert("PURGE COMPLETE. DATABASE CLEAN.");
+                this.scanGhosts(); // Refresh
+                this.fetchUsers(); // Refresh list
+            })
+            .catch(e => alert("PURGE FAILED: " + e.message));
     }
 };
-
-document.addEventListener("DOMContentLoaded", () => { Admin.init(); });
