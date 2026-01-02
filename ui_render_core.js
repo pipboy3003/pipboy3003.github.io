@@ -1,4 +1,4 @@
-// [v2.8a] - 2026-01-01 17:55pm (UI Polish) - Renamed HP to TP - Mobile Bar full width & with text
+// [v2.9.9] - 2026-01-02 21:10pm (UI Navigation Update) - Sector Display with Map Logic
 Object.assign(UI, {
     
     // Updates HUD and Button States
@@ -7,6 +7,10 @@ Object.assign(UI, {
         
         // Lazy load dynamic elements
         if(!this.els.ammo) this.els.ammo = document.getElementById('val-ammo');
+        if(!this.els.caps) this.els.caps = document.getElementById('val-caps');
+        if(!this.els.hp) this.els.hp = document.getElementById('bar-hp');
+        if(!this.els.hpText) this.els.hpText = document.getElementById('val-hp-text');
+        
         const sectorDisplay = document.getElementById('val-sector-display');
         
         // Global Level-Up Check
@@ -27,7 +31,15 @@ Object.assign(UI, {
         if(sectorDisplay) {
             const sx = Game.state.sector ? Game.state.sector.x : 0;
             const sy = Game.state.sector ? Game.state.sector.y : 0;
-            sectorDisplay.textContent = `SEKTOR [${sx},${sy}]`;
+            
+            // Wenn wir auf der Weltkarte sind, zeigen wir "WELTKARTE", sonst Koordinaten
+            if(Game.state.view === 'worldmap' || Game.state.view === 'map') {
+                sectorDisplay.innerHTML = `<span class="text-yellow-400">🗺️ WELTKARTE</span>`;
+                sectorDisplay.classList.add('border-yellow-500'); 
+            } else {
+                sectorDisplay.innerHTML = `🗺️ SEKTOR [${sx},${sy}]`;
+                sectorDisplay.classList.remove('border-yellow-500');
+            }
         }
 
         // 3. LEVEL UPDATE
@@ -43,7 +55,7 @@ Object.assign(UI, {
         const maxHp = Game.state.maxHp;
         const hp = Game.state.hp;
         const rads = Game.state.rads || 0;
-        const hpPct = Math.max(0, (hp / maxHp) * 100);
+        const hpPct = Math.min(100, Math.max(0, (hp / maxHp) * 100));
         const radPct = Math.min(100, (rads / maxHp) * 100);
         const hpText = `${Math.round(hp)}/${maxHp}`;
         
@@ -58,7 +70,20 @@ Object.assign(UI, {
         const mobRad = document.getElementById('bar-rads-mobile');
         const mobText = document.getElementById('val-hp-mobile-text');
         
-        if(mobHp) mobHp.style.width = `${hpPct}%`;
+        // HP Bar Color Logic (Red < 25%, Yellow < 50%, Green > 50%)
+        let barColor = "bg-green-500";
+        if(hpPct < 25) barColor = "bg-red-500 animate-pulse";
+        else if(hpPct < 50) barColor = "bg-yellow-500";
+
+        if(this.els.hp) {
+             this.els.hp.className = `h-full transition-all duration-300 ${barColor}`;
+             this.els.hp.style.width = `${hpPct}%`;
+        }
+
+        if(mobHp) {
+            mobHp.className = `h-full transition-all duration-300 ${barColor}`;
+            mobHp.style.width = `${hpPct}%`;
+        }
         if(mobRad) mobRad.style.width = `${radPct}%`;
         if(mobText) mobText.textContent = hpText;
 
@@ -72,7 +97,10 @@ Object.assign(UI, {
         
         // Misc
         if(this.els.caps) this.els.caps.textContent = `${Game.state.caps}`;
-        if(this.els.ammo) this.els.ammo.textContent = Game.state.ammo || 0;
+        
+        // Ammo (Count inventory item)
+        const ammoItem = Game.state.inventory ? Game.state.inventory.find(i => i.id === 'ammo') : null;
+        if(this.els.ammo) this.els.ammo.textContent = ammoItem ? ammoItem.count : 0;
 
         // Camp Button Visibility Logic
         const campBtn = document.getElementById('btn-enter-camp');
@@ -117,8 +145,18 @@ Object.assign(UI, {
         
         // Buff Visuals
         if(this.els.lvl) {
-            if(Date.now() < Game.state.buffEndTime) this.els.lvl.classList.add('blink-red');
+            if(Game.state.buffEndTime && Date.now() < Game.state.buffEndTime) this.els.lvl.classList.add('blink-red');
             else this.els.lvl.classList.remove('blink-red');
+        }
+        
+        // 5. MOBILE PLAYER LIST HINT
+        if(typeof Network !== 'undefined' && Network.active) {
+            const count = Object.keys(Network.otherPlayers).length + 1; // + me
+            const onlineBadge = document.getElementById('online-badge');
+            if(onlineBadge) {
+                onlineBadge.innerHTML = `● ${count} ONLINE`;
+                onlineBadge.className = "absolute top-2 right-2 text-[10px] font-mono border border-green-900 bg-black/80 px-1 rounded " + (count > 1 ? "text-green-400" : "text-gray-600");
+            }
         }
     },
 
@@ -157,13 +195,11 @@ Object.assign(UI, {
                 <div id="map-view" class="w-full h-full flex justify-center items-center bg-black relative">
                     <canvas id="game-canvas" class="w-full h-full object-contain" style="image-rendering: pixelated;"></canvas>
                     
-                    <div id="val-sector-display" class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/80 border border-green-500 text-green-500 px-3 py-1 text-sm font-bold tracking-widest z-20 shadow-[0_0_10px_#39ff14] pointer-events-none rounded">
-                        SEKTOR [?,?]
+                    <div id="val-sector-display" 
+                         onclick="UI.switchView('worldmap')"
+                         class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/80 border border-green-500 text-green-500 px-3 py-1 text-sm font-bold tracking-widest z-20 shadow-[0_0_10px_#39ff14] cursor-pointer hover:text-yellow-400 hover:border-yellow-500 transition-all active:scale-95 group rounded">
+                        🗺️ SEKTOR [?,?]
                     </div>
-
-                    <button onclick="UI.switchView('worldmap')" class="absolute top-4 right-4 bg-black/80 border-2 border-green-500 text-green-500 p-2 rounded-full hover:bg-green-900 hover:text-white transition-all z-20 shadow-[0_0_15px_#39ff14] animate-pulse cursor-pointer" title="Weltkarte öffnen">
-                        <span class="text-2xl">🌍</span>
-                    </button>
 
                     <button id="btn-enter-camp" onclick="UI.switchView('camp')" class="absolute top-4 left-4 hidden bg-black/80 border-2 border-yellow-500 text-yellow-500 p-2 rounded-lg hover:bg-yellow-900 hover:text-white transition-all z-20 shadow-[0_0_15px_#ffd700] cursor-pointer flex flex-col items-center">
                         <span class="text-2xl">⛺</span>
