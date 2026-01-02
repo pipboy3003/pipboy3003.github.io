@@ -1,5 +1,7 @@
 🐛 Aktuelle Bugs & Anpassungen:
 - Nukleares Material nicht stapelbar?
+- Zelt hat immer noch kein Button zum gesammeltes Fleisch "verbraten", außerdem soll beim "übernachten" und regenerieren ein kleiner anteil an RAD dazukommen, man Übernachtet ja im freien.
+- Munition wird wiedermal nicht verbraucht? 10mm waffe aber andere Munition im Inventar? Für den Anfang verbrauchen mal alle Waffen bitte einfach nur "munition" symbol dafür bleibt die Patrone.
 - Inventar zu klein, bzw Dropprate zu hoch. Lass uns besser die Droprate bisschen Ruterschrauben, nicht jedes Tier ist verwertbar für Zeug. unter
 - name leuchtet ja beim Level up, lass das LVL direkt daneben mit leuchten. Beides soll anklickbar sein und einen in das "Charakter bzw Perk menü bringen" Menü bringen, je nachdem für was noch Punkte da sind. Standart, sofern beides Punkte hat zum verteilen sind die Stats.
 - Items müssen beim Händler verkauft werden können und verschrottet / weggeworfen werden können. Verkaufen beim Händler nur gegen begrenzte Kapazität an Kronkorken
