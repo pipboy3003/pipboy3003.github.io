@@ -1,4 +1,4 @@
-// [v2.9] - 2026-01-02 17:35pm (Equipment Overhaul) - Support for Head, Legs, Feet, Arms
+// [v2.9.2] - 2026-01-02 18:05pm (Stacking Fix) - Meat & Components now stack up to 20
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     WORLD_W: 10, WORLD_H: 10, 
@@ -157,6 +157,7 @@ window.Game = {
         }
     },
 
+    // [v2.2] Inventory Helper Functions
     getMaxSlots: function() {
         if(!this.state) return 10;
         let slots = 10; // Basis
@@ -178,8 +179,12 @@ window.Game = {
         if(itemId === 'caps') return 99999;
         const item = this.items[itemId];
         if(!item) return 1;
-        if(item.type === 'consumable' || item.type === 'junk') return 20;
+        
+        // [MOD] Stacking Logic Updated - Now includes components (Meat, etc.)
+        if(item.type === 'component') return 20; // Fleisch, Leder, Kleber, etc.
+        if(item.type === 'consumable' || item.type === 'junk') return 20; 
         if(item.type === 'ammo') return 100;
+        
         return 1;
     },
     
@@ -209,7 +214,6 @@ window.Game = {
 
             if (saveData) {
                 this.state = saveData;
-                // Defaults for updates
                 if(!this.state.explored) this.state.explored = {};
                 if(!this.state.view) this.state.view = 'map';
                 if(!this.state.radio) this.state.radio = { on: false, station: 0, trackIndex: 0 };
@@ -222,7 +226,7 @@ window.Game = {
                 if(!this.state.perks) this.state.perks = [];
                 if(!this.state.shop) this.state.shop = { nextRestock: 0, stock: {} };
                 
-                // [v2.9] Ensure New Slots exist in savegame
+                // Ensure Slots exist
                 if(!this.state.equip.back) this.state.equip.back = null;
                 if(!this.state.equip.head) this.state.equip.head = null;
                 if(!this.state.equip.legs) this.state.equip.legs = null;
@@ -252,7 +256,6 @@ window.Game = {
                     worldPOIs: defaultPOIs,
                     player: {x: 20, y: 20, rot: 0},
                     stats: { STR: 5, PER: 5, END: 5, INT: 5, AGI: 5, LUC: 5 }, 
-                    // [v2.9] Expanded Equipment
                     equip: { 
                         weapon: this.items.fists, 
                         body: this.items.vault_suit, 
@@ -321,7 +324,6 @@ window.Game = {
         if(!this.state) return 5;
         let val = this.state.stats[key] || 5;
         
-        // [v2.9] Iterate over ALL equipment slots for stats
         const slots = ['weapon', 'body', 'head', 'legs', 'feet', 'arms', 'back'];
         slots.forEach(slot => {
             const item = this.state.equip[slot];
