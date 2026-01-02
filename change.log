@@ -1,3 +1,7 @@
+[v2.9.3] - 2026-01-02 18:55pm (Render Crash Fix)
+- RENDER: Sicherheitsabfrage 'if(!this.state.currentMap) return;' zur draw() Funktion hinzugefügt.
+- RENDER: Verhindert Absturz, wenn Netzwerk-Events feuern, bevor die Map geladen ist.
+
 [v2.9.2] - 2026-01-02 18:05pm (Inventory Stacking Fix)
 - CORE: Stacking für Items vom Typ 'component' (Fleisch, Leder, Federn etc.) aktiviert (Limit: 20).
 - CORE: Stacking-Limit für 'junk' und 'consumable' bestätigt auf 20.
