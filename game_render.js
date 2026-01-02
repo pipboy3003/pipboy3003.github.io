@@ -1,4 +1,4 @@
-// [v2.9.4] - 2026-01-02 19:15pm (Visual Swap Update) - Vault Tile using Emoji & Label
+// [v2.9.8] - 2026-01-02 20:50pm (Visual Fix) - Vault Tile Static (No Pulse)
 // Canvas Rendering Logic
 Object.assign(Game, {
     renderStaticMap: function() { 
@@ -154,9 +154,9 @@ Object.assign(Game, {
             case '=': ctx.strokeStyle = "#5d4037"; ctx.lineWidth = 2; ctx.moveTo(px, py+5); ctx.lineTo(px+ts, py+5); ctx.moveTo(px, py+25); ctx.lineTo(px+ts, py+25); ctx.stroke(); break;
             case 'U': ctx.fillStyle = "#000"; ctx.arc(px+ts/2, py+ts/2, ts/3, 0, Math.PI, true); ctx.fill(); break;
             
-            // [MOD] REPLACED WITH EMOJI STYLE (LIKE WORLD MAP)
+            // [MOD] FIXED VAULT TILE (Emoji + Label, No Pulse)
             case 'V': 
-                ctx.globalAlpha = pulse; 
+                ctx.globalAlpha = 1; // STATIC OPACITY (No Pulse)
                 ctx.shadowBlur = 10;
                 ctx.shadowColor = "#ffff00";
                 
@@ -164,7 +164,7 @@ Object.assign(Game, {
                 ctx.fillStyle = "#ffff00"; 
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
-                ctx.font = "35px monospace"; // Groß, überragt das Tile leicht
+                ctx.font = "35px monospace"; 
                 ctx.fillText("⚙️", px + ts/2, py + ts/2);
                 
                 // Text Label (Below)
