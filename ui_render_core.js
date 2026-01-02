@@ -1,4 +1,4 @@
-// [v2.9.9] - 2026-01-02 21:10pm (UI Navigation Update) - Sector Display with Map Logic
+// [v3.0] - 2026-01-03 00:15am (UI & Map Link) - Sector Display with Map Logic
 Object.assign(UI, {
     
     // Updates HUD and Button States
@@ -32,14 +32,12 @@ Object.assign(UI, {
             const sx = Game.state.sector ? Game.state.sector.x : 0;
             const sy = Game.state.sector ? Game.state.sector.y : 0;
             
-            // Wenn wir auf der Weltkarte sind, zeigen wir "WELTKARTE", sonst Koordinaten
-            if(Game.state.view === 'worldmap' || Game.state.view === 'map') {
-                sectorDisplay.innerHTML = `<span class="text-yellow-400">🗺️ WELTKARTE</span>`;
-                sectorDisplay.classList.add('border-yellow-500'); 
-            } else {
-                sectorDisplay.innerHTML = `🗺️ SEKTOR [${sx},${sy}]`;
-                sectorDisplay.classList.remove('border-yellow-500');
-            }
+            // [v3.0] Update: Weltkugel Icon & Sektor-Koordinaten statt "WELTKARTE" Text
+            // Der Button ist durch 'switchView' bereits mit onclick="UI.switchView('worldmap')" verknüpft.
+            sectorDisplay.innerHTML = `🌍 SEKTOR [${sx},${sy}]`;
+            
+            // Wir entfernen die harte gelbe Umrandung, die vorher aktiv war, damit der CSS-Hover-Effekt (Grün -> Gelb) besser wirkt.
+            sectorDisplay.classList.remove('border-yellow-500');
         }
 
         // 3. LEVEL UPDATE
@@ -198,7 +196,7 @@ Object.assign(UI, {
                     <div id="val-sector-display" 
                          onclick="UI.switchView('worldmap')"
                          class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/80 border border-green-500 text-green-500 px-3 py-1 text-sm font-bold tracking-widest z-20 shadow-[0_0_10px_#39ff14] cursor-pointer hover:text-yellow-400 hover:border-yellow-500 transition-all active:scale-95 group rounded">
-                        🗺️ SEKTOR [?,?]
+                        🌍 SEKTOR [?,?]
                     </div>
 
                     <button id="btn-enter-camp" onclick="UI.switchView('camp')" class="absolute top-4 left-4 hidden bg-black/80 border-2 border-yellow-500 text-yellow-500 p-2 rounded-lg hover:bg-yellow-900 hover:text-white transition-all z-20 shadow-[0_0_15px_#ffd700] cursor-pointer flex flex-col items-center">
