@@ -1,6 +1,5 @@
-// [v3.0] - 2026-01-03 01:00am (Quest Overlay Update)
-// - Entfernt: Text-Logs für abgeschlossene Quests.
-// - Neu: Aufruf von UI.showQuestComplete für HUD-Benachrichtigung.
+// [v3.0.1] - 2026-01-03 02:00am (Logout Crash Fix)
+// - Fix: performSave checkt nun auf null state.
 
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
@@ -316,7 +315,6 @@ window.Game = {
         }
     },
 
-    // [MOD] Performance Optimized Save Function
     saveGame: function(force = false) {
         // Mark as dirty (needs saving)
         this.isDirty = true;
@@ -343,6 +341,9 @@ window.Game = {
         }
 
         if(!this.isDirty) return;
+        
+        // [v3.0.1] Safety check: If state is already null (after logout), do nothing
+        if(!this.state) return;
 
         if(typeof Network !== 'undefined') { 
             Network.save(this.state); 
@@ -350,8 +351,6 @@ window.Game = {
         }
         try { 
             localStorage.setItem('pipboy_save', JSON.stringify(this.state)); 
-            // Optional: Small debug log to see when it saves
-            // console.log("Saved.");
         } catch(e){}
         
         this.isDirty = false;
@@ -448,14 +447,10 @@ window.Game = {
         const q = this.state.activeQuests[index];
         const def = this.questDefs.find(d => d.id === q.id);
         if(def) {
-            // [v3.0] REMOVED LOGS, ADDED HUD CALL
-            // UI.log(`QUEST ERFÜLLT: ${def.title}!`, "text-yellow-400 font-bold animate-bounce text-lg");
-            
             if(def.reward) {
                 if(def.reward.xp) this.gainExp(def.reward.xp);
                 if(def.reward.caps) {
                     this.state.caps += def.reward.caps;
-                    // UI.log(`Belohnung: ${def.reward.caps} Kronkorken`, "text-yellow-200");
                 }
                 if(def.reward.items) {
                     def.reward.items.forEach(item => {
