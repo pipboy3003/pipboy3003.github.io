@@ -1,4 +1,5 @@
 // [v2.2] - Modularized World Views (Map, Camp, Radio)
+// [v2.9.1] - Vault Icon Update (Bigger & Label)
 Object.assign(UI, {
 
     renderWorldMap: function() {
@@ -71,15 +72,37 @@ Object.assign(UI, {
                 if (fixedPOI) {
                     let icon = "❓";
                     let color = "#fff";
+                    let fontSize = "20px";
+                    let label = null;
+
                     if(fixedPOI.type === 'C') { icon = "🏙️"; color = "#00ffff"; }
-                    else if(fixedPOI.type === 'V') { icon = "⚙️"; color = "#ffff00"; }
+                    else if(fixedPOI.type === 'V') { 
+                        icon = "⚙️"; 
+                        color = "#ffff00"; 
+                        fontSize = "40px"; // [MOD] Größer
+                        label = "VAULT 101"; // [MOD] Label
+                    }
                     else if(fixedPOI.type === 'M') { icon = "🏰"; color = "#ff5555"; }
                     else if(fixedPOI.type === 'R') { icon = "☠️"; color = "#ffaa00"; }
                     else if(fixedPOI.type === 'T') { icon = "📡"; color = "#55ff55"; }
                     
                     if(isVisited) {
+                        ctx.font = `bold ${fontSize} monospace`;
+                        ctx.shadowBlur = 10;
+                        ctx.shadowColor = color;
                         ctx.fillStyle = color;
                         ctx.fillText(icon, cx, cy);
+                        ctx.shadowBlur = 0;
+                        
+                        // [MOD] Draw Label
+                        if(label) {
+                            ctx.font = "bold 10px monospace";
+                            ctx.fillStyle = "#ffffff";
+                            ctx.shadowColor = "#000";
+                            ctx.shadowBlur = 4;
+                            ctx.fillText(label, cx, cy + TILE_H/2 - 5);
+                            ctx.shadowBlur = 0;
+                        }
                     } else {
                         ctx.globalAlpha = 0.5;
                         ctx.shadowBlur = 10;
@@ -210,7 +233,6 @@ Object.assign(UI, {
 
         if(restBtn) restBtn.onclick = () => Game.restInCamp();
         
-        // Cooking Button Logic
         if(!cookBtn) {
             const actionsDiv = document.querySelector('#view-container .grid');
             if(actionsDiv && !document.getElementById('btn-camp-cook')) {
