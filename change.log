@@ -1,3 +1,6 @@
+[v2.9.8] - 2026-01-02 20:50pm (Visual Fix)
+- RENDER: Vault-Tile (V) auf der Spielkarte pulsiert nicht mehr (statische Deckkraft).
+
 [v2.9.6] - 2026-01-02 20:10pm (Interaction & Camp UX)
 - UI: Inventar-Klicks sind jetzt kontext-sensitiv. Schrott & Ammo zeigen nur Info-Text, benutzbare Items öffnen das Menü.
 - UI: Camp-Menü komplett überarbeitet. "Kochen", "Schlafen", "Upgrade" und "Abbauen" sind jetzt feste, große Buttons.
