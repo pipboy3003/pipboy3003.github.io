@@ -1,3 +1,8 @@
+[v2.9.5] - 2026-01-02 19:45pm (Performance Update)
+- CORE: "Debounced Saving" implementiert. Das Spiel speichert nun asynchron alle 2 Sekunden bei Änderungen, statt bei jedem Schritt zu blockieren.
+- CORE: 'forceSave' hinzugefügt für kritische Momente (Levelwechsel, Laden).
+- CORE: Sicherheits-Listener hinzugefügt, der beim Schließen des Tabs sofort speichert.
+
 [v2.9.4] - 2026-01-02 19:15pm (Visual Swap Update)
 - WORLDMAP: Vault-Icon verkleinert (von 40px auf 25px), damit es nicht mehr so dominant ist.
 - RENDER: Lokales Vault-Tile komplett geändert. Es nutzt jetzt das "⚙️" Emoji (groß) und den Schriftzug "VAULT 101", genau wie vorher die Weltkarte.
