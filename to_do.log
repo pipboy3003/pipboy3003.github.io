@@ -9,10 +9,8 @@
 - UI Header überabeiten. Speicherbutton komplett entfernen. Menü Schrift ersetzen durch Burger Menü zeichen. LVL direkt unter den Namen. XP anzeige kompletter Balken von links nach rechts über Spielfeld & Log (also komplette breite ausnutzten)
 Kronkorken & Mun direkt untereinander. Den freien Bereich rechts davon bis zum Menü Button wird als HP Anzeige benutzt, komplett volle höhe und Breite Dynamisch für jedes Gerät.
 Bei Fragen, frag!
-
-
-- Erfüllte Quests sollen auf dem Bildschirm kurz eingeblendet werden, also aus dem Log raus. als kleines Feld für ein paar sekunden eingeblendet werden, oben unter dem Sektor auf der Spielekarte, dann wieder Verschwinden. 
-Kein Bounce effekt oder sonst was. Geld als Schriftfarbe is super, größe passt auch so wie im Log. Log bleibt dann in dem Fall leer von quest beenden nachrichten.
+- Quest erfüllt Fenster komplett mittig einblenden
+- Trefferanzeigen  nicht immer auf der selben stelle einblenden
 
 
 Ideen für die Zukunft (Roadmap)
