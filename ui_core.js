@@ -1,4 +1,5 @@
-// [v0.9.7] - Fix: Loading Loop & Syntax Check
+// [v3.0.1] - 2026-01-03 02:00am (Logout Crash Fix)
+// - Fix: Logout Reihenfolge korrigiert (Save -> Clear State -> Disconnect).
 const UI = {
     els: {},
     timerInterval: null,
@@ -66,13 +67,11 @@ const UI = {
         const s = (diff % 60).toString().padStart(2,'0');
         if(this.els.timer) this.els.timer.textContent = `${h}:${m}:${s}`;
         
-        // Dynamic Updates (HP, XP, Combat State) from ui_render.js
         if(this.update) this.update();
     },
 
     // Initialization
     init: function() {
-        // Map DOM Elements
         this.els = {
             touchArea: document.getElementById('main-content'),
             view: document.getElementById('view-container'),
@@ -183,14 +182,19 @@ const UI = {
         if(typeof Network !== 'undefined') Network.startPresence();
     },
 
+    // [v3.0.1] LOGOUT FIX
     logout: function(msg) {
         this.loginBusy = false;
-        this.selectedSlot = -1; // [v0.9.7] Reset selection on logout
-        if(typeof Network !== 'undefined') Network.disconnect();
+        this.selectedSlot = -1; 
+        
+        // 1. Erst Speichern (Force Save), solange Verbindung da ist
         if(Game.state) {
-            Game.saveGame();
+            Game.saveGame(true); 
             Game.state = null;
         }
+
+        // 2. Dann trennen
+        if(typeof Network !== 'undefined') Network.disconnect();
         
         this.els.gameScreen.classList.add('hidden');
         this.els.loginScreen.style.display = 'flex';
@@ -224,7 +228,7 @@ const UI = {
                 saves = await Network.login(email, pass);
             }
             
-            this.selectedSlot = -1; // [v0.9.7] Reset selection BEFORE rendering list
+            this.selectedSlot = -1; 
             if(this.renderCharacterSelection) this.renderCharacterSelection(saves || {});
             
         } catch(e) {
@@ -274,9 +278,7 @@ const UI = {
         }
     },
     
-    // [v0.9.7] Tap-to-Load Logic Fixed
     selectSlot: function(index) {
-        // If clicking the ALREADY selected slot -> Load Game immediately
         if(this.selectedSlot === index) {
             this.triggerCharSlot();
             return;
@@ -294,21 +296,15 @@ const UI = {
         const save = this.currentSaves ? this.currentSaves[index] : null;
         if (this.els.btnCharSelectAction) {
             if (save) {
-                // HIDE the load button (user wants to tap)
                 this.els.btnCharSelectAction.style.display = 'none';
-                
-                // Enable Delete for selected slot
                 if(this.els.btnCharDeleteAction) {
                     this.els.btnCharDeleteAction.disabled = false;
                     this.els.btnCharDeleteAction.classList.remove('opacity-50', 'cursor-not-allowed');
                 }
             } else {
-                // SHOW Create button for empty slots
                 this.els.btnCharSelectAction.style.display = 'block';
                 this.els.btnCharSelectAction.textContent = "CHARAKTER ERSTELLEN";
                 this.els.btnCharSelectAction.className = "action-button w-full border-yellow-400 text-yellow-400 font-bold py-3 mb-2";
-                
-                // Disable Delete for empty slot
                 if(this.els.btnCharDeleteAction) {
                     this.els.btnCharDeleteAction.disabled = true;
                     this.els.btnCharDeleteAction.classList.add('opacity-50', 'cursor-not-allowed');
