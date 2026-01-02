@@ -1,4 +1,4 @@
-// [v2.9] - 2026-01-02 17:35pm (UI Update) - Dynamic Equipment List Rendering for New Slots
+// [v2.9.6] - 2026-01-02 20:10pm (Smart Interactions)
 Object.assign(UI, {
 
     renderInventory: function() {
@@ -23,7 +23,6 @@ Object.assign(UI, {
             }
         }
         
-        // Icons Mapping - Added new types
         const getIcon = (type) => {
             switch(type) {
                 case 'weapon': return '🔫';
@@ -35,6 +34,7 @@ Object.assign(UI, {
                 case 'back': return '🎒'; 
                 case 'consumable': return '💉';
                 case 'junk': return '⚙️';
+                case 'component': return '🔩';
                 case 'ammo': return '🧨';
                 case 'blueprint': return '📜'; 
                 case 'tool': return '⛺';
@@ -42,7 +42,6 @@ Object.assign(UI, {
             }
         };
 
-        // Render Grid
         Game.state.inventory.forEach((entry, index) => {
             if(entry.count <= 0) return;
             const item = Game.items[entry.id];
@@ -84,7 +83,6 @@ Object.assign(UI, {
             let isEquipped = false;
             let label = "AUSGERÜSTET";
             
-            // Check all slots
             for(let key in Game.state.equip) {
                 if(Game.state.equip[key] && Game.state.equip[key].name === displayName) isEquipped = true;
             }
@@ -98,7 +96,20 @@ Object.assign(UI, {
                 btn.style.borderColor = "#39ff14"; 
             }
             
-            btn.onclick = () => { UI.showItemConfirm(index); };
+            // [MOD] Smarter Click Logic
+            btn.onclick = () => { 
+                // Items die man nicht "benutzen" oder "ausrüsten" kann, zeigen nur Info
+                const nonInteractive = ['junk', 'component', 'misc', 'ammo', 'rare'];
+                
+                if(nonInteractive.includes(item.type)) {
+                    UI.log(`INFO: ${displayName}`, "text-cyan-400 font-bold");
+                    UI.log(`${item.desc}`, "text-gray-400 italic text-sm");
+                } else {
+                    // Alles andere (Waffen, Essen, Blueprints, Tools) öffnet das Menü
+                    UI.showItemConfirm(index); 
+                }
+            };
+            
             list.appendChild(btn);
         });
         
@@ -110,7 +121,6 @@ Object.assign(UI, {
         const perksContainer = document.getElementById('perk-container');
         if(!grid) return; 
 
-        // 1. Header Info (Level, EXP)
         const lvlDisplay = document.getElementById('char-lvl');
         if(lvlDisplay) lvlDisplay.textContent = Game.state.lvl;
 
@@ -125,7 +135,6 @@ Object.assign(UI, {
         if(elNext) elNext.textContent = nextXp;
         if(elBar) elBar.style.width = `${expPct}%`;
 
-        // Points Display
         const pts = Game.state.statPoints || 0;
         const ptsEl = document.getElementById('char-points');
         if(ptsEl) {
@@ -133,25 +142,20 @@ Object.assign(UI, {
             else ptsEl.textContent = pts;
         }
         
-        // 2. [NEW] Dynamic Equipment Rendering
-        // Wir suchen den Container wo bisher die Stats waren und bauen ihn neu auf.
-        // Das ist robuster als einzelne IDs zu suchen.
         const charView = document.getElementById('view-char');
         let equipContainer = document.getElementById('dynamic-equip-list');
         
         if(!equipContainer) {
-            // Find existing static container and replace/hide it or create new one
-            // We'll search for 'equip-weapon-name' parent parent to find the box
             const oldRef = document.getElementById('equip-weapon-name');
             if(oldRef) {
-                const oldContainer = oldRef.parentElement.parentElement.parentElement; // box -> div -> name
+                const oldContainer = oldRef.parentElement.parentElement.parentElement; 
                 oldContainer.innerHTML = '<div id="dynamic-equip-list" class="flex flex-col gap-2"></div>';
                 equipContainer = document.getElementById('dynamic-equip-list');
             }
         }
 
         if(equipContainer) {
-            equipContainer.innerHTML = ''; // Clear old list
+            equipContainer.innerHTML = ''; 
             
             const slotConfig = [
                 { key: 'weapon', label: 'WAFFE', icon: '🔫' },
@@ -167,15 +171,12 @@ Object.assign(UI, {
                 const item = Game.state.equip[slot.key];
                 const isEmpty = !item || (slot.key === 'back' && !item.props) || (slot.key !== 'back' && (!item.name || item.name === 'Fäuste' || item.name === 'Vault-Anzug' || item.name === 'Kein Rucksack'));
                 
-                // Determine Name & Stats
                 let name = "---";
                 let statsText = "";
                 let canUnequip = false;
 
                 if(item) {
                     name = item.props ? item.props.name : item.name;
-                    
-                    // Stats String Building
                     if(slot.key === 'weapon') {
                         let dmg = item.baseDmg || 0;
                         if(item.props && item.props.dmgMult) dmg = Math.floor(dmg * item.props.dmgMult);
@@ -183,21 +184,17 @@ Object.assign(UI, {
                     } else if (slot.key === 'back') {
                         if(item.props && item.props.slots) statsText = `+${item.props.slots} Slots`;
                     } else {
-                        // Armor
                         let bonus = item.bonus || (item.props ? item.props.bonus : {});
                         if(bonus) {
                              statsText = Object.entries(bonus).map(([k,v]) => `${k}:${v}`).join(' ');
                         }
                     }
-                    
-                    // Check if default item (cannot unequip defaults)
                     if(item.name !== 'Fäuste' && item.name !== 'Vault-Anzug' && item.name !== 'Kein Rucksack') {
                         canUnequip = true;
                     }
                 }
 
                 if(isEmpty) {
-                    // Show empty slot placeholder
                     if(slot.key === 'weapon') name = "Fäuste (2 DMG)";
                     if(slot.key === 'body') name = "Vault-Anzug";
                 }
@@ -218,7 +215,7 @@ Object.assign(UI, {
                     const btn = document.createElement('button');
                     btn.innerHTML = "×";
                     btn.className = "absolute right-0 top-0 text-red-500 hover:text-white px-2 font-bold";
-                    btn.style.position = "relative"; // Fix positioning
+                    btn.style.position = "relative"; 
                     btn.style.marginLeft = "10px";
                     btn.onclick = (e) => { e.stopPropagation(); Game.unequipItem(slot.key); };
                     div.querySelector('.flex').appendChild(btn);
@@ -228,7 +225,6 @@ Object.assign(UI, {
             });
         }
 
-        // Perks & Tabs
         const perkPoints = Game.state.perkPoints || 0;
         const perkBtn = document.getElementById('btn-show-perks');
         if(perkBtn) {
@@ -279,7 +275,7 @@ Object.assign(UI, {
                 const canAfford = points > 0 && !hasPerk;
                 let btnHtml = '';
                 if(hasPerk) btnHtml = '<span class="text-green-500 font-bold border border-green-500 px-2 py-1 text-xs">GELERNT</span>';
-                else if(canAfford) btnHtml = `<button class="action-button text-xs px-2 py-1" onclick="Game.choosePerk('${p.id}')">LERNEN</button>`;
+                else if(canAfford) btnHtml = `<button class="action-button text-xs px-2 py-1" onclick=\"Game.choosePerk('${p.id}')\">LERNEN</button>`;
                 else btnHtml = '<span class="text-gray-600 text-xs">---</span>';
 
                 const div = document.createElement('div');
@@ -287,9 +283,9 @@ Object.assign(UI, {
                 div.innerHTML = `
                     <div class="flex items-center gap-3">
                         <span class="text-2xl">${p.icon}</span>
-                        <div class="flex flex-col">
-                            <span class="font-bold ${hasPerk ? 'text-green-300' : 'text-white'}">${p.name}</span>
-                            <span class="text-xs text-green-500">${p.desc}</span>
+                        <div class=\"flex flex-col\">
+                            <span class=\"font-bold ${hasPerk ? 'text-green-300' : 'text-white'}\">${p.name}</span>
+                            <span class=\"text-xs text-green-500\">${p.desc}</span>
                         </div>
                     </div>
                     <div>${btnHtml}</div>
