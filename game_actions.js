@@ -1,11 +1,10 @@
-// [v3.2] - 2026-01-03 02:45am (Shop Quantity Logic)
-// - Feature: buyItem & sellItem now support 'amount' (1, 5, 'max').
-// - Logic: Auto-calculation for max amounts based on budget/stock.
+// [v3.3a] - 2026-01-03 04:30am (Survival Update & Full Restore)
+// - Balance: Sleeping outside ('rest') now adds +10 Radiation.
+// - Logic: buyItem/sellItem supports quantities.
+// - System: Full code integrity check.
 
 Object.assign(Game, {
     
-    // ... (Andere Funktionen wie addRadiation, rest, heal bleiben unverändert) ...
-
     addRadiation: function(amount) {
         if(!this.state) return;
         if(typeof this.state.rads === 'undefined') this.state.rads = 0;
@@ -23,6 +22,11 @@ Object.assign(Game, {
 
     rest: function() { 
         if(!this.state) return;
+        
+        // [v3.3a] Penalty for sleeping on the ground
+        this.addRadiation(10);
+        UI.log("Ungeschützt geschlafen: +10 RADS", "text-red-500 font-bold");
+
         const effectiveMax = this.state.maxHp - (this.state.rads || 0);
         this.state.hp = effectiveMax; 
         UI.log("Ausgeruht. HP voll (soweit möglich).", "text-blue-400"); 
@@ -199,17 +203,7 @@ Object.assign(Game, {
         this.state.shop.merchantCaps -= totalEarned;
         
         // Remove Item logic
-        if(this.removeFromInventory(item.id, amount)) {
-             // removeFromInventory handles splicing if count reaches 0
-             // But it searches by ID, which might be risky if we have multiple stacks (though game logic tries to stack).
-             // To be safe with `invIndex`, we should probably manipulate array directly, 
-             // BUT `removeFromInventory` is safer for globals like Ammo Sync.
-             // Let's trust `removeFromInventory` or implement index specific logic.
-             // Since `invIndex` was passed, let's use direct modification for precision.
-             // WAIT: item ref `item` is from `this.state.inventory[invIndex]`.
-        }
         // Actually, let's do direct for the specific index to avoid removing from wrong stack
-        // Revert the `removeFromInventory` call above and do it manually:
         
         item.count -= amount;
         if(item.count <= 0) {
@@ -526,11 +520,6 @@ Object.assign(Game, {
         }
     },
 
-    // ... (restliche Funktionen startCombat, gamble, upgradeStat etc. bleiben) ...
-    // Ich füge sie hier der Vollständigkeit halber als Platzhalter ein, wenn du sie kopieren willst, 
-    // nimm den Code von vorher, da sich hier nichts geändert hat. 
-    // Aber damit du EINE Datei Copy&Pasten kannst, hier der Rest:
-    
     startCombat: function() { 
         let pool = []; 
         let lvl = this.state.lvl; 
