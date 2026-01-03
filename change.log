@@ -1,3 +1,11 @@
+[v3.4a] - 2026-01-03 (UI Polish & Logic Update)
+- UI: "HP" in "TP" umbenannt.
+- TP-Anzeige: Nutzt nun die volle Höhe der Leiste für bessere Lesbarkeit.
+- TP-Werte: Zeigt nun "Aktuell / Effektiv-Max" (Maximalwert abzüglich RAD-Strafe).
+- Burger-Menü: Button ist nun quadratisch (1:1) und das Icon exakt zentriert.
+- Header-Logik: Name/Level leuchtet nun auch bei verfügbaren Perk-Punkten.
+- Interaktion: Klick auf Header prüft Priorität: Stat-Punkte -> Stats Tab, Perk-Punkte -> Perks Tab (Vorbereitung).
+
 [v3.4] - 2026-01-03 (UI & Header Overhaul)
 - Header Layout komplett umgebaut: Speicher-Button entfernt.
 - Navigation: "MENÜ" Text zu Burger-Icon (☰) geändert.
