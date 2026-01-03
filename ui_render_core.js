@@ -1,30 +1,25 @@
-// [v3.6b] - 2026-01-03 (UI Routing Fix)
+// [v3.7] - 2026-01-03 07:00am (Fix: Camp Routing Priority)
+// - FIX: 'switchView' fängt 'camp' nun ganz oben ab.
+// - UI: Camp-Menü öffnet sich zuverlässig, auch wenn 'camp.html' gelöscht wurde.
+
 Object.assign(UI, {
     
-    // Updates HUD and Button States
     update: function() {
         if (!Game.state) return;
         
-        // Lazy load dynamic elements
+        // Lazy load
         if(!this.els.ammo) this.els.ammo = document.getElementById('val-ammo');
         if(!this.els.caps) this.els.caps = document.getElementById('val-caps');
         if(!this.els.hp) this.els.hp = document.getElementById('bar-hp');
-        if(!this.els.hpText) this.els.hpText = document.getElementById('val-hp-text');
         if(!this.els.headerCharInfo) this.els.headerCharInfo = document.getElementById('header-char-info');
 
         const sectorDisplay = document.getElementById('val-sector-display');
-        
-        // Global Level-Up Check (Stats or Perks)
         const hasPoints = (Game.state.statPoints > 0) || (Game.state.perkPoints > 0);
 
-        // 1. NAME UPDATE
+        // Name & Stats
         const displayName = Game.state.playerName || (typeof Network !== 'undefined' ? Network.myDisplayName : "SURVIVOR");
+        if(this.els.name) this.els.name.textContent = displayName;
         
-        if(this.els.name) {
-            this.els.name.textContent = displayName;
-        }
-        
-        // Apply Glow to the whole container if any points available
         if(this.els.headerCharInfo) {
             if(hasPoints) this.els.headerCharInfo.classList.add('lvl-ready-glow');
             else this.els.headerCharInfo.classList.remove('lvl-ready-glow');
@@ -33,7 +28,6 @@ Object.assign(UI, {
         const dtName = document.querySelector('.desktop-name-target');
         if(dtName) dtName.textContent = displayName;
 
-        // 2. SECTOR UPDATE (Map Overlay)
         if(sectorDisplay) {
             const sx = Game.state.sector ? Game.state.sector.x : 0;
             const sy = Game.state.sector ? Game.state.sector.y : 0;
@@ -41,34 +35,26 @@ Object.assign(UI, {
             sectorDisplay.classList.remove('border-yellow-500');
         }
 
-        // 3. LEVEL UPDATE
-        if(this.els.lvl) { 
-            this.els.lvl.textContent = Game.state.lvl;
-        }
+        if(this.els.lvl) this.els.lvl.textContent = Game.state.lvl;
         const dtLvl = document.querySelector('.desktop-lvl-target');
         if(dtLvl) dtLvl.textContent = Game.state.lvl;
 
-        // 4. TP (HP) & RADS UPDATE
+        // HP Logic
         const maxHp = Game.state.maxHp;
         const hp = Game.state.hp;
         const rads = Game.state.rads || 0;
-        // Effektiv verfügbar (Max - Rads)
         const effectiveMax = Math.max(1, maxHp - rads);
         
         const hpPct = Math.min(100, Math.max(0, (hp / maxHp) * 100));
         const radPct = Math.min(100, (rads / maxHp) * 100);
-        
-        // Display: Current / Effective Max (after Rads)
         const hpText = `${Math.round(hp)}/${Math.round(effectiveMax)}`;
         
-        // Desktop / Header Bar
         if(this.els.hp) {
              this.els.hp.textContent = hpText; 
              const valHpEl = document.getElementById('val-hp');
              if(valHpEl) valHpEl.textContent = hpText;
         }
 
-        // Bar Colors
         let barColor = "bg-green-500";
         if(hpPct < 25) barColor = "bg-red-500 animate-pulse";
         else if(hpPct < 50) barColor = "bg-yellow-500";
@@ -77,71 +63,59 @@ Object.assign(UI, {
              this.els.hp.className = `h-full transition-all duration-300 ${barColor}`;
              this.els.hp.style.width = `${hpPct}%`;
         }
-
         const radBar = document.getElementById('bar-rads');
         if(radBar) radBar.style.width = `${radPct}%`;
 
-        // 5. XP UPDATE
+        // XP
         const nextXp = Game.expToNextLevel(Game.state.lvl);
         const expPct = Math.min(100, Math.floor((Game.state.xp / nextXp) * 100));
-        
         if(this.els.xpTxt) this.els.xpTxt.textContent = expPct;
         if(this.els.expBarTop) this.els.expBarTop.style.width = `${expPct}%`;
         
-        // Misc
+        // Currency & Ammo
         if(this.els.caps) this.els.caps.textContent = `${Game.state.caps}`;
-        
-        // Ammo
         const ammoItem = Game.state.inventory ? Game.state.inventory.find(i => i.id === 'ammo') : null;
         if(this.els.ammo) this.els.ammo.textContent = ammoItem ? ammoItem.count : 0;
 
-        // [v3.6] CAMP BUTTON LOGIC
+        // --- CAMP BUTTON LOGIC ---
         const campBtn = document.getElementById('btn-camp-overlay');
         if(campBtn) {
             const hasKit = Game.state.inventory && Game.state.inventory.some(i => i.id === 'camp_kit');
             const campDeployed = !!Game.state.camp;
-            // Check if player is in the same sector as the deployed camp
             const inCampSector = campDeployed && 
                                  Game.state.camp.sector.x === Game.state.sector.x && 
                                  Game.state.camp.sector.y === Game.state.sector.y;
 
             if (campDeployed) {
-                // CASE 1: Camp is deployed
                 if (inCampSector) {
-                    // Player is AT the camp -> Show "ENTER" with Glow
                     campBtn.classList.remove('hidden');
                     campBtn.className = "absolute top-4 left-4 flex flex-col items-center justify-center p-2 rounded-lg border-2 z-20 shadow-[0_0_15px_#ffd700] cursor-pointer bg-black/80 animate-pulse border-yellow-400 text-yellow-400";
                     campBtn.innerHTML = '<span class="text-2xl">⛺</span><span class="text-xs font-bold">LAGER</span>';
                     campBtn.onclick = () => UI.switchView('camp');
                 } else {
-                    // Player is somewhere else -> Hide button
                     campBtn.classList.add('hidden');
                 }
             } else {
-                // CASE 2: Camp is NOT deployed
                 if (hasKit) {
-                    // Player has kit -> Show "BUILD" (Green, no pulse)
                     campBtn.classList.remove('hidden');
                     campBtn.className = "absolute top-4 left-4 flex flex-col items-center justify-center p-2 rounded-lg border-2 z-20 shadow-[0_0_10px_#39ff14] cursor-pointer bg-black/80 border-green-500 text-green-500 hover:bg-green-900 transition-colors";
                     campBtn.innerHTML = '<span class="text-2xl">⛺</span><span class="text-xs font-bold">BAUEN</span>';
                     campBtn.onclick = () => Game.deployCamp();
                 } else {
-                    // No kit, no camp -> Hide
                     campBtn.classList.add('hidden');
                 }
             }
         }
+        // -------------------------
 
-        // Glow Alerts (Button specific)
+        // Alerts
         let hasAlert = false;
         if(this.els.btnChar) {
             if(hasPoints) { this.els.btnChar.classList.add('alert-glow-yellow'); hasAlert = true; } 
             else { this.els.btnChar.classList.remove('alert-glow-yellow'); }
         } 
-        
         const questsList = Game.state.quests || [];
         const unreadQuests = questsList.some(q => !q.read);
-        
         if(this.els.btnQuests) {
             if(unreadQuests) { this.els.btnQuests.classList.add('alert-glow-cyan'); hasAlert = true; } 
             else { this.els.btnQuests.classList.remove('alert-glow-cyan'); }
@@ -153,21 +127,15 @@ Object.assign(UI, {
 
         // Disable Buttons in Combat
         const inCombat = Game.state.view === 'combat';
-        [this.els.btnWiki, this.els.btnMap, this.els.btnChar, this.els.btnQuests, this.els.btnLogout, this.els.btnInv].forEach(btn => {
-            if(btn) {
-                btn.disabled = inCombat;
-            }
-        });
+        [this.els.btnWiki, this.els.btnMap, this.els.btnChar, this.els.btnQuests, this.els.btnLogout, this.els.btnInv].forEach(btn => { if(btn) btn.disabled = inCombat; });
         
-        // Buff Visuals
         if(this.els.lvl) {
             if(Game.state.buffEndTime && Date.now() < Game.state.buffEndTime) this.els.lvl.classList.add('blink-red');
             else this.els.lvl.classList.remove('blink-red');
         }
         
-        // 5. MOBILE PLAYER LIST HINT
         if(typeof Network !== 'undefined' && Network.active) {
-            const count = Object.keys(Network.otherPlayers).length + 1; // + me
+            const count = Object.keys(Network.otherPlayers).length + 1;
             const onlineBadge = document.getElementById('online-badge');
             if(onlineBadge) {
                 onlineBadge.innerHTML = `● ${count} ONLINE`;
@@ -206,27 +174,21 @@ Object.assign(UI, {
         const verDisplay = document.getElementById('version-display');
         const ver = verDisplay ? verDisplay.textContent.trim() : Date.now();
         
+        // --- SPEZIAL ROUTING FÜR MAP UND CAMP (KEIN FETCH!) ---
+
         if (name === 'map') {
             this.els.view.innerHTML = `
                 <div id="map-view" class="w-full h-full flex justify-center items-center bg-black relative">
                     <canvas id="game-canvas" class="w-full h-full object-contain" style="image-rendering: pixelated;"></canvas>
-                    
-                    <div id="val-sector-display" 
-                         onclick="UI.switchView('worldmap')"
-                         class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/80 border border-green-500 text-green-500 px-3 py-1 text-sm font-bold tracking-widest z-20 shadow-[0_0_10px_#39ff14] cursor-pointer hover:text-yellow-400 hover:border-yellow-500 transition-all active:scale-95 group rounded">
-                        🌍 SEKTOR [?,?]
-                    </div>
-
+                    <div id="val-sector-display" onclick="UI.switchView('worldmap')" class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/80 border border-green-500 text-green-500 px-3 py-1 text-sm font-bold tracking-widest z-20 shadow-[0_0_10px_#39ff14] cursor-pointer hover:text-yellow-400 hover:border-yellow-500 transition-all active:scale-95 group rounded">🌍 SEKTOR [?,?]</div>
                     <button id="btn-camp-overlay" class="hidden absolute top-4 left-4 bg-black/80 border-2 border-green-500 text-green-500 p-2 rounded-lg hover:bg-green-900 transition-all z-20 shadow-[0_0_15px_#39ff14] cursor-pointer flex flex-col items-center">
                         <span class="text-2xl">⛺</span>
                         <span class="text-xs font-bold">BAUEN</span>
                     </button>
                 </div>`;
             Game.state.view = name;
-            
             if(Game.state) Game.state.inDialog = false;
             if(document.activeElement) document.activeElement.blur();
-            
             Game.initCanvas();
             this.restoreOverlay();
             this.toggleControls(true);
@@ -235,13 +197,13 @@ Object.assign(UI, {
             return;
         }
 
-        // [v3.6b] FIX: Handle CAMP via JS instead of fetching camp.html
+        // [v3.7] FIX: Camp wird direkt gerendert, kein HTML Fetch mehr!
         if (name === 'camp') {
             Game.state.view = name;
             if(typeof this.renderCamp === 'function') {
-                this.renderCamp(); // Uses the new Layout from ui_view_world.js
+                this.renderCamp();
             } else {
-                this.els.view.innerHTML = '<div class="text-red-500 p-4">Render Error: UI.renderCamp missing.</div>';
+                this.els.view.innerHTML = '<div class="text-red-500 p-6 text-center border border-red-500">FEHLER: Camp UI nicht geladen.<br>Bitte Seite neu laden.</div>';
             }
             this.restoreOverlay();
             this.toggleControls(false);
@@ -250,17 +212,10 @@ Object.assign(UI, {
             return;
         }
 
-        if(name === 'hacking') {
-            this.renderHacking();
-            Game.state.view = name;
-            return;
-        }
-        if(name === 'lockpicking') {
-            this.renderLockpicking(true);
-            Game.state.view = name;
-            return;
-        }
+        if(name === 'hacking') { this.renderHacking(); Game.state.view = name; return; }
+        if(name === 'lockpicking') { this.renderLockpicking(true); Game.state.view = name; return; }
 
+        // --- STANDARD VIEWS VIA FETCH ---
         const path = `views/${name}.html?v=${ver}`;
         try {
             const res = await fetch(path);
