@@ -1,7 +1,6 @@
-// [v3.6] - 2026-01-03 06:10am (Camp & Actions Update)
-// - Feature: destroyItem (Mülleimer) hinzugefügt.
-// - Logic: Camp Aufbau verbraucht Bausatz nicht (Permanent-Item).
-// - Full Code Restore.
+// [v3.7] - 2026-01-04 12:05am (Gamble Balance Update)
+// - Balance: Wasteland Gamble Legendary Chance erhöht (Schwelle von >15 auf >14 gesenkt).
+// - Chance für Legendary Loot verdoppelt (ca. 9.2% statt 4.6%).
 
 Object.assign(Game, {
     
@@ -288,7 +287,6 @@ Object.assign(Game, {
         return remaining === 0;
     },
 
-    // [NEU v3.5a/v3.6] - Zerstört Items aus dem Inventar
     destroyItem: function(invIndex) {
         if(!this.state.inventory || !this.state.inventory[invIndex]) return;
         const item = this.state.inventory[invIndex];
@@ -560,13 +558,13 @@ Object.assign(Game, {
             if(Math.random() < 0.5) { this.state.caps += 50; UI.log("Gewinn: 50 Kronkorken", "text-green-400"); } 
             else { this.addToInventory('ammo', 10); UI.log("Gewinn: 10x Munition", "text-green-400"); }
         }
-        else if(sum <= 15) {
+        else if(sum <= 14) { // [v3.7] Changed from <= 15 to <= 14
             this.state.caps += 150;
             this.addToInventory('stimpack', 1);
             this.addToInventory('screws', 5);
             UI.log("Gewinn: 150 KK + Stimpack + Schrott", "text-blue-400");
         }
-        else {
+        else { // Now wins on 15, 16, 17, 18
             const rareId = this.items['plasma_rifle'] ? 'plasma_rifle' : 'hunting_rifle';
             const item = Game.generateLoot(rareId);
             item.props = { prefix: 'legendary', name: `Legendäres ${this.items[rareId].name}`, dmgMult: 1.5, valMult: 3.0, bonus: {LUC: 2}, color: 'text-yellow-400 font-bold' };
