@@ -1,5 +1,6 @@
-// [v3.0.1] - 2026-01-03 02:00am (Logout Crash Fix)
-// - Fix: performSave checkt nun auf null state.
+// [v3.1] - 2026-01-03 01:20am (Bugs & Balancing)
+// - Fixed: 'nuclear_mat' (rare) is now stackable (Limit 20).
+// - Logic: getStackLimit updated.
 
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
@@ -185,7 +186,8 @@ window.Game = {
         const item = this.items[itemId];
         if(!item) return 1;
         
-        if(item.type === 'component') return 20; 
+        // [v3.1] Added 'rare' to stackable types
+        if(item.type === 'component' || item.type === 'rare') return 20; 
         if(item.type === 'consumable' || item.type === 'junk') return 20; 
         if(item.type === 'ammo') return 100;
         
