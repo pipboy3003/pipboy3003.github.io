@@ -1,4 +1,4 @@
-/* [v0.9.18] - Added .lvl-ready-glow and animation */
+/* [v3.4] - Added .lvl-ready-glow adjustments */
 :root { --pip-green: #1aff1a; --pip-glow: #2bff2b; --pip-dim: #0d330d; --pip-bg: #051105; }
 
 html, body { width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; position: fixed; }
@@ -76,9 +76,15 @@ body { background-color: #000; color: var(--pip-green); font-family: 'VT323', mo
     color: #ffd700 !important;
     text-shadow: 0 0 5px #b8860b;
 }
+/* Ensure child elements also inherit the glow effect or similar */
+.lvl-ready-glow * {
+    color: #ffd700 !important;
+    text-shadow: 0 0 5px #b8860b;
+}
+
 @keyframes pulse-lvl-text {
     0% { transform: scale(1); text-shadow: 0 0 5px #b8860b; }
-    100% { transform: scale(1.1); text-shadow: 0 0 15px #ffd700, 0 0 2px white; }
+    100% { transform: scale(1.02); text-shadow: 0 0 15px #ffd700, 0 0 2px white; }
 }
 
 /* MINIGAME STYLES */
