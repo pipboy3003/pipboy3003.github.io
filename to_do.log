@@ -29,6 +29,7 @@ Möchtest du, dass ich dir CSS/JS-Code erstelle, um ein solches Raster (Grid) au
 
 ######################################################
 🐛 Aktuelle Bugs & Anpassungen:
+- Admin Panel muss scrollbar sein und für Portrai Modus optimiert werden
 - Items muss man aus dem Inventar schmeißen können. bzw zerstören, muss auch für "Schrott" funktionieren, aktuell nur Ausrüstungsgegenstände.
 - Würfelspiele ab und an nach Legendary? Hatte bissher nie glück, rate minimal erhöhen? Oder ist es gar nicht mehr eingebaut?
 - Neue und mehr Quest implemntieren, gerne 5 neue Quest. eine Anfänger quest z.b noch. Das erste mal Zelt aubauen, was braten + übernachten
