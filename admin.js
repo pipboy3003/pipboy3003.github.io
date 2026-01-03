@@ -1,6 +1,7 @@
-// [v5.6] - 2026-01-03 (Admin System Fix)
-// - Fix: Crash bei fehlenden Items/Stats abgefangen.
-// - Update: Kompatibel mit HTML v5.0.
+// [v5.7] - 2026-01-03 (Admin System Fix)
+// - Fix: Inventar/Quests werden sicher als Array geladen (Fix für "forEach" Crash).
+// - Fix: Game.items Check verhindert Absturz bei fehlenden Item-Daten.
+// - Update: Kompatibel mit HTML v5.0 Layout.
 
 const Admin = {
     // Config
@@ -31,6 +32,7 @@ const Admin = {
     },
 
     connectFirebase: async function() {
+        // Init Network if not ready
         if (typeof Network !== 'undefined' && !Network.db) {
             try { if(typeof Network.init === 'function') Network.init(); } catch(e) {}
         }
@@ -38,10 +40,13 @@ const Admin = {
         try {
             await Network.login(this.adminUser, this.adminPass);
             
+            // Switch UI
             document.getElementById('gate-screen').classList.add('hidden');
             const app = document.getElementById('app-ui');
-            app.classList.remove('hidden');
-            setTimeout(() => app.classList.remove('opacity-0'), 50);
+            if(app) {
+                app.classList.remove('hidden');
+                setTimeout(() => app.classList.remove('opacity-0'), 50);
+            }
             
             const connDot = document.getElementById('conn-dot');
             if(connDot) {
@@ -75,18 +80,20 @@ const Admin = {
         }
 
         // Listener
-        Network.db.ref('saves').on('value', snap => {
-            this.dbData = snap.val() || {};
-            this.renderUserList();
-            
-            // Refresh selection if active
-            if(this.currentPath) {
-                const parts = this.currentPath.split('/');
-                if(this.dbData[parts[1]] && this.dbData[parts[1]][parts[2]]) {
-                    this.selectUser(this.currentPath, true);
+        if(Network.db) {
+            Network.db.ref('saves').on('value', snap => {
+                this.dbData = snap.val() || {};
+                this.renderUserList();
+                
+                // Refresh selection if active
+                if(this.currentPath) {
+                    const parts = this.currentPath.split('/');
+                    if(this.dbData[parts[1]] && this.dbData[parts[1]][parts[2]]) {
+                        this.selectUser(this.currentPath, true);
+                    }
                 }
-            }
-        });
+            });
+        }
     },
 
     refresh: function() {
@@ -182,7 +189,7 @@ const Admin = {
         setVal('quick-lvl', d.lvl || 1);
         setVal('quick-xp', d.xp || 0);
 
-        // Fill Tabs (Safely)
+        // Fill Tabs (Safely with try-catch)
         try { this.fillGeneral(d); } catch(e) { console.error("Fill General Error", e); }
         try { this.fillStats(d); } catch(e) { console.error("Fill Stats Error", e); }
         try { this.fillInv(d); } catch(e) { console.error("Fill Inv Error", e); }
@@ -233,8 +240,14 @@ const Admin = {
         if(!tbody) return;
         tbody.innerHTML = '';
         
-        const inv = d.inventory || [];
+        // [FIX] Convert Object to Array if necessary (Firebase quirk)
+        let inv = [];
+        if(d.inventory) {
+            inv = Array.isArray(d.inventory) ? d.inventory : Object.values(d.inventory);
+        }
+
         inv.forEach((item, idx) => {
+            if(!item) return;
             const tr = document.createElement('tr');
             tr.className = "border-b border-[#1a551a] hover:bg-[#002200]";
             
@@ -275,7 +288,12 @@ const Admin = {
         const qList = document.getElementById('quest-list');
         if(!qList) return;
         qList.innerHTML = '';
-        const quests = d.quests || [];
+        
+        // [FIX] Array check for quests too
+        let quests = [];
+        if(d.quests) {
+            quests = Array.isArray(d.quests) ? d.quests : Object.values(d.quests);
+        }
         
         if(quests.length === 0) qList.innerHTML = '<div class="text-gray-500 italic">No active quests.</div>';
         
@@ -394,7 +412,10 @@ const Admin = {
 
     invDelete: function(idx) {
         if(!confirm("Remove Item?")) return;
-        const inv = [...(this.currentUserData.inventory || [])];
+        // Fix for array splice
+        let inv = this.currentUserData.inventory;
+        if (!Array.isArray(inv)) inv = Object.values(inv || {});
+        
         inv.splice(idx, 1);
         Network.db.ref(this.currentPath + '/inventory').set(inv);
     },
@@ -417,7 +438,8 @@ const Admin = {
             return;
         }
 
-        const inv = [...(this.currentUserData.inventory || [])];
+        let inv = this.currentUserData.inventory;
+        if (!Array.isArray(inv)) inv = Object.values(inv || {});
         
         let found = false;
         for(let item of inv) {
