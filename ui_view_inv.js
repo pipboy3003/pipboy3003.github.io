@@ -1,6 +1,6 @@
-// [v3.2.3] - 2026-01-03 03:40am (Inventory Static Equip)
-// - Fix: Equipped items in inventory are now read-only (visual only).
-// - UI: Removed click actions & hover effects for equipped items list.
+// [v3.3] - 2026-01-03 11:35pm (Inventory Interaction Update)
+// - Feature: Alle Items (auch Schrott/Ammo) sind jetzt anklickbar.
+// - Ziel: Ermöglicht das Wegwerfen von Junk über den Detail-Dialog.
 
 Object.assign(UI, {
 
@@ -48,15 +48,12 @@ Object.assign(UI, {
         // --- BUTTON GENERATOR ---
         const createBtn = (itemDef, count, props, isNew, isEquipped, label, onClick) => {
             const btn = document.createElement('div');
-            
-            // Base Style
             let cssClass = "relative border border-green-500 bg-green-900/30 w-full h-16 flex flex-col items-center justify-center transition-colors group";
             
-            // Interaction Style (Only if clickable)
             if(onClick) {
                 cssClass += " cursor-pointer hover:bg-green-500 hover:text-black";
             } else {
-                cssClass += " cursor-default opacity-80"; // Visual cue for "read-only"
+                cssClass += " cursor-default opacity-80"; 
             }
             
             btn.className = cssClass;
@@ -99,43 +96,33 @@ Object.assign(UI, {
         const unequippedList = [];
         const equippedList = [];
 
-        // 1. INVENTORY ITEMS (Backpack)
+        // 1. INVENTORY ITEMS
         Game.state.inventory.forEach((entry, index) => {
             if(entry.count <= 0) return;
             const item = Game.items[entry.id];
             if(!item) return;
 
-            // Special Case: Camp Kit (stays in inv but is deployed)
             if(entry.id === 'camp_kit' && Game.state.camp) {
-                 // [v3.2.3] No Click Action for deployed camp in inventory
                  const btn = createBtn(item, entry.count, entry.props, false, true, "AUFGESTELLT", null);
                  equippedList.push(btn); 
                  return;
             }
 
-            // Normal Item
+            // [v3.3] Click Action for ALL items (removed filter)
             const onClick = () => {
-                const nonInteractive = ['junk', 'component', 'misc', 'ammo', 'rare'];
-                if(nonInteractive.includes(item.type)) {
-                    UI.log(`INFO: ${item.name}`, "text-cyan-400 font-bold");
-                    if(item.desc) UI.log(`${item.desc}`, "text-gray-400 italic text-sm");
-                } else {
-                    UI.showItemConfirm(index);
-                }
+                UI.showItemConfirm(index);
             };
 
             const btn = createBtn(item, entry.count, entry.props, entry.isNew, false, null, onClick);
             unequippedList.push(btn);
         });
 
-        // 2. EQUIPPED ITEMS (from Game.state.equip slots)
+        // 2. EQUIPPED ITEMS
         const slots = ['weapon', 'head', 'body', 'arms', 'legs', 'feet', 'back'];
         slots.forEach(slot => {
             const equippedItem = Game.state.equip[slot];
-            // Ignore defaults/empty
             if(!equippedItem || equippedItem.name === 'Fäuste' || equippedItem.name === 'Vault-Anzug' || equippedItem.name === 'Kein Rucksack') return;
 
-            // Find base definition
             let baseDef = Game.items[equippedItem.id];
             if(!baseDef) {
                 const key = Object.keys(Game.items).find(k => Game.items[k].name === equippedItem.name);
@@ -143,7 +130,6 @@ Object.assign(UI, {
             }
             if(!baseDef) return; 
 
-            // [v3.2.3] Pass NULL as onClick to make it static
             const btn = createBtn(
                 baseDef, 
                 1, 
@@ -156,7 +142,6 @@ Object.assign(UI, {
             equippedList.push(btn);
         });
 
-        // RENDER
         unequippedList.forEach(b => list.appendChild(b));
 
         if(equippedList.length > 0) {
@@ -172,6 +157,7 @@ Object.assign(UI, {
         }
     },
 
+    // ... (Rest bleibt unverändert - renderChar etc.)
     renderChar: function(mode = 'stats') {
         const grid = document.getElementById('stat-grid');
         const perksContainer = document.getElementById('perk-container');
@@ -270,7 +256,6 @@ Object.assign(UI, {
                 if(canUnequip) {
                     const btn = document.createElement('button');
                     btn.innerHTML = "✖"; 
-                    // [MOD] BIGGER UNEQUIP BUTTON (Same as v3.2.2)
                     btn.className = "absolute right-0 top-0 h-full w-8 bg-red-900/20 hover:bg-red-500 hover:text-white text-red-500 flex items-center justify-center font-bold text-lg transition-colors";
                     btn.onclick = (e) => { e.stopPropagation(); Game.unequipItem(slot.key); };
                     div.appendChild(btn);
