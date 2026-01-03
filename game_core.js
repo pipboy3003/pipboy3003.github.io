@@ -1,6 +1,6 @@
-// [v3.1] - 2026-01-03 01:20am (Bugs & Balancing)
-// - Fixed: 'nuclear_mat' (rare) is now stackable (Limit 20).
-// - Logic: getStackLimit updated.
+// [v3.1b] - 2026-01-03 02:00am (Economy Update)
+// - Feature: Merchant has limited caps (Budget).
+// - Logic: Added 'merchantCaps' to shop state.
 
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
@@ -235,7 +235,10 @@ window.Game = {
                 if(!this.state.camp) this.state.camp = null;
                 if(!this.state.knownRecipes) this.state.knownRecipes = ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp']; 
                 if(!this.state.perks) this.state.perks = [];
-                if(!this.state.shop) this.state.shop = { nextRestock: 0, stock: {} };
+                
+                // [v3.1b] Merchant Budget Init for existing saves
+                if(!this.state.shop) this.state.shop = { nextRestock: 0, stock: {}, merchantCaps: 1000 };
+                if(typeof this.state.shop.merchantCaps === 'undefined') this.state.shop.merchantCaps = 1000;
                 
                 if(!this.state.equip.back) this.state.equip.back = null;
                 if(!this.state.equip.head) this.state.equip.head = null;
@@ -290,7 +293,7 @@ window.Game = {
                     quests: [], 
                     knownRecipes: ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp'], 
                     hiddenItems: {},
-                    shop: { nextRestock: 0, stock: {} },
+                    shop: { nextRestock: 0, stock: {}, merchantCaps: 1000 },
                     startTime: Date.now()
                 };
                 
@@ -473,7 +476,7 @@ window.Game = {
     
     checkShopRestock: function() {
         const now = Date.now();
-        if(!this.state.shop) this.state.shop = { nextRestock: 0, stock: {} };
+        if(!this.state.shop) this.state.shop = { nextRestock: 0, stock: {}, merchantCaps: 1000 };
         
         if(now >= this.state.shop.nextRestock) {
             const stock = {};
@@ -510,9 +513,12 @@ window.Game = {
             stock['lockpick'] = 5;
             stock['camp_kit'] = 1;
 
+            // [v3.1b] Restock Merchant Caps
+            this.state.shop.merchantCaps = 500 + Math.floor(Math.random() * 1000);
+
             this.state.shop.stock = stock;
             this.state.shop.nextRestock = now + (15 * 60 * 1000); 
-            UI.log("INFO: Der Händler hat neue Ware erhalten.", "text-green-500 italic");
+            UI.log("INFO: Der Händler hat neue Ware & Kronkorken.", "text-green-500 italic");
         }
     },
 
