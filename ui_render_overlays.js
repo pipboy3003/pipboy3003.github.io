@@ -1,10 +1,10 @@
-// [v5.2] - 2026-01-03 10:25pm (UI Overlay Fixes)
-// - Vault Legends: Höhe auf 90% des Containers (statt Viewport) begrenzt -> Fix für Abschneiden.
-// - Vault Legends: Click-Outside Logik verbessert.
+// [v5.8] - 2026-01-03 11:40pm (Item Trash Update)
+// - Feature: showItemConfirm angepasst für Schrott (Junk).
+// - UI: "Benutzen" Button wird bei Junk ausgeblendet, "Wegwerfen" bleibt aktiv.
 
 Object.assign(UI, {
     
-    // [v3.0] NEW QUEST HUD (Unverändert)
+    // [v3.0] NEW QUEST HUD
     showQuestComplete: function(questDef) {
         let container = document.getElementById('hud-quest-overlay');
         if(!container) {
@@ -43,7 +43,6 @@ Object.assign(UI, {
         overlay.className = "absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto";
         overlay.style.display = 'flex';
         
-        // Direkter Click Handler auf Overlay
         overlay.onclick = (e) => { 
             if(e.target === overlay) UI.leaveDialog(); 
         };
@@ -79,17 +78,14 @@ Object.assign(UI, {
         if(!this.els.dialog) this.restoreOverlay();
         const overlay = this.els.dialog;
 
-        // [v5.2] pointer-events-auto sicherstellen
         overlay.className = "absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto";
         overlay.style.display = 'flex';
         
         if(Game.state) Game.state.inDialog = true;
         
-        // ESC Handler
         const escHandler = (e) => { if(e.key === "Escape") UI.leaveDialog(); };
         document.addEventListener('keydown', escHandler);
         
-        // Cleanup beim Schließen
         const originalLeave = this.leaveDialog.bind(this);
         this.leaveDialog = function() {
             document.removeEventListener('keydown', escHandler);
@@ -97,7 +93,6 @@ Object.assign(UI, {
             originalLeave();
         };
 
-        // Click Outside Handler
         overlay.onclick = (e) => {
             if(e.target === overlay) UI.leaveDialog();
         };
@@ -115,7 +110,6 @@ Object.assign(UI, {
             scores.sort((a,b) => b.lvl - a.lvl || b.xp - a.xp);
 
             const box = document.createElement('div');
-            // [v5.2] FIX: max-h-[90%] (Prozent vom Container statt vh) verhindert Abschneiden.
             box.className = "bg-black border-4 border-green-600 p-4 shadow-[0_0_30px_green] w-full max-w-2xl max-h-[90%] flex flex-col relative pointer-events-auto";
             
             const closeBtn = document.createElement('button');
@@ -210,7 +204,6 @@ Object.assign(UI, {
 
         overlay.innerHTML = '';
         
-        // Calculate Stats Text
         let statsText = "";
         let typeLabel = item.type.toUpperCase();
         
@@ -299,7 +292,7 @@ Object.assign(UI, {
         const box = document.createElement('div');
         box.className = "bg-black border-2 border-green-500 p-4 shadow-[0_0_15px_green] max-w-sm text-center mb-4 w-full pointer-events-auto";
 
-        // Stimpack Dialog
+        // Stimpack Logic
         if (invItem.id === 'stimpack') {
              box.innerHTML = `
                 <h2 class="text-xl font-bold text-green-400 mb-2 border-b border-green-500 pb-2">${item.name}</h2>
@@ -342,23 +335,30 @@ Object.assign(UI, {
             if(invItem.props.dmgMult) statsText = `Schaden: ${Math.floor(item.baseDmg * invItem.props.dmgMult)} (Mod)`;
         } else {
             if(item.type === 'consumable') statsText = `Effekt: ${item.effect} (${item.val})`;
-            if(item.type === 'weapon') statsText = `Schaden: ${item.baseDmg}`;
-            if(item.type === 'body') statsText = `Rüstung: +${item.bonus.END || 0} END`;
+            else if(item.type === 'weapon') statsText = `Schaden: ${item.baseDmg}`;
+            else if(item.type === 'body') statsText = `Rüstung: +${item.bonus.END || 0} END`;
+            else if(item.type === 'junk' || item.type === 'component') statsText = "Material / Schrott";
+            else statsText = item.desc || "Item";
         }
+
+        const isUsable = !['junk', 'component', 'misc', 'rare', 'ammo'].includes(item.type);
 
         box.innerHTML = `
             <h2 class="text-xl font-bold text-green-400 mb-2">${displayName}</h2>
             <div class="text-xs text-green-200 mb-4 border-t border-b border-green-900 py-2">Typ: ${item.type.toUpperCase()}<br>Wert: ${item.cost} KK<br><span class="text-yellow-400">${statsText}</span></div>
-            <p class="text-green-200 mb-4 text-sm">Gegenstand benutzen oder wegwerfen?</p>
+            <p class="text-green-200 mb-4 text-sm">${isUsable ? "Gegenstand benutzen oder wegwerfen?" : "Dieses Item kann nur verkauft oder zum Craften verwendet werden."}</p>
         `;
         
         const btnContainer = document.createElement('div');
         btnContainer.className = "flex flex-col gap-2 w-full mt-2";
         
-        const btnYes = document.createElement('button');
-        btnYes.className = "border border-green-500 text-green-500 hover:bg-green-900 px-4 py-3 font-bold w-full text-lg";
-        btnYes.textContent = "BENUTZEN / AUSRÜSTEN";
-        btnYes.onclick = () => { Game.useItem(invIndex); this.leaveDialog(); };
+        if (isUsable) {
+            const btnYes = document.createElement('button');
+            btnYes.className = "border border-green-500 text-green-500 hover:bg-green-900 px-4 py-3 font-bold w-full text-lg";
+            btnYes.textContent = "BENUTZEN / AUSRÜSTEN";
+            btnYes.onclick = () => { Game.useItem(invIndex); this.leaveDialog(); };
+            btnContainer.appendChild(btnYes);
+        }
         
         const row = document.createElement('div');
         row.className = "flex gap-2 w-full";
@@ -376,7 +376,6 @@ Object.assign(UI, {
         row.appendChild(btnTrash);
         row.appendChild(btnNo);
         
-        btnContainer.appendChild(btnYes);
         btnContainer.appendChild(row);
         
         box.appendChild(btnContainer); overlay.appendChild(box);
