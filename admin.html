@@ -13,26 +13,18 @@
     
     <style>
         body { background-color: #050505; color: #39ff14; font-family: 'Share Tech Mono', monospace; overflow: hidden; }
-        
-        /* CRT Scanline Effect */
         .scanlines { background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); background-size: 100% 2px, 3px 100%; pointer-events: none; position: fixed; inset: 0; z-index: 50; }
-        
-        /* UI Elements */
         .panel-box { border: 1px solid #333; background: rgba(0, 20, 0, 0.9); box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
         .active-tab { background-color: #39ff14; color: black; font-weight: bold; box-shadow: 0 0 10px #39ff14; }
         .inactive-tab { border: 1px solid #1a3300; color: #1a551a; }
         .inactive-tab:hover { color: #39ff14; border-color: #39ff14; }
-        
         input, select, textarea { background: #001100; border: 1px solid #1a551a; color: #39ff14; padding: 4px 8px; outline: none; transition: all 0.2s; }
         input:focus, select:focus, textarea:focus { border-color: #39ff14; box-shadow: 0 0 5px #1a551a; }
-        
         .btn { border: 1px solid #39ff14; padding: 5px 15px; text-transform: uppercase; cursor: pointer; transition: all 0.1s; background: rgba(0,20,0,0.5); }
         .btn:hover { background: #39ff14; color: black; box-shadow: 0 0 15px #39ff14; }
         .btn:active { transform: scale(0.98); }
         .btn-danger { border-color: #ff3333; color: #ff3333; }
         .btn-danger:hover { background: #ff3333; color: white; box-shadow: 0 0 15px #ff0000; }
-
-        /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #001100; }
         ::-webkit-scrollbar-thumb { background: #1a551a; }
@@ -47,7 +39,6 @@
         <div class="panel-box p-8 w-full max-w-md text-center border-2 border-[#39ff14]">
             <h1 class="text-4xl font-bold mb-2 tracking-widest text-[#39ff14] drop-shadow-[0_0_10px_rgba(57,255,20,0.8)]">VAULT-TEC</h1>
             <div class="text-xs mb-8 text-[#1a551a]">OVERSEER SYSTEM ACCESS V4.0</div>
-            
             <form onsubmit="event.preventDefault(); Admin.unlock();">
                 <input type="password" id="gate-pass" class="w-full text-center text-xl py-3 tracking-widest mb-4 border-[#39ff14]" placeholder="ENTER PASSCODE" autofocus>
                 <button type="submit" class="btn w-full py-3 font-bold text-lg">INITIALIZE LINK</button>
@@ -62,78 +53,78 @@
             <div class="flex items-center gap-4">
                 <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_red]" id="conn-dot"></div>
                 <div>
-                    <h1 class="text-2xl font-bold leading-none">OVERSEER TERMINAL</h1>
-                    <div class="text-xs text-[#1a551a] tracking-widest">CONNECTED TO MAINFFRAME</div>
+                    <h1 class="text-2xl font-bold leading-none">OVERSEER</h1>
+                    <div class="text-xs text-[#1a551a] tracking-widest">TERMINAL V4.0</div>
                 </div>
             </div>
             <div class="flex gap-2">
-                <button onclick="Admin.refresh()" class="btn text-sm">SYNC DATA</button>
-                <button onclick="location.reload()" class="btn btn-danger text-sm">TERMINATE</button>
+                <button onclick="Admin.refresh()" class="btn text-sm">SYNC</button>
+                <button onclick="location.reload()" class="btn btn-danger text-sm">EXIT</button>
             </div>
         </header>
 
         <div class="flex flex-col md:flex-row flex-grow overflow-hidden">
             
-            <div class="w-full md:w-80 h-56 md:h-auto border-r-0 md:border-r border-b md:border-b-0 border-[#1a551a] bg-black/50 flex flex-col shrink-0">
+            <div class="w-full md:w-80 h-48 md:h-auto border-r-0 md:border-r border-b md:border-b-0 border-[#1a551a] bg-black/50 flex flex-col shrink-0">
                 <div class="p-2 border-b border-[#1a551a] bg-[#001100]">
                     <input type="text" id="search-player" class="w-full text-sm" placeholder="SEARCH ID/NAME..." onkeyup="Admin.filterList()">
                 </div>
                 <div id="user-list" class="flex-grow overflow-y-auto p-2 space-y-1">
-                    <div class="text-center text-gray-500 mt-10">Waiting for Data...</div>
+                    <div class="text-center text-gray-500 mt-10">Waiting...</div>
                 </div>
                 <div class="p-2 border-t border-[#1a551a] text-xs text-center text-[#1a551a]">
-                    <span id="user-count">0</span> RECORDS FOUND
+                    <span id="user-count">0</span> RECORDS
                 </div>
             </div>
 
             <div id="editor-panel" class="flex-grow bg-black/20 flex flex-col relative w-full overflow-hidden">
                 
                 <div id="no-selection" class="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-                    <div class="text-4xl text-[#1a331a] font-bold tracking-widest opacity-50">SELECT A RESIDENT</div>
+                    <div class="text-3xl md:text-4xl text-[#1a331a] font-bold tracking-widest opacity-50 text-center px-4">SELECT A RESIDENT</div>
                 </div>
 
-                <div id="editor-content" class="hidden flex-col h-full z-10 bg-black/80 backdrop-blur-sm">
+                <div id="editor-content" class="hidden flex-col h-full z-10 bg-black/80 backdrop-blur-sm absolute inset-0">
                     
-                    <div class="flex justify-between items-end p-6 border-b border-[#39ff14] bg-[#001100] shrink-0">
-                        <div>
-                            <h2 id="edit-name" class="text-4xl font-bold text-white mb-1">PLAYER_NAME</h2>
-                            <div class="text-xs font-mono text-[#1a551a]">UID: <span id="edit-uid">---</span> | SLOT: <span id="edit-slot">0</span></div>
-                            <div class="text-xs text-yellow-500" id="edit-email">email@vault.tec</div>
+                    <div class="flex justify-between items-end p-4 border-b border-[#39ff14] bg-[#001100] shrink-0">
+                        <div class="overflow-hidden">
+                            <h2 id="edit-name" class="text-2xl md:text-4xl font-bold text-white mb-1 truncate">PLAYER</h2>
+                            <div class="text-[10px] md:text-xs font-mono text-[#1a551a] truncate">ID: <span id="edit-uid">---</span></div>
+                            <div class="text-[10px] text-yellow-500 truncate" id="edit-email">---</div>
                         </div>
-                        <div class="text-right">
-                            <div class="text-3xl font-bold text-yellow-400">LVL <input type="number" id="quick-lvl" class="w-16 bg-transparent border-b border-yellow-400 text-right focus:border-white" onchange="Admin.saveVal('lvl', this.value)"></div>
-                            <div class="text-sm text-gray-400">XP: <input type="number" id="quick-xp" class="w-20 bg-transparent border-b border-gray-600 text-right" onchange="Admin.saveVal('xp', this.value)"></div>
+                        <div class="text-right shrink-0 ml-2">
+                            <div class="text-xl md:text-3xl font-bold text-yellow-400">LVL <input type="number" id="quick-lvl" class="w-12 md:w-16 bg-transparent border-b border-yellow-400 text-right focus:border-white" onchange="Admin.saveVal('lvl', this.value)"></div>
+                            <div class="text-xs text-gray-400">XP: <input type="number" id="quick-xp" class="w-16 bg-transparent border-b border-gray-600 text-right" onchange="Admin.saveVal('xp', this.value)"></div>
                         </div>
                     </div>
 
-                    <div class="flex border-b border-[#1a551a] overflow-x-auto shrink-0 whitespace-nowrap">
-                        <button onclick="Admin.tab('general')" id="tab-btn-general" class="flex-1 py-3 px-4 min-w-[100px] hover:bg-[#002200] active-tab">GENERAL</button>
-                        <button onclick="Admin.tab('stats')" id="tab-btn-stats" class="flex-1 py-3 px-4 min-w-[100px] hover:bg-[#002200] inactive-tab">S.P.E.C.I.A.L.</button>
-                        <button onclick="Admin.tab('inv')" id="tab-btn-inv" class="flex-1 py-3 px-4 min-w-[100px] hover:bg-[#002200] inactive-tab">INVENTORY</button>
-                        <button onclick="Admin.tab('world')" id="tab-btn-world" class="flex-1 py-3 px-4 min-w-[120px] hover:bg-[#002200] inactive-tab">WORLD & QUESTS</button>
-                        <button onclick="Admin.tab('raw')" id="tab-btn-raw" class="flex-1 py-3 px-4 min-w-[100px] hover:bg-[#002200] inactive-tab">RAW DATA</button>
+                    <div class="flex border-b border-[#1a551a] overflow-x-auto shrink-0 whitespace-nowrap bg-black">
+                        <button onclick="Admin.tab('general')" id="tab-btn-general" class="flex-1 py-3 px-4 min-w-[90px] hover:bg-[#002200] active-tab">GENERAL</button>
+                        <button onclick="Admin.tab('stats')" id="tab-btn-stats" class="flex-1 py-3 px-4 min-w-[90px] hover:bg-[#002200] inactive-tab">S.P.E.C.I.A.L.</button>
+                        <button onclick="Admin.tab('inv')" id="tab-btn-inv" class="flex-1 py-3 px-4 min-w-[90px] hover:bg-[#002200] inactive-tab">INVENTORY</button>
+                        <button onclick="Admin.tab('world')" id="tab-btn-world" class="flex-1 py-3 px-4 min-w-[100px] hover:bg-[#002200] inactive-tab">WORLD</button>
+                        <button onclick="Admin.tab('raw')" id="tab-btn-raw" class="flex-1 py-3 px-4 min-w-[80px] hover:bg-[#002200] inactive-tab">RAW</button>
                     </div>
 
-                    <div class="flex-grow overflow-y-auto p-6 relative">
+                    <div class="flex-grow relative overflow-hidden bg-black/50">
                         
-                        <div id="tab-general" class="space-y-6">
+                        <div id="tab-general" class="absolute inset-0 overflow-y-auto p-4 md:p-6 space-y-6">
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div class="panel-box p-4">
-                                    <label class="block text-xs text-green-600 mb-1">HEALTH POINTS</label>
+                                    <label class="block text-xs text-green-600 mb-1">HEALTH</label>
                                     <div class="flex items-center gap-2">
                                         <input type="number" id="inp-hp" class="w-full text-2xl text-center font-bold" onchange="Admin.saveVal('hp', this.value)">
-                                        <span class="text-xl">/</span>
+                                        <span>/</span>
                                         <input type="number" id="inp-maxhp" class="w-full text-2xl text-center font-bold text-gray-500" onchange="Admin.saveVal('maxHp', this.value)">
                                     </div>
-                                    <button onclick="Admin.action('heal')" class="btn w-full mt-2 text-xs border-green-500 text-green-500">FULL HEAL</button>
+                                    <button onclick="Admin.action('heal')" class="btn w-full mt-2 text-xs border-green-500 text-green-500">HEAL</button>
                                 </div>
                                 <div class="panel-box p-4">
-                                    <label class="block text-xs text-green-600 mb-1">RADIATION</label>
+                                    <label class="block text-xs text-green-600 mb-1">RADS</label>
                                     <input type="number" id="inp-rads" class="w-full text-2xl text-center font-bold text-red-500" onchange="Admin.saveVal('rads', this.value)">
-                                    <button onclick="Admin.action('de-rad')" class="btn w-full mt-2 text-xs border-blue-500 text-blue-500">CURE RADS</button>
+                                    <button onclick="Admin.action('de-rad')" class="btn w-full mt-2 text-xs border-blue-500 text-blue-500">CURE</button>
                                 </div>
                                 <div class="panel-box p-4">
-                                    <label class="block text-xs text-green-600 mb-1">CAPS (WÄHRUNG)</label>
+                                    <label class="block text-xs text-green-600 mb-1">CAPS</label>
                                     <input type="number" id="inp-caps" class="w-full text-2xl text-center font-bold text-yellow-400" onchange="Admin.saveVal('caps', this.value)">
                                     <div class="flex gap-1 mt-2">
                                         <button onclick="Admin.modVal('caps', 100)" class="btn flex-1 text-xs">+100</button>
@@ -143,54 +134,56 @@
                             </div>
 
                             <div class="panel-box p-4 border-red-900 bg-red-900/10">
-                                <h3 class="text-red-500 font-bold mb-2 border-b border-red-900">DANGER ZONE</h3>
+                                <h3 class="text-red-500 font-bold mb-2 border-b border-red-900">ZONE</h3>
                                 <div class="flex flex-col md:flex-row gap-4">
-                                    <button onclick="Admin.action('kill')" class="btn btn-danger flex-1">KILL PLAYER</button>
-                                    <button onclick="Admin.action('revive')" class="btn border-blue-500 text-blue-500 flex-1">REVIVE (RESET FLAGS)</button>
-                                    <button onclick="Admin.action('delete')" class="btn btn-danger flex-1 border-2">DELETE SAVEGAME</button>
+                                    <button onclick="Admin.action('kill')" class="btn btn-danger flex-1">KILL</button>
+                                    <button onclick="Admin.action('revive')" class="btn border-blue-500 text-blue-500 flex-1">REVIVE</button>
+                                    <button onclick="Admin.action('delete')" class="btn btn-danger flex-1 border-2">DELETE</button>
                                 </div>
                             </div>
                         </div>
 
-                        <div id="tab-stats" class="hidden">
+                        <div id="tab-stats" class="absolute inset-0 overflow-y-auto p-4 md:p-6 hidden">
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="special-container">
                                 </div>
                             <div class="mt-4 panel-box p-4">
-                                <label class="block text-xs text-green-600 mb-1">AVAILABLE POINTS</label>
+                                <label class="block text-xs text-green-600 mb-1">POINTS</label>
                                 <div class="flex gap-4">
                                     <div class="flex-1">
-                                        <span>STAT POINTS:</span>
+                                        <span>STAT:</span>
                                         <input type="number" id="inp-statPoints" class="w-20 ml-2" onchange="Admin.saveVal('statPoints', this.value)">
                                     </div>
                                     <div class="flex-1">
-                                        <span>PERK POINTS:</span>
+                                        <span>PERK:</span>
                                         <input type="number" id="inp-perkPoints" class="w-20 ml-2" onchange="Admin.saveVal('perkPoints', this.value)">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div id="tab-inv" class="hidden flex flex-col h-full">
-                            <div class="flex flex-col md:flex-row gap-2 mb-4 p-4 panel-box items-end">
+                        <div id="tab-inv" class="absolute inset-0 p-4 hidden flex flex-col">
+                            <div class="shrink-0 mb-4 p-3 panel-box flex flex-col md:flex-row gap-2 items-end">
                                 <div class="w-full md:flex-grow">
-                                    <label class="text-xs text-gray-500">ADD ITEM</label>
-                                    <select id="inv-add-select" class="w-full text-lg h-10"></select>
+                                    <label class="text-xs text-gray-500 block mb-1">ADD ITEM</label>
+                                    <select id="inv-add-select" class="w-full text-base md:text-lg h-10 border border-[#1a551a] bg-black text-[#39ff14]"></select>
                                 </div>
-                                <div class="w-full md:w-24">
-                                    <label class="text-xs text-gray-500">QTY</label>
-                                    <input type="number" id="inv-add-qty" value="1" class="w-full text-lg h-10 text-center">
+                                <div class="flex gap-2 w-full md:w-auto">
+                                    <div class="w-20">
+                                        <label class="text-xs text-gray-500 block mb-1">QTY</label>
+                                        <input type="number" id="inv-add-qty" value="1" class="w-full text-lg h-10 text-center">
+                                    </div>
+                                    <button onclick="Admin.invAdd()" class="btn flex-grow md:w-auto h-10 font-bold bg-[#39ff14] text-black hover:bg-white self-end">ADD</button>
                                 </div>
-                                <button onclick="Admin.invAdd()" class="btn w-full md:w-auto h-10 font-bold bg-[#39ff14] text-black hover:bg-white">ADD</button>
                             </div>
                             
-                            <div class="flex-grow overflow-y-auto panel-box">
+                            <div class="flex-grow overflow-y-auto panel-box min-h-0 relative">
                                 <table class="w-full text-left border-collapse">
-                                    <thead class="bg-[#002200] text-xs text-gray-400 sticky top-0">
+                                    <thead class="bg-[#002200] text-xs text-gray-400 sticky top-0 z-10 shadow-md">
                                         <tr>
-                                            <th class="p-2 border-b border-[#1a551a]">ITEM NAME</th>
-                                            <th class="p-2 border-b border-[#1a551a]">ID</th>
-                                            <th class="p-2 border-b border-[#1a551a] w-24">COUNT</th>
-                                            <th class="p-2 border-b border-[#1a551a] w-20">ACT</th>
+                                            <th class="p-2 border-b border-[#1a551a]">ITEM</th>
+                                            <th class="p-2 border-b border-[#1a551a] hidden md:table-cell">ID</th>
+                                            <th class="p-2 border-b border-[#1a551a] w-16 text-center">#</th>
+                                            <th class="p-2 border-b border-[#1a551a] w-16 text-center">ACT</th>
                                         </tr>
                                     </thead>
                                     <tbody id="inv-table-body" class="text-sm">
@@ -199,37 +192,36 @@
                             </div>
                         </div>
 
-                        <div id="tab-world" class="hidden space-y-6">
+                        <div id="tab-world" class="absolute inset-0 overflow-y-auto p-4 md:p-6 hidden space-y-6">
                             <div class="panel-box p-6 border-yellow-600">
-                                <h3 class="text-2xl font-bold text-yellow-400 mb-4">TELEPORTATION</h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <h3 class="text-2xl font-bold text-yellow-400 mb-4">TELEPORT</h3>
+                                <div class="grid grid-cols-1 gap-4">
                                     <div>
-                                        <div class="mb-2">CURRENT SECTOR: <span id="view-sector" class="font-bold text-white">0,0</span></div>
+                                        <div class="mb-2">SECTOR: <span id="view-sector" class="font-bold text-white">0,0</span></div>
                                         <div class="flex gap-2 items-center">
                                             X: <input type="number" id="tele-x" class="w-16">
                                             Y: <input type="number" id="tele-y" class="w-16">
                                             <button onclick="Admin.teleport()" class="btn">WARP</button>
                                         </div>
                                     </div>
-                                    <div class="flex flex-col justify-center">
-                                        <button onclick="Admin.action('reset-vault')" class="btn border-yellow-400 text-yellow-400 py-4 text-xl font-bold shadow-[0_0_15px_rgba(255,200,0,0.3)]">
-                                            ⚠️ EMERGENCY: RESET TO VAULT (4,4)
+                                    <div class="pt-4 border-t border-yellow-900">
+                                        <button onclick="Admin.action('reset-vault')" class="btn w-full border-yellow-400 text-yellow-400 py-3 font-bold">
+                                            ⚠️ RESET TO VAULT
                                         </button>
-                                        <div class="text-center text-xs text-gray-500 mt-2">Resets Sector, Local Position and Map View.</div>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="panel-box p-4">
-                                <h3 class="text-lg font-bold text-green-400 mb-2">QUEST LOG (Raw List)</h3>
-                                <div id="quest-list" class="flex flex-col gap-1 max-h-60 overflow-y-auto"></div>
+                                <h3 class="text-lg font-bold text-green-400 mb-2">QUEST LOG</h3>
+                                <div id="quest-list" class="flex flex-col gap-1"></div>
                             </div>
                         </div>
 
-                        <div id="tab-raw" class="hidden h-full flex flex-col">
-                            <p class="text-xs text-red-500 mb-2">WARNING: DIRECT JSON EDITING. SYNTAX ERRORS WILL BREAK SAVEGAME.</p>
-                            <textarea id="raw-json" class="flex-grow font-mono text-xs bg-black p-4 border border-[#1a551a] text-green-300"></textarea>
-                            <button onclick="Admin.saveRaw()" class="btn mt-2 border-red-500 text-red-500">SAVE RAW JSON</button>
+                        <div id="tab-raw" class="absolute inset-0 p-4 hidden flex flex-col">
+                            <p class="text-xs text-red-500 mb-2 shrink-0">WARNING: DIRECT JSON EDITING.</p>
+                            <textarea id="raw-json" class="flex-grow font-mono text-xs bg-black p-4 border border-[#1a551a] text-green-300 resize-none mb-2"></textarea>
+                            <button onclick="Admin.saveRaw()" class="btn shrink-0 border-red-500 text-red-500">SAVE RAW JSON</button>
                         </div>
 
                     </div>
@@ -239,7 +231,6 @@
     </div>
 
     <script>
-        // Cache Buster
         const v = Date.now();
         const load = (src) => new Promise((res, rej) => {
             const s = document.createElement('script');
@@ -248,9 +239,8 @@
             document.body.appendChild(s);
         });
 
-        // Load Chain
         load('data_core.js')
-        .then(() => load('data_items.js')) // Essential for Inventory Manager
+        .then(() => load('data_items.js'))
         .then(() => load('data_recipes.js'))
         .then(() => load('network.js'))
         .then(() => load('admin.js'))
