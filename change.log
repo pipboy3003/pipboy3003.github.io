@@ -1,3 +1,13 @@
+[v3.4] - 2026-01-03 (UI & Header Overhaul)
+- Header Layout komplett umgebaut: Speicher-Button entfernt.
+- Navigation: "MENÜ" Text zu Burger-Icon (☰) geändert.
+- Level-Anzeige: Befindet sich nun direkt unter dem Namen.
+- Interaktion: Klick auf Name/Level öffnet das Charakter-Menü (Stats bei Punkten).
+- Ressourcen: Kronkorken & Munition vertikal gestapelt.
+- HP-Anzeige: Füllt nun dynamisch den gesamten freien Platz im Header.
+- XP-Leiste: Nimmt nun die volle Breite unter dem Header ein (über Spielfeld/Log).
+- Code Cleanup: Entfernung alter Save-Button Logik.
+
 [v3.3b] - 2026-01-03 04:45am (Survival & UI Polish)
 - SURVIVAL: Ungeschütztes Schlafen im Freien gibt nun +10 RADS Strahlung.
 - SURVIVAL: Schlafen im Zelt gibt +5 RADS (Teilweiser Schutz).
