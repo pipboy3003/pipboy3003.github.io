@@ -288,6 +288,26 @@ Object.assign(Game, {
         return remaining === 0;
     },
 
+    destroyItem: function(invIndex) {
+        if(!this.state.inventory || !this.state.inventory[invIndex]) return;
+        const item = this.state.inventory[invIndex];
+        const def = this.items[item.id];
+        
+        let name = def.name;
+        if(item.props && item.props.name) name = item.props.name;
+
+        // Item entfernen
+        this.state.inventory.splice(invIndex, 1);
+        
+        if(item.id === 'ammo') this.syncAmmo();
+        
+        UI.log(`${name} weggeworfen.`, "text-red-500 italic");
+        
+        UI.update();
+        if(this.state.view === 'inventory') UI.renderInventory();
+        this.saveGame();
+    },
+
     unequipItem: function(slot) {
         if(!this.state.equip[slot]) return;
         const item = this.state.equip[slot];
