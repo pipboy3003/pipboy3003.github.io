@@ -1,4 +1,4 @@
-// [v3.6] - 2026-01-03 (Camp & Cooking Update)
+// [v3.6a] - 2026-01-03 (Camp Layout Update)
 Object.assign(UI, {
 
     renderWorldMap: function() {
@@ -169,19 +169,19 @@ Object.assign(UI, {
         }
     },
 
-    // [v3.6] CAMP UI
+    // [v3.6a] CAMP UI UPDATE
     renderCamp: function() {
         const camp = Game.state.camp;
         if(!camp) { this.switchView('map'); return; }
         
         let statusText = "Basis-Zelt (Lvl 1). Heilung 50%.";
-        let upgradeText = "Lager verbessern";
+        let upgradeText = "LAGER VERBESSERN";
         let upgradeSub = "Kosten: 10x Schrott";
         let upgradeDisabled = false;
         
         if(camp.level >= 2) {
             statusText = "Komfort-Zelt (Lvl 2). Heilung 100%.";
-            upgradeText = "Lager maximiert";
+            upgradeText = "LAGER MAXIMIERT";
             upgradeSub = "Maximum erreicht";
             upgradeDisabled = true;
         }
@@ -198,41 +198,43 @@ Object.assign(UI, {
                     <p class="text-green-300">${statusText}</p>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4 flex-grow">
-                    
-                    <button class="flex flex-col items-center justify-center border ${upgradeDisabled ? 'border-gray-700 text-gray-500 cursor-not-allowed' : 'border-yellow-500 text-yellow-400 hover:bg-yellow-900/30'} p-4 transition-all"
-                        onclick="Game.upgradeCamp()" ${upgradeDisabled ? 'disabled' : ''}>
-                        <span class="text-3xl mb-1">🔨</span>
-                        <span class="font-bold">${upgradeText}</span>
-                        <span class="text-xs opacity-70">${upgradeSub}</span>
-                    </button>
+                <button class="flex flex-col items-center justify-center border ${upgradeDisabled ? 'border-gray-700 text-gray-500 cursor-not-allowed' : 'border-yellow-500 text-yellow-400 hover:bg-yellow-900/30'} p-3 transition-all w-full"
+                    onclick="Game.upgradeCamp()" ${upgradeDisabled ? 'disabled' : ''}>
+                    <span class="font-bold text-lg">${upgradeText}</span>
+                    <span class="text-xs opacity-70">${upgradeSub}</span>
+                </button>
 
-                    <button class="flex flex-col items-center justify-center border border-blue-500 text-blue-400 hover:bg-blue-900/30 p-4 transition-all"
+                <div class="grid grid-cols-2 gap-4 flex-grow max-h-[60%]">
+                    
+                    <button class="flex flex-col items-center justify-center border border-blue-500 text-blue-400 hover:bg-blue-900/30 p-4 transition-all h-full"
                         onclick="Game.restInCamp()">
                         <span class="text-3xl mb-1">💤</span>
                         <span class="font-bold">SCHLAFEN</span>
-                        <span class="text-xs opacity-70">HP wiederherstellen</span>
+                        <span class="text-xs opacity-70">HP heilen</span>
                     </button>
 
-                    <button class="flex flex-col items-center justify-center border border-orange-500 text-orange-400 hover:bg-orange-900/30 p-4 transition-all"
+                    <button class="flex flex-col items-center justify-center border border-orange-500 text-orange-400 hover:bg-orange-900/30 p-4 transition-all h-full"
                         onclick="UI.renderCampCooking()">
                         <span class="text-3xl mb-1">🍖</span>
                         <span class="font-bold">KOCHEN</span>
-                        <span class="text-xs opacity-70">Nahrung zubereiten</span>
+                        <span class="text-xs opacity-70">Essen</span>
                     </button>
 
-                    <button class="flex flex-col items-center justify-center border border-red-500 text-red-400 hover:bg-red-900/30 p-4 transition-all"
+                    <button class="flex flex-col items-center justify-center border border-red-500 text-red-400 hover:bg-red-900/30 p-4 transition-all h-full"
                         onclick="Game.packCamp()">
                         <span class="text-3xl mb-1">🎒</span>
                         <span class="font-bold">ABBAUEN</span>
-                        <span class="text-xs opacity-70">Lager einpacken</span>
+                        <span class="text-xs opacity-70">Einpacken</span>
+                    </button>
+
+                    <button class="flex flex-col items-center justify-center border border-green-500 text-green-500 hover:bg-green-900/30 p-4 transition-all h-full"
+                        onclick="UI.switchView('map')">
+                        <span class="text-3xl mb-1">🗺️</span>
+                        <span class="font-bold">ZURÜCK</span>
+                        <span class="text-xs opacity-70">Karte</span>
                     </button>
                 
                 </div>
-
-                <button onclick="UI.switchView('map')" class="mt-auto w-full py-4 border-t border-green-500 text-green-500 font-bold hover:bg-green-900/50">
-                    ZURÜCK ZUR KARTE
-                </button>
             </div>
         `;
     },
