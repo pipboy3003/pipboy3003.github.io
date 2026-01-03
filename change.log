@@ -1,3 +1,9 @@
+[v3.1b] - 2026-01-03 02:00am (Economy Update)
+- ECONOMY: Verkaufs-Tab im Händler-Menü hinzugefügt.
+- ECONOMY: Du kannst nun Items aus deinem Inventar für Kronkorken verkaufen (25% des Kaufwerts).
+- LOGIC: Händler haben nun ein begrenztes Budget (Budget regeneriert sich alle 15 Min beim Restock).
+- UI: Shop-Header zeigt nun dein Vermögen UND das Budget des Händlers an.
+
 [v3.1a] - 2026-01-03 01:45am (Combat QoL)
 - COMBAT: Wenn Munition leer ist, wird die Waffe automatisch abgelegt.
 - COMBAT: Der Angriff wird sofort mit Fäusten fortgesetzt (kein Zugverlust).
