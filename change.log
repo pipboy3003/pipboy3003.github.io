@@ -1,3 +1,7 @@
+[v5.2] - 2026-01-03 10:25pm (UI Overlay Fixes)
+- Vault Legends: Fensterhöhe auf 90% des Containers begrenzt -> Verhindert Abschneiden auf Mobile.
+- Vault Legends: Hintergrund-Klick schließt Fenster nun zuverlässig (pointer-events-auto Fix).
+
 [v5.1] - 2026-01-03 09:00pm (Overlay Fixes)
 - Vault Legends: Overlay-Container explizit positioniert (Fix für Click-Outside).
 - Vault Legends: Box auf 80vh begrenzt, Scrollen repariert (flex-1/min-h-0).
