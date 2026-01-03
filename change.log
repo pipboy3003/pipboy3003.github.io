@@ -1,3 +1,9 @@
+[v4.1] - 2026-01-03 15:30 (Graphics Engine Overhaul)
+- Core: Umstellung von Vektor/Rect-Rendering auf Sprite/Tile-Rendering.
+- New: generateTileset() erstellt dynamisch Pixel-Art Texturen (Gras, Mauern, Wasser, Bäume) zur Laufzeit.
+- Visual: "Top-Down" Perspektive für Wände und Objekte simuliert.
+- Visual: image-rendering: pixelated für knackigen 16-Bit Look aktiviert.
+
 [v3.6] - 2026-01-03 06:00am (Camp System 2.0)
 - FEATURE: Permanentes Zelt-Icon (⛺) auf dem Spielfeld hinzugefügt.
   - Wenn Bausatz im Inventar: Button zeigt "BAUEN".
