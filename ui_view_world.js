@@ -1,4 +1,7 @@
-// [v3.6a] - 2026-01-03 (Camp Layout Update)
+// [v3.7] - 2026-01-03 07:15am (World & Camp Renderer)
+// - Map Logic: Zeigt Sektoren und POIs.
+// - Camp Renderer: Zeichnet das Zelt-Menü direkt via JS (ohne HTML-Datei).
+
 Object.assign(UI, {
 
     renderWorldMap: function() {
@@ -10,6 +13,7 @@ Object.assign(UI, {
         const TILE_W = cvs.width / W;
         const TILE_H = cvs.height / H;
 
+        // Hintergrund
         ctx.fillStyle = "#050a05"; 
         ctx.fillRect(0, 0, cvs.width, cvs.height);
 
@@ -22,10 +26,12 @@ Object.assign(UI, {
         const pulse = (Date.now() % 1000) / 1000;
         const glowAlpha = 0.3 + (Math.sin(Date.now() / 200) + 1) * 0.2; 
         
+        // Camp Coordinate Fix
         if(Game.state.camp && !Game.state.camp.sector && Game.state.camp.sx !== undefined) {
              Game.state.camp.sector = { x: Game.state.camp.sx, y: Game.state.camp.sy };
         }
 
+        // Loop über alle Sektoren
         for(let y=0; y<H; y++) {
             for(let x=0; x<W; x++) {
                 const key = `${x},${y}`;
@@ -52,6 +58,7 @@ Object.assign(UI, {
                     }
                 }
 
+                // Zeichne Kachel
                 if(isVisited) {
                     const biome = WorldGen.getSectorBiome(x, y);
                     ctx.fillStyle = biomeColors[biome] || '#222';
@@ -68,6 +75,7 @@ Object.assign(UI, {
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
 
+                // POI Icons
                 if (fixedPOI) {
                     let icon = "❓";
                     let color = "#fff";
@@ -76,10 +84,7 @@ Object.assign(UI, {
 
                     if(fixedPOI.type === 'C') { icon = "🏙️"; color = "#00ffff"; }
                     else if(fixedPOI.type === 'V') { 
-                        icon = "⚙️"; 
-                        color = "#ffff00"; 
-                        fontSize = "25px"; 
-                        label = "VAULT 101"; 
+                        icon = "⚙️"; color = "#ffff00"; fontSize = "25px"; label = "VAULT 101"; 
                     }
                     else if(fixedPOI.type === 'M') { icon = "🏰"; color = "#ff5555"; }
                     else if(fixedPOI.type === 'R') { icon = "☠️"; color = "#ffaa00"; }
@@ -130,12 +135,14 @@ Object.assign(UI, {
                     }
                 }
 
+                // Zelt-Icon auf Karte
                 if(Game.state.camp && Game.state.camp.sector && Game.state.camp.sector.x === x && Game.state.camp.sector.y === y) {
                     ctx.font = "bold 20px monospace";
                     ctx.fillStyle = "#ffffff";
                     ctx.fillText("⛺", x * TILE_W + TILE_W/4, y * TILE_H + TILE_H/4);
                 }
 
+                // Detail-Text Update
                 if(isCurrent && details) {
                     let info = `SEKTOR [${x},${y}]`;
                     if(randomDungeon) info += " <span class='text-purple-400 animate-pulse'>[SIGNAL]</span>";
@@ -144,6 +151,7 @@ Object.assign(UI, {
             }
         }
 
+        // Spieler Position (Grüner Punkt)
         const relX = Game.state.player.x / Game.MAP_W; 
         const relY = Game.state.player.y / Game.MAP_H; 
         
@@ -163,16 +171,22 @@ Object.assign(UI, {
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        // Canvas Rendering Loop
+        // Loop
         if(Game.state.view === 'worldmap') {
             requestAnimationFrame(() => this.renderWorldMap());
         }
     },
 
-    // [v3.6a] CAMP UI UPDATE
+    // --- HIER IST DIE FUNKTION, DIE DIR FEHLT ---
     renderCamp: function() {
         const camp = Game.state.camp;
-        if(!camp) { this.switchView('map'); return; }
+        
+        // Sicherheitscheck: Wenn kein Camp existiert, zurück zur Map
+        if(!camp) { 
+            console.warn("RenderCamp called but no camp exists.");
+            this.switchView('map'); 
+            return; 
+        }
         
         let statusText = "Basis-Zelt (Lvl 1). Heilung 50%.";
         let upgradeText = "LAGER VERBESSERN";
@@ -186,6 +200,7 @@ Object.assign(UI, {
             upgradeDisabled = true;
         }
 
+        // Wir bauen das UI komplett in JS zusammen
         this.els.view.innerHTML = `
             <div class="flex flex-col h-full w-full max-w-lg mx-auto p-4 gap-4">
                 
