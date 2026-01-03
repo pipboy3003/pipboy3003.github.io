@@ -1,8 +1,11 @@
-// [v5.8] - 2026-01-03 11:40pm (Item Trash Update)
-// - Feature: showItemConfirm angepasst für Schrott (Junk).
-// - UI: "Benutzen" Button wird bei Junk ausgeblendet, "Wegwerfen" bleibt aktiv.
+// [v5.9] - 2026-01-04 01:20am (Workbench Integration)
+// - UI: "Zerlegen" Button im Item-Dialog hinzugefügt (wenn im Camp/Stadt/Vault).
+// - Logic: Prüft Game.state.camp oder Zone für Werkbank-Zugriff.
 
 Object.assign(UI, {
+    
+    // ... [Show Quest, Legend, Highscore etc. UNVERÄNDERT LASSEN] ...
+    // (Behalte den Code für showQuestComplete, showMapLegend, showHighscoreBoard, showShopConfirm aus v5.8 bei)
     
     // [v3.0] NEW QUEST HUD
     showQuestComplete: function(questDef) {
@@ -329,6 +332,7 @@ Object.assign(UI, {
 
         let statsText = "";
         let displayName = item.name;
+        let isScrappable = false;
         
         if(invItem.props) {
             displayName = invItem.props.name;
@@ -341,12 +345,18 @@ Object.assign(UI, {
             else statsText = item.desc || "Item";
         }
 
+        // Check if scrappable (Weapon/Armor) AND Workbench nearby
+        if (['weapon', 'body', 'head', 'legs', 'feet', 'arms'].includes(item.type)) {
+            isScrappable = true;
+        }
+
         const isUsable = !['junk', 'component', 'misc', 'rare', 'ammo'].includes(item.type);
+        const hasWorkbench = (Game.state.camp || (Game.state.zone && Game.state.zone.includes('Stadt')) || (Game.state.zone && Game.state.zone.includes('Vault 101')));
 
         box.innerHTML = `
             <h2 class="text-xl font-bold text-green-400 mb-2">${displayName}</h2>
             <div class="text-xs text-green-200 mb-4 border-t border-b border-green-900 py-2">Typ: ${item.type.toUpperCase()}<br>Wert: ${item.cost} KK<br><span class="text-yellow-400">${statsText}</span></div>
-            <p class="text-green-200 mb-4 text-sm">${isUsable ? "Gegenstand benutzen oder wegwerfen?" : "Dieses Item kann nur verkauft oder zum Craften verwendet werden."}</p>
+            <p class="text-green-200 mb-4 text-sm">${isUsable ? "Ausrüsten, Zerlegen oder Wegwerfen?" : "Nur Verkauf / Crafting"}</p>
         `;
         
         const btnContainer = document.createElement('div');
@@ -358,6 +368,20 @@ Object.assign(UI, {
             btnYes.textContent = "BENUTZEN / AUSRÜSTEN";
             btnYes.onclick = () => { Game.useItem(invIndex); this.leaveDialog(); };
             btnContainer.appendChild(btnYes);
+        }
+
+        // [v5.9] Scrapping Button Logic
+        if (isScrappable) {
+            const btnScrap = document.createElement('button');
+            if (hasWorkbench) {
+                btnScrap.className = "border border-orange-500 text-orange-500 hover:bg-orange-900 px-4 py-2 font-bold w-full";
+                btnScrap.innerHTML = "ZERLEGEN (Schrott) 🔧";
+                btnScrap.onclick = () => { Game.scrapItem(invIndex); this.leaveDialog(); };
+            } else {
+                btnScrap.className = "border border-gray-600 text-gray-600 px-4 py-2 font-bold w-full cursor-not-allowed opacity-50";
+                btnScrap.innerHTML = "ZERLEGEN (Werkbank benötigt)";
+            }
+            btnContainer.appendChild(btnScrap);
         }
         
         const row = document.createElement('div');
@@ -382,6 +406,7 @@ Object.assign(UI, {
         this.refreshFocusables();
     },
 
+    // ... (restliche Funktionen bleiben unverändert)
     showDungeonWarning: function(callback) {
         if(!this.els.dialog) this.restoreOverlay();
         const overlay = this.els.dialog;
