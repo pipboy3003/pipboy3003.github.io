@@ -1,5 +1,7 @@
-// [v3.0.1] - 2026-01-03 02:00am (Logout Crash Fix)
+// [v3.0.2] - 2026-01-03 03:30am (Login Error Fix)
 // - Fix: Logout Reihenfolge korrigiert (Save -> Clear State -> Disconnect).
+// - Fix: Error Handling für Login verbessert (JSON Parsing).
+
 const UI = {
     els: {},
     timerInterval: null,
@@ -233,10 +235,24 @@ const UI = {
             
         } catch(e) {
             let msg = e.message;
-            if (e.code === "auth/email-already-in-use") msg = "E-Mail wird bereits verwendet!";
-            if (e.code === "auth/invalid-email") msg = "Ungültige E-Mail-Adresse!";
-            if (e.code === "auth/wrong-password") msg = "Falsches Passwort!";
-            if (e.code === "auth/user-not-found") msg = "Benutzer nicht gefunden!";
+            
+            // [v3.0.2] Error Parsing für saubere Ausgabe
+            if(msg && (msg.includes("INVALID_LOGIN_CREDENTIALS") || msg.includes("INVALID_EMAIL"))) {
+                msg = "E-Mail oder Passwort falsch!";
+            }
+            else if(msg && msg.includes("EMAIL_NOT_FOUND")) msg = "E-Mail nicht gefunden!";
+            else if(msg && msg.includes("INVALID_PASSWORD")) msg = "Falsches Passwort!";
+            else if(msg && msg.includes("USER_DISABLED")) msg = "Account deaktiviert!";
+            else if(msg && msg.includes("Too many unsuccessful attempts")) msg = "Zu viele Versuche. Warte kurz!";
+            else if (e.code === "auth/email-already-in-use") msg = "E-Mail wird bereits verwendet!";
+            else if (e.code === "auth/invalid-email") msg = "Ungültige E-Mail-Adresse!";
+            else if (e.code === "auth/wrong-password") msg = "Falsches Passwort!";
+            else if (e.code === "auth/user-not-found") msg = "Benutzer nicht gefunden!";
+            else if (e.code === "auth/internal-error") {
+                 // Fallback: Wenn internal-error trotzdem CREDENTIALS enthält
+                 if(msg.includes("INVALID_LOGIN_CREDENTIALS")) msg = "E-Mail oder Passwort falsch!";
+            }
+
             this.els.loginStatus.textContent = "FEHLER: " + msg;
             this.els.loginStatus.className = "mt-4 text-red-500 font-bold blink-red";
         } finally {
