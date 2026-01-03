@@ -1,70 +1,100 @@
-// [v4.1] - 2026-01-03 06:15pm (Visual Atmosphere Overhaul)
-// - RENDER: Day/Night Cycle via 'Game.getAmbientLight()'.
-// - RENDER: Dynamic Weather Particles (Rain, Ash, Rad-Fog).
-// - GFX: Lightning Flashes during 'storm'.
-// - GFX: Flickering Lights for POIs.
+// [v4.3] - 2026-01-03 07:00pm (Render Fixes)
+// - FIX: Alle Map-Objekte (Zäune, Steine, Säulen) wieder sichtbar gemacht.
+// - FIX: Emojis durch Canvas-Pixel-Art ersetzt (keine "Schatten-Bugs" mehr).
+// - GFX: Spieler-Sprite Kontrast erhöht.
 
 Object.assign(Game, {
     gameTileset: null,
     particles: [],
-    lightningTimer: 0,
     lightningIntensity: 0,
 
-    // --- TILES GENERATOR (Optimiert) ---
+    // --- TILES GENERATOR ---
     generateGameTileset: function() {
         if (this.gameTileset) return this.gameTileset;
         const TILE = 32;
         const cvs = document.createElement('canvas');
-        cvs.width = TILE * 16; cvs.height = TILE;
+        cvs.width = TILE * 20; cvs.height = TILE; 
         const ctx = cvs.getContext('2d');
 
-        // Helper
-        const noise = (x, color, i=0.1) => {
-            ctx.fillStyle = color; ctx.fillRect(x, 0, TILE, TILE);
-            for(let j=0; j<40; j++) {
-                ctx.fillStyle = Math.random()>0.5 ? `rgba(255,255,255,${i})` : `rgba(0,0,0,${i})`;
-                ctx.fillRect(x+Math.random()*TILE, Math.random()*TILE, 2, 2);
-            }
+        const rect = (x, y, w, h, c) => { ctx.fillStyle=c; ctx.fillRect(x,y,w,h); };
+        const noise = (x, c) => {
+            rect(x,0,32,32,c);
+            for(let i=0; i<30; i++) rect(x+Math.random()*32, Math.random()*32, 2, 2, Math.random()>0.5?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.1)');
         };
-        const draw = (idx, fn) => { ctx.save(); ctx.translate(idx*TILE, 0); fn(ctx); ctx.restore(); };
 
-        // TEXTUREN
-        noise(0, '#4e342e'); // 0: Boden
-        draw(1, c => { noise(0, '#263238'); c.fillStyle='#111'; c.fillRect(0,0,32,2); c.fillRect(0,0,2,32); c.fillRect(8,8,16,16); }); // 1: Wand
-        draw(2, c => { c.fillStyle='#3e2723'; c.fillRect(12,18,8,14); c.fillStyle='#1b5e20'; c.beginPath(); c.arc(16,14,12,0,7); c.fill(); }); // 2: Baum
-        draw(3, c => { c.strokeStyle='#3e2723'; c.lineWidth=2; c.moveTo(16,32); c.lineTo(16,10); c.stroke(); c.moveTo(16,20); c.lineTo(8,10); c.stroke(); }); // 3: Toter Baum
-        draw(4, c => { noise(0, '#004d40', 0.2); c.fillStyle='rgba(100,255,218,0.3)'; c.fillRect(5,5,10,2); }); // 4: Wasser
-        draw(5, c => { c.fillStyle='#444'; c.beginPath(); c.moveTo(16,4); c.lineTo(30,30); c.lineTo(2,30); c.fill(); }); // 5: Berg
-        draw(6, c => { c.fillStyle='#6d4c41'; c.fillRect(4,8,24,20); c.strokeStyle='#3e2723'; c.strokeRect(4,8,24,20); c.beginPath(); c.moveTo(4,8); c.lineTo(28,28); c.stroke(); }); // 6: Kiste
-        draw(7, c => { noise(0, '#212121'); c.fillStyle='#fbc02d'; c.fillRect(14,12,4,8); }); // 7: Asphalt
+        // 0: ERDE
+        noise(0, '#4e342e'); rect(5,5,4,4,'#3e2723');
+
+        // 1: WAND (#)
+        noise(32, '#263238'); rect(32,0,32,2,'#000'); rect(32,0,2,32,'#000'); rect(40,10,16,12,'#1a2327');
+
+        // 2: BAUM (t)
+        ctx.clearRect(64,0,32,32); rect(76,18,8,14,'#3e2723'); 
+        ctx.fillStyle='#1b5e20'; ctx.beginPath(); ctx.arc(80,14,12,0,7); ctx.fill(); 
+
+        // 3: TOTER BAUM (T)
+        ctx.clearRect(96,0,32,32); rect(110,20,4,12,'#3e2723');
+        ctx.strokeStyle='#3e2723'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(112,20); ctx.lineTo(104,10); ctx.stroke(); ctx.moveTo(112,22); ctx.lineTo(120,12); ctx.stroke();
+
+        // 4: WASSER (~)
+        noise(128, '#004d40'); rect(132,8,8,2,'#4db6ac'); rect(145,20,10,2,'#4db6ac');
+
+        // 5: BERG (M)
+        ctx.clearRect(160,0,32,32); ctx.fillStyle='#555'; ctx.beginPath(); ctx.moveTo(176,4); ctx.lineTo(190,30); ctx.lineTo(162,30); ctx.fill();
+
+        // 6: KISTE (X)
+        ctx.clearRect(192,0,32,32); rect(196,8,24,20,'#6d4c41'); ctx.strokeStyle='#3e2723'; ctx.lineWidth=2; ctx.strokeRect(196,8,24,20);
+        ctx.beginPath(); ctx.moveTo(196,8); ctx.lineTo(220,28); ctx.stroke();
+
+        // 7: STRASSE (=)
+        noise(224, '#212121'); rect(238,12,4,8,'#fbc02d');
+
+        // 8: ZAUN (x)
+        ctx.clearRect(256,0,32,32); 
+        ctx.fillStyle='#5d4037'; rect(258,10,2,14,'#5d4037'); rect(284,10,2,14,'#5d4037');
+        rect(258,14,28,2,'#5d4037'); rect(258,20,28,2,'#5d4037');
+
+        // 9: STEIN (o)
+        ctx.clearRect(288,0,32,32); ctx.fillStyle='#757575'; ctx.beginPath(); ctx.arc(304,24,6,0,7); ctx.fill();
+
+        // 10: SÄULE (|)
+        ctx.clearRect(320,0,32,32); rect(328,4,16,28,'#37474f'); rect(332,8,8,20,'#263238');
+
+        // 11: TÜR (+)
+        rect(352,0,32,32,'#4e342e'); rect(356,4,24,24,'#8d6e63'); ctx.fillStyle='#ffd600'; ctx.beginPath(); ctx.arc(376,16,2,0,7); ctx.fill();
+
+        // ICONS (Pixel Art)
+        // 12: VAULT (V)
+        ctx.clearRect(384,0,32,32); ctx.fillStyle='#222'; ctx.beginPath(); ctx.arc(400,16,12,0,7); ctx.fill();
+        ctx.strokeStyle='#ffeb3b'; ctx.lineWidth=2; ctx.stroke(); ctx.fillStyle='#ffeb3b'; ctx.font="10px monospace"; ctx.fillText("101", 392, 20);
+
+        // 13: RUSTY SPRINGS (R)
+        ctx.clearRect(416,0,32,32); rect(418,10,28,14,'#b71c1c'); rect(422,14,20,6,'#fff');
         
-        const icon = (idx, char, color) => draw(idx, c => { c.fillStyle=color; c.font="24px monospace"; c.textAlign="center"; c.textBaseline="middle"; c.fillText(char, 16, 16); });
-        icon(10, '⚙️', '#ff0'); icon(11, '🛒', '#f00'); icon(12, '🏥', '#fff'); icon(13, '💰', '#fd0'); icon(14, '🔨', '#aaa'); icon(15, '☢️', '#0f0');
+        // 14: CLINIC (P)
+        ctx.clearRect(448,0,32,32); rect(452,6,24,20,'#eee'); rect(462,10,4,12,'#f00'); rect(458,14,12,4,'#f00');
+
+        // 15: SHOP ($)
+        ctx.clearRect(480,0,32,32); rect(484,8,24,18,'#5d4037'); rect(492,20,8,6,'#ffd700');
 
         this.gameTileset = cvs;
         return cvs;
     },
 
-    // --- MAIN DRAW LOOP ---
+    // --- RENDER LOOP ---
     draw: function() { 
         if(!this.ctx || !this.cacheCanvas || !this.state.currentMap) return;
         const ctx = this.ctx; const cvs = ctx.canvas;
         
-        // 1. Kamera Smooth Follow
-        let targetCamX = (this.state.player.x * this.TILE) - (cvs.width / 2); 
-        let targetCamY = (this.state.player.y * this.TILE) - (cvs.height / 2); 
-        this.camera.x += (targetCamX - this.camera.x) * 0.1; 
-        this.camera.y += (targetCamY - this.camera.y) * 0.1;
+        let tx = (this.state.player.x * this.TILE) - (cvs.width / 2); 
+        let ty = (this.state.player.y * this.TILE) - (cvs.height / 2); 
+        this.camera.x += (tx - this.camera.x) * 0.1; 
+        this.camera.y += (ty - this.camera.y) * 0.1;
         this.camera.x = Math.max(0, Math.min(this.camera.x, (this.MAP_W * this.TILE) - cvs.width)); 
         this.camera.y = Math.max(0, Math.min(this.camera.y, (this.MAP_H * this.TILE) - cvs.height)); 
 
-        // 2. Render Basis Welt
         this.renderWorldLayer(ctx, cvs);
-
-        // 3. Render Licht & Atmosphäre (Tag/Nacht/Wetter)
         this.renderAtmosphere(ctx, cvs);
-
-        // 4. UI Overlay (Scanlines, Vignette, Zeit-Display)
         this.renderHUD(ctx, cvs);
     },
 
@@ -74,13 +104,10 @@ Object.assign(Game, {
         ctx.fillStyle = "#050505"; ctx.fillRect(0, 0, cvs.width, cvs.height); 
         ctx.imageSmoothingEnabled = false;
 
-        const camX = Math.floor(this.camera.x);
-        const camY = Math.floor(this.camera.y);
+        const cx = Math.floor(this.camera.x); const cy = Math.floor(this.camera.y);
+        ctx.drawImage(this.cacheCanvas, cx, cy, cvs.width, cvs.height, 0, 0, cvs.width, cvs.height);
 
-        ctx.drawImage(this.cacheCanvas, camX, camY, cvs.width, cvs.height, 0, 0, cvs.width, cvs.height);
-
-        ctx.save();
-        ctx.translate(-camX, -camY);
+        ctx.save(); ctx.translate(-cx, -cy);
         this.drawDynamicObjects(ctx);
         this.drawPlayerSprite(ctx);
         ctx.restore();
@@ -89,7 +116,7 @@ Object.assign(Game, {
     renderStaticMap: function() {
         if(!this.cacheCtx) this.initCache();
         const ctx = this.cacheCtx;
-        const tileset = this.generateGameTileset();
+        const tiles = this.generateGameTileset();
         ctx.fillStyle = "#111"; ctx.fillRect(0, 0, this.cacheCanvas.width, this.cacheCanvas.height);
 
         for(let y=0; y<this.MAP_H; y++) {
@@ -98,43 +125,44 @@ Object.assign(Game, {
                 const t = this.state.currentMap[y][x];
                 const px = x*32, py = y*32;
                 
-                // Boden
-                if(['=','+'].includes(t)) ctx.drawImage(tileset, 7*32,0,32,32,px,py,32,32);
-                else if(t==='~') ctx.drawImage(tileset, 4*32,0,32,32,px,py,32,32);
-                else ctx.drawImage(tileset, 0,0,32,32,px,py,32,32);
+                // BODEN
+                if(['=','+'].includes(t)) ctx.drawImage(tiles, 7*32,0,32,32,px,py,32,32);
+                else if(t==='~' || t==='W') ctx.drawImage(tiles, 4*32,0,32,32,px,py,32,32);
+                else ctx.drawImage(tiles, 0,0,32,32,px,py,32,32);
 
-                // Objekte
+                // OBJEKTE
                 let idx = -1;
-                if(t==='#') idx=1; if(t==='t') idx=2; if(t==='T') idx=3; 
-                if(t==='M') idx=5; if(t==='X') idx=6;
-                if(idx >= 0) ctx.drawImage(tileset, idx*32, 0, 32, 32, px, py, 32, 32);
+                if(t==='#') idx=1; else if(t==='t') idx=2; else if(t==='T') idx=3; 
+                else if(t==='M') idx=5; else if(t==='X') idx=6;
+                else if(t==='x') idx=8; else if(t==='o') idx=9; 
+                else if(t==='|') idx=10; else if(t==='+') idx=11;
+
+                if(idx >= 0) ctx.drawImage(tiles, idx*32, 0, 32, 32, px, py, 32, 32);
             }
         }
     },
 
     drawDynamicObjects: function(ctx) {
-        const tileset = this.generateGameTileset();
-        const startX = Math.floor(this.camera.x / 32); const endX = startX + 25;
-        const startY = Math.floor(this.camera.y / 32); const endY = startY + 20;
+        const tiles = this.generateGameTileset();
+        const sx=Math.floor(this.camera.x/32); const ex=sx+25;
+        const sy=Math.floor(this.camera.y/32); const ey=sy+20;
 
-        for(let y=startY; y<endY; y++) {
-            for(let x=startX; x<endX; x++) {
+        for(let y=sy; y<ey; y++) {
+            for(let x=sx; x<ex; x++) {
                 if(y<0||y>=this.MAP_H||x<0||x>=this.MAP_W) continue;
                 const t = this.state.currentMap[y][x];
                 const px = x*32, py = y*32;
                 
                 let idx = -1;
-                if(t==='V') idx=10; if(t==='R') idx=11; if(t==='P') idx=12;
-                if(t==='$') idx=13; if(t==='&') idx=14; 
+                if(t==='V') idx=12; if(t==='R') idx=13; if(t==='P') idx=14; if(t==='$') idx=15;
                 
                 if(idx >= 0) {
-                    const bounce = Math.sin(Date.now()/250)*2;
-                    ctx.drawImage(tileset, idx*32, 0, 32, 32, px, py + (idx>9?bounce:0), 32, 32);
+                    const bounce = Math.sin(Date.now()/300)*2;
+                    ctx.drawImage(tiles, idx*32, 0, 32, 32, px, py + bounce, 32, 32);
                 }
-
                 if(this.state.hiddenItems && this.state.hiddenItems[`${x},${y}`]) {
                     ctx.fillStyle = `rgba(255,215,0,${0.5+Math.sin(Date.now()/100)*0.5})`;
-                    ctx.beginPath(); ctx.arc(px+16, py+16, 2, 0, 7); ctx.fill();
+                    ctx.beginPath(); ctx.arc(px+16, py+16, 3, 0, 7); ctx.fill();
                 }
             }
         }
@@ -143,182 +171,68 @@ Object.assign(Game, {
     drawPlayerSprite: function(ctx) {
         const px = this.state.player.x * 32 + 16;
         const py = this.state.player.y * 32 + 16;
-        const walkBounce = Math.sin(Date.now() / 150) * 2;
+        const bounce = Math.sin(Date.now() / 150) * 2;
         
-        ctx.fillStyle = "rgba(0,0,0,0.6)";
-        ctx.beginPath(); ctx.ellipse(px, py+12, 10, 5, 0, 0, 7); ctx.fill();
+        ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.beginPath(); ctx.ellipse(px, py+14, 10, 5, 0, 0, 7); ctx.fill();
 
-        ctx.translate(px, py + walkBounce);
+        ctx.translate(px, py + bounce);
+        ctx.fillStyle = "#0055ff"; ctx.fillRect(-8, -8, 16, 16); 
+        ctx.fillStyle = "#ffdd00"; ctx.fillRect(-2, -8, 4, 16); 
+        ctx.fillStyle = "#ffccaa"; ctx.fillRect(-7, -18, 14, 10); 
         ctx.fillStyle = "#222"; ctx.fillRect(-6, 8, 4, 6); ctx.fillRect(2, 8, 4, 6);
-        ctx.fillStyle = "#0044aa"; ctx.fillRect(-8, -8, 16, 16); 
-        ctx.fillStyle = "#e6c200"; ctx.fillRect(-2, -8, 4, 16); 
-        ctx.fillStyle = "#f5d0a9"; ctx.fillRect(-7, -18, 14, 10);
-        ctx.fillStyle = "#4e342e"; ctx.fillRect(-8, -20, 16, 5); ctx.fillRect(-8,-18,3,8); ctx.fillRect(5,-18,3,8);
-        ctx.fillStyle = "#2e7d32"; ctx.fillRect(-10, 0, 4, 6);
-        ctx.translate(-px, -(py + walkBounce));
+        ctx.translate(-px, -(py + bounce));
     },
 
     renderAtmosphere: function(ctx, cvs) {
-        const camX = this.camera.x;
-        const camY = this.camera.y;
-        const time = Game.getAmbientLight ? Game.getAmbientLight() : 1.0;
-        const weather = Game.state.weather || 'clear';
-
-        // --- 1. AMBIENT LIGHT LAYER ---
+        const light = Game.getAmbientLight ? Game.getAmbientLight() : 1.0;
+        
         ctx.globalCompositeOperation = 'multiply';
-        
-        // Wetter-Einfluss auf Licht
-        let lightLevel = time;
-        if(weather === 'rain') lightLevel *= 0.8;
-        if(weather === 'storm') lightLevel *= 0.5;
-        if(weather === 'fog') lightLevel *= 0.7;
-
-        // Basis-Dunkelheit (Tag = Transparent, Nacht = Dunkelblau)
-        // Wir invertieren lightLevel für Opacity (1.0 Hell = 0.0 Opacity)
-        const darkness = 1.0 - Math.max(0.1, lightLevel); 
-        ctx.fillStyle = `rgba(0, 5, 20, ${darkness})`; 
-        
-        // Radstorm: Grüner Tint
-        if(weather === 'storm') ctx.fillStyle = `rgba(10, 30, 10, ${darkness + 0.2})`;
-
+        const darkness = 1.0 - Math.max(0.2, light); 
+        ctx.fillStyle = `rgba(0, 10, 25, ${darkness})`; 
         ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-
-        // --- 2. DYNAMIC LIGHTS (Löcher in die Dunkelheit) ---
         ctx.globalCompositeOperation = 'destination-out';
-
-        const light = (x, y, r, flicker=0) => {
-            const px = (x * 32 + 16) - camX;
-            const py = (y * 32 + 16) - camY;
-            const radius = r + Math.random() * flicker;
-            const g = ctx.createRadialGradient(px, py, 0, px, py, radius);
-            g.addColorStop(0, "rgba(255, 255, 255, 1)");
-            g.addColorStop(1, "rgba(255, 255, 255, 0)");
-            ctx.fillStyle = g; ctx.beginPath(); ctx.arc(px, py, radius, 0, Math.PI*2); ctx.fill();
+        const lamp = (x,y,r) => {
+            const px=(x*32+16)-this.camera.x, py=(y*32+16)-this.camera.y;
+            const g=ctx.createRadialGradient(px,py,0,px,py,r);
+            g.addColorStop(0,"rgba(255,255,255,1)"); g.addColorStop(1,"rgba(255,255,255,0)");
+            ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px,py,r,0,7); ctx.fill();
         };
 
-        // Spieler Licht (immer an, aber schwächer am Tag)
-        light(this.state.player.x, this.state.player.y, 140, 2);
-
-        // Map Lichter
-        const startX = Math.floor(camX / 32); const endX = startX + 25;
-        const startY = Math.floor(camY / 32); const endY = startY + 20;
-
-        for(let y=startY; y<endY; y++) {
-            for(let x=startX; x<endX; x++) {
-                if(y<0||y>=this.MAP_H||x<0||x>=this.MAP_W) continue;
-                const t = this.state.currentMap[y][x];
-                // Flackernde Lichter
-                const flick = (Math.random() > 0.9) ? 20 : 0; 
-                if(t==='C' || t==='$' || t==='P') light(x, y, 90, flick); 
-                if(t==='V') light(x, y, 110, 5); 
-                if(t==='~') light(x, y, 50, 5); 
+        lamp(this.state.player.x, this.state.player.y, 140);
+        
+        const sx=Math.floor(this.camera.x/32), ex=sx+25, sy=Math.floor(this.camera.y/32), ey=sy+20;
+        for(let y=sy; y<ey; y++) {
+            for(let x=sx; x<ex; x++) {
+                if(y>=0 && y<this.MAP_H && x>=0 && x<this.MAP_W) {
+                    const t = this.state.currentMap[y][x];
+                    if(['C','$','P','V','R'].includes(t)) lamp(x,y,100);
+                }
             }
         }
         
-        // --- 3. BLITZE (Bei Sturm) ---
-        if(weather === 'storm' && Math.random() < 0.005) {
-            this.lightningIntensity = 1.0;
-        }
-        if(this.lightningIntensity > 0) {
-            ctx.fillStyle = `rgba(200, 255, 200, ${this.lightningIntensity})`;
-            ctx.fillRect(0, 0, cvs.width, cvs.height);
-            this.lightningIntensity -= 0.1;
-        }
-
-
-        // --- 4. COLORED GLOW (Overlay) ---
-        ctx.globalCompositeOperation = 'screen'; 
-
-        const glow = (x, y, r, color) => {
-            const px = (x * 32 + 16) - camX;
-            const py = (y * 32 + 16) - camY;
-            const g = ctx.createRadialGradient(px, py, 0, px, py, r);
-            g.addColorStop(0, color); g.addColorStop(1, "rgba(0,0,0,0)");
-            ctx.fillStyle = g; ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI*2); ctx.fill();
-        };
-
-        for(let y=startY; y<endY; y++) {
-            for(let x=startX; x<endX; x++) {
-                if(y<0||y>=this.MAP_H||x<0||x>=this.MAP_W) continue;
-                const t = this.state.currentMap[y][x];
-                if(t==='~') glow(x, y, 60, "rgba(0, 255, 50, 0.3)");
-                if(t==='V') glow(x, y, 90, "rgba(255, 255, 0, 0.2)");
-                if(t==='R') glow(x, y, 90, "rgba(255, 0, 0, 0.3)");
-            }
-        }
-        
-        // PipBoy Monitor Glow (Grünlich)
-        glow(this.state.player.x, this.state.player.y, 100, "rgba(50, 255, 50, 0.08)");
-
-        // --- 5. PARTICLES (Wetter) ---
         ctx.globalCompositeOperation = 'source-over';
-        this.renderParticles(ctx, cvs, weather);
+        this.renderParticles(ctx, cvs, Game.state.weather);
     },
 
-    renderParticles: function(ctx, cvs, weather) {
-        // Init Particles
-        if(this.particles.length < 100) {
-            this.particles.push({
-                x: Math.random() * cvs.width,
-                y: Math.random() * cvs.height,
-                vx: (Math.random() - 0.5) * 2,
-                vy: 2 + Math.random() * 3,
-                life: Math.random() * 100
-            });
-        }
-
-        this.particles.forEach((p) => {
-            // Logik je nach Wetter
-            if(weather === 'rain' || weather === 'storm') {
-                p.x += p.vx * 0.1; // Regen fällt fast gerade
-                p.y += p.vy * 3;   // Schnell
-                
-                ctx.strokeStyle = (weather==='storm') ? "rgba(100, 255, 100, 0.3)" : "rgba(200, 200, 255, 0.3)";
-                ctx.lineWidth = 1;
-                ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx, p.y - p.vy * 2); ctx.stroke();
-            } else {
-                // Asche / Staub (Langsam)
-                p.x += p.vx * 0.5;
-                p.y += p.vy * 0.2;
-                ctx.fillStyle = "rgba(200, 200, 150, 0.3)";
-                ctx.fillRect(p.x, p.y, 2, 2);
-            }
-
-            if(p.y > cvs.height) { p.y = -10; p.x = Math.random() * cvs.width; }
-            if(p.x > cvs.width) p.x = 0;
-            if(p.x < 0) p.x = cvs.width;
+    renderParticles: function(ctx, cvs, w) {
+        if(this.particles.length < 50) this.particles.push({x:Math.random()*cvs.width, y:Math.random()*cvs.height, s:Math.random()+1});
+        ctx.fillStyle = (w==='rain') ? 'rgba(150,150,255,0.5)' : 'rgba(200,200,150,0.3)';
+        this.particles.forEach(p => {
+            p.y += (w==='rain') ? 10 : 0.5; p.x -= 0.5;
+            if(p.y>cvs.height) { p.y=-10; p.x=Math.random()*cvs.width; }
+            ctx.fillRect(p.x, p.y, (w==='rain'?1:2), (w==='rain'?6:2));
         });
     },
 
     renderHUD: function(ctx, cvs) {
-        // Scanlines
-        ctx.fillStyle = "rgba(0, 255, 0, 0.02)";
+        ctx.fillStyle = "rgba(0, 255, 0, 0.03)";
         for(let i=0; i<cvs.height; i+=3) ctx.fillRect(0, i, cvs.width, 1);
-
-        // Vignette
-        const g = ctx.createRadialGradient(cvs.width/2, cvs.height/2, cvs.height/2.5, cvs.width/2, cvs.height/2, cvs.height);
-        g.addColorStop(0, "rgba(0,0,0,0)");
-        g.addColorStop(1, "rgba(0,20,0,0.6)");
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, cvs.width, cvs.height);
-
-        // Zeit & Wetter Anzeige (Oben Rechts im Canvas)
+        
         if(Game.getTimeString) {
-            const timeStr = Game.getTimeString();
-            const wStr = (Game.state.weather || 'CLEAR').toUpperCase();
-            
-            ctx.font = "bold 16px monospace";
-            ctx.textAlign = "right";
-            
-            // Schatten
-            ctx.fillStyle = "rgba(0,0,0,0.8)";
-            ctx.fillText(`${timeStr} | ${wStr}`, cvs.width - 10 + 1, 25 + 1);
-            
-            // Text
-            ctx.fillStyle = "#39ff14";
-            if(Game.state.weather === 'storm') ctx.fillStyle = "#ff3333"; // Rot bei Sturm
-            ctx.fillText(`${timeStr} | ${wStr}`, cvs.width - 10, 25);
+            ctx.font = "bold 16px monospace"; ctx.textAlign = "right";
+            ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillText(Game.getTimeString(), cvs.width-8, 26);
+            ctx.fillStyle = "#39ff14"; ctx.fillText(Game.getTimeString(), cvs.width-10, 24);
         }
     }
 });
