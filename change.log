@@ -1,3 +1,8 @@
+[v5.1] - 2026-01-03 09:00pm (Overlay Fixes)
+- Vault Legends: Overlay-Container explizit positioniert (Fix für Click-Outside).
+- Vault Legends: Box auf 80vh begrenzt, Scrollen repariert (flex-1/min-h-0).
+- Vault Legends: ESC-Taste Event Listener hinzugefügt.
+
 [v5.0] - 2026-01-03 08:30pm (UI & Vault Legends Update) 
 - Vault Legends Fensterhöhe auf Spielbereich begrenzt & Scrollbalken optimiert. 
 - Click-Outside-To-Close Feature für Vault Legends Fenster hinzugefügt.
