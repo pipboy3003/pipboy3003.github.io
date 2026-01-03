@@ -1,6 +1,7 @@
-// [v3.0] - 2026-01-03 00:30am (Combat Visual Feedback)
-// - Added 'triggerFeedback' for visual damage numbers and effects.
-// - Integrated feedback into attack, enemyTurn and flee.
+// [v3.1] - 2026-01-03 01:20am (Bugs & Balancing)
+// - Feature: Range weapons consume 'ammo'.
+// - Logic: Attack blocked if no ammo.
+// - Visual: Floating text position randomized (X/Y).
 
 window.Combat = {
     loopId: null,
@@ -72,9 +73,10 @@ window.Combat = {
         const el = document.createElement('div');
         el.className = "float-text absolute font-bold text-4xl pointer-events-none z-50 text-shadow-black";
         
-        // Random slight offset for "natural" feel
+        // Random slight offset for "natural" feel (X and Y)
         const offset = Math.floor(Math.random() * 40) - 20;
-        el.style.transform = `translateX(${offset}px)`;
+        const offsetY = Math.floor(Math.random() * 40) - 20;
+        el.style.transform = `translate(${offset}px, ${offsetY}px)`;
 
         if(type === 'hit') {
             el.innerHTML = `-${value}`;
@@ -107,9 +109,25 @@ window.Combat = {
         setTimeout(() => { el.remove(); }, 1000);
     },
 
+    isMelee: function(weaponName) {
+        const meleeNames = ["Fäuste", "Rostiges Messer", "Kampfmesser", "Machete", "Baseballschläger"];
+        return meleeNames.some(m => weaponName.includes(m));
+    },
+
     // ACTIONS
     attack: function(partIndex) {
         if(this.turn !== 'player') return;
+
+        // [v3.1] Ammo Check
+        const wpn = Game.state.equip.weapon || {name: "Fäuste"};
+        if(!this.isMelee(wpn.name)) {
+            const hasAmmo = Game.removeFromInventory('ammo', 1);
+            if(!hasAmmo) {
+                this.log("Klick! Keine Munition!", "text-red-500 font-bold");
+                this.triggerFeedback('miss'); 
+                return;
+            }
+        }
         
         const enemy = Game.state.enemy;
         const hitChance = this.calculateHitChance(partIndex);
