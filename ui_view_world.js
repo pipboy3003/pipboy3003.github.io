@@ -1,4 +1,4 @@
-// [v2.9.6] - Camp Layout fixed (Hardcoded Buttons for Reliability)
+// [v3.6] - 2026-01-03 (Camp & Cooking Update)
 Object.assign(UI, {
 
     renderWorldMap: function() {
@@ -163,42 +163,17 @@ Object.assign(UI, {
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        const camp = Game.state.camp;
-        const btnCamp = document.getElementById('btn-map-enter-camp');
-        
-        if(camp && camp.sector && camp.sector.x === Game.state.sector.x && camp.sector.y === Game.state.sector.y) {
-            const dist = Math.abs(camp.x - Game.state.player.x) + Math.abs(camp.y - Game.state.player.y);
-            if(dist <= 2) {
-                if(!btnCamp) {
-                    const b = document.createElement('button');
-                    b.id = 'btn-map-enter-camp';
-                    b.className = "absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-black border-2 border-green-500 text-green-500 px-6 py-2 font-bold hover:bg-green-900 z-50";
-                    b.innerHTML = "⛺ LAGER BETRETEN";
-                    b.onclick = () => Game.enterCamp();
-                    document.getElementById('view-container').appendChild(b);
-                } else {
-                    btnCamp.style.display = 'block';
-                }
-            } else {
-                if(btnCamp) btnCamp.style.display = 'none';
-            }
-        } else {
-            if(btnCamp) btnCamp.style.display = 'none';
-        }
-
+        // Canvas Rendering Loop
         if(Game.state.view === 'worldmap') {
             requestAnimationFrame(() => this.renderWorldMap());
-        } else {
-            if(btnCamp) btnCamp.style.display = 'none';
         }
     },
 
-    // [MOD] REWRITTEN CAMP RENDER
+    // [v3.6] CAMP UI
     renderCamp: function() {
         const camp = Game.state.camp;
         if(!camp) { this.switchView('map'); return; }
         
-        // Setup variables for button states
         let statusText = "Basis-Zelt (Lvl 1). Heilung 50%.";
         let upgradeText = "Lager verbessern";
         let upgradeSub = "Kosten: 10x Schrott";
@@ -211,7 +186,6 @@ Object.assign(UI, {
             upgradeDisabled = true;
         }
 
-        // Build HTML directly for stability
         this.els.view.innerHTML = `
             <div class="flex flex-col h-full w-full max-w-lg mx-auto p-4 gap-4">
                 
