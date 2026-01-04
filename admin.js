@@ -1,7 +1,7 @@
-// [v1.2.1] - 2026-01-04 (Admin Item Fix)
-// - Fix: Uses Game.items correctly after shim.
-// - Feature: Force Deploy Camp Button.
-// - Fix: Robust inventory rendering.
+// [v1.2.3] - 2026-01-04 (Admin Quest & Layout Fix)
+// - Fix: Inventory Rendering (safe names).
+// - Fix: Quest list reads multiple sources.
+// - Fix: Camp Force Deploy.
 
 const Admin = {
     gatePass: "bimbo123",
@@ -48,7 +48,7 @@ const Admin = {
     },
 
     initData: function() {
-        // Load Game Items for Dropdown (Robust check)
+        // Safe item loading
         const items = (typeof Game !== 'undefined' && Game.items) ? Game.items : (window.GameData ? window.GameData.items : {});
         
         this.itemsList = Object.keys(items).sort().map(k => ({id: k, name: items[k].name}));
@@ -182,7 +182,6 @@ const Admin = {
     },
 
     fillInv: function(d) {
-        // Equipped
         const equipList = document.getElementById('equip-list');
         equipList.innerHTML = '';
         if(d.equip) {
@@ -200,18 +199,16 @@ const Admin = {
             }
         }
 
-        // Inventory
         const tbody = document.getElementById('inv-table-body');
         tbody.innerHTML = '';
-        
         const inv = d.inventory || [];
-        const items = (typeof Game !== 'undefined' && Game.items) ? Game.items : {};
+        // [v1.2.3 Fix] Use global items list if game object fails
+        const items = (typeof Game !== 'undefined' && Game.items) ? Game.items : (window.GameData ? window.GameData.items : {});
 
         inv.forEach((item, idx) => {
             const tr = document.createElement('tr');
             tr.className = "border-b border-[#1a551a] hover:bg-[#002200]";
             
-            // Safe Name Resolution
             let name = item.id;
             if(items[item.id]) name = items[item.id].name;
             if(item.props && item.props.name) name = item.props.name + "*";
@@ -234,7 +231,6 @@ const Admin = {
     fillCamp: function(d) {
         const container = document.getElementById('camp-data-content');
         if(!d.camp) {
-            // [v1.2.1] Force Deploy Button
             container.innerHTML = `
                 <span class="text-gray-500 italic block mb-2">No camp deployed.</span>
                 <button onclick="Admin.action('force-camp')" class="btn border-yellow-500 text-yellow-500 w-full text-sm">FORCE DEPLOY (Lvl 1)</button>
@@ -250,8 +246,7 @@ const Admin = {
                         onchange="Admin.saveVal('camp/level', this.value)">
                 </div>
                 <div>
-                    <label class="block text-xs text-green-600 mb-1">LOCATION (Local)</label>
-                    <div class="text-sm font-mono">X: ${Math.round(d.camp.x || 0)}, Y: ${Math.round(d.camp.y || 0)}</div>
+                    <label class="block text-xs text-green-600 mb-1">LOCATION</label>
                     <div class="text-xs text-gray-500">Sector: ${d.camp.sector.x},${d.camp.sector.y}</div>
                 </div>
             </div>
@@ -269,7 +264,7 @@ const Admin = {
         const qList = document.getElementById('quest-list');
         qList.innerHTML = '';
         
-        // Fallback for old save format or missing arrays
+        // [v1.2.3 Fix] Fallback to legacy or activeQuests
         const active = d.activeQuests || d.quests || [];
         const completed = d.completedQuests || [];
         
@@ -278,10 +273,8 @@ const Admin = {
         }
         
         active.forEach(q => {
-            // Support both object {id:..} and string formats if legacy
             const id = q.id || q;
             const progress = q.progress !== undefined ? `${q.progress}/${q.max}` : '?';
-            
             const div = document.createElement('div');
             div.className = "flex justify-between border-b border-[#1a331a] p-2 text-sm bg-yellow-900/20";
             div.innerHTML = `
@@ -315,7 +308,7 @@ const Admin = {
         });
         document.getElementById('tab-btn-' + id).classList.replace('inactive-tab', 'active-tab');
         
-        document.querySelectorAll('#editor-content > div.flex-grow > div').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('#editor-content > div.flex-1 > div').forEach(el => el.classList.add('hidden'));
         document.getElementById('tab-' + id).classList.remove('hidden');
     },
 
@@ -378,7 +371,6 @@ const Admin = {
             return;
         }
         else if (type === 'force-camp') {
-            // [v1.2.1] Create default camp at current location
             const sec = this.currentUserData.sector || {x:4, y:4};
             const pos = this.currentUserData.player || {x:100, y:100};
             updates['camp'] = {
