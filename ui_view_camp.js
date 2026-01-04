@@ -1,17 +1,22 @@
-// [v3.7a] - 2026-01-03 07:30am (Camp Logic)
+// [v1.1.2] - 2026-01-04 09:30pm (Camp View Fix)
 // Logik für das Camping Menü (benötigt views/camp.html)
 
 Object.assign(UI, {
 
     renderCamp: function() {
-        // Sicherstellen, dass wir im Camp View sind (falls Funktion manuell aufgerufen wurde)
         const cookingView = document.getElementById('camp-cooking-view');
         const mainActions = document.getElementById('camp-main-actions');
         
-        // Falls wir gerade vom Kochen kommen: Reset View
-        if(cookingView && mainActions) {
+        // Reset View NUR wenn wir NICHT gerade im Kochen-Modus sind
+        // (Verhindert Flackern, falls diese Funktion mal anderswo aufgerufen wird)
+        if(cookingView && mainActions && !cookingView.classList.contains('hidden')) {
+             // Wir sind im Kochen Modus, also machen wir hier NICHTS am Layout,
+             // es sei denn, wir wollen explizit zurücksetzen.
+             // Standard: Beim Betreten via switchView ist cookingView meist hidden.
+        } else if(cookingView && mainActions) {
+            // Sicherstellen, dass Main Actions sichtbar sind beim ersten Laden
             cookingView.classList.add('hidden');
-            mainActions.classList.remove('hidden'); // Buttons wieder zeigen
+            mainActions.classList.remove('hidden');
         }
 
         const camp = Game.state.camp;
@@ -21,31 +26,61 @@ Object.assign(UI, {
             return; 
         }
 
-        // 1. Level Anzeige Update
+        const lvl = camp.level || 1;
+
+        // --- 1. Level Anzeige Update ---
         const lvlDisplay = document.getElementById('camp-level-display');
-        if(lvlDisplay) lvlDisplay.textContent = `LEVEL ${camp.level}`;
+        if(lvlDisplay) lvlDisplay.textContent = `LEVEL ${lvl}`;
 
-        // 2. Status Text Update
+        // --- 2. Status Text Update (Dynamisch) ---
+        // Berechnung analog zu game_actions.js
+        let healPct = 30 + ((lvl - 1) * 8); 
+        if(lvl >= 10) healPct = 100;
+        if(healPct > 100) healPct = 100;
+
         const statusBox = document.getElementById('camp-status-box');
-        let statusText = "Basis-Zelt (Lvl 1). Heilung 50%.";
-        if(camp.level >= 2) statusText = "Komfort-Zelt (Lvl 2). Heilung 100%.";
-        if(statusBox) statusBox.textContent = statusText;
+        if(statusBox) {
+            // Text behält den Stil bei, passt aber die Werte an
+            let comfort = (lvl === 1) ? "Basis-Zelt" : (lvl >= 10 ? "Luxus-Bunker" : "Komfort-Zelt");
+            statusBox.textContent = `${comfort} (Lvl ${lvl}). Heilung ${Math.floor(healPct)}%.`;
+        }
 
-        // 3. Upgrade Button Logic
+        // --- 3. Upgrade Button Logic (Dynamisch) ---
         const upgradeCont = document.getElementById('camp-upgrade-container');
         if(upgradeCont) {
             let upgradeText = "LAGER VERBESSERN";
-            let upgradeSub = "Kosten: 10x Schrott";
+            let upgradeSub = "Lädt...";
             let upgradeDisabled = false;
             let btnClass = "border-yellow-500 text-yellow-400 hover:bg-yellow-900/30";
-
-            if(camp.level >= 2) {
+            
+            // Maximale Stufe prüfen
+            if(lvl >= 10) {
                 upgradeText = "LAGER MAXIMIERT";
-                upgradeSub = "Maximum erreicht";
+                upgradeSub = "Maximum erreicht (Level 10)";
                 upgradeDisabled = true;
-                btnClass = "border-gray-700 text-gray-500 cursor-not-allowed";
+                btnClass = "border-green-500 text-green-500 cursor-default bg-green-900/20";
+            } else {
+                // Kosten für nächstes Level holen
+                const cost = Game.getCampUpgradeCost(lvl);
+                if(cost) {
+                    const hasItem = Game.state.inventory.find(i => i.id === cost.id);
+                    const count = hasItem ? hasItem.count : 0;
+                    
+                    if(count >= cost.count) {
+                        upgradeSub = `Kosten: ${cost.count}x ${cost.name}`;
+                        // Stil behalten (Gelb, aktiv)
+                    } else {
+                        upgradeSub = `Fehlt: ${cost.count}x ${cost.name} (Besitz: ${count})`;
+                        upgradeDisabled = true;
+                        btnClass = "border-red-500 text-red-500 cursor-not-allowed opacity-70";
+                    }
+                } else {
+                    upgradeSub = "Keine Daten";
+                    upgradeDisabled = true;
+                }
             }
 
+            // HTML injizieren (Optik vom User beibehalten)
             upgradeCont.innerHTML = `
                 <button class="flex flex-col items-center justify-center border ${btnClass} p-3 transition-all w-full mb-4"
                     onclick="Game.upgradeCamp()" ${upgradeDisabled ? 'disabled' : ''}>
@@ -63,7 +98,7 @@ Object.assign(UI, {
         
         if(!cookingView) return;
 
-        // Grid ausblenden, Kochen einblenden
+        // Grid ausblenden, Kochen einblenden (Status beibehalten)
         if(mainActions) mainActions.classList.add('hidden');
         cookingView.classList.remove('hidden');
 
@@ -82,6 +117,7 @@ Object.assign(UI, {
         cookingRecipes.forEach(recipe => {
             const outItem = Game.items[recipe.out];
             const div = document.createElement('div');
+            // Optik vom User unverändert
             div.className = "border border-yellow-900 bg-yellow-900/10 p-3 mb-2 flex justify-between items-center";
             
             let reqHtml = '';
