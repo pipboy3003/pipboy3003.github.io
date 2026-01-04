@@ -1,22 +1,18 @@
-// [v1.2.0] - 2026-01-04 (Admin System Upgrade)
-// - Feature: Added 'CAMP' Tab for level management.
-// - Fix: Inventory now shows Equipped items correctly.
-// - Fix: Quest list reads 'activeQuests' and 'completedQuests' properly.
+// [v1.2.1] - 2026-01-04 (Admin Item Fix)
+// - Fix: Uses Game.items correctly after shim.
+// - Feature: Force Deploy Camp Button.
+// - Fix: Robust inventory rendering.
 
 const Admin = {
-    // Config
     gatePass: "bimbo123",
     adminUser: "admin@pipboy-system.com",
     adminPass: "zintel1992",
 
-    // State
-    dbData: {}, // Full snapshot of 'saves'
-    currentPath: null, // e.g., 'saves/UID/0'
-    currentUserData: null, // Local copy of selected save
-    itemsList: [], // Loaded from data_items.js
+    dbData: {}, 
+    currentPath: null,
+    currentUserData: null,
+    itemsList: [], 
 
-    // --- 1. GATEKEEPER & INIT ---
-    
     unlock: function() {
         const input = document.getElementById('gate-pass').value;
         const msg = document.getElementById('gate-msg');
@@ -32,28 +28,19 @@ const Admin = {
     },
 
     connectFirebase: async function() {
-        // Init Network if not ready
         if (typeof Network !== 'undefined' && !Network.db) {
             try { if(typeof Network.init === 'function') Network.init(); } catch(e) {}
         }
 
         try {
-            // Real Auth
             await Network.login(this.adminUser, this.adminPass);
-            
-            // Switch UI
             document.getElementById('gate-screen').classList.add('hidden');
             const app = document.getElementById('app-ui');
             app.classList.remove('hidden');
-            // Fade In
             setTimeout(() => app.classList.remove('opacity-0'), 50);
-            
-            // Start Data Flow
             document.getElementById('conn-dot').classList.replace('bg-red-500', 'bg-green-500');
             document.getElementById('conn-dot').classList.remove('animate-pulse');
-            
             this.initData();
-
         } catch(e) {
             document.getElementById('gate-msg').textContent = "UPLINK FAILED: " + e.code;
             console.error(e);
@@ -61,44 +48,37 @@ const Admin = {
     },
 
     initData: function() {
-        // Load Game Items for Dropdown
-        if(typeof Game !== 'undefined' && Game.items) {
-            this.itemsList = Object.keys(Game.items).sort().map(k => ({id: k, name: Game.items[k].name}));
-            const sel = document.getElementById('inv-add-select');
-            sel.innerHTML = '';
-            this.itemsList.forEach(i => {
-                const opt = document.createElement('option');
-                opt.value = i.id;
-                opt.textContent = `${i.name} (${i.id})`;
-                sel.appendChild(opt);
-            });
-        }
+        // Load Game Items for Dropdown (Robust check)
+        const items = (typeof Game !== 'undefined' && Game.items) ? Game.items : (window.GameData ? window.GameData.items : {});
+        
+        this.itemsList = Object.keys(items).sort().map(k => ({id: k, name: items[k].name}));
+        const sel = document.getElementById('inv-add-select');
+        sel.innerHTML = '';
+        this.itemsList.forEach(i => {
+            const opt = document.createElement('option');
+            opt.value = i.id;
+            opt.textContent = `${i.name} (${i.id})`;
+            sel.appendChild(opt);
+        });
 
-        // Start Firebase Listener on 'saves' (The Master Record)
         Network.db.ref('saves').on('value', snap => {
             this.dbData = snap.val() || {};
             this.renderUserList();
-            // Auto-refresh selected view if active
             if(this.currentPath) {
-                const parts = this.currentPath.split('/'); // saves, uid, slot
+                const parts = this.currentPath.split('/'); 
                 if(this.dbData[parts[1]] && this.dbData[parts[1]][parts[2]]) {
-                    this.selectUser(this.currentPath, true); // true = silent update
+                    this.selectUser(this.currentPath, true); 
                 }
             }
         });
     },
 
-    refresh: function() {
-        location.reload(); // Hard refresh to clear memory/cache
-    },
-
-    // --- 2. USER LIST ---
+    refresh: function() { location.reload(); },
 
     renderUserList: function() {
         const list = document.getElementById('user-list');
         const filter = document.getElementById('search-player').value.toLowerCase();
         list.innerHTML = '';
-        
         let count = 0;
         
         for(let uid in this.dbData) {
@@ -108,7 +88,6 @@ const Admin = {
                 const name = (save.playerName || "Unknown").toLowerCase();
                 const path = `saves/${uid}/${slotIdx}`;
                 
-                // Filter
                 if(filter && !name.includes(filter) && !uid.includes(filter)) continue;
 
                 const div = document.createElement('div');
@@ -137,15 +116,12 @@ const Admin = {
 
     selectUser: function(path, silent = false) {
         this.currentPath = path;
-        
-        // Extract Data
         const parts = path.split('/');
         const uid = parts[1];
         const slot = parts[2];
         this.currentUserData = this.dbData[uid][slot];
         const d = this.currentUserData;
 
-        // UI Update
         if(!silent) {
             document.querySelectorAll('.active-tab').forEach(el => {
                 el.classList.remove('active-tab');
@@ -156,7 +132,6 @@ const Admin = {
             this.tab('general');
         }
 
-        // Header Info
         document.getElementById('no-selection').classList.add('hidden');
         document.getElementById('editor-content').classList.remove('hidden');
         
@@ -168,19 +143,15 @@ const Admin = {
         document.getElementById('quick-lvl').value = d.lvl || 1;
         document.getElementById('quick-xp').value = d.xp || 0;
 
-        // Fill Tabs
         this.fillGeneral(d);
         this.fillStats(d);
         this.fillInv(d);
         this.fillWorld(d);
-        this.fillCamp(d); // [v1.2.0] New
+        this.fillCamp(d); 
         this.fillRaw(d);
         
-        // Refresh List Highlight
         if(!silent) this.renderUserList(); 
     },
-
-    // --- 3. EDITOR FILLERS ---
 
     fillGeneral: function(d) {
         document.getElementById('inp-hp').value = Math.round(d.hp || 0);
@@ -192,7 +163,6 @@ const Admin = {
     fillStats: function(d) {
         const container = document.getElementById('special-container');
         container.innerHTML = '';
-        
         const stats = d.stats || { STR:1, PER:1, END:1, CHA:1, INT:1, AGI:1, LUC:1 };
         
         for(let key in stats) {
@@ -207,13 +177,12 @@ const Admin = {
             `;
             container.appendChild(div);
         }
-
         document.getElementById('inp-statPoints').value = d.statPoints || 0;
         document.getElementById('inp-perkPoints').value = d.perkPoints || 0;
     },
 
     fillInv: function(d) {
-        // 1. EQUIPPED ITEMS
+        // Equipped
         const equipList = document.getElementById('equip-list');
         equipList.innerHTML = '';
         if(d.equip) {
@@ -231,19 +200,21 @@ const Admin = {
             }
         }
 
-        // 2. INVENTORY BAG
+        // Inventory
         const tbody = document.getElementById('inv-table-body');
         tbody.innerHTML = '';
         
         const inv = d.inventory || [];
+        const items = (typeof Game !== 'undefined' && Game.items) ? Game.items : {};
+
         inv.forEach((item, idx) => {
             const tr = document.createElement('tr');
             tr.className = "border-b border-[#1a551a] hover:bg-[#002200]";
             
-            // Name resolve
+            // Safe Name Resolution
             let name = item.id;
-            if(Game.items[item.id]) name = Game.items[item.id].name;
-            if(item.props && item.props.name) name = item.props.name + "*"; // Custom item
+            if(items[item.id]) name = items[item.id].name;
+            if(item.props && item.props.name) name = item.props.name + "*";
 
             tr.innerHTML = `
                 <td class="p-2">${name}</td>
@@ -260,11 +231,14 @@ const Admin = {
         });
     },
 
-    // [v1.2.0] New Camp Filler
     fillCamp: function(d) {
         const container = document.getElementById('camp-data-content');
         if(!d.camp) {
-            container.innerHTML = '<span class="text-gray-500 italic">No camp deployed.</span>';
+            // [v1.2.1] Force Deploy Button
+            container.innerHTML = `
+                <span class="text-gray-500 italic block mb-2">No camp deployed.</span>
+                <button onclick="Admin.action('force-camp')" class="btn border-yellow-500 text-yellow-500 w-full text-sm">FORCE DEPLOY (Lvl 1)</button>
+            `;
             return;
         }
 
@@ -292,32 +266,34 @@ const Admin = {
         document.getElementById('tele-x').value = sx;
         document.getElementById('tele-y').value = sy;
 
-        // Quests Logic [FIXED]
         const qList = document.getElementById('quest-list');
         qList.innerHTML = '';
         
-        const active = d.activeQuests || [];
+        // Fallback for old save format or missing arrays
+        const active = d.activeQuests || d.quests || [];
         const completed = d.completedQuests || [];
         
         if(active.length === 0 && completed.length === 0) {
             qList.innerHTML = '<div class="text-gray-500 italic">No quest data found.</div>';
         }
         
-        // Active
         active.forEach(q => {
+            // Support both object {id:..} and string formats if legacy
+            const id = q.id || q;
+            const progress = q.progress !== undefined ? `${q.progress}/${q.max}` : '?';
+            
             const div = document.createElement('div');
             div.className = "flex justify-between border-b border-[#1a331a] p-2 text-sm bg-yellow-900/20";
             div.innerHTML = `
                 <div>
-                    <span class="font-bold text-yellow-400">${q.id}</span>
-                    <div class="text-xs opacity-70">Progress: ${q.progress}/${q.max}</div>
+                    <span class="font-bold text-yellow-400">${id}</span>
+                    <div class="text-xs opacity-70">Progress: ${progress}</div>
                 </div>
                 <span class="text-yellow-500 text-xs">ACTIVE</span>
             `;
             qList.appendChild(div);
         });
 
-        // Completed
         completed.forEach(qid => {
             const div = document.createElement('div');
             div.className = "flex justify-between border-b border-[#1a331a] p-2 text-sm opacity-60";
@@ -332,8 +308,6 @@ const Admin = {
     fillRaw: function(d) {
         document.getElementById('raw-json').value = JSON.stringify(d, null, 2);
     },
-
-    // --- 4. ACTIONS & SAVING ---
 
     tab: function(id) {
         document.querySelectorAll('[id^="tab-btn-"]').forEach(b => {
@@ -403,6 +377,17 @@ const Admin = {
             Network.db.ref(p + '/camp').remove();
             return;
         }
+        else if (type === 'force-camp') {
+            // [v1.2.1] Create default camp at current location
+            const sec = this.currentUserData.sector || {x:4, y:4};
+            const pos = this.currentUserData.player || {x:100, y:100};
+            updates['camp'] = {
+                sector: sec,
+                x: pos.x,
+                y: pos.y,
+                level: 1
+            };
+        }
 
         Network.db.ref(p).update(updates);
     },
@@ -414,7 +399,6 @@ const Admin = {
         Network.db.ref(this.currentPath + '/player').set({x:300, y:200}); 
     },
 
-    // Inventory Logic
     invUpdate: function(idx, val) {
         val = Number(val);
         if(val <= 0) {
@@ -451,21 +435,14 @@ const Admin = {
         Network.db.ref(this.currentPath + '/inventory').set(inv);
     },
     
-    // [v1.2.0] Force Unequip from Admin
     forceUnequip: function(slot) {
         if(!confirm(`Unequip ${slot}? This moves item to inventory.`)) return;
         const item = this.currentUserData.equip[slot];
         if(!item) return;
         
-        // 1. Add to Inv
         const inv = [...(this.currentUserData.inventory || [])];
-        // Simplified Logic: Just push as new item, stack logic complex here
-        // Ideally should check for duplicates but for Admin tool simplistic push is safer
         inv.push({id: item.id, count: 1, props: item.props});
-        
         Network.db.ref(this.currentPath + '/inventory').set(inv);
-        
-        // 2. Clear Slot
         Network.db.ref(this.currentPath + '/equip/' + slot).remove();
     },
 
