@@ -1,6 +1,7 @@
-// [v1.0.3] - 2026-01-04 03:20pm (UI Fixes: HP & Popups)
-// - Visual: HP Container Hintergrund auf schwarz gesetzt.
-// - Fix: Overlays an document.body angehängt (z-index fix).
+// [v1.5.0] - 2026-01-05 09:30am (Modal Overlay Update)
+// - FIX: 'switchView' lädt Camp wieder als HTML.
+// - UI: HP Anzeige bereinigt (Hintergrund dunkel, RADs rechts).
+// - UI: Dialog Overlay ist nun Fullscreen mit Backdrop & Click-to-Close.
 
 Object.assign(UI, {
     
@@ -62,14 +63,11 @@ Object.assign(UI, {
              this.els.hp.style.width = `${hpPct}%`;
              
              // [v1.0.3] HARD FIX BACKGROUND
-             // Wir erzwingen hier einen dunklen Hintergrund auf dem Eltern-Element
              if(this.els.hp.parentElement) {
                  const p = this.els.hp.parentElement;
-                 // Entferne Klassen die grün sein könnten
                  p.classList.remove('bg-green-900', 'bg-green-800', 'bg-green-700', 'bg-opacity-50');
-                 // Setze Inline-Style für Dominanz
-                 p.style.backgroundColor = 'rgba(10, 10, 10, 0.9)'; // Fast schwarz
-                 p.style.borderColor = '#14532d'; // Dunkelgrüner Rand
+                 p.style.backgroundColor = 'rgba(10, 10, 10, 0.9)'; 
+                 p.style.borderColor = '#14532d'; 
              }
         }
         
@@ -119,8 +117,7 @@ Object.assign(UI, {
                 }
             }
         }
-        // -------------------------
-
+        
         let hasAlert = false;
         if(this.els.btnChar) {
             if(hasPoints) { this.els.btnChar.classList.add('alert-glow-yellow'); hasAlert = true; } 
@@ -185,7 +182,7 @@ Object.assign(UI, {
         const verDisplay = document.getElementById('version-display');
         const ver = verDisplay ? verDisplay.textContent.trim() : Date.now();
         
-        // --- Special Routing: Map & Minigames (No fetch) ---
+        // --- Special Routing ---
         if (name === 'map') {
             this.els.view.innerHTML = `
                 <div id="map-view" class="w-full h-full flex justify-center items-center bg-black relative">
@@ -210,8 +207,7 @@ Object.assign(UI, {
         if(name === 'hacking') { this.renderHacking(); Game.state.view = name; return; }
         if(name === 'lockpicking') { this.renderLockpicking(true); Game.state.view = name; return; }
 
-        // --- Standard Views (Fetch HTML) ---
-        
+        // --- Standard Views ---
         const path = `views/${name}.html?v=${ver}`;
         try {
             const res = await fetch(path);
@@ -230,7 +226,6 @@ Object.assign(UI, {
                 this.toggleControls(false);
             }
             
-            // Render Logic Calls
             if (name === 'char') this.renderChar();
             if (name === 'inventory') this.renderInventory();
             if (name === 'wiki') this.renderWiki();
@@ -241,10 +236,8 @@ Object.assign(UI, {
             if (name === 'shop') this.renderShop(document.getElementById('shop-list'));
             if (name === 'clinic') this.renderClinic();
             
-            // [v3.7a] NEU: Camp Logic Aufruf
             if (name === 'camp') {
                 if(typeof this.renderCamp === 'function') this.renderCamp();
-                else console.error("UI.renderCamp is missing! Check if ui_view_camp.js is loaded.");
             }
             
             this.updateButtonStates(name);
@@ -265,18 +258,37 @@ Object.assign(UI, {
 
     restoreOverlay: function() {
         if(document.getElementById('joystick-base')) return;
+        
+        // [v1.5.0] MODAL OVERLAY: Fullscreen, Backdrop, Flex Center
         const joystickHTML = `
             <div id="joystick-base" style="position: absolute; width: 100px; height: 100px; border-radius: 50%; border: 2px solid rgba(57, 255, 20, 0.5); background: rgba(0, 0, 0, 0.2); display: none; pointer-events: none; z-index: 9999;"></div>
             <div id="joystick-stick" style="position: absolute; width: 50px; height: 50px; border-radius: 50%; background: rgba(57, 255, 20, 0.8); display: none; pointer-events: none; z-index: 10000; box-shadow: 0 0 10px #39ff14;"></div>
-            <div id="dialog-overlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10001; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 5px; width: auto; max-width: 90%;"></div>
+            
+            <div id="dialog-overlay" 
+                 onclick="if(event.target === this) { this.style.display='none'; this.innerHTML=''; }"
+                 style="position: fixed; inset: 0; z-index: 10001; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 5px; background: rgba(0,0,0,0.6); backdrop-filter: blur(2px);">
+            </div>
         `;
         
-        // [v1.0.3] Fix: Append to body to avoid cutoff by view container overflow
         document.body.insertAdjacentHTML('beforeend', joystickHTML);
         
         this.els.joyBase = document.getElementById('joystick-base');
         this.els.joyStick = document.getElementById('joystick-stick');
         this.els.dialog = document.getElementById('dialog-overlay');
+
+        // [v1.5.0] Global ESC Listener for Modals
+        if(!window.escListenerAdded) {
+            window.addEventListener('keydown', (e) => {
+                if(e.key === 'Escape') {
+                    const d = document.getElementById('dialog-overlay');
+                    if(d && d.style.display !== 'none') {
+                        d.style.display = 'none';
+                        d.innerHTML = '';
+                    }
+                }
+            });
+            window.escListenerAdded = true;
+        }
     },
     
     toggleControls: function(show) { if (!show && this.els.dialog) this.els.dialog.innerHTML = ''; },
