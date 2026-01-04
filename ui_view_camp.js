@@ -1,9 +1,9 @@
-// [v1.1.5] - 2026-01-04 10:30pm (Camp View State Fix)
+// [v1.2.0] - 2026-01-04 (Camp View Fix)
 // - Fix: Kochen-View bleibt offen, außer man klickt explizit auf "Zurück".
 
 Object.assign(UI, {
 
-    // Helper für das Info-Popup (bleibt unverändert)
+    // Helper für das Info-Popup
     showCampInfo: function() {
         if(!this.els.dialog) return;
 
