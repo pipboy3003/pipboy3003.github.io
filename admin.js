@@ -1,7 +1,6 @@
-// [v1.2.3] - 2026-01-04 (Admin Quest & Layout Fix)
-// - Fix: Inventory Rendering (safe names).
-// - Fix: Quest list reads multiple sources.
-// - Fix: Camp Force Deploy.
+// [v1.3.1] - 2026-01-04 (Admin Stable)
+// - Fix: Selector-independent Tab Switching.
+// - Fix: Error Trap in selectUser.
 
 const Admin = {
     gatePass: "bimbo123",
@@ -38,8 +37,6 @@ const Admin = {
             const app = document.getElementById('app-ui');
             app.classList.remove('hidden');
             setTimeout(() => app.classList.remove('opacity-0'), 50);
-            document.getElementById('conn-dot').classList.replace('bg-red-500', 'bg-green-500');
-            document.getElementById('conn-dot').classList.remove('animate-pulse');
             this.initData();
         } catch(e) {
             document.getElementById('gate-msg').textContent = "UPLINK FAILED: " + e.code;
@@ -115,42 +112,45 @@ const Admin = {
     },
 
     selectUser: function(path, silent = false) {
-        this.currentPath = path;
-        const parts = path.split('/');
-        const uid = parts[1];
-        const slot = parts[2];
-        this.currentUserData = this.dbData[uid][slot];
-        const d = this.currentUserData;
+        try {
+            this.currentPath = path;
+            const parts = path.split('/');
+            const uid = parts[1];
+            const slot = parts[2];
+            this.currentUserData = this.dbData[uid][slot];
+            const d = this.currentUserData;
 
-        if(!silent) {
-            document.querySelectorAll('.active-tab').forEach(el => {
-                el.classList.remove('active-tab');
-                el.classList.add('inactive-tab');
-            });
-            document.getElementById('tab-btn-general').classList.add('active-tab');
-            document.getElementById('tab-btn-general').classList.remove('inactive-tab');
-            this.tab('general');
+            if(!silent) {
+                this.tab('general');
+            }
+
+            document.getElementById('no-selection').classList.add('hidden');
+            document.getElementById('editor-content').classList.remove('hidden');
+            document.getElementById('editor-error').classList.add('hidden'); // clear errors
+            
+            document.getElementById('edit-name').textContent = d.playerName || "Unknown";
+            document.getElementById('edit-uid').textContent = uid;
+            document.getElementById('edit-slot').textContent = slot;
+            document.getElementById('edit-email').textContent = d._userEmail || "No Email";
+            
+            document.getElementById('quick-lvl').value = d.lvl || 1;
+            document.getElementById('quick-xp').value = d.xp || 0;
+
+            this.fillGeneral(d);
+            this.fillStats(d);
+            this.fillInv(d);
+            this.fillWorld(d);
+            this.fillCamp(d); 
+            this.fillRaw(d);
+            
+            if(!silent) this.renderUserList(); 
+
+        } catch (e) {
+            console.error(e);
+            const errBox = document.getElementById('editor-error');
+            errBox.textContent = "RENDER ERROR: " + e.message;
+            errBox.classList.remove('hidden');
         }
-
-        document.getElementById('no-selection').classList.add('hidden');
-        document.getElementById('editor-content').classList.remove('hidden');
-        
-        document.getElementById('edit-name').textContent = d.playerName || "Unknown";
-        document.getElementById('edit-uid').textContent = uid;
-        document.getElementById('edit-slot').textContent = slot;
-        document.getElementById('edit-email').textContent = d._userEmail || "No Email";
-        
-        document.getElementById('quick-lvl').value = d.lvl || 1;
-        document.getElementById('quick-xp').value = d.xp || 0;
-
-        this.fillGeneral(d);
-        this.fillStats(d);
-        this.fillInv(d);
-        this.fillWorld(d);
-        this.fillCamp(d); 
-        this.fillRaw(d);
-        
-        if(!silent) this.renderUserList(); 
     },
 
     fillGeneral: function(d) {
@@ -202,7 +202,6 @@ const Admin = {
         const tbody = document.getElementById('inv-table-body');
         tbody.innerHTML = '';
         const inv = d.inventory || [];
-        // [v1.2.3 Fix] Use global items list if game object fails
         const items = (typeof Game !== 'undefined' && Game.items) ? Game.items : (window.GameData ? window.GameData.items : {});
 
         inv.forEach((item, idx) => {
@@ -214,7 +213,7 @@ const Admin = {
             if(item.props && item.props.name) name = item.props.name + "*";
 
             tr.innerHTML = `
-                <td class="p-2">${name}</td>
+                <td class="p-2 truncate max-w-[150px]" title="${name}">${name}</td>
                 <td class="p-2 font-mono text-xs opacity-50">${item.id}</td>
                 <td class="p-2">
                     <input type="number" class="w-16 bg-black border border-[#1a551a] text-center" 
@@ -264,7 +263,6 @@ const Admin = {
         const qList = document.getElementById('quest-list');
         qList.innerHTML = '';
         
-        // [v1.2.3 Fix] Fallback to legacy or activeQuests
         const active = d.activeQuests || d.quests || [];
         const completed = d.completedQuests || [];
         
@@ -303,13 +301,22 @@ const Admin = {
     },
 
     tab: function(id) {
+        // [v1.3.1] Robust ID-based switching
         document.querySelectorAll('[id^="tab-btn-"]').forEach(b => {
             b.classList.replace('active-tab', 'inactive-tab');
         });
-        document.getElementById('tab-btn-' + id).classList.replace('inactive-tab', 'active-tab');
+        const btn = document.getElementById('tab-btn-' + id);
+        if(btn) btn.classList.replace('inactive-tab', 'active-tab');
         
-        document.querySelectorAll('#editor-content > div.flex-1 > div').forEach(el => el.classList.add('hidden'));
-        document.getElementById('tab-' + id).classList.remove('hidden');
+        // Hide all tabs by default
+        ['general', 'stats', 'inv', 'camp', 'world', 'raw'].forEach(t => {
+            const el = document.getElementById('tab-' + t);
+            if(el) el.classList.add('hidden');
+        });
+        
+        // Show target
+        const target = document.getElementById('tab-' + id);
+        if(target) target.classList.remove('hidden');
     },
 
     saveVal: function(key, val) {
