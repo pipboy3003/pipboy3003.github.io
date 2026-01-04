@@ -1,7 +1,7 @@
-// [v3.7d] - 2026-01-04 (UI Style Update - HP Display)
+// [v1.0.2] - 2026-01-04 03:05pm (UI Polish - HP Bar)
 // - FIX: 'switchView' lädt Camp wieder als HTML.
 // - LOGIC: 'renderCamp()' wird nach dem Laden aufgerufen.
-// - UI: HP Text Formatierung auf "TP XXX/XXX" geändert.
+// - UI: HP Anzeige bereinigt (Hintergrund dunkel, RADs rechts).
 
 Object.assign(UI, {
     
@@ -40,7 +40,7 @@ Object.assign(UI, {
         const dtLvl = document.querySelector('.desktop-lvl-target');
         if(dtLvl) dtLvl.textContent = Game.state.lvl;
 
-        // HP Logic
+        // --- HP Logic & Visual Fixes ---
         const maxHp = Game.state.maxHp;
         const hp = Game.state.hp;
         const rads = Game.state.rads || 0;
@@ -49,7 +49,7 @@ Object.assign(UI, {
         const hpPct = Math.min(100, Math.max(0, (hp / maxHp) * 100));
         const radPct = Math.min(100, (rads / maxHp) * 100);
         
-        // [STYLE UPDATE] Format: "TP 100/100"
+        // Text Format: "TP 100/100" (Effective)
         const hpText = `TP ${Math.round(hp)}/${Math.round(effectiveMax)}`;
         
         const valHpEl = document.getElementById('val-hp');
@@ -62,9 +62,23 @@ Object.assign(UI, {
         if(this.els.hp) {
              this.els.hp.className = `absolute top-0 left-0 h-full transition-all duration-300 ${barColor}`;
              this.els.hp.style.width = `${hpPct}%`;
+             
+             // [v1.0.2] Fix Background (Remove light green ghost bar)
+             // Force parent to be dark/transparent
+             if(this.els.hp.parentElement) {
+                 // Preserve layout classes (w-full h-full) but force colors
+                 this.els.hp.parentElement.classList.remove('bg-green-900', 'bg-green-800'); // Remove old bg
+                 this.els.hp.parentElement.classList.add('bg-black/60', 'border', 'border-green-900');
+                 this.els.hp.parentElement.style.backgroundColor = "rgba(0,0,0,0.6)"; // Fallback
+             }
         }
+        
         const radBar = document.getElementById('bar-rads');
-        if(radBar) radBar.style.width = `${radPct}%`;
+        if(radBar) {
+            radBar.style.width = `${radPct}%`;
+            // [v1.0.2] Ensure Rads are right-aligned and Red
+            radBar.className = "absolute top-0 right-0 h-full bg-red-600 transition-all duration-300 opacity-90";
+        }
 
         // XP
         const nextXp = Game.expToNextLevel(Game.state.lvl);
