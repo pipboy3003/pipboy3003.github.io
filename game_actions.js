@@ -1,6 +1,5 @@
-// [v2.0.0] - 2026-01-05 01:00pm (Game Actions V2 - Perk System)
-// - Feature: Ranked Perks Integration.
-// - Logic: Auto-Migration of old perks to new rank system.
+// [v2.0.2] - 2026-01-05 01:55pm (Perk Logic Repair)
+// - Fix: Replaced legacy .includes() calls in useItem and startCombat with getPerkRank().
 
 Object.assign(Game, {
 
@@ -37,7 +36,7 @@ Object.assign(Game, {
             // Instant Effects
             if (perkId === 'toughness') {
                 this.state.maxHp = this.calculateMaxHP(this.getStat('END'));
-                this.state.hp += 20; // Instant Heal for the gain
+                this.state.hp += 20; 
             }
             if (perkId === 'strong_back') {
                 UI.log("Inventarplatz erhöht!", "text-green-300");
@@ -463,7 +462,7 @@ Object.assign(Game, {
             if(itemDef.effect === 'heal' || itemDef.effect === 'heal_rad') { 
                 let healAmt = itemDef.val; 
                 
-                // Perk: Medic
+                // [FIX] Perk: Medic using getPerkRank
                 const medicRank = this.getPerkRank('medic');
                 if (medicRank > 0) healAmt = Math.floor(healAmt * (1 + (medicRank * 0.2)));
 
@@ -594,7 +593,7 @@ Object.assign(Game, {
         enemy.dmg = Math.floor(enemy.dmg * difficultyMult);
         enemy.loot = Math.floor(enemy.loot * difficultyMult);
 
-        // Perk: Fortune Finder
+        // [FIX] Perk: Fortune Finder using getPerkRank
         const fortuneRank = this.getPerkRank('fortune_finder');
         if (fortuneRank > 0) {
             enemy.loot = Math.floor(enemy.loot * (1 + (fortuneRank * 0.1)));
