@@ -1,14 +1,11 @@
-// [v1.5.0] - 2026-01-05 09:30am (Modal Overlay Update)
-// - FIX: 'switchView' lädt Camp wieder als HTML.
-// - UI: HP Anzeige bereinigt (Hintergrund dunkel, RADs rechts).
-// - UI: Dialog Overlay ist nun Fullscreen mit Backdrop & Click-to-Close.
+// [v1.5.1] - 2026-01-05 09:45am (Modal Event Isolation)
+// - Fix: StopPropagation bei Overlay-Klicks/ESC verhindert Schließen des Parent-Views.
 
 Object.assign(UI, {
     
     update: function() {
         if (!Game.state) return;
         
-        // Lazy load
         if(!this.els.ammo) this.els.ammo = document.getElementById('val-ammo');
         if(!this.els.caps) this.els.caps = document.getElementById('val-caps');
         if(!this.els.hp) this.els.hp = document.getElementById('bar-hp');
@@ -17,7 +14,6 @@ Object.assign(UI, {
         const sectorDisplay = document.getElementById('val-sector-display');
         const hasPoints = (Game.state.statPoints > 0) || (Game.state.perkPoints > 0);
 
-        // Name & Stats
         const displayName = Game.state.playerName || (typeof Network !== 'undefined' ? Network.myDisplayName : "SURVIVOR");
         if(this.els.name) this.els.name.textContent = displayName;
         
@@ -40,7 +36,7 @@ Object.assign(UI, {
         const dtLvl = document.querySelector('.desktop-lvl-target');
         if(dtLvl) dtLvl.textContent = Game.state.lvl;
 
-        // --- HP Logic ---
+        // HP Logic
         const maxHp = Game.state.maxHp;
         const hp = Game.state.hp;
         const rads = Game.state.rads || 0;
@@ -62,7 +58,6 @@ Object.assign(UI, {
              this.els.hp.className = `absolute top-0 left-0 h-full transition-all duration-300 ${barColor}`;
              this.els.hp.style.width = `${hpPct}%`;
              
-             // [v1.0.3] HARD FIX BACKGROUND
              if(this.els.hp.parentElement) {
                  const p = this.els.hp.parentElement;
                  p.classList.remove('bg-green-900', 'bg-green-800', 'bg-green-700', 'bg-opacity-50');
@@ -83,12 +78,11 @@ Object.assign(UI, {
         if(this.els.xpTxt) this.els.xpTxt.textContent = expPct;
         if(this.els.expBarTop) this.els.expBarTop.style.width = `${expPct}%`;
         
-        // Currency & Ammo
         if(this.els.caps) this.els.caps.textContent = `${Game.state.caps}`;
         const ammoItem = Game.state.inventory ? Game.state.inventory.find(i => i.id === 'ammo') : null;
         if(this.els.ammo) this.els.ammo.textContent = ammoItem ? ammoItem.count : 0;
 
-        // --- CAMP BUTTON LOGIC ---
+        // Camp Button
         const campBtn = document.getElementById('btn-camp-overlay');
         if(campBtn) {
             const hasKit = Game.state.inventory && Game.state.inventory.some(i => i.id === 'camp_kit');
@@ -182,7 +176,6 @@ Object.assign(UI, {
         const verDisplay = document.getElementById('version-display');
         const ver = verDisplay ? verDisplay.textContent.trim() : Date.now();
         
-        // --- Special Routing ---
         if (name === 'map') {
             this.els.view.innerHTML = `
                 <div id="map-view" class="w-full h-full flex justify-center items-center bg-black relative">
@@ -207,7 +200,6 @@ Object.assign(UI, {
         if(name === 'hacking') { this.renderHacking(); Game.state.view = name; return; }
         if(name === 'lockpicking') { this.renderLockpicking(true); Game.state.view = name; return; }
 
-        // --- Standard Views ---
         const path = `views/${name}.html?v=${ver}`;
         try {
             const res = await fetch(path);
@@ -259,13 +251,13 @@ Object.assign(UI, {
     restoreOverlay: function() {
         if(document.getElementById('joystick-base')) return;
         
-        // [v1.5.0] MODAL OVERLAY: Fullscreen, Backdrop, Flex Center
+        // [v1.5.1] UPDATE: stopPropagation im OnClick
         const joystickHTML = `
             <div id="joystick-base" style="position: absolute; width: 100px; height: 100px; border-radius: 50%; border: 2px solid rgba(57, 255, 20, 0.5); background: rgba(0, 0, 0, 0.2); display: none; pointer-events: none; z-index: 9999;"></div>
             <div id="joystick-stick" style="position: absolute; width: 50px; height: 50px; border-radius: 50%; background: rgba(57, 255, 20, 0.8); display: none; pointer-events: none; z-index: 10000; box-shadow: 0 0 10px #39ff14;"></div>
             
             <div id="dialog-overlay" 
-                 onclick="if(event.target === this) { this.style.display='none'; this.innerHTML=''; }"
+                 onclick="if(event.target === this) { this.style.display='none'; this.innerHTML=''; event.stopPropagation(); event.preventDefault(); }"
                  style="position: fixed; inset: 0; z-index: 10001; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 5px; background: rgba(0,0,0,0.6); backdrop-filter: blur(2px);">
             </div>
         `;
@@ -276,17 +268,21 @@ Object.assign(UI, {
         this.els.joyStick = document.getElementById('joystick-stick');
         this.els.dialog = document.getElementById('dialog-overlay');
 
-        // [v1.5.0] Global ESC Listener for Modals
+        // [v1.5.1] Global ESC Listener: Prioritize Overlay
         if(!window.escListenerAdded) {
             window.addEventListener('keydown', (e) => {
                 if(e.key === 'Escape') {
                     const d = document.getElementById('dialog-overlay');
                     if(d && d.style.display !== 'none') {
+                        // Close Overlay AND STOP PROPAGATION
                         d.style.display = 'none';
                         d.innerHTML = '';
+                        e.stopPropagation(); 
+                        e.stopImmediatePropagation();
+                        e.preventDefault();
                     }
                 }
-            });
+            }, true); // Use Capture phase to catch it first
             window.escListenerAdded = true;
         }
     },
