@@ -1,7 +1,6 @@
-// [v1.0.2] - 2026-01-04 03:05pm (UI Polish - HP Bar)
-// - FIX: 'switchView' lädt Camp wieder als HTML.
-// - LOGIC: 'renderCamp()' wird nach dem Laden aufgerufen.
-// - UI: HP Anzeige bereinigt (Hintergrund dunkel, RADs rechts).
+// [v1.0.3] - 2026-01-04 03:20pm (UI Fixes: HP & Popups)
+// - Visual: HP Container Hintergrund auf schwarz gesetzt.
+// - Fix: Overlays an document.body angehängt (z-index fix).
 
 Object.assign(UI, {
     
@@ -40,7 +39,7 @@ Object.assign(UI, {
         const dtLvl = document.querySelector('.desktop-lvl-target');
         if(dtLvl) dtLvl.textContent = Game.state.lvl;
 
-        // --- HP Logic & Visual Fixes ---
+        // --- HP Logic ---
         const maxHp = Game.state.maxHp;
         const hp = Game.state.hp;
         const rads = Game.state.rads || 0;
@@ -49,7 +48,6 @@ Object.assign(UI, {
         const hpPct = Math.min(100, Math.max(0, (hp / maxHp) * 100));
         const radPct = Math.min(100, (rads / maxHp) * 100);
         
-        // Text Format: "TP 100/100" (Effective)
         const hpText = `TP ${Math.round(hp)}/${Math.round(effectiveMax)}`;
         
         const valHpEl = document.getElementById('val-hp');
@@ -63,20 +61,21 @@ Object.assign(UI, {
              this.els.hp.className = `absolute top-0 left-0 h-full transition-all duration-300 ${barColor}`;
              this.els.hp.style.width = `${hpPct}%`;
              
-             // [v1.0.2] Fix Background (Remove light green ghost bar)
-             // Force parent to be dark/transparent
+             // [v1.0.3] HARD FIX BACKGROUND
+             // Wir erzwingen hier einen dunklen Hintergrund auf dem Eltern-Element
              if(this.els.hp.parentElement) {
-                 // Preserve layout classes (w-full h-full) but force colors
-                 this.els.hp.parentElement.classList.remove('bg-green-900', 'bg-green-800'); // Remove old bg
-                 this.els.hp.parentElement.classList.add('bg-black/60', 'border', 'border-green-900');
-                 this.els.hp.parentElement.style.backgroundColor = "rgba(0,0,0,0.6)"; // Fallback
+                 const p = this.els.hp.parentElement;
+                 // Entferne Klassen die grün sein könnten
+                 p.classList.remove('bg-green-900', 'bg-green-800', 'bg-green-700', 'bg-opacity-50');
+                 // Setze Inline-Style für Dominanz
+                 p.style.backgroundColor = 'rgba(10, 10, 10, 0.9)'; // Fast schwarz
+                 p.style.borderColor = '#14532d'; // Dunkelgrüner Rand
              }
         }
         
         const radBar = document.getElementById('bar-rads');
         if(radBar) {
             radBar.style.width = `${radPct}%`;
-            // [v1.0.2] Ensure Rads are right-aligned and Red
             radBar.className = "absolute top-0 right-0 h-full bg-red-600 transition-all duration-300 opacity-90";
         }
 
@@ -269,9 +268,12 @@ Object.assign(UI, {
         const joystickHTML = `
             <div id="joystick-base" style="position: absolute; width: 100px; height: 100px; border-radius: 50%; border: 2px solid rgba(57, 255, 20, 0.5); background: rgba(0, 0, 0, 0.2); display: none; pointer-events: none; z-index: 9999;"></div>
             <div id="joystick-stick" style="position: absolute; width: 50px; height: 50px; border-radius: 50%; background: rgba(57, 255, 20, 0.8); display: none; pointer-events: none; z-index: 10000; box-shadow: 0 0 10px #39ff14;"></div>
-            <div id="dialog-overlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 50; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 5px; width: auto; max-width: 90%;"></div>
+            <div id="dialog-overlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10001; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 5px; width: auto; max-width: 90%;"></div>
         `;
-        this.els.view.insertAdjacentHTML('beforeend', joystickHTML);
+        
+        // [v1.0.3] Fix: Append to body to avoid cutoff by view container overflow
+        document.body.insertAdjacentHTML('beforeend', joystickHTML);
+        
         this.els.joyBase = document.getElementById('joystick-base');
         this.els.joyStick = document.getElementById('joystick-stick');
         this.els.dialog = document.getElementById('dialog-overlay');
