@@ -1,16 +1,16 @@
-// [v1.1.3] - 2026-01-04 09:45pm (Camp Info Feature)
-// - Feature: Info-Button (?) für Level-Übersicht.
-// - Fix: Kochen-View bleibt stabil.
+// [v1.1.4] - 2026-01-04 09:55pm (Camp Code Cleanup)
+// - Refactor: Info-Button Code entfernt (jetzt HTML).
+// - Logic: Kochen-Menü und Info-Popup Logik.
 
 Object.assign(UI, {
 
-    // [v1.1.3] Helper für das Info-Popup
+    // Helper für das Info-Popup
     showCampInfo: function() {
         if(!this.els.dialog) return;
 
         let rows = '';
         for(let l=1; l<=10; l++) {
-            // Heilung berechnen (identisch zu game_actions logic)
+            // Heilung berechnen
             let healPct = 30 + ((l - 1) * 8); 
             if(l >= 10) healPct = 100;
             if(healPct > 100) healPct = 100;
@@ -20,17 +20,14 @@ Object.assign(UI, {
             if (l === 1) {
                 costStr = '<span class="text-gray-500">Start (100 KK)</span>';
             } else {
-                // getCampUpgradeCost gibt Kosten für das NÄCHSTE Level zurück (basierend auf aktuellem)
-                // Um Kosten FÜR Level 'l' zu sehen, müssen wir wissen was Level 'l-1' kostet
                 const cost = Game.getCampUpgradeCost(l - 1);
                 if(cost) {
-                    // Prüfen ob wir das Material haben (optional, hier nur Info)
                     costStr = `${cost.count}x ${cost.name}`;
                 }
             }
 
             // Style für aktuelles Level
-            const currentLvl = Game.state.camp.level || 1;
+            const currentLvl = (Game.state.camp && Game.state.camp.level) ? Game.state.camp.level : 1;
             const isCurrent = (l === currentLvl);
             const bgClass = isCurrent ? "bg-yellow-900/40 border border-yellow-600" : "border-b border-gray-800";
             const textClass = isCurrent ? "text-yellow-400 font-bold" : "text-gray-400";
@@ -135,28 +132,6 @@ Object.assign(UI, {
                     upgradeSub = "Keine Daten";
                     upgradeDisabled = true;
                 }
-            }
-
-            // [v1.1.3] Added Info Button (?) top center relative to this container if needed, 
-            // BUT since we use the HTML structure from views/camp.html, we inject the button into the container 
-            // if it's not already there? 
-            // BETTER: We render the whole upgrade block and add the button dynamically to the main view if needed.
-            // OR: We rely on the HTML structure.
-            // Since I cannot change views/camp.html directly here easily without you uploading it, 
-            // I will inject the button via JS into the 'camp-view' container if it exists.
-            
-            const campView = document.getElementById('camp-view');
-            // Check if button already exists to avoid duplicates
-            if(campView && !document.getElementById('btn-camp-info')) {
-                // Ensure campView has relative positioning
-                campView.classList.add('relative');
-                
-                const infoBtn = document.createElement('button');
-                infoBtn.id = 'btn-camp-info';
-                infoBtn.textContent = '?';
-                infoBtn.onclick = () => UI.showCampInfo();
-                infoBtn.className = "absolute top-2 left-1/2 transform -translate-x-1/2 bg-black border border-yellow-400 text-yellow-400 rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm hover:bg-yellow-900 z-10 shadow-[0_0_5px_#ffd700]";
-                campView.appendChild(infoBtn);
             }
 
             upgradeCont.innerHTML = `
