@@ -663,11 +663,32 @@ Object.assign(Game, {
         }
     },
 
-    deployCamp: function(invIndex) {
+    // [v1.0.4] - 2026-01-04 (Camp Build Confirmation)
+    deployCamp: function(invIndex, confirmed=false) {
         if(this.state.camp) { UI.log("Lager existiert bereits!", "text-red-500"); return; }
         if(this.state.zone.includes("Stadt") || this.state.dungeonLevel > 0) { UI.log("Hier nicht möglich!", "text-red-500"); return; }
+        
         const cost = 100;
         if(this.state.caps < cost) { UI.log(`Benötigt ${cost} Kronkorken für Aufbau.`, "text-red-500"); return; }
+
+        if(!confirmed) {
+             if(typeof UI !== 'undefined' && UI.els.dialog) {
+                 UI.els.dialog.style.display = 'flex';
+                 UI.els.dialog.innerHTML = `
+                    <div class="bg-black/95 border-2 border-yellow-400 p-6 rounded-lg shadow-[0_0_20px_#ffd700] text-center max-w-sm pointer-events-auto relative z-50">
+                        <div class="text-4xl mb-4">⛺</div>
+                        <h3 class="text-xl font-bold text-yellow-400 mb-2">LAGER ERRICHTEN?</h3>
+                        <p class="text-gray-300 text-sm mb-6 leading-relaxed">Der Aufbau kostet Material im Wert von <span class="text-yellow-400 font-bold">${cost} Kronkorken</span>.</p>
+                        <div class="flex gap-4 justify-center">
+                            <button onclick="Game.deployCamp(${invIndex}, true); UI.els.dialog.style.display='none'; UI.els.dialog.innerHTML='';" class="border-2 border-green-500 bg-green-900/40 text-green-400 px-6 py-2 rounded font-bold hover:bg-green-500 hover:text-black transition-all">BAUEN</button>
+                            <button onclick="UI.els.dialog.style.display='none'; UI.els.dialog.innerHTML='';" class="border-2 border-red-500 bg-red-900/40 text-red-400 px-6 py-2 rounded font-bold hover:bg-red-500 hover:text-black transition-all">ABBRECHEN</button>
+                        </div>
+                    </div>
+                 `;
+             }
+             return;
+        }
+
         this.state.caps -= cost;
         this.state.camp = { 
             sector: { x: this.state.sector.x, y: this.state.sector.y }, 
