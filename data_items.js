@@ -1,4 +1,3 @@
-// [v2.9] - Equipment Expansion (Head, Legs, Feet, Arms)
 if(typeof window.GameData === 'undefined') window.GameData = {};
 if(typeof window.GameData.items === 'undefined') window.GameData.items = {}; 
 
