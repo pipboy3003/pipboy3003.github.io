@@ -1,6 +1,6 @@
 Object.assign(UI, {
     
-    // [v2.6] ZENTRALE OVERLAY LOGIC (Layer 1 - Hauptdialoge)
+    // [v0.5.5] ZENTRALE OVERLAY LOGIC (Layer 1 - Hauptdialoge)
     restoreOverlay: function() {
         let overlay = document.getElementById('ui-dialog-overlay');
         if(!overlay) {
@@ -28,7 +28,7 @@ Object.assign(UI, {
     leaveDialog: function() {
         if(Game.state) Game.state.inDialog = false;
         
-        // ESC Listener aufräumen, falls vorhanden
+        // ESC Listener aufräumen
         if(this._activeEscHandler) {
             document.removeEventListener('keydown', this._activeEscHandler);
             this._activeEscHandler = null;
@@ -40,26 +40,30 @@ Object.assign(UI, {
             overlay.innerHTML = ''; 
         }
         
-        // UI Update feuern, damit Listen (Inventar/Shop) aktuell sind
+        // UI Update feuern
         if(typeof this.update === 'function') this.update();
+        
+        // Falls wir im Inventar waren, Liste neu laden (z.B. nach Verbrauch)
+        if(document.getElementById('inventory-list')) {
+            if(typeof UI.renderInventory === 'function') UI.renderInventory();
+        }
     },
 
-    // Helper: Aktiviert ESC-Falle für Dialoge
+    // Helper: Aktiviert ESC-Falle
     _trapEscKey: function() {
-        // Alten Handler entfernen, falls vorhanden
         if(this._activeEscHandler) document.removeEventListener('keydown', this._activeEscHandler);
         
         this._activeEscHandler = (e) => {
             if(e.key === "Escape") {
                 e.preventDefault();
-                e.stopPropagation(); // Verhindert, dass Inventar/Menüs im Hintergrund zugehen
+                e.stopPropagation(); // Verhindert Schließen von Fenstern im Hintergrund
                 UI.leaveDialog();
             }
         };
         document.addEventListener('keydown', this._activeEscHandler);
     },
 
-    // [v2.6] GENERIC INFO DIALOG (Layer 2 - Info Popups)
+    // [v0.5.5] GENERIC INFO DIALOG (Layer 2 - Info Popups)
     showInfoDialog: function(title, htmlContent) {
         if(Game.state) Game.state.inDialog = true;
 
@@ -100,7 +104,151 @@ Object.assign(UI, {
         document.body.appendChild(infoOverlay);
     },
 
-    // [v3.0] QUEST HUD
+    // [v0.5.5] INVENTAR ITEM DETAILS & AKTIONEN
+    showItemConfirm: function(invIndex) {
+        const overlay = this.restoreOverlay();
+        overlay.style.display = 'flex';
+        overlay.innerHTML = '';
+        this._trapEscKey();
+        
+        if(!Game.state.inventory || !Game.state.inventory[invIndex]) return;
+        const invItem = Game.state.inventory[invIndex];
+        const item = Game.items[invItem.id];
+        
+        if(!item) return;
+        if(Game.state) Game.state.inDialog = true;
+        
+        const box = document.createElement('div');
+        box.className = "bg-black border-2 border-green-500 p-4 shadow-[0_0_15px_green] max-w-sm text-center mb-4 w-full pointer-events-auto";
+        box.onclick = (e) => e.stopPropagation();
+
+        // --- SPEZIAL LOGIK: STIMPACK ---
+        const isStimpack = (invItem.id && invItem.id.toLowerCase().includes('stimpack')) || (item.name && item.name.toLowerCase().includes('stimpack'));
+
+        if (isStimpack) {
+             box.innerHTML = `
+                <h2 class="text-xl font-bold text-green-400 mb-2 border-b border-green-500 pb-2">${item.name}</h2>
+                <div class="text-xs text-green-200 mb-4 bg-green-900/20 p-2">
+                    <div class="flex justify-between"><span>TP Aktuell:</span> <span class="text-white font-bold">${Math.floor(Game.state.hp)} / ${Game.state.maxHp}</span></div>
+                    <div class="flex justify-between"><span>Verfügbar:</span> <span class="text-yellow-400 font-bold">${invItem.count} Stück</span></div>
+                </div>
+                
+                <div class="flex flex-col gap-3 w-full">
+                    <button id="btn-use-one" class="action-button border-green-500 text-green-500 hover:bg-green-900 py-3 font-bold flex justify-between px-4">
+                        <span>1x BENUTZEN</span>
+                        <span class="text-xs mt-1 text-green-300">+${item.val} HP</span>
+                    </button>
+                    
+                    <button id="btn-use-max" class="action-button border-blue-500 text-blue-400 hover:bg-blue-900 py-3 font-bold flex justify-between px-4">
+                        <span>AUTO-HEAL (MAX)</span>
+                        <span class="text-xs mt-1 text-blue-200">Bis voll</span>
+                    </button>
+                    
+                    <button id="btn-cancel" class="action-button border-red-500 text-red-500 hover:bg-red-900 py-2 font-bold mt-2">
+                        ABBRUCH
+                    </button>
+                </div>
+            `;
+            overlay.appendChild(box);
+            
+            // Events binden
+            document.getElementById('btn-use-one').onclick = () => { Game.useItem(invIndex, 1); setTimeout(() => UI.leaveDialog(), 50); };
+            document.getElementById('btn-use-max').onclick = () => { Game.useItem(invIndex, 'max'); setTimeout(() => UI.leaveDialog(), 50); };
+            document.getElementById('btn-cancel').onclick = () => { UI.leaveDialog(); };
+            return;
+        }
+
+        // --- GENERISCHES ITEM ---
+        let statsText = "";
+        let displayName = item.name;
+        
+        if(invItem.props) {
+            displayName = invItem.props.name;
+            if(invItem.props.dmgMult) statsText = `Schaden: ${Math.floor(item.baseDmg * invItem.props.dmgMult)} (Mod)`;
+        } else {
+            if(item.type === 'consumable') statsText = `Effekt: ${item.effect} (${item.val})`;
+            else if(item.type === 'weapon') statsText = `Schaden: ${item.baseDmg}`;
+            else if(item.type === 'body') statsText = `Rüstung: +${item.bonus ? item.bonus.END : 0} END`;
+            else if(item.type === 'junk' || item.type === 'component') statsText = "Material / Schrott";
+            else statsText = item.desc || "Item";
+        }
+
+        const isUsable = !['junk', 'component', 'misc', 'rare', 'ammo'].includes(item.type);
+
+        box.innerHTML = `
+            <h2 class="text-xl font-bold text-green-400 mb-2">${displayName}</h2>
+            <div class="text-xs text-green-200 mb-4 border-t border-b border-green-900 py-2">Typ: ${item.type.toUpperCase()}<br>Wert: ${item.cost} KK<br><span class="text-yellow-400">${statsText}</span></div>
+            <p class="text-green-200 mb-4 text-sm">${isUsable ? "Gegenstand benutzen oder wegwerfen?" : "Dieses Item kann nur verkauft oder zum Craften verwendet werden."}</p>
+        `;
+        
+        const btnContainer = document.createElement('div');
+        btnContainer.className = "flex flex-col gap-2 w-full mt-2";
+        
+        if (isUsable) {
+            const btnYes = document.createElement('button');
+            btnYes.className = "border border-green-500 text-green-500 hover:bg-green-900 px-4 py-3 font-bold w-full text-lg";
+            btnYes.textContent = "BENUTZEN / AUSRÜSTEN";
+            btnYes.onclick = () => { Game.useItem(invIndex); setTimeout(() => UI.leaveDialog(), 50); };
+            btnContainer.appendChild(btnYes);
+        }
+        
+        const row = document.createElement('div');
+        row.className = "flex gap-2 w-full";
+        
+        const btnTrash = document.createElement('button');
+        btnTrash.className = "border border-red-500 text-red-500 hover:bg-red-900 px-4 py-2 font-bold flex-1";
+        btnTrash.innerHTML = "WEGWERFEN 🗑️";
+        btnTrash.onclick = () => { Game.destroyItem(invIndex); setTimeout(() => UI.leaveDialog(), 50); };
+        
+        const btnNo = document.createElement('button');
+        btnNo.className = "border border-gray-600 text-gray-500 hover:bg-gray-800 px-4 py-2 font-bold flex-1";
+        btnNo.textContent = "ABBRUCH";
+        btnNo.onclick = () => { UI.leaveDialog(); };
+        
+        row.appendChild(btnTrash);
+        row.appendChild(btnNo);
+        btnContainer.appendChild(row);
+        
+        box.appendChild(btnContainer); 
+        overlay.appendChild(box);
+    },
+
+    // [v0.5.5] AUSGERÜSTETES ITEM DIALOG
+    showEquippedDialog: function(slot) {
+        const overlay = this.restoreOverlay();
+        overlay.style.display = 'flex';
+        overlay.innerHTML = '';
+        this._trapEscKey();
+        
+        if(Game.state) Game.state.inDialog = true;
+
+        const item = Game.state.equip[slot];
+        const name = item.props ? item.props.name : item.name;
+
+        const box = document.createElement('div');
+        box.className = "bg-black border-2 border-yellow-500 p-4 shadow-[0_0_15px_#aa0] max-w-sm text-center mb-4 w-full pointer-events-auto";
+        box.onclick = (e) => e.stopPropagation();
+
+        box.innerHTML = `
+            <div class="text-xs text-yellow-600 font-bold tracking-widest mb-1">SLOT: ${slot.toUpperCase()}</div>
+            <h2 class="text-xl font-bold text-yellow-400 mb-4 border-b border-yellow-500 pb-2">${name}</h2>
+            <div class="flex flex-col gap-2 w-full">
+                <button id="btn-unequip" class="action-button w-full border-yellow-500 text-yellow-500 hover:bg-yellow-900 py-3 font-bold">
+                    ABLEGEN (INS INVENTAR)
+                </button>
+                <button id="btn-cancel-eq" class="action-button border-gray-600 text-gray-500 hover:bg-gray-800 py-2 font-bold mt-2">
+                    ABBRUCH
+                </button>
+            </div>
+        `;
+        overlay.appendChild(box);
+
+        document.getElementById('btn-unequip').onclick = () => { Game.unequipItem(slot); setTimeout(() => UI.leaveDialog(), 50); };
+        document.getElementById('btn-cancel-eq').onclick = () => { UI.leaveDialog(); };
+    },
+
+    // --- SONSTIGE DIALOGE (Shop, Quest, etc.) ---
+
     showQuestComplete: function(questDef) {
         let container = document.getElementById('hud-quest-overlay');
         if(!container) {
@@ -137,7 +285,7 @@ Object.assign(UI, {
         const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
         overlay.innerHTML = '';
-        this._trapEscKey(); // ESC Falle aktivieren
+        this._trapEscKey();
         
         const box = document.createElement('div');
         box.className = "bg-black border-4 border-green-500 p-6 shadow-[0_0_30px_green] max-w-sm w-full relative pointer-events-auto";
@@ -161,7 +309,6 @@ Object.assign(UI, {
             </div>
             <button class="action-button w-full mt-6 border-green-500 text-green-500 font-bold hover:bg-green-900" onclick="UI.leaveDialog()">SCHLIESSEN</button>
         `;
-        
         overlay.appendChild(box);
     },
 
@@ -325,117 +472,6 @@ Object.assign(UI, {
         }
         
         document.getElementById('btn-cancel').onclick = () => UI.leaveDialog();
-    },
-
-    showItemConfirm: function(invIndex) {
-        const overlay = this.restoreOverlay();
-        overlay.style.display = 'flex';
-        overlay.innerHTML = '';
-        this._trapEscKey();
-        
-        if(!Game.state.inventory || !Game.state.inventory[invIndex]) return;
-        const invItem = Game.state.inventory[invIndex];
-        const item = Game.items[invItem.id];
-        
-        if(!item) return;
-        if(Game.state) Game.state.inDialog = true;
-        
-        const box = document.createElement('div');
-        box.className = "bg-black border-2 border-green-500 p-4 shadow-[0_0_15px_green] max-w-sm text-center mb-4 w-full pointer-events-auto";
-        box.onclick = (e) => e.stopPropagation();
-
-        // [FIX] STIMPACK SPECIAL LOGIC - ROBUSTER CHECK
-        const isStimpack = (invItem.id && invItem.id.toLowerCase().includes('stimpack')) || (item.name && item.name.toLowerCase().includes('stimpack'));
-
-        if (isStimpack) {
-             box.innerHTML = `
-                <h2 class="text-xl font-bold text-green-400 mb-2 border-b border-green-500 pb-2">${item.name}</h2>
-                <div class="text-xs text-green-200 mb-4 bg-green-900/20 p-2">
-                    <div class="flex justify-between"><span>TP Aktuell:</span> <span class="text-white font-bold">${Math.floor(Game.state.hp)} / ${Game.state.maxHp}</span></div>
-                    <div class="flex justify-between"><span>Verfügbar:</span> <span class="text-yellow-400 font-bold">${invItem.count} Stück</span></div>
-                </div>
-                
-                <div class="flex flex-col gap-3 w-full">
-                    <button id="btn-use-one" class="action-button border-green-500 text-green-500 hover:bg-green-900 py-3 font-bold flex justify-between px-4">
-                        <span>1x BENUTZEN</span>
-                        <span class="text-xs mt-1 text-green-300">+${item.val} HP</span>
-                    </button>
-                    
-                    <button id="btn-use-max" class="action-button border-blue-500 text-blue-400 hover:bg-blue-900 py-3 font-bold flex justify-between px-4">
-                        <span>AUTO-HEAL (MAX)</span>
-                        <span class="text-xs mt-1 text-blue-200">Bis voll</span>
-                    </button>
-                    
-                    <button id="btn-cancel" class="action-button border-red-500 text-red-500 hover:bg-red-900 py-2 font-bold mt-2">
-                        ABBRUCH
-                    </button>
-                </div>
-            `;
-            overlay.appendChild(box);
-            
-            // Events manuell binden
-            const btnOne = document.getElementById('btn-use-one');
-            const btnMax = document.getElementById('btn-use-max');
-            const btnCancel = document.getElementById('btn-cancel');
-
-            if(btnOne) btnOne.onclick = () => { Game.useItem(invIndex, 1); setTimeout(() => UI.leaveDialog(), 50); };
-            if(btnMax) btnMax.onclick = () => { Game.useItem(invIndex, 'max'); setTimeout(() => UI.leaveDialog(), 50); };
-            if(btnCancel) btnCancel.onclick = () => { UI.leaveDialog(); };
-            
-            return;
-        }
-
-        // --- GENERIC ITEM LOGIC ---
-        let statsText = "";
-        let displayName = item.name;
-        if(invItem.props) {
-            displayName = invItem.props.name;
-            if(invItem.props.dmgMult) statsText = `Schaden: ${Math.floor(item.baseDmg * invItem.props.dmgMult)} (Mod)`;
-        } else {
-            if(item.type === 'consumable') statsText = `Effekt: ${item.effect} (${item.val})`;
-            else if(item.type === 'weapon') statsText = `Schaden: ${item.baseDmg}`;
-            else if(item.type === 'body') statsText = `Rüstung: +${item.bonus.END || 0} END`;
-            else if(item.type === 'junk' || item.type === 'component') statsText = "Material / Schrott";
-            else statsText = item.desc || "Item";
-        }
-
-        const isUsable = !['junk', 'component', 'misc', 'rare', 'ammo'].includes(item.type);
-
-        box.innerHTML = `
-            <h2 class="text-xl font-bold text-green-400 mb-2">${displayName}</h2>
-            <div class="text-xs text-green-200 mb-4 border-t border-b border-green-900 py-2">Typ: ${item.type.toUpperCase()}<br>Wert: ${item.cost} KK<br><span class="text-yellow-400">${statsText}</span></div>
-            <p class="text-green-200 mb-4 text-sm">${isUsable ? "Gegenstand benutzen oder wegwerfen?" : "Dieses Item kann nur verkauft oder zum Craften verwendet werden."}</p>
-        `;
-        
-        const btnContainer = document.createElement('div');
-        btnContainer.className = "flex flex-col gap-2 w-full mt-2";
-        
-        if (isUsable) {
-            const btnYes = document.createElement('button');
-            btnYes.className = "border border-green-500 text-green-500 hover:bg-green-900 px-4 py-3 font-bold w-full text-lg";
-            btnYes.textContent = "BENUTZEN / AUSRÜSTEN";
-            btnYes.onclick = () => { Game.useItem(invIndex); setTimeout(() => UI.leaveDialog(), 50); };
-            btnContainer.appendChild(btnYes);
-        }
-        
-        const row = document.createElement('div');
-        row.className = "flex gap-2 w-full";
-        
-        const btnTrash = document.createElement('button');
-        btnTrash.className = "border border-red-500 text-red-500 hover:bg-red-900 px-4 py-2 font-bold flex-1";
-        btnTrash.innerHTML = "WEGWERFEN 🗑️";
-        btnTrash.onclick = () => { Game.destroyItem(invIndex); setTimeout(() => UI.leaveDialog(), 50); };
-        
-        const btnNo = document.createElement('button');
-        btnNo.className = "border border-gray-600 text-gray-500 hover:bg-gray-800 px-4 py-2 font-bold flex-1";
-        btnNo.textContent = "ABBRUCH";
-        btnNo.onclick = () => { UI.leaveDialog(); };
-        
-        row.appendChild(btnTrash);
-        row.appendChild(btnNo);
-        btnContainer.appendChild(row);
-        
-        box.appendChild(btnContainer); overlay.appendChild(box);
     },
 
     showDungeonWarning: function(callback) {
