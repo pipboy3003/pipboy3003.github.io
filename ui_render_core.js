@@ -1,6 +1,3 @@
-// [v1.5.1] - 2026-01-05 09:45am (Modal Event Isolation)
-// - Fix: StopPropagation bei Overlay-Klicks/ESC verhindert Schließen des Parent-Views.
-
 Object.assign(UI, {
     
     update: function() {
