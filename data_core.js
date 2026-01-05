@@ -1,14 +1,38 @@
 window.GameData = window.GameData || {};
 
-// --- PERKS ---
+// [v0.6.0] PERK SYSTEM 2.0 (Leveled)
 window.GameData.perks = [
-    { id: 'toughness', name: 'Zähigkeit', desc: '+20 Max HP dauerhaft.', icon: '🛡️' },
-    { id: 'medic', name: 'Sanitäter', desc: 'Stimpacks heilen +50% mehr HP.', icon: '💉' },
-    { id: 'fortune_finder', name: 'Schatzsucher', desc: 'Mehr Kronkorken in Loot.', icon: '💰' },
-    { id: 'mysterious_stranger', name: 'Mysteriöser Fremder', desc: '10% Chance auf kritischen Treffer.', icon: '🕵️' }
+    { 
+        id: 'toughness', 
+        name: 'Zähigkeit', 
+        desc: '+10 Max HP pro Stufe.', 
+        icon: '🛡️', 
+        max: 5 
+    },
+    { 
+        id: 'medic', 
+        name: 'Sanitäter', 
+        desc: '+20% Heilung durch Stimpacks pro Stufe.', 
+        icon: '💉', 
+        max: 5 
+    },
+    { 
+        id: 'fortune_finder', 
+        name: 'Schatzsucher', 
+        desc: '+10% mehr Kronkorken finden pro Stufe.', 
+        icon: '💰', 
+        max: 5 
+    },
+    { 
+        id: 'mysterious_stranger', 
+        name: 'Mysteriöser Fremder', 
+        desc: '+2% Krit-Chance im V.A.T.S. pro Stufe.', 
+        icon: '🕵️', 
+        max: 5 
+    }
 ];
 
-// --- QUESTS (NEU) ---
+// --- QUESTS ---
 window.GameData.questDefs = [
     { 
         id: "q_start", 
@@ -72,19 +96,14 @@ window.GameData.colors = {
     'M': '#3e2723', 'W': '#0d47a1', '~': '#2f4f2f', 
     't': '#1b5e20', 'T': '#0a3d0a', 'x': '#8b4513', 'o': '#808080',
     '+': '#666666', '"': '#3cb371', 'Y': '#deb887', 'U': '#212121',
-    // [v0.9.1] New POI Colors
     'A': '#cc0000', 'K': '#00bfff',
-    // City Tiles
     '$': '#ffd700', '&': '#ff8c00', 'P': '#ff3333', 'E': '#39ff14', 'F': '#00bfff', '|': '#777',
     'X': '#ff00ff', 
-    // Map Colors
     'wasteland': '#5d5345', 'desert': '#eecfa1', 'jungle': '#1a3300', 'city': '#555555', 'swamp': '#1e1e11'
 };
 
-// --- TEXTE ---
 window.GameData.statLabels = { 'STR': 'STÄRKE', 'PER': 'WAHRNEHMUNG', 'END': 'AUSDAUER', 'INT': 'INTELLIGENZ', 'AGI': 'BEWEGLICHKEIT', 'LUC': 'GLÜCK' };
 
-// --- BIOME ---
 window.GameData.biomes = {
     'wasteland': { 
         ground: '.', water: 0.02, mountain: 0.03,
@@ -108,7 +127,6 @@ window.GameData.biomes = {
     }
 };
 
-// --- HACKING WORDS ---
 window.GameData.hackWords = {
     easy: ["PASS", "CODE", "HACK", "DATA", "BIOS", "BOOT", "DISK", "FILE", "LOAD", "SAVE", "EXIT", "USER", "LOCK", "KEYS", "WIFI", "NODE"],
     medium: ["SERVER", "ACCESS", "SYSTEM", "ROUTER", "MEMORY", "CONFIG", "STATUS", "REBOOT", "UPDATE", "KERNEL", "SCRIPT", "SEARCH", "SIGNAL", "TARGET", "MATRIX", "BYPASS"],
