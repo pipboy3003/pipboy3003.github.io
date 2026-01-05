@@ -1,81 +1,14 @@
-// [v2.0.0] - 2026-01-05 12:55pm (Data Core Update)
 window.GameData = window.GameData || {};
 
-// --- PERKS (NEU v2.0) ---
+// --- PERKS ---
 window.GameData.perks = [
-    { 
-        id: 'toughness', 
-        name: 'Härte', 
-        icon: '🛡️', 
-        maxRank: 5,
-        desc: (rank) => `Erhöht max. HP um +${rank * 20}.` 
-    },
-    { 
-        id: 'medic', 
-        name: 'Feldsanitäter', 
-        icon: '💉', 
-        maxRank: 5,
-        desc: (rank) => `Stimpacks und Essen heilen +${rank * 20}% mehr.` 
-    },
-    { 
-        id: 'gun_nut', 
-        name: 'Waffennarr', 
-        icon: '🔫', 
-        maxRank: 5,
-        desc: (rank) => `Fernkampfwaffen verursachen +${rank * 10}% Schaden.` 
-    },
-    { 
-        id: 'scrapper', 
-        name: 'Schrottsammler', 
-        icon: '⚙️', 
-        maxRank: 5,
-        desc: (rank) => `Beim Zerlegen erhältst du +${rank} zusätzliche Materialien.` 
-    },
-    { 
-        id: 'strong_back', 
-        name: 'Packesel', 
-        icon: '🎒', 
-        maxRank: 5,
-        desc: (rank) => `Inventarkapazität +${rank * 2} Plätze.` 
-    },
-    { 
-        id: 'commando', 
-        name: 'Kommando', 
-        icon: '💥', 
-        maxRank: 5,
-        desc: (rank) => `Kritische Trefferchance +${rank * 5}%.` 
-    },
-    { 
-        id: 'rad_resistant', 
-        name: 'Bleimagen', 
-        icon: '☢️', 
-        maxRank: 5,
-        desc: (rank) => `Strahlungsschaden aus der Umwelt -${rank * 10}%.` 
-    },
-    { 
-        id: 'fortune_finder', 
-        name: 'Schnorrer', 
-        icon: '💰', 
-        maxRank: 5,
-        desc: (rank) => `Findest +${rank * 10}% mehr Kronkorken in Kämpfen.` 
-    },
-    { 
-        id: 'barter', 
-        name: 'Meisterhändler', 
-        icon: '🤝', 
-        maxRank: 5,
-        desc: (rank) => `Verkaufspreise beim Händler +${rank * 10}%.` 
-    },
-    { 
-        id: 'survivalist', 
-        name: 'Überlebenskünstler', 
-        icon: '⛺', 
-        maxRank: 5,
-        desc: (rank) => `Lager-Regeneration +${rank * 10}% effektiver.` 
-    }
+    { id: 'toughness', name: 'Zähigkeit', desc: '+20 Max HP dauerhaft.', icon: '🛡️' },
+    { id: 'medic', name: 'Sanitäter', desc: 'Stimpacks heilen +50% mehr HP.', icon: '💉' },
+    { id: 'fortune_finder', name: 'Schatzsucher', desc: 'Mehr Kronkorken in Loot.', icon: '💰' },
+    { id: 'mysterious_stranger', name: 'Mysteriöser Fremder', desc: '10% Chance auf kritischen Treffer.', icon: '🕵️' }
 ];
 
-// --- QUESTS ---
+// --- QUESTS (NEU) ---
 window.GameData.questDefs = [
     { 
         id: "q_start", 
@@ -139,9 +72,12 @@ window.GameData.colors = {
     'M': '#3e2723', 'W': '#0d47a1', '~': '#2f4f2f', 
     't': '#1b5e20', 'T': '#0a3d0a', 'x': '#8b4513', 'o': '#808080',
     '+': '#666666', '"': '#3cb371', 'Y': '#deb887', 'U': '#212121',
+    // [v0.9.1] New POI Colors
     'A': '#cc0000', 'K': '#00bfff',
+    // City Tiles
     '$': '#ffd700', '&': '#ff8c00', 'P': '#ff3333', 'E': '#39ff14', 'F': '#00bfff', '|': '#777',
     'X': '#ff00ff', 
+    // Map Colors
     'wasteland': '#5d5345', 'desert': '#eecfa1', 'jungle': '#1a3300', 'city': '#555555', 'swamp': '#1e1e11'
 };
 
