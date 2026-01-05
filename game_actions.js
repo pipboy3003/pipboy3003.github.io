@@ -1,6 +1,5 @@
 Object.assign(Game, {
 
-    // Helper: Definiert die Kosten für das NÄCHSTE Level
     getCampUpgradeCost: function(currentLevel) {
         switch(currentLevel) {
             case 1: return { id: 'junk_metal', count: 25, name: 'Schrott' };
@@ -57,8 +56,6 @@ Object.assign(Game, {
         this.addRadiation(5); 
 
         const effectiveMax = this.state.maxHp - (this.state.rads || 0);
-        
-        // Lvl 1 = 30%, Lvl 10 = 100%.
         let healPct = 30 + ((lvl - 1) * 8); 
         if(lvl >= 10) healPct = 100;
         if(healPct > 100) healPct = 100;
@@ -316,7 +313,6 @@ Object.assign(Game, {
         
         let name = (item.props && item.props.name) ? item.props.name : def.name;
 
-        // Item entfernen
         this.state.inventory.splice(invIndex, 1);
         
         if(item.id === 'ammo') this.syncAmmo();
@@ -390,18 +386,14 @@ Object.assign(Game, {
         this.state.inventory.push(objToAdd);
         
         if(slot === 'weapon') this.state.equip.weapon = this.items.fists;
-        else if(slot === 'body') {
-            this.state.equip.body = this.items.vault_suit;
-            this.state.maxHp = this.calculateMaxHP(this.getStat('END'));
-            
-            const effectiveMax = this.state.maxHp - (this.state.rads || 0);
-            if(this.state.hp > effectiveMax) this.state.hp = effectiveMax;
-        }
-        else {
-            this.state.equip[slot] = null; 
-        }
+        else if(slot === 'body') this.state.equip.body = this.items.vault_suit;
+        else this.state.equip[slot] = null; 
 
         UI.log(`${item.name} abgelegt.`, "text-yellow-400");
+        
+        // [v0.6.0] RECALC
+        this.recalcStats();
+        
         if(typeof UI !== 'undefined' && this.state.view === 'char') UI.renderChar(); 
         
         this.saveGame();
@@ -467,9 +459,15 @@ Object.assign(Game, {
         else if(itemDef.type === 'consumable') { 
             if(itemDef.effect === 'heal' || itemDef.effect === 'heal_rad') { 
                 let healAmt = itemDef.val; 
-                if(this.state.perks && this.state.perks.includes('medic')) {
-                    healAmt = Math.floor(healAmt * 1.5);
+                
+                // [v0.6.0] PERK: MEDIC (Leveled)
+                // Level 1 = +20%, Level 5 = +100%
+                const medicLvl = this.getPerkLevel('medic');
+                if(medicLvl > 0) {
+                    const bonus = 1 + (medicLvl * 0.2); // 1.2 to 2.0
+                    healAmt = Math.floor(healAmt * bonus);
                 }
+
                 const effectiveMax = this.state.maxHp - (this.state.rads || 0);
                 if(this.state.hp >= effectiveMax) { UI.log("Gesundheit voll.", "text-gray-500"); return; } 
                 
@@ -523,13 +521,9 @@ Object.assign(Game, {
                 const displayName = invItem.props ? invItem.props.name : itemDef.name;
                 UI.log(`Ausgerüstet: ${displayName}`, "text-yellow-400"); 
                 
-                const oldMax = this.state.maxHp; 
-                this.state.maxHp = this.calculateMaxHP(this.getStat('END')); 
-                if(this.state.maxHp > oldMax) {
-                     this.state.hp += (this.state.maxHp - oldMax); 
-                }
+                // [v0.6.0] RECALC (Important for armor stats)
+                this.recalcStats();
                 
-                // [v1.0.1] Fix: Cap HP at effective max
                 const effectiveMax = this.state.maxHp - (this.state.rads || 0);
                 if(this.state.hp > effectiveMax) this.state.hp = effectiveMax;
             }
@@ -565,7 +559,6 @@ Object.assign(Game, {
         
         UI.log(`Hergestellt: ${recipe.count}x ${recipe.out === "AMMO" ? "Munition" : this.items[recipe.out].name}`, "text-green-400 font-bold");
 
-        // [v1.2.0 FIX] - Cooking UI Logic
         if(recipe.type === 'cooking') {
             if(typeof UI.renderCampCooking === 'function') {
                 UI.renderCampCooking();
@@ -602,8 +595,10 @@ Object.assign(Game, {
         enemy.dmg = Math.floor(enemy.dmg * difficultyMult);
         enemy.loot = Math.floor(enemy.loot * difficultyMult);
 
-        if(this.state.perks && this.state.perks.includes('fortune_finder')) {
-            enemy.loot = Math.floor(enemy.loot * 1.5);
+        // [v0.6.0] PERK: FORTUNE FINDER (Leveled)
+        const fortuneLvl = this.getPerkLevel('fortune_finder');
+        if(fortuneLvl > 0) {
+            enemy.loot = Math.floor(enemy.loot * (1 + (fortuneLvl * 0.1)));
         }
 
         const isLegendary = Math.random() < 0.05; 
@@ -649,28 +644,53 @@ Object.assign(Game, {
         if(this.state.statPoints > 0) { 
             this.state.stats[key]++; 
             this.state.statPoints--; 
-            if(key === 'END') this.state.maxHp = this.calculateMaxHP(this.getStat('END')); 
+            
+            // [v0.6.0] RECALC
+            this.recalcStats();
+            
             UI.renderChar(); 
             UI.update(); 
             this.saveGame(); 
         } 
     },
 
+    // [v0.6.0] PERK WAHL (Leveled)
     choosePerk: function(perkId) {
-        if(this.state.perkPoints > 0 && !this.state.perks.includes(perkId)) {
-            const perk = this.perkDefs.find(p => p.id === perkId);
-            if(!perk) return;
-            this.state.perks.push(perkId);
-            this.state.perkPoints--;
-            UI.log(`Perk gelernt: ${perk.name}`, "text-yellow-400 font-bold");
-            if(perkId === 'toughness') {
-                this.state.maxHp = this.calculateMaxHP(this.getStat('END'));
-                this.state.hp += 20;
-            }
-            UI.renderChar(); 
-            UI.update(); 
-            this.saveGame();
+        if(this.state.perkPoints <= 0) {
+            UI.log("Keine Perk-Punkte verfügbar!", "text-red-500");
+            return;
         }
+
+        const perkDef = this.perkDefs.find(p => p.id === perkId);
+        if(!perkDef) return;
+
+        // Migration Check
+        if (Array.isArray(this.state.perks)) {
+            const oldPerks = this.state.perks;
+            this.state.perks = {};
+            oldPerks.forEach(id => this.state.perks[id] = 1);
+        }
+        if (!this.state.perks) this.state.perks = {};
+
+        const currentLvl = this.state.perks[perkId] || 0;
+        const maxLvl = perkDef.max || 1;
+
+        if (currentLvl >= maxLvl) {
+            UI.log(`${perkDef.name} ist bereits auf Max-Level!`, "text-yellow-500");
+            return;
+        }
+
+        this.state.perkPoints--;
+        this.state.perks[perkId] = currentLvl + 1;
+        
+        UI.log(`Perk gelernt: ${perkDef.name} (Stufe ${this.state.perks[perkId]})`, "text-green-400 font-bold");
+        
+        // Recalc Stats (für Toughness, etc)
+        this.recalcStats();
+        
+        this.saveGame();
+        
+        if(typeof UI.renderChar === 'function') UI.renderChar('perks');
     },
 
     deployCamp: function(invIndex, confirmed=false) {
@@ -747,7 +767,6 @@ Object.assign(Game, {
         
         this.saveGame();
         
-        // UI Refresh
         if(typeof UI.renderCamp === 'function') UI.renderCamp();
     },
 
