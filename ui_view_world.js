@@ -1,7 +1,3 @@
-// [v3.7b] - 2026-01-03 07:45am (World View Cleanup)
-// - CLEANUP: Camp-Funktionen entfernt (jetzt in ui_view_camp.js).
-// - LOGIC: Nur noch für die renderWorldMap zuständig.
-
 Object.assign(UI, {
 
     renderWorldMap: function() {
