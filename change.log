@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## v0.5.5 (UI System Overhaul)
+- [SYSTEM] **Unified UI Logic:** Alte Popup-Systeme (Inventar) wurden entfernt und vollständig in das zentrale Overlay-System integriert.
+- [BUGFIX] **Stimpaks:** Das Kontextmenü (1x Benutzen / Auto-Heal) funktioniert wieder zuverlässig.
+- [BUGFIX] **ESC Taste:** Drücken von ESC schließt jetzt korrekt das oberste Fenster und nicht mehr das Inventar im Hintergrund.
+- [BUGFIX] **UI Events:** Buttons in Popups (z.B. Abbruch) reagieren jetzt zuverlässig und schließen das Fenster sauber.
+- [UI] **Inventar:** Klick auf ausgerüstete Items öffnet nun ebenfalls ein einheitliches Popup zum Ablegen.
+
 v0.5.2 (Fixes)
 [UI] Multi-Layer Support: Info-Popups (? Buttons) öffnen jetzt auf einem separaten Layer.
 [UI] Dialog-Logik: Das Schließen eines Info-Fensters schließt nicht mehr darunterliegende Dialoge (z.B. Inventar-Aktionen).
