@@ -1,4 +1,3 @@
-// [v0.9.12] - Map with Quest Triggers
 Object.assign(Game, {
     reveal: function(px, py) { 
         if(!this.state) return;
