@@ -81,12 +81,8 @@ Object.assign(UI, {
         if(lock) lock.style.transform = `rotate(${MiniGames.lockpicking.lockAngle}deg)`;
     },
 
+    // [v0.5.1 FIX] Nutzt jetzt zentrales Overlay via showInfoDialog
     showMiniGameHelp: function(type) {
-        if(!this.els.dialog) this.restoreOverlay();
-        Game.state.inDialog = true;
-        this.els.dialog.innerHTML = '';
-        this.els.dialog.style.display = 'flex';
-        
         let title = "", text = "";
         
         if(type === 'hacking') {
@@ -112,13 +108,7 @@ Object.assign(UI, {
             `;
         }
 
-        const box = document.createElement('div');
-        box.className = "bg-black border-2 border-yellow-400 p-4 shadow-[0_0_20px_#aa0] max-w-md w-full text-center relative";
-        box.innerHTML = `
-            <h2 class="text-2xl font-bold text-yellow-400 mb-4 border-b border-yellow-500 pb-2">${title}</h2>
-            <div class="text-green-300 mb-6 font-mono">${text}</div>
-            <button class="action-button w-full border-green-500 text-green-500 font-bold" onclick="UI.leaveDialog()">VERSTANDEN</button>
-        `;
-        this.els.dialog.appendChild(box);
+        // Zentraler Aufruf
+        this.showInfoDialog(title, text);
     }
 });
