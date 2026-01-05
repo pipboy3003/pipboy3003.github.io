@@ -1,5 +1,3 @@
-// [v2.2] - 2025-12-31 16:30pm (Refactoring) - Split large file into modules (ui_view_inv, ui_view_world, etc.)
-// This file now only contains core system views.
 Object.assign(UI, {
     
     renderCharacterSelection: function(saves) {
