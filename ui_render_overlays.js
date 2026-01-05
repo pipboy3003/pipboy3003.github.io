@@ -1,5 +1,65 @@
 Object.assign(UI, {
     
+    // [v2.2] CENTRAL OVERLAY LOGIC
+    // Erstellt oder holt das Overlay und setzt das Standard-Verhalten (Klick daneben = Schließen)
+    restoreOverlay: function() {
+        let overlay = document.getElementById('ui-dialog-overlay');
+        if(!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'ui-dialog-overlay';
+            // Standard-Klassen für Overlay
+            overlay.className = "absolute inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm hidden pointer-events-auto";
+            
+            // ZENTRALE SCHLIESS-LOGIK
+            overlay.onclick = (e) => {
+                if(e.target === overlay) {
+                    UI.leaveDialog();
+                }
+            };
+            
+            document.body.appendChild(overlay);
+            this.els.dialog = overlay;
+        }
+        
+        // Sicherheitsnetz: Falls Event verloren ging, neu setzen
+        overlay.onclick = (e) => { 
+            if(e.target === overlay) UI.leaveDialog(); 
+        };
+        
+        return overlay;
+    },
+
+    leaveDialog: function() {
+        if(Game.state) Game.state.inDialog = false;
+        
+        const overlay = this.els.dialog || document.getElementById('ui-dialog-overlay');
+        if(overlay) {
+            overlay.style.display = 'none';
+            overlay.innerHTML = ''; // Inhalt löschen
+            overlay.onclick = null; // Listener entfernen (wird von restoreOverlay neu gesetzt)
+        }
+        
+        if(typeof this.update === 'function') this.update();
+    },
+
+    // [v2.2] GENERIC INFO DIALOG (Für ? Buttons)
+    showInfoDialog: function(title, htmlContent) {
+        const overlay = this.restoreOverlay();
+        overlay.style.display = 'flex';
+        overlay.innerHTML = '';
+
+        if(Game.state) Game.state.inDialog = true;
+
+        const box = document.createElement('div');
+        box.className = "bg-black border-2 border-yellow-400 p-4 shadow-[0_0_20px_#aa0] max-w-md w-full relative animate-float-in pointer-events-auto";
+        box.innerHTML = `
+            <h2 class="text-2xl font-bold text-yellow-400 mb-4 border-b border-yellow-500 pb-2">${title}</h2>
+            <div class="text-green-300 mb-6 font-mono text-sm max-h-[60vh] overflow-y-auto custom-scroll">${htmlContent}</div>
+            <button class="action-button w-full border-green-500 text-green-500 hover:bg-green-900" onclick="UI.leaveDialog()">VERSTANDEN</button>
+        `;
+        overlay.appendChild(box);
+    },
+
     // [v3.0] NEW QUEST HUD
     showQuestComplete: function(questDef) {
         let container = document.getElementById('hud-quest-overlay');
@@ -34,15 +94,8 @@ Object.assign(UI, {
     },
 
     showMapLegend: function() {
-        if(!this.els.dialog) this.restoreOverlay();
-        const overlay = this.els.dialog;
-        overlay.className = "absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto";
+        const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
-        
-        overlay.onclick = (e) => { 
-            if(e.target === overlay) UI.leaveDialog(); 
-        };
-
         overlay.innerHTML = '';
         
         const box = document.createElement('div');
@@ -71,14 +124,12 @@ Object.assign(UI, {
     },
 
     showHighscoreBoard: async function() {
-        if(!this.els.dialog) this.restoreOverlay();
-        const overlay = this.els.dialog;
-
-        overlay.className = "absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto";
+        const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
         
         if(Game.state) Game.state.inDialog = true;
         
+        // ESC Key Handler
         const escHandler = (e) => { if(e.key === "Escape") UI.leaveDialog(); };
         document.addEventListener('keydown', escHandler);
         
@@ -87,10 +138,6 @@ Object.assign(UI, {
             document.removeEventListener('keydown', escHandler);
             UI.leaveDialog = originalLeave;
             originalLeave();
-        };
-
-        overlay.onclick = (e) => {
-            if(e.target === overlay) UI.leaveDialog();
         };
 
         overlay.innerHTML = `
@@ -186,19 +233,14 @@ Object.assign(UI, {
     },
 
     showShopConfirm: function(itemKey) {
-        if(!this.els.dialog) this.restoreOverlay();
-        const overlay = this.els.dialog;
-        overlay.className = "absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto";
+        const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
+        overlay.innerHTML = '';
         
         const item = Game.items[itemKey];
         if(!item) return;
 
         if(Game.state) Game.state.inDialog = true;
-        
-        overlay.onclick = (e) => { if(e.target === overlay) UI.leaveDialog(); };
-
-        overlay.innerHTML = '';
         
         // Calculate Stats Text
         let statsText = "";
@@ -269,10 +311,9 @@ Object.assign(UI, {
     },
 
     showItemConfirm: function(invIndex) {
-        if(!this.els.dialog) this.restoreOverlay();
-        const overlay = this.els.dialog;
-        overlay.className = "absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto";
+        const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
+        overlay.innerHTML = '';
         
         if(!Game.state.inventory || !Game.state.inventory[invIndex]) return;
         const invItem = Game.state.inventory[invIndex];
@@ -281,10 +322,6 @@ Object.assign(UI, {
         if(!item) return;
 
         if(Game.state) Game.state.inDialog = true;
-        
-        overlay.onclick = (e) => { if(e.target === overlay) UI.leaveDialog(); };
-
-        overlay.innerHTML = '';
         
         const box = document.createElement('div');
         box.className = "bg-black border-2 border-green-500 p-4 shadow-[0_0_15px_green] max-w-sm text-center mb-4 w-full pointer-events-auto";
@@ -338,7 +375,6 @@ Object.assign(UI, {
             else statsText = item.desc || "Item";
         }
 
-        // [v5.10] NO SCRAP BUTTON HERE anymore. Only Use/Equip/Trash.
         const isUsable = !['junk', 'component', 'misc', 'rare', 'ammo'].includes(item.type);
 
         box.innerHTML = `
@@ -381,16 +417,12 @@ Object.assign(UI, {
     },
 
     showDungeonWarning: function(callback) {
-        if(!this.els.dialog) this.restoreOverlay();
-        const overlay = this.els.dialog;
-        overlay.className = "absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto";
+        const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
-        
+        overlay.innerHTML = '';
+
         if(Game.state) Game.state.inDialog = true;
         
-        overlay.onclick = (e) => { if(e.target === overlay) UI.leaveDialog(); };
-
-        overlay.innerHTML = '';
         const box = document.createElement('div');
         box.className = "bg-black border-2 border-red-600 p-4 shadow-[0_0_20px_red] max-w-sm text-center animate-pulse mb-4 pointer-events-auto";
         box.innerHTML = `
@@ -413,13 +445,11 @@ Object.assign(UI, {
     },
 
     showWastelandGamble: function(callback) {
-        if(!this.els.dialog) this.restoreOverlay();
-        const overlay = this.els.dialog;
-        overlay.className = "absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto";
+        const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
+        overlay.innerHTML = '';
         
         if(Game.state) Game.state.inDialog = true;
-        overlay.innerHTML = '';
         
         // Prevent accidental close during gamble
         overlay.onclick = null;
@@ -480,16 +510,12 @@ Object.assign(UI, {
     },
 
     showDungeonLocked: function(minutesLeft) {
-        if(!this.els.dialog) this.restoreOverlay();
-        const overlay = this.els.dialog;
-        overlay.className = "absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto";
+        const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
+        overlay.innerHTML = '';
         
         if(Game.state) Game.state.inDialog = true;
-        
-        overlay.onclick = (e) => { if(e.target === overlay) UI.leaveDialog(); };
 
-        overlay.innerHTML = '';
         const box = document.createElement('div');
         box.className = "bg-black border-2 border-gray-600 p-4 shadow-[0_0_20px_gray] max-w-sm text-center mb-4 pointer-events-auto";
         box.innerHTML = `
@@ -537,16 +563,14 @@ Object.assign(UI, {
     },
     
     showPermadeathWarning: function() {
-        if(!this.els.dialog) this.restoreOverlay();
-        const overlay = this.els.dialog;
-        overlay.className = "absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto";
+        const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
+        overlay.innerHTML = '';
         
         if(Game.state) Game.state.inDialog = true;
         
         overlay.onclick = null; // Zwingende Bestätigung
 
-        overlay.innerHTML = '';
         const box = document.createElement('div');
         box.className = "bg-black border-4 border-red-600 p-6 shadow-[0_0_50px_red] max-w-lg text-center animate-pulse pointer-events-auto";
         box.innerHTML = `
@@ -601,34 +625,32 @@ Object.assign(UI, {
     },
 
     enterVault: function() { 
-        if(!this.els.dialog) this.restoreOverlay();
-        const overlay = this.els.dialog;
-        overlay.className = "absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto";
+        const overlay = this.restoreOverlay(); // Holt das Overlay inkl. Klick-Event
         overlay.style.display = 'flex';
+        overlay.innerHTML = ''; 
 
         if(Game.state) Game.state.inDialog = true; 
         
-        overlay.onclick = (e) => { if(e.target === overlay) UI.leaveDialog(); };
-
-        overlay.innerHTML = ''; 
+        // Container für den Inhalt (damit Klicks hier drin das Overlay nicht schließen)
+        const box = document.createElement('div');
+        box.className = "flex flex-col gap-2 w-full max-w-sm p-4 bg-black border-2 border-blue-500 shadow-[0_0_20px_blue] pointer-events-auto";
+        
+        const msg = document.createElement('div');
+        msg.innerHTML = "<h2 class='text-blue-300 font-bold mb-2'>VAULT 101</h2><p class='text-sm text-gray-400'>Sicherer Schlafplatz. Kostet nichts, heilt alles.</p>";
+        
         const restBtn = document.createElement('button'); 
-        restBtn.className = "action-button w-full mb-1 border-blue-500 text-blue-300 pointer-events-auto"; 
+        restBtn.className = "action-button w-full border-blue-500 text-blue-300"; 
         restBtn.textContent = "Ausruhen (Gratis)"; 
         restBtn.onclick = () => { Game.rest(); this.leaveDialog(); }; 
+        
         const leaveBtn = document.createElement('button'); 
-        leaveBtn.className = "action-button w-full pointer-events-auto"; 
+        leaveBtn.className = "action-button w-full"; 
         leaveBtn.textContent = "Weiter geht's"; 
         leaveBtn.onclick = () => this.leaveDialog(); 
-        overlay.appendChild(restBtn); 
-        overlay.appendChild(leaveBtn); 
-    },
-    
-    leaveDialog: function() { 
-        if(Game.state) Game.state.inDialog = false; 
-        if(this.els.dialog) {
-            this.els.dialog.style.display = 'none'; 
-            this.els.dialog.onclick = null; 
-        }
-        if(typeof this.update === 'function') this.update(); 
+        
+        box.appendChild(msg);
+        box.appendChild(restBtn); 
+        box.appendChild(leaveBtn);
+        overlay.appendChild(box);
     }
 });
