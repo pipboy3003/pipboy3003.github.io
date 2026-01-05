@@ -1,9 +1,7 @@
 Object.assign(UI, {
 
-    // Helper für das Info-Popup
+    // [v0.5.1 FIX] Nutzt jetzt zentrales Overlay via showInfoDialog
     showCampInfo: function() {
-        if(!this.els.dialog) return;
-
         let rows = '';
         for(let l=1; l<=10; l++) {
             let healPct = 30 + ((l - 1) * 8); 
@@ -34,29 +32,22 @@ Object.assign(UI, {
             `;
         }
 
-        this.els.dialog.style.display = 'flex';
-        this.els.dialog.innerHTML = `
-            <div class="bg-black/95 border-2 border-yellow-400 p-4 rounded-lg shadow-[0_0_20px_#ffd700] w-80 pointer-events-auto relative z-50 flex flex-col max-h-[80vh]">
-                <div class="flex justify-between items-center mb-4 border-b border-yellow-900 pb-2">
-                    <h3 class="text-lg font-bold text-yellow-400">⛺ LAGER INFO</h3>
-                    <button onclick="UI.els.dialog.style.display='none'" class="text-red-500 font-bold hover:text-red-400 px-2">X</button>
-                </div>
-                
-                <div class="flex justify-between text-xs text-yellow-600 font-bold mb-2 px-2 uppercase tracking-wider">
-                    <span class="w-12">Stufe</span>
-                    <span class="w-20 text-center">Heilung</span>
-                    <span class="flex-1 text-right">Kosten (Upgrade)</span>
-                </div>
-
-                <div class="overflow-y-auto custom-scrollbar flex-1 space-y-1">
-                    ${rows}
-                </div>
-                
-                <div class="mt-4 text-[10px] text-gray-500 text-center border-t border-gray-800 pt-2">
-                    Höhere Stufen heilen Verletzungen effektiver. <br>Hintergrundstrahlung (+5) bleibt konstant.
-                </div>
+        const content = `
+            <div class="flex justify-between text-xs text-yellow-600 font-bold mb-2 px-2 uppercase tracking-wider border-b border-yellow-900 pb-1">
+                <span class="w-12">Stufe</span>
+                <span class="w-20 text-center">Heilung</span>
+                <span class="flex-1 text-right">Kosten</span>
+            </div>
+            <div class="flex flex-col gap-1 max-h-[50vh] overflow-y-auto custom-scroll mb-4 border border-green-900/30 bg-black/50 p-1">
+                ${rows}
+            </div>
+            <div class="text-[10px] text-gray-500 text-center italic">
+                Höhere Stufen heilen effektiver.<br>Strahlung (+5) beim Kochen bleibt konstant.
             </div>
         `;
+
+        // Ruft das zentrale Overlay auf (ui_render_overlays.js)
+        this.showInfoDialog("LAGER INFO", content);
     },
 
     // [Fix] Parameter reset=false ist Standard
