@@ -1,3 +1,4 @@
+
 [v1.2.0] - 2026-01-04 10:15pm (Admin Tool Upgrade) 
 - Feature: Neuer Tab "CAMP" im Admin-Panel zur Verwaltung von Lager-Level und Position. 
 - Fix: Quest-Anzeige liest nun korrekt activeQuests und completedQuests aus. 
