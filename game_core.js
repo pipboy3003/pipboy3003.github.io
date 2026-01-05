@@ -1,7 +1,3 @@
-// [v3.1b] - 2026-01-03 02:00am (Economy Update)
-// - Feature: Merchant has limited caps (Budget).
-// - Logic: Added 'merchantCaps' to shop state.
-
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     WORLD_W: 10, WORLD_H: 10, 
