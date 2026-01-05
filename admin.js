@@ -1,7 +1,3 @@
-// [v1.4.0] - 2026-01-05 (Mobile Portrait Support)
-// - Feature: Sidebar Toggle for Mobile.
-// - Fix: selectUser error trap.
-
 const Admin = {
     gatePass: "bimbo123",
     adminUser: "admin@pipboy-system.com",
