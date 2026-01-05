@@ -1,7 +1,3 @@
-/* [v3.5] - 2026-01-03 04:45pm (Pixel Art Crispness) */
-/* - GFX: 'image-rendering: pixelated' hinzugefügt, damit der Canvas scharf bleibt. */
-/* - UI: .lvl-ready-glow adjustments retained. */
-
 :root { --pip-green: #1aff1a; --pip-glow: #2bff2b; --pip-dim: #0d330d; --pip-bg: #051105; }
 
 html, body { width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; position: fixed; }
