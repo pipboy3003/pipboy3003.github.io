@@ -1,6 +1,3 @@
-// [v3.4a] - 2026-01-03 04:45am (Stats/Perk Logic)
-// - Click Logic for Stats/Perks priority.
-
 const UI = {
     els: {},
     timerInterval: null,
