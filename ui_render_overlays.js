@@ -1,6 +1,6 @@
 Object.assign(UI, {
     
-    // [v2.2] CENTRAL OVERLAY LOGIC (Layer 1 - Hauptdialoge)
+    // [v2.4] ZENTRALE OVERLAY LOGIC (Layer 1 - Hauptdialoge)
     restoreOverlay: function() {
         let overlay = document.getElementById('ui-dialog-overlay');
         if(!overlay) {
@@ -8,21 +8,18 @@ Object.assign(UI, {
             overlay.id = 'ui-dialog-overlay';
             // Z-Index 60 für Hauptdialoge
             overlay.className = "absolute inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm hidden pointer-events-auto";
-            
-            // Klick auf Hintergrund schließt NUR Layer 1
-            overlay.onclick = (e) => {
-                if(e.target === overlay) {
-                    UI.leaveDialog();
-                }
-            };
-            
             document.body.appendChild(overlay);
             this.els.dialog = overlay;
         }
         
-        // Sicherheitsnetz: Event Listener sicherstellen
-        overlay.onclick = (e) => { 
-            if(e.target === overlay) UI.leaveDialog(); 
+        // RESET Click Handler: Klick auf Hintergrund schließt Layer 1
+        overlay.onclick = (e) => {
+            // Nur schließen, wenn wirklich der Hintergrund (Overlay) geklickt wurde
+            if(e.target === overlay) {
+                e.preventDefault();
+                e.stopPropagation();
+                UI.leaveDialog();
+            }
         };
         
         return overlay;
@@ -41,36 +38,37 @@ Object.assign(UI, {
         if(typeof this.update === 'function') this.update();
     },
 
-    // [v2.3 FIX] GENERIC INFO DIALOG (Layer 2 - Info Popups)
-    // Erstellt ein ZUSÄTZLICHES Overlay über dem aktuellen, damit das darunterliegende Fenster offen bleibt.
+    // [v2.4 FIX] GENERIC INFO DIALOG (Layer 2 - Info Popups)
+    // Erstellt ein ZUSÄTZLICHES Overlay über dem aktuellen.
     showInfoDialog: function(title, htmlContent) {
-        // Status setzen
-        const wasInDialog = Game.state.inDialog;
+        // Status setzen, aber merken, dass wir schon im Dialog waren
         if(Game.state) Game.state.inDialog = true;
 
         // 1. Neues Overlay Element erstellen (Layer 2)
         const infoOverlay = document.createElement('div');
-        // Z-Index 70 (höher als Layer 1 mit 60)
         infoOverlay.className = "fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fadeIn pointer-events-auto";
         
         // 2. Inhalt Box bauen
         const box = document.createElement('div');
         box.className = "bg-black border-2 border-yellow-400 p-4 shadow-[0_0_20px_#aa0] max-w-md w-full relative animate-float-in pointer-events-auto mx-4";
         
-        // HTML Inhalt
+        // WICHTIG: Klicks innerhalb der Box dürfen nicht zum Overlay durchdringen
+        box.onclick = (e) => { e.stopPropagation(); };
+
         box.innerHTML = `
             <h2 class="text-2xl font-bold text-yellow-400 mb-4 border-b border-yellow-500 pb-2">${title}</h2>
             <div class="text-green-300 mb-6 font-mono text-sm max-h-[60vh] overflow-y-auto custom-scroll">${htmlContent}</div>
         `;
 
-        // Button manuell erstellen, um die spezifische Schließ-Logik zu binden
         const btn = document.createElement('button');
         btn.className = "action-button w-full border-green-500 text-green-500 hover:bg-green-900";
         btn.textContent = "VERSTANDEN";
         
         // 3. Schließ-Logik für Layer 2
-        const closeLayer2 = () => {
-            // Entferne Layer 2 aus dem DOM
+        const closeLayer2 = (e) => {
+            if(e) e.stopPropagation(); // Verhindert Durchklicken auf Layer 1
+            
+            // Entferne Layer 2
             infoOverlay.remove();
             
             // Prüfen, ob Layer 1 (Basis Overlay) noch sichtbar ist
@@ -78,9 +76,9 @@ Object.assign(UI, {
             const isBaseOpen = baseOverlay && baseOverlay.style.display !== 'none';
             
             // Wenn Layer 1 NICHT offen ist, beenden wir den Dialog-Modus komplett.
-            // Wenn er offen ist, lassen wir inDialog auf true, damit das Spiel pausiert bleibt.
+            // Wenn er offen ist, lassen wir inDialog auf true.
             if(!isBaseOpen) {
-                Game.state.inDialog = false;
+                if(Game.state) Game.state.inDialog = false;
             }
         };
 
@@ -89,7 +87,7 @@ Object.assign(UI, {
         // Klick auf Hintergrund von Layer 2 schließt nur Layer 2
         infoOverlay.onclick = (e) => {
             if(e.target === infoOverlay) {
-                closeLayer2();
+                closeLayer2(e);
             }
         };
 
@@ -138,7 +136,8 @@ Object.assign(UI, {
         
         const box = document.createElement('div');
         box.className = "bg-black border-4 border-green-500 p-6 shadow-[0_0_30px_green] max-w-sm w-full relative pointer-events-auto";
-        
+        box.onclick = (e) => e.stopPropagation(); // Stop Click-Through
+
         const item = (icon, text, color) => `
             <div class="flex items-center gap-4 mb-3 border-b border-green-900/30 pb-1 last:border-0">
                 <span class="text-2xl w-10 text-center filter drop-shadow-[0_0_5px_rgba(255,255,255,0.3)]" style="color: ${color}">${icon}</span>
@@ -179,7 +178,7 @@ Object.assign(UI, {
         };
 
         overlay.innerHTML = `
-            <div class="flex flex-col items-center justify-center p-6 border-2 border-green-500 bg-black shadow-[0_0_20px_green] pointer-events-auto">
+            <div class="flex flex-col items-center justify-center p-6 border-2 border-green-500 bg-black shadow-[0_0_20px_green] pointer-events-auto" onclick="event.stopPropagation()">
                 <div class="text-green-500 animate-pulse text-2xl mb-6">EMPFANGE DATEN...</div>
                 <button class="action-button border-red-500 text-red-500 w-full" onclick="UI.leaveDialog()">ABBRECHEN</button>
             </div>`;
@@ -192,7 +191,8 @@ Object.assign(UI, {
 
             const box = document.createElement('div');
             box.className = "bg-black border-4 border-green-600 p-4 shadow-[0_0_30px_green] w-full max-w-2xl max-h-[90%] flex flex-col relative pointer-events-auto";
-            
+            box.onclick = (e) => e.stopPropagation(); // Stop Click-Through
+
             const closeBtn = document.createElement('button');
             closeBtn.className = "absolute top-2 right-2 text-green-500 text-xl border border-green-500 px-3 hover:bg-green-900 font-bold z-50";
             closeBtn.textContent = "X";
@@ -261,7 +261,7 @@ Object.assign(UI, {
                 msg = "ZUGRIFF VERWEIGERT: FIREBASE REGELN BLOCKIEREN 'leaderboard'.";
             }
             overlay.innerHTML = `
-                <div class="border-2 border-red-500 bg-black p-6 text-center shadow-[0_0_20px_red] pointer-events-auto">
+                <div class="border-2 border-red-500 bg-black p-6 text-center shadow-[0_0_20px_red] pointer-events-auto" onclick="event.stopPropagation()">
                     <div class="text-red-500 font-bold text-2xl mb-4 tracking-widest">NETZWERK FEHLER</div>
                     <div class="text-green-400 font-mono mb-6">${msg}</div>
                     <button class="action-button w-full border-red-500 text-red-500" onclick="UI.leaveDialog()">SCHLIESSEN</button>
@@ -280,50 +280,36 @@ Object.assign(UI, {
 
         if(Game.state) Game.state.inDialog = true;
         
-        // Calculate Stats Text
+        // Calculate Stats
         let statsText = "";
         let typeLabel = item.type.toUpperCase();
-        
-        if(item.type === 'consumable') {
-            statsText = `Effekt: ${item.effect} (${item.val})`;
-            typeLabel = "VERBRAUCHSGEGENSTAND";
-        } else if(item.type === 'weapon') {
-            statsText = `Schaden: ${item.baseDmg}`;
-            typeLabel = "WAFFE";
-        } else if(item.type === 'body') {
-            const bonus = item.bonus ? Object.entries(item.bonus).map(([k,v]) => `+${v} ${k}`).join(', ') : 'Keine';
-            statsText = `Rüstung: ${bonus}`;
-            typeLabel = "KLEIDUNG / RÜSTUNG";
-        } else if(item.type === 'junk' || item.type === 'component') {
-            statsText = "Material für Handwerk";
-            typeLabel = "SCHROTT / MATERIAL";
-        } else if(item.type === 'tool' || item.type === 'blueprint') {
-            statsText = "Bauplan / Werkzeug";
-            typeLabel = "AUSRÜSTUNG";
-        }
+        if(item.type === 'consumable') { statsText = `Effekt: ${item.effect} (${item.val})`; typeLabel = "VERBRAUCHSGEGENSTAND"; } 
+        else if(item.type === 'weapon') { statsText = `Schaden: ${item.baseDmg}`; typeLabel = "WAFFE"; } 
+        else if(item.type === 'body') { const bonus = item.bonus ? Object.entries(item.bonus).map(([k,v]) => `+${v} ${k}`).join(', ') : 'Keine'; statsText = `Rüstung: ${bonus}`; typeLabel = "KLEIDUNG / RÜSTUNG"; } 
+        else if(item.type === 'junk' || item.type === 'component') { statsText = "Material für Handwerk"; typeLabel = "SCHROTT / MATERIAL"; } 
+        else if(item.type === 'tool' || item.type === 'blueprint') { statsText = "Bauplan / Werkzeug"; typeLabel = "AUSRÜSTUNG"; }
 
         const canAfford = Game.state.caps >= item.cost;
         const costColor = canAfford ? "text-yellow-400" : "text-red-500";
 
         const box = document.createElement('div');
         box.className = "bg-black border-2 border-green-500 p-4 shadow-[0_0_15px_green] max-w-sm text-center mb-4 w-full pointer-events-auto";
+        box.onclick = (e) => e.stopPropagation(); // FIX: Prevent overlay closing when clicking box
+
         box.innerHTML = `
             <div class="border-b border-green-500 pb-2 mb-2">
                 <h2 class="text-xl font-bold text-green-400">${item.name}</h2>
                 <div class="text-[10px] text-green-600 tracking-widest">${typeLabel}</div>
             </div>
-            
             <div class="text-sm text-green-200 mb-4 bg-green-900/20 p-3 text-left">
                 <div class="mb-1 text-xs italic text-green-400">${item.desc || "Standard Ausrüstung."}</div>
                 <div class="w-full h-px bg-green-900/50 my-2"></div>
                 <div class="font-bold text-yellow-200">${statsText}</div>
             </div>
-
             <div class="flex justify-between items-center bg-black border border-green-900 p-2 mb-4">
                 <span class="text-xs text-gray-400">PREIS:</span>
                 <span class="font-mono font-bold text-xl ${costColor}">${item.cost} KK</span>
             </div>
-            
             <div class="flex flex-col gap-2 w-full">
                 <button id="btn-buy" class="action-button border-green-500 text-green-500 hover:bg-green-900 py-3 font-bold" ${!canAfford ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
                     ${canAfford ? 'KAUFEN' : 'ZU TEUER'}
@@ -340,11 +326,11 @@ Object.assign(UI, {
         if(canAfford) {
             btnBuy.onclick = () => { 
                 Game.buyItem(itemKey); 
-                this.leaveDialog(); 
+                UI.leaveDialog(); 
             };
         }
         
-        document.getElementById('btn-cancel').onclick = () => this.leaveDialog();
+        document.getElementById('btn-cancel').onclick = () => UI.leaveDialog();
         this.refreshFocusables();
     },
 
@@ -363,6 +349,7 @@ Object.assign(UI, {
         
         const box = document.createElement('div');
         box.className = "bg-black border-2 border-green-500 p-4 shadow-[0_0_15px_green] max-w-sm text-center mb-4 w-full pointer-events-auto";
+        box.onclick = (e) => e.stopPropagation(); // FIX: Content Click Protection
 
         // Stimpack Logic
         if (invItem.id === 'stimpack') {
@@ -391,9 +378,10 @@ Object.assign(UI, {
             `;
             overlay.appendChild(box);
             
-            document.getElementById('btn-use-one').onclick = () => { Game.useItem(invIndex, 1); this.leaveDialog(); };
-            document.getElementById('btn-use-max').onclick = () => { Game.useItem(invIndex, 'max'); this.leaveDialog(); };
-            document.getElementById('btn-cancel').onclick = () => { this.leaveDialog(); };
+            // Explicit UI.leaveDialog() calls
+            document.getElementById('btn-use-one').onclick = () => { Game.useItem(invIndex, 1); UI.leaveDialog(); };
+            document.getElementById('btn-use-max').onclick = () => { Game.useItem(invIndex, 'max'); UI.leaveDialog(); };
+            document.getElementById('btn-cancel').onclick = () => { UI.leaveDialog(); };
             
             this.refreshFocusables();
             return;
@@ -401,7 +389,6 @@ Object.assign(UI, {
 
         let statsText = "";
         let displayName = item.name;
-        
         if(invItem.props) {
             displayName = invItem.props.name;
             if(invItem.props.dmgMult) statsText = `Schaden: ${Math.floor(item.baseDmg * invItem.props.dmgMult)} (Mod)`;
@@ -428,7 +415,7 @@ Object.assign(UI, {
             const btnYes = document.createElement('button');
             btnYes.className = "border border-green-500 text-green-500 hover:bg-green-900 px-4 py-3 font-bold w-full text-lg";
             btnYes.textContent = "BENUTZEN / AUSRÜSTEN";
-            btnYes.onclick = () => { Game.useItem(invIndex); this.leaveDialog(); };
+            btnYes.onclick = () => { Game.useItem(invIndex); UI.leaveDialog(); };
             btnContainer.appendChild(btnYes);
         }
         
@@ -438,12 +425,12 @@ Object.assign(UI, {
         const btnTrash = document.createElement('button');
         btnTrash.className = "border border-red-500 text-red-500 hover:bg-red-900 px-4 py-2 font-bold flex-1";
         btnTrash.innerHTML = "WEGWERFEN 🗑️";
-        btnTrash.onclick = () => { Game.destroyItem(invIndex); this.leaveDialog(); };
+        btnTrash.onclick = () => { Game.destroyItem(invIndex); UI.leaveDialog(); };
         
         const btnNo = document.createElement('button');
         btnNo.className = "border border-gray-600 text-gray-500 hover:bg-gray-800 px-4 py-2 font-bold flex-1";
         btnNo.textContent = "ABBRUCH";
-        btnNo.onclick = () => { this.leaveDialog(); };
+        btnNo.onclick = () => { UI.leaveDialog(); };
         
         row.appendChild(btnTrash);
         row.appendChild(btnNo);
@@ -463,6 +450,8 @@ Object.assign(UI, {
         
         const box = document.createElement('div');
         box.className = "bg-black border-2 border-red-600 p-4 shadow-[0_0_20px_red] max-w-sm text-center animate-pulse mb-4 pointer-events-auto";
+        box.onclick = (e) => e.stopPropagation();
+
         box.innerHTML = `
             <h2 class="text-3xl font-bold text-red-600 mb-2 tracking-widest">⚠️ WARNING ⚠️</h2>
             <p class="text-red-400 mb-4 font-bold">HOHE GEFAHR!<br>Sicher, dass du eintreten willst?</p>
@@ -472,11 +461,11 @@ Object.assign(UI, {
         const btnYes = document.createElement('button');
         btnYes.className = "border border-red-500 text-red-500 hover:bg-red-900 px-4 py-2 font-bold w-full";
         btnYes.textContent = "BETRETEN";
-        btnYes.onclick = () => { this.leaveDialog(); if(callback) callback(); };
+        btnYes.onclick = () => { UI.leaveDialog(); if(callback) callback(); };
         const btnNo = document.createElement('button');
         btnNo.className = "border border-green-500 text-green-500 hover:bg-green-900 px-4 py-2 font-bold w-full";
         btnNo.textContent = "FLUCHT";
-        btnNo.onclick = () => { this.leaveDialog(); };
+        btnNo.onclick = () => { UI.leaveDialog(); };
         btnContainer.appendChild(btnYes); btnContainer.appendChild(btnNo);
         box.appendChild(btnContainer); overlay.appendChild(box);
         this.refreshFocusables();
@@ -539,7 +528,7 @@ Object.assign(UI, {
                     btnRoll.textContent = `SUMME: ${sum}`;
                     btnRoll.classList.add('animate-pulse');
                     setTimeout(() => {
-                        this.leaveDialog();
+                        UI.leaveDialog();
                         callback(sum);
                     }, 1500);
                 }
@@ -556,6 +545,8 @@ Object.assign(UI, {
 
         const box = document.createElement('div');
         box.className = "bg-black border-2 border-gray-600 p-4 shadow-[0_0_20px_gray] max-w-sm text-center mb-4 pointer-events-auto";
+        box.onclick = (e) => e.stopPropagation();
+
         box.innerHTML = `
             <h2 class="text-3xl font-bold text-gray-400 mb-2 tracking-widest">🔒 LOCKED</h2>
             <p class="text-gray-300 mb-4 font-bold">Dieses Gebiet ist versiegelt.<br>Versuche es in ${minutesLeft} Minuten wieder.</p>
@@ -563,7 +554,7 @@ Object.assign(UI, {
         const btn = document.createElement('button');
         btn.className = "border border-gray-500 text-gray-500 hover:bg-gray-900 px-4 py-2 font-bold w-full";
         btn.textContent = "VERSTANDEN";
-        btn.onclick = () => this.leaveDialog();
+        btn.onclick = () => UI.leaveDialog();
         box.appendChild(btn); overlay.appendChild(box);
         this.refreshFocusables();
     },
@@ -574,7 +565,7 @@ Object.assign(UI, {
         overlay.className = "fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/95 animate-fadeIn pointer-events-auto";
         
         overlay.innerHTML = `
-            <div class="bg-black border-4 border-yellow-400 p-6 shadow-[0_0_30px_gold] max-w-md text-center mb-4 relative">
+            <div class="bg-black border-4 border-yellow-400 p-6 shadow-[0_0_30px_gold] max-w-md text-center mb-4 relative" onclick="event.stopPropagation()">
                 <div class="text-6xl mb-2">👑⚔️</div>
                 <h2 class="text-4xl font-bold text-yellow-400 mb-2 tracking-widest text-shadow-gold">VICTORY!</h2>
                 <p class="text-yellow-200 mb-4 font-bold text-lg">DUNGEON (LVL ${lvl}) GECLEARED!</p>
@@ -663,28 +654,28 @@ Object.assign(UI, {
     },
 
     enterVault: function() { 
-        const overlay = this.restoreOverlay(); // Holt das Overlay inkl. Klick-Event
+        const overlay = this.restoreOverlay(); 
         overlay.style.display = 'flex';
         overlay.innerHTML = ''; 
 
         if(Game.state) Game.state.inDialog = true; 
         
-        // Container für den Inhalt (damit Klicks hier drin das Overlay nicht schließen)
         const box = document.createElement('div');
         box.className = "flex flex-col gap-2 w-full max-w-sm p-4 bg-black border-2 border-blue-500 shadow-[0_0_20px_blue] pointer-events-auto";
-        
+        box.onclick = (e) => e.stopPropagation();
+
         const msg = document.createElement('div');
         msg.innerHTML = "<h2 class='text-blue-300 font-bold mb-2'>VAULT 101</h2><p class='text-sm text-gray-400'>Sicherer Schlafplatz. Kostet nichts, heilt alles.</p>";
         
         const restBtn = document.createElement('button'); 
         restBtn.className = "action-button w-full border-blue-500 text-blue-300"; 
         restBtn.textContent = "Ausruhen (Gratis)"; 
-        restBtn.onclick = () => { Game.rest(); this.leaveDialog(); }; 
+        restBtn.onclick = () => { Game.rest(); UI.leaveDialog(); }; 
         
         const leaveBtn = document.createElement('button'); 
         leaveBtn.className = "action-button w-full"; 
         leaveBtn.textContent = "Weiter geht's"; 
-        leaveBtn.onclick = () => this.leaveDialog(); 
+        leaveBtn.onclick = () => UI.leaveDialog(); 
         
         box.appendChild(msg);
         box.appendChild(restBtn); 
