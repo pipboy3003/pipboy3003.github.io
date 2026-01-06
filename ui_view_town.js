@@ -159,62 +159,69 @@ Object.assign(UI, {
         }
     },
 
-    // --- SHOP (Handelsposten) ---
+// ==========================================
+    // --- SHOP REDESIGN (Handelsposten) [v0.9.2] ---
+    // ==========================================
     renderShop: function(mode = 'buy') {
         Game.state.view = 'shop';
+        Game.checkShopRestock(); 
 
         const view = document.getElementById('view-container');
         if(!view) return;
         view.innerHTML = '';
 
-        Game.checkShopRestock(); // Immer prüfen beim Öffnen
-
-        // Header
+        // 1. HEADER (Cash Register Style)
         const header = document.createElement('div');
-        header.className = "flex justify-between items-center p-3 border-b border-yellow-500 bg-yellow-900/20";
+        header.className = "flex justify-between items-end p-4 border-b-4 border-yellow-600 bg-[#1a1500] relative shadow-md";
         header.innerHTML = `
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-500 to-transparent opacity-50"></div>
             <div>
-                <h2 class="text-2xl text-yellow-400 font-bold">HANDELSPOSTEN</h2>
-                <div class="text-xs text-yellow-600">HÄNDLER: ${Game.state.shop.merchantCaps} KK</div>
+                <h2 class="text-3xl text-yellow-400 font-bold font-vt323 tracking-wider">HANDELSPOSTEN</h2>
+                <div class="text-sm text-yellow-700 font-mono">HÄNDLER KAPITAL: <span class="font-bold">${Game.state.shop.merchantCaps} KK</span></div>
             </div>
-            <div class="text-xl font-bold text-yellow-400 border border-yellow-600 px-2 bg-black">
-                DEIN GELD: ${Game.state.caps}
+            <div class="flex flex-col items-end p-2 bg-black/50 border-2 border-yellow-500 rounded shadow-[inset_0_0_10px_rgba(255,200,0,0.2)]">
+                <span class="text-[10px] text-yellow-600 uppercase tracking-widest">DEIN VERMÖGEN</span>
+                <span class="text-2xl text-yellow-300 font-bold font-vt323">${Game.state.caps} 📜</span>
             </div>
         `;
         view.appendChild(header);
 
-        // Tabs
-        const tabs = document.createElement('div');
-        tabs.className = "flex w-full border-b border-yellow-900 mb-2";
-        tabs.innerHTML = `
-            <button class="flex-1 py-2 font-bold ${mode==='buy' ? 'bg-yellow-500 text-black' : 'text-yellow-500 hover:bg-yellow-900/30'}" onclick="UI.renderShop('buy')">KAUFEN</button>
-            <button class="flex-1 py-2 font-bold ${mode==='sell' ? 'bg-green-500 text-black' : 'text-green-500 hover:bg-green-900/30'}" onclick="UI.renderShop('sell')">VERKAUFEN</button>
+        // 2. CONTROL PANEL (Tabs & Qty)
+        const controls = document.createElement('div');
+        controls.className = "bg-[#110d00] border-b-2 border-yellow-900 p-3 flex flex-col gap-3 shadow-inner";
+        
+        // TABS as sturdy switches
+        controls.innerHTML = `
+            <div class="flex w-full gap-2">
+                <button class="flex-1 py-3 font-bold text-lg uppercase tracking-wider border-2 transition-all ${mode==='buy' ? 'bg-yellow-500 text-black border-yellow-500 shadow-[inset_0_2px_5px_rgba(0,0,0,0.5)]' : 'bg-black text-yellow-600 border-yellow-800 hover:border-yellow-500 hover:text-yellow-400'}" onclick="UI.renderShop('buy')">KAUFEN</button>
+                <button class="flex-1 py-3 font-bold text-lg uppercase tracking-wider border-2 transition-all ${mode==='sell' ? 'bg-green-500 text-black border-green-500 shadow-[inset_0_2px_5px_rgba(0,0,0,0.5)]' : 'bg-black text-green-600 border-green-800 hover:border-green-500 hover:text-green-400'}" onclick="UI.renderShop('sell')">VERKAUFEN</button>
+            </div>
         `;
-        view.appendChild(tabs);
-
-        // Menge Buttons
-        const qtyContainer = document.createElement('div');
-        qtyContainer.className = "flex justify-center gap-2 mb-2 px-2";
+        
+        // QTY BUTTONS as smaller mechanical buttons
+        const qtyRow = document.createElement('div');
+        qtyRow.className = "flex justify-center gap-2 px-2 pt-2 border-t border-yellow-900/30";
         const makeQtyBtn = (label, val) => {
             const isActive = (this.shopQty === val);
-            return `<button class="px-4 py-1 text-xs font-bold border ${isActive ? 'bg-yellow-500 text-black border-yellow-500' : 'bg-black text-yellow-500 border-yellow-500 hover:bg-yellow-900'}" onclick="UI.shopQty = '${val}'; UI.renderShop('${mode}')">${label}</button>`;
+            return `<button class="px-4 py-1 text-xs font-bold border-2 uppercase tracking-widest transition-all ${isActive ? 'bg-yellow-500 text-black border-yellow-500 shadow-inner' : 'bg-[#2a2510] text-yellow-500 border-yellow-700 hover:border-yellow-400 hover:bg-[#3a3520]'}" onclick="UI.shopQty = '${val}'; UI.renderShop('${mode}')">${label}</button>`;
         };
-        qtyContainer.innerHTML = makeQtyBtn("1x", 1) + makeQtyBtn("5x", 5) + makeQtyBtn("MAX", 'max');
-        view.appendChild(qtyContainer);
+        qtyRow.innerHTML = `<span class="text-xs text-yellow-800 self-center mr-2 font-bold">MENGE:</span>` + makeQtyBtn("1x", 1) + makeQtyBtn("5x", 5) + makeQtyBtn("MAX", 'max');
+        controls.appendChild(qtyRow);
+        view.appendChild(controls);
 
-        // Content
+        // 3. CONTENT LIST
         const content = document.createElement('div');
         content.id = "shop-list";
-        content.className = "flex-grow overflow-y-auto p-2 custom-scrollbar";
+        content.className = "flex-grow overflow-y-auto p-3 custom-scrollbar bg-[#0a0800]";
         view.appendChild(content);
 
         if(mode === 'buy') this.renderShopBuy(content);
         else this.renderShopSell(content);
 
-        // Footer
+        // 4. FOOTER
         const footer = document.createElement('div');
-        footer.className = "p-2 border-t border-yellow-900";
-        footer.innerHTML = `<button class="action-button w-full border-gray-500 text-gray-500 hover:bg-gray-900" onclick="UI.renderCity()">ZURÜCK ZUM ZENTRUM</button>`;
+        footer.className = "p-3 border-t-4 border-yellow-900 bg-[#1a1500]";
+        footer.innerHTML = `<button class="action-button w-full border-2 border-yellow-700 text-yellow-600 hover:bg-yellow-900/50 hover:text-yellow-300 py-3 font-bold tracking-widest uppercase" onclick="UI.renderCity()"><< ZURÜCK ZUM ZENTRUM</button>`;
         view.appendChild(footer);
     },
 
@@ -226,22 +233,44 @@ Object.assign(UI, {
         const stock = Game.state.shop.stock || {};
         const ammoStock = Game.state.shop.ammoStock || 0;
 
-        // Ammo Section
-        if(ammoStock > 0) {
+        // HELPER: Create Item Slot (Buy)
+        const createBuySlot = (icon, name, stockCount, price, onClick, isSpecial=false) => {
+            const canBuy = Game.state.caps >= price;
+            const borderColor = isSpecial ? 'border-blue-500' : (canBuy ? 'border-yellow-600' : 'border-red-900');
+            const bgColor = isSpecial ? 'bg-blue-900/10' : (canBuy ? 'bg-yellow-900/10' : 'bg-red-900/10');
+            const textColor = isSpecial ? 'text-blue-300' : (canBuy ? 'text-yellow-300' : 'text-gray-600');
+            const priceColor = canBuy ? 'text-yellow-400' : 'text-red-500';
+
             const div = document.createElement('div');
-            div.className = "flex justify-between items-center p-3 mb-2 border border-blue-500 bg-blue-900/20 cursor-pointer hover:bg-blue-900/40";
-            const canBuy = Game.state.caps >= 10;
+            div.className = `flex justify-between items-stretch mb-2 border-2 ${borderColor} ${bgColor} ${canBuy ? 'hover:bg-opacity-30 cursor-pointer group' : 'opacity-60 grayscale'} transition-all h-18 shadow-sm`;
+            
             div.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <span class="text-2xl">🧨</span>
-                    <div>
-                        <div class="font-bold text-blue-300">Munition x10</div>
-                        <div class="text-xs text-blue-500">Vorrat: ${ammoStock} Pakete</div>
+                <div class="flex items-center gap-3 p-2 flex-grow overflow-hidden">
+                    <div class="text-3xl w-12 h-12 flex items-center justify-center bg-black/30 border border-${isSpecial?'blue':'yellow'}-800 rounded group-hover:scale-110 transition-transform">${icon}</div>
+                    <div class="flex flex-col truncate">
+                        <span class="font-bold ${textColor} text-lg truncate leading-tight font-vt323">${name}</span>
+                        <span class="text-xs ${isSpecial?'text-blue-500':'text-yellow-700'} font-mono">Vorrat: ${stockCount}</span>
                     </div>
                 </div>
-                <button class="action-button border-yellow-400 text-yellow-400" onclick="Game.buyAmmo(UI.shopQty)" ${canBuy ? '' : 'disabled'}>10 KK</button>
+                <div class="flex flex-col items-end justify-center border-l-2 ${borderColor} bg-black/20 min-w-[90px]">
+                     <div class="font-bold ${priceColor} text-lg p-1 text-center w-full border-b ${borderColor} font-vt323">${price} KK</div>
+                     <button class="flex-grow w-full text-xs font-bold uppercase tracking-wider hover:bg-${isSpecial?'blue':'yellow'}-500 hover:text-black transition-colors ${textColor}" ${canBuy ? '' : 'disabled'}>
+                        KAUFEN
+                     </button>
+                </div>
             `;
-            container.appendChild(div);
+            if(canBuy) {
+                div.querySelector('button').onclick = (e) => { e.stopPropagation(); onClick(); };
+                div.onclick = onClick;
+            }
+            return div;
+        };
+
+        // Special Ammo Offer
+        if(ammoStock > 0) {
+            container.appendChild(createBuySlot("🧨", "10x MUNITION PAKET", ammoStock, 10, () => Game.buyAmmo(UI.shopQty), true));
+            // Separator
+             container.innerHTML += `<div class="h-px bg-yellow-900/50 my-4 relative"><span class="absolute left-1/2 -top-2 -translate-x-1/2 bg-[#0a0800] px-2 text-xs text-yellow-800 font-mono lowercase">reguläres angebot</span></div>`;
         }
 
         // Categories
@@ -249,12 +278,10 @@ Object.assign(UI, {
             'consumable': { title: '💊 HILFSMITTEL', items: [] },
             'weapon': { title: '🔫 WAFFEN', items: [] },
             'body': { title: '🛡️ RÜSTUNG', items: [] },
-            'back': { title: '🎒 RUCKSÄCKE', items: [] },
             'misc': { title: '📦 SONSTIGES', items: [] } 
         };
 
         const sortedKeys = Object.keys(stock).sort((a,b) => (Game.items[a]?.cost || 0) - (Game.items[b]?.cost || 0));
-        
         sortedKeys.forEach(key => {
             if(stock[key] <= 0) return;
             const item = Game.items[key];
@@ -263,30 +290,26 @@ Object.assign(UI, {
             cat.items.push({key, ...item});
         });
 
+        let hasItems = false;
         for(let catKey in categories) {
             const cat = categories[catKey];
             if(cat.items.length > 0) {
+                hasItems = true;
                 const header = document.createElement('h3');
-                header.className = "text-green-500 font-bold border-b border-green-700 mt-4 mb-2 pb-1 pl-2 text-sm uppercase tracking-widest bg-green-900/20";
+                header.className = "text-yellow-600 font-bold border-b-2 border-yellow-800 mt-6 mb-3 pb-1 pl-2 text-sm uppercase tracking-[0.2em] bg-yellow-900/20 font-mono";
                 header.textContent = cat.title;
                 container.appendChild(header);
 
                 cat.items.forEach(data => {
-                    const canAfford = Game.state.caps >= data.cost;
-                    const div = document.createElement('div');
-                    div.className = `flex justify-between items-center p-2 mb-2 border h-14 w-full ${canAfford ? 'border-green-500 bg-green-900/10 hover:bg-green-900/30' : 'border-red-900 bg-black/40 opacity-50'} transition-all`;
-                    
-                    div.innerHTML = `
-                        <div class="font-bold ${canAfford ? 'text-green-200' : 'text-gray-500'}">${data.name} <span class="text-xs font-normal text-gray-500">(${stock[data.key]}x)</span></div>
-                        <button class="action-button border-yellow-500 text-yellow-500 text-sm" onclick="Game.buyItem('${data.key}', UI.shopQty)">${data.cost} KK</button>
-                    `;
-                    container.appendChild(div);
+                    let icon = "📦";
+                    if(data.type === 'weapon') icon = "🔫"; if(data.type === 'body') icon = "🛡️"; if(data.type === 'consumable') icon = "💉";
+                    container.appendChild(createBuySlot(icon, data.name, stock[data.key], data.cost, () => Game.buyItem(data.key, UI.shopQty)));
                 });
             }
         }
 
-        if(ammoStock <= 0 && sortedKeys.length === 0) {
-            container.innerHTML = '<div class="text-center text-gray-500 mt-10">Alles ausverkauft! Komm später wieder.</div>';
+        if(ammoStock <= 0 && !hasItems) {
+            container.innerHTML = '<div class="text-center text-yellow-800 mt-10 font-mono border-2 border-yellow-900 p-4 border-dashed">ALLES AUSVERKAUFT.<br>Komm später wieder.</div>';
         }
     },
 
@@ -296,9 +319,11 @@ Object.assign(UI, {
         container.innerHTML = '';
 
         if(Game.state.inventory.length === 0) {
-            container.innerHTML = '<div class="text-center text-gray-500 mt-10 italic">Dein Inventar ist leer.</div>';
+            container.innerHTML = '<div class="text-center text-green-800 mt-10 font-mono border-2 border-green-900 p-4 border-dashed">DEIN INVENTAR IST LEER.</div>';
             return;
         }
+
+        container.innerHTML = `<div class="text-xs text-green-700 mb-4 text-center bg-green-900/20 p-2 border border-green-900 font-mono uppercase tracking-widest">Wähle Items zum Verkauf</div>`;
 
         Game.state.inventory.forEach((item, idx) => {
             const def = Game.items[item.id];
@@ -310,17 +335,36 @@ Object.assign(UI, {
 
             const name = item.props && item.props.name ? item.props.name : def.name;
             const canSell = Game.state.shop.merchantCaps >= sellPrice;
+            
+            const borderColor = canSell ? 'border-green-600' : 'border-red-900';
+            const bgColor = canSell ? 'bg-green-900/10' : 'bg-red-900/10';
+            const textColor = canSell ? 'text-green-300' : 'text-gray-600';
 
             const div = document.createElement('div');
-            div.className = `flex justify-between items-center p-2 mb-2 border h-14 w-full ${canSell ? 'border-yellow-600 bg-yellow-900/10 hover:bg-yellow-900/30' : 'border-red-900 bg-black/40 opacity-50'} transition-all`;
+            div.className = `flex justify-between items-stretch mb-2 border-2 ${borderColor} ${bgColor} ${canSell ? 'hover:bg-opacity-30 cursor-pointer group' : 'opacity-60 grayscale'} transition-all h-16 shadow-sm`;
             
+            let icon = "📦";
+            if(def.type === 'weapon') icon = "🔫"; if(def.type === 'body') icon = "🛡️"; if(def.type === 'consumable') icon = "💉"; if(def.type === 'junk') icon = "⚙️";
+
             div.innerHTML = `
-                <div>
-                    <div class="font-bold text-yellow-200">${name}</div>
-                    <div class="text-xs text-yellow-600">Menge: ${item.count} | Wert: ${sellPrice} KK</div>
+                <div class="flex items-center gap-3 p-2 flex-grow overflow-hidden">
+                     <div class="text-2xl w-10 h-10 flex items-center justify-center bg-black/30 border border-green-800 rounded group-hover:scale-110 transition-transform">${icon}</div>
+                    <div class="flex flex-col truncate">
+                        <span class="font-bold ${textColor} text-lg truncate leading-tight font-vt323">${name}</span>
+                        <span class="text-xs text-green-700 font-mono">Im Besitz: ${item.count}x</span>
+                    </div>
                 </div>
-                <button class="action-button border-green-500 text-green-500 text-sm" onclick="Game.sellItem(${idx}, UI.shopQty)">VERKAUFEN</button>
+                <div class="flex flex-col items-end justify-center border-l-2 ${borderColor} bg-black/20 min-w-[90px]">
+                     <div class="font-bold text-green-400 text-lg p-1 text-center w-full border-b ${borderColor} font-vt323">${sellPrice} KK</div>
+                     <button class="flex-grow w-full text-xs font-bold uppercase tracking-wider hover:bg-green-500 hover:text-black transition-colors ${textColor}" ${canSell ? '' : 'disabled'}>
+                        VERKAUFEN
+                     </button>
+                </div>
             `;
+             if(canSell) {
+                div.querySelector('button').onclick = (e) => { e.stopPropagation(); Game.sellItem(idx, UI.shopQty); };
+                div.onclick = () => Game.sellItem(idx, UI.shopQty);
+            }
             container.appendChild(div);
         });
     }
