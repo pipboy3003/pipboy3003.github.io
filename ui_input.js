@@ -98,13 +98,12 @@ Object.assign(UI, {
             };
         }
 
-        // SMART CHAR CLICK (Header) - Bleibt intelligent
         const btnCharHeader = document.getElementById('header-char-info');
         if(btnCharHeader) {
             btnCharHeader.onclick = () => {
                 if (Game.state.statPoints > 0) this.charTab = 'stats';
                 else if (Game.state.perkPoints > 0) this.charTab = 'perks';
-                else this.charTab = 'status'; // Default Header Klick
+                else this.charTab = 'status'; 
                 this.switchView('char');
             };
         }
@@ -122,9 +121,7 @@ Object.assign(UI, {
         for (const [id, view] of Object.entries(navMap)) {
             const el = document.getElementById(id);
             if(el) el.onclick = () => { 
-                // [FIX] Hier erzwingen wir den 'status' Tab beim Menü-Klick
                 if(view === 'char') this.charTab = 'status'; 
-                
                 this.switchView(view); 
                 this.toggleNav(false); 
             };
@@ -146,25 +143,32 @@ Object.assign(UI, {
             }
         });
         
+        // [v0.9.4] LOG CLICK HANDLER UPDATE
         if(this.els.log.parentElement) {
             this.els.log.parentElement.addEventListener('click', () => {
-                if (Game.state && Game.state.view !== 'map' && Game.state.view !== 'combat' && !Game.state.view.includes('city') && Game.state.view !== 'hacking' && Game.state.view !== 'lockpicking') {
-                     if (Game.state.view !== 'combat') {
-                         this.switchView('map');
+                // Prüfen ob Interaktion erlaubt ist
+                if (Game.state && Game.state.view !== 'map' && Game.state.view !== 'combat' && Game.state.view !== 'hacking' && Game.state.view !== 'lockpicking') {
+                     
+                     // SPECIAL CASE: CITY DASHBOARD
+                     // Wenn wir im Stadt-Dashboard sind, nutzen wir leaveCity() für sauberes Exit
+                     if (Game.state.view === 'city') {
+                         Game.leaveCity();
+                         return;
                      }
+
+                     // Standard-Verhalten für Inventar, Wiki etc.
+                     this.switchView('map');
                 }
             });
         }
 
         if(this.els.playerCount) this.els.playerCount.onclick = () => this.togglePlayerList();
         
-        // Direkte Buttons (Desktop / Shortcuts)
         if(this.els.btnInv) this.els.btnInv.onclick = () => this.toggleView('inventory');
         if(this.els.btnWiki) this.els.btnWiki.onclick = () => this.toggleView('wiki');
         if(this.els.btnMap) this.els.btnMap.onclick = () => this.toggleView('worldmap');
         
         if(this.els.btnChar) this.els.btnChar.onclick = () => {
-            // [FIX] Auch hier Reset auf Status
             this.charTab = 'status';
             this.toggleView('char');
         };
@@ -269,6 +273,13 @@ Object.assign(UI, {
             if (Game.state.inDialog) { /* ... */ }
             else if(this.els.playerList && this.els.playerList.style.display === 'flex') this.togglePlayerList();
             else if(this.els.navMenu && !this.els.navMenu.classList.contains('hidden')) this.toggleMenu();
+            
+            // [v0.9.4] ESCAPE HANDLING FOR CITY
+            else if(Game.state.view === 'city') Game.leaveCity();
+            else if(Game.state.view === 'shop' || Game.state.view === 'clinic' || Game.state.view === 'crafting') {
+                if(UI.renderCity) UI.renderCity(); // Zurück zum Dashboard
+            }
+            
             else if(Game.state.view !== 'map') this.switchView('map');
             else this.toggleMenu();
             return;
@@ -309,11 +320,9 @@ Object.assign(UI, {
             if(e.key === 'a' || e.key === 'ArrowLeft') Game.move(-1, 0);
             if(e.key === 'd' || e.key === 'ArrowRight') Game.move(1, 0);
             
-            // Shortcuts
             const k = e.key.toLowerCase();
             if(k === 'i') this.switchView('inventory');
             else if(k === 'c') {
-                // Shortcut C öffnet Status
                 this.charTab = 'status'; 
                 this.switchView('char');
             }
@@ -440,7 +449,6 @@ Object.assign(UI, {
         }
     },
 
-    // --- FOCUS MANAGER ---
     toggleMenu: function() {
         if(!this.els.navMenu) return;
         const isHidden = this.els.navMenu.classList.contains('hidden');
