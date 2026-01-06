@@ -2,9 +2,14 @@
     LADE STADT-INTERFACE...
 </div>
 <script>
-    if(UI && UI.renderCity) {
-        UI.renderCity();
-    } else {
-        console.error("UI.renderCity nicht gefunden!");
-    }
+    // Sicherheits-Verzögerung, falls JS noch nicht bereit ist
+    setTimeout(() => {
+        if(UI && UI.renderCity) {
+            UI.renderCity();
+        } else {
+            console.error("UI.renderCity nicht gefunden!");
+            // Fallback
+            UI.switchView('map');
+        }
+    }, 50);
 </script>
