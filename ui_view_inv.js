@@ -1,7 +1,9 @@
 Object.assign(UI, {
 
+    // [v0.7.0] VIEW STATE
     charTab: 'status', 
 
+    // --- INVENTAR ---
     renderInventory: function() {
         const list = document.getElementById('inventory-list');
         const countDisplay = document.getElementById('inv-count');
@@ -143,6 +145,7 @@ Object.assign(UI, {
         }
     },
 
+    // --- CHARAKTER ---
     renderChar: function(mode) {
         if(mode) this.charTab = mode;
         const tab = this.charTab;
@@ -328,10 +331,10 @@ Object.assign(UI, {
         }
     },
 
-    // --- [v0.8.0] RUSTY SPRINGS DASHBOARD ---
+    // --- [v0.8.3] RUSTY SPRINGS DASHBOARD (FIXED) ---
     renderCity: function() {
         const view = document.getElementById('view-container');
-        view.innerHTML = ''; // Canvas löschen
+        view.innerHTML = ''; 
 
         // 1. HEADER
         const header = document.createElement('div');
@@ -402,6 +405,7 @@ Object.assign(UI, {
         restCard.className = "city-card";
         restCard.onclick = () => { 
             Game.rest(); 
+            // Kleines Feedback
             UI.log("Du ruhst dich in der Baracke aus...", "text-blue-300");
         }; 
         restCard.innerHTML = `
@@ -416,10 +420,10 @@ Object.assign(UI, {
         // 3. FOOTER
         const footer = document.createElement('div');
         footer.className = "p-4 border-t border-green-900 bg-black";
-        // Zurück zur Weltkarte
+        // WICHTIG: Game.leaveCity() ruft jetzt korrekt switchView('worldmap') auf
         footer.innerHTML = `
-            <button class="action-button w-full border-green-500 text-green-500 py-3 font-bold text-xl hover:bg-green-900" onclick="UI.switchView('worldmap')">
-                STADT VERLASSEN (WELTKARTE)
+            <button class="action-button w-full border-green-500 text-green-500 py-3 font-bold text-xl hover:bg-green-900" onclick="Game.leaveCity()">
+                ZURÜCK INS ÖDLAND (ESC)
             </button>
         `;
         view.appendChild(footer);
