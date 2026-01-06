@@ -1,8 +1,9 @@
 Object.assign(UI, {
 
-    // [v0.6.2] Status-Speicher
-    charTab: 'stats', 
+    // [v0.7.0] VIEW STATE
+    charTab: 'status', // 'status', 'stats', 'perks'
 
+    // --- INVENTAR (Dein Original Code) ---
     renderInventory: function() {
         const list = document.getElementById('inventory-list');
         const countDisplay = document.getElementById('inv-count');
@@ -58,7 +59,10 @@ Object.assign(UI, {
             }
             
             if(onClick) {
-                btn.onclick = (e) => { e.stopPropagation(); onClick(); };
+                btn.onclick = (e) => {
+                    e.stopPropagation(); 
+                    onClick();
+                };
             }
             return btn;
         };
@@ -141,126 +145,159 @@ Object.assign(UI, {
         }
     },
 
+    // --- [v0.7.0] CHARAKTER HAUPTFUNKTION ---
     renderChar: function(mode) {
-        // [v0.6.3] CLEAN RENDER & TAB MEMORY
-        if (mode) this.charTab = mode;
-        const currentMode = this.charTab;
+        if(mode) this.charTab = mode;
+        const tab = this.charTab;
 
-        const grid = document.getElementById('stat-grid');
-        const perksContainer = document.getElementById('perk-container');
-        if(!grid) return; 
+        // 1. Basic Info Update (Header)
+        const elName = document.getElementById('char-sheet-name');
+        const elLvl = document.getElementById('char-sheet-lvl');
+        if(elName) elName.textContent = Game.state.playerName;
+        if(elLvl) elLvl.textContent = Game.state.lvl;
 
-        const lvlDisplay = document.getElementById('char-lvl');
-        if(lvlDisplay) lvlDisplay.textContent = Game.state.lvl;
+        // 2. Tabs umschalten (Visuals)
+        ['status', 'stats', 'perks'].forEach(t => {
+            const btn = document.getElementById(`tab-btn-${t}`);
+            const view = document.getElementById(`view-${t}`);
+            if(btn && view) {
+                if(t === tab) {
+                    btn.classList.add('active');
+                    view.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('active');
+                    view.classList.add('hidden');
+                }
+            }
+        });
 
-        const nextXp = Game.expToNextLevel(Game.state.lvl);
-        const expPct = Math.min(100, (Game.state.xp / nextXp) * 100);
-        
-        const elExp = document.getElementById('char-exp');
-        const elNext = document.getElementById('char-next');
-        const elBar = document.getElementById('char-exp-bar');
-        
-        if(elExp) elExp.textContent = Game.state.xp;
-        if(elNext) elNext.textContent = nextXp;
-        if(elBar) elBar.style.width = `${expPct}%`;
-
-        const pts = Game.state.statPoints || 0;
-        const ptsEl = document.getElementById('char-points');
-        if(ptsEl) {
-            if (pts > 0) ptsEl.innerHTML = `<span class="text-red-500 animate-pulse text-2xl font-bold bg-red-900/20 px-2 border border-red-500">${pts} VERFÜGBAR!</span>`;
-            else ptsEl.textContent = pts;
-        }
-        
-        const btnStats = document.getElementById('btn-show-stats');
-        const perkBtn = document.getElementById('btn-show-perks');
-
-        if(perkBtn) {
-             const pPoints = Game.state.perkPoints || 0;
-             perkBtn.innerHTML = `PERKS ${pPoints > 0 ? `<span class="bg-yellow-400 text-black px-1 ml-1 text-xs animate-pulse">${pPoints}</span>` : ''}`;
-        }
-        
-        if(btnStats && perkBtn) {
-             if(currentMode === 'stats') {
-                 btnStats.className = "flex-1 py-2 font-bold bg-green-900/40 text-green-400 border border-green-500 transition-colors";
-                 perkBtn.className = "flex-1 py-2 font-bold bg-black text-gray-500 border border-gray-700 hover:text-green-400 transition-colors ml-[-1px]";
-             } else {
-                 btnStats.className = "flex-1 py-2 font-bold bg-black text-gray-500 border border-gray-700 hover:text-green-400 transition-colors";
-                 perkBtn.className = "flex-1 py-2 font-bold bg-green-900/40 text-green-400 border border-green-500 transition-colors ml-[-1px]";
-             }
-        }
-
-        if(currentMode === 'stats') {
-             grid.style.display = 'block';
-             if(perksContainer) perksContainer.style.display = 'none';
-             
-             const statOrder = ['STR', 'PER', 'END', 'INT', 'AGI', 'LUC'];
-             grid.innerHTML = statOrder.map(k => {
-                const val = Game.getStat(k);
-                const btn = Game.state.statPoints > 0 ? `<button class="w-12 h-12 border-2 border-green-500 bg-green-900/50 text-green-400 font-bold ml-2 flex items-center justify-center hover:bg-green-500 hover:text-black transition-colors" onclick="Game.upgradeStat('${k}', event)" style="font-size: 1.5rem;">+</button>` : '';
-                const label = (window.GameData && window.GameData.statLabels && window.GameData.statLabels[k]) ? window.GameData.statLabels[k] : k;
-                return `<div class="flex justify-between items-center border-b border-green-900/30 py-1 h-14"><span>${label}</span> <div class="flex items-center"><span class="text-yellow-400 font-bold mr-4 text-xl">${val}</span>${btn}</div></div>`;
-             }).join('');
-
-             // [FIX] Direkter Zugriff, kein ensureEquipContainer mehr nötig
-             const equipContainer = document.getElementById('dynamic-equip-list');
-             if(equipContainer) {
-                equipContainer.innerHTML = '';
-                const slotConfig = [
-                    { key: 'weapon', label: 'WAFFE', icon: '🔫' },
-                    { key: 'head', label: 'KOPF', icon: '🪖' },
-                    { key: 'body', label: 'KÖRPER', icon: '🛡️' },
-                    { key: 'arms', label: 'ARME', icon: '🦾' },
-                    { key: 'legs', label: 'BEINE', icon: '👖' },
-                    { key: 'feet', label: 'FÜSSE', icon: '🥾' },
-                    { key: 'back', label: 'RUCKSACK', icon: '🎒' }
-                ];
-                slotConfig.forEach(slot => {
-                    const item = Game.state.equip[slot.key];
-                    const isEmpty = !item || (slot.key === 'back' && !item.props) || (slot.key !== 'back' && (!item.name || item.name === 'Fäuste' || item.name === 'Vault-Anzug' || item.name === 'Kein Rucksack'));
-                    
-                    let name = isEmpty ? "---" : (item.props ? item.props.name : item.name);
-                    if(isEmpty && slot.key === 'weapon') name = "Fäuste (2 DMG)";
-                    if(isEmpty && slot.key === 'body') name = "Vault-Anzug";
-
-                    const div = document.createElement('div');
-                    div.className = "border-b border-green-900/30 pb-1 mb-1 relative";
-                    div.innerHTML = `
-                        <div class="text-[10px] text-green-600 font-mono tracking-widest mb-0.5 flex items-center gap-1"><span>${slot.icon}</span> ${slot.label}</div>
-                        <div class="flex justify-between items-center pr-10">
-                            <div class="font-bold ${item && item.props && item.props.color ? item.props.color : 'text-yellow-400'} text-sm truncate">${name}</div>
-                        </div>`;
-                    
-                    if(!isEmpty && name !== 'Fäuste' && name !== 'Vault-Anzug') {
-                        const btn = document.createElement('button');
-                        btn.innerHTML = "✖";
-                        btn.className = "absolute right-0 top-0 h-full w-8 bg-red-900/20 hover:bg-red-500 hover:text-white text-red-500 flex items-center justify-center font-bold text-lg transition-colors";
-                        btn.onclick = (e) => { e.stopPropagation(); Game.unequipItem(slot.key); };
-                        div.appendChild(btn);
-                    }
-                    equipContainer.appendChild(div);
-                });
-             }
-
-        } else {
-             grid.style.display = 'none';
-             if(perksContainer) {
-                 perksContainer.style.display = 'block';
-                 this.renderPerksList(perksContainer);
-             }
-        }
+        // 3. Inhalt rendern je nach Tab
+        if(tab === 'status') this.renderCharStatus();
+        else if(tab === 'stats') this.renderCharStats();
+        else if(tab === 'perks') this.renderCharPerks();
     },
 
-    renderPerksList: function(container) {
+    // --- TAB 1: STATUS (Equip Grid & Summary) ---
+    renderCharStatus: function() {
+        // Stats Summary
+        document.getElementById('sheet-hp').textContent = `${Math.floor(Game.state.hp)}/${Game.state.maxHp}`;
+        
+        const nextXp = Game.expToNextLevel(Game.state.lvl);
+        document.getElementById('sheet-xp').textContent = `${Math.floor(Game.state.xp)}/${nextXp}`;
+        
+        const used = Game.getUsedSlots();
+        const max = Game.getMaxSlots();
+        const loadEl = document.getElementById('sheet-load');
+        loadEl.textContent = `${used}/${max}`;
+        loadEl.className = used >= max ? "text-red-500 font-bold animate-pulse" : "text-white font-bold";
+
+        document.getElementById('sheet-crit').textContent = `${Game.state.critChance}%`;
+
+        // Alert Box (Level Up Button)
+        const alertBox = document.getElementById('status-points-alert');
+        if(Game.state.statPoints > 0 || Game.state.perkPoints > 0) {
+            alertBox.classList.remove('hidden');
+            alertBox.onclick = () => {
+                if(Game.state.statPoints > 0) UI.renderChar('stats');
+                else UI.renderChar('perks');
+            };
+        } else {
+            alertBox.classList.add('hidden');
+        }
+
+        // GRID RENDERER
+        const slots = ['head', 'back', 'weapon', 'body', 'arms', 'legs', 'feet'];
+        
+        slots.forEach(slot => {
+            const el = document.getElementById(`slot-${slot}`);
+            if(!el) return;
+
+            const item = Game.state.equip[slot];
+            
+            // Leerer Slot Check
+            const isEmpty = !item || 
+                           (slot === 'back' && !item.props) || 
+                           (!item.name || item.name === 'Fäuste' || item.name === 'Vault-Anzug' || item.name === 'Kein Rucksack');
+
+            if(isEmpty) {
+                el.classList.remove('filled');
+                el.classList.add('empty');
+                el.querySelector('.item-name').textContent = "---";
+                el.querySelector('.item-name').className = "item-name text-gray-600";
+                // Click deaktivieren oder Info anzeigen
+                el.onclick = null; 
+            } else {
+                el.classList.add('filled');
+                el.classList.remove('empty');
+                const name = item.props ? item.props.name : item.name;
+                const color = (item.props && item.props.color) ? item.props.color : "text-[#39ff14]";
+                
+                el.querySelector('.item-name').textContent = name;
+                el.querySelector('.item-name').className = `item-name ${color}`;
+                // Click aktivieren -> Dialog öffnen
+                el.onclick = () => UI.showEquippedDialog(slot);
+            }
+        });
+    },
+
+    // --- TAB 2: SPECIAL ---
+    renderCharStats: function() {
+        const container = document.getElementById('special-list');
+        const pointsEl = document.getElementById('sheet-stat-points');
         if(!container) return;
-        const scrollPos = container.scrollTop || 0;
 
         container.innerHTML = '';
-        const points = Game.state.perkPoints || 0;
-        
-        container.innerHTML += `
-            <div class="text-center mb-4 border-b border-green-900 pb-2">
-                VERFÜGBARE PUNKTE: <span class="text-yellow-400 font-bold text-xl animate-pulse">${points}</span>
-            </div>`;
+        pointsEl.textContent = Game.state.statPoints;
+
+        const statOrder = ['STR', 'PER', 'END', 'INT', 'AGI', 'LUC'];
+        const canUpgrade = Game.state.statPoints > 0;
+
+        statOrder.forEach(key => {
+            const val = Game.getStat(key);
+            const label = (window.GameData && window.GameData.statLabels && window.GameData.statLabels[key]) ? window.GameData.statLabels[key] : key;
+            
+            // Progress Bar visual (1-10)
+            let bar = '';
+            for(let i=1; i<=10; i++) {
+                bar += (i <= val) ? '<div class="h-2 w-full bg-[#39ff14] mr-0.5"></div>' : '<div class="h-2 w-full bg-green-900/30 mr-0.5"></div>';
+            }
+
+            const div = document.createElement('div');
+            div.className = "flex items-center justify-between bg-green-900/10 border border-green-900 p-2";
+            
+            let btnHtml = '';
+            if(canUpgrade && val < 10) {
+                btnHtml = `<button class="w-8 h-8 bg-yellow-500 text-black font-bold flex items-center justify-center hover:bg-yellow-400" onclick="Game.upgradeStat('${key}', event)">+</button>`;
+            } else {
+                btnHtml = `<div class="w-8 h-8 flex items-center justify-center font-bold text-green-700 text-xl">${val}</div>`;
+            }
+
+            div.innerHTML = `
+                <div class="flex-1">
+                    <div class="flex justify-between mb-1">
+                        <span class="font-bold text-green-400 text-lg">${key}</span>
+                        <span class="text-xs text-green-600 uppercase tracking-widest mt-1">${label}</span>
+                    </div>
+                    <div class="flex w-32">${bar}</div>
+                </div>
+                <div class="ml-4">${btnHtml}</div>
+            `;
+            container.appendChild(div);
+        });
+    },
+
+    // --- TAB 3: PERKS ---
+    renderCharPerks: function() {
+        const container = document.getElementById('perks-list');
+        const pointsEl = document.getElementById('sheet-perk-points');
+        if(!container) return;
+
+        // Scroll Position merken
+        const scrollPos = container.parentElement.scrollTop || 0;
+
+        container.innerHTML = '';
+        pointsEl.textContent = Game.state.perkPoints;
+        const points = Game.state.perkPoints;
 
         if(Game.perkDefs) {
             Game.perkDefs.forEach(p => {
@@ -269,45 +306,44 @@ Object.assign(UI, {
                 const isMaxed = currentLvl >= maxLvl;
                 const canAfford = points > 0 && !isMaxed;
                 
+                // Visual Bar
                 let levelBar = '';
                 for(let i=0; i<maxLvl; i++) {
-                    levelBar += (i < currentLvl) ? '<span class="text-yellow-400 text-lg">■</span>' : '<span class="text-gray-700 text-lg">□</span>';
-                }
-
-                let btnHtml = '';
-                if(isMaxed) {
-                    btnHtml = '<span class="text-green-500 font-bold border border-green-500 px-2 py-1 text-xs bg-green-900/20">MAX</span>';
-                } else if(canAfford) {
-                    btnHtml = `<button class="action-button text-xs px-3 py-1 bg-yellow-900/20 border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black font-bold" onclick="event.stopPropagation(); Game.choosePerk('${p.id}')">LERNEN (+)</button>`;
-                } else {
-                    btnHtml = '<span class="text-gray-600 text-xs border border-gray-800 px-2 py-1">---</span>';
+                    levelBar += (i < currentLvl) ? '<span class="text-yellow-400 text-sm">●</span>' : '<span class="text-gray-700 text-sm">○</span>';
                 }
 
                 const div = document.createElement('div');
-                div.className = `border ${isMaxed ? 'border-yellow-900 bg-yellow-900/5' : 'border-green-900 bg-green-900/10'} p-3 mb-2 flex justify-between items-center transition-all hover:bg-green-900/20`;
+                div.className = `border ${isMaxed ? 'border-yellow-900 bg-yellow-900/5' : 'border-green-800 bg-black'} p-3 flex justify-between items-center transition-all hover:border-green-500`;
                 
+                let actionBtn = '';
+                if(canAfford) {
+                    actionBtn = `<button class="bg-yellow-500/20 text-yellow-400 border border-yellow-500 px-3 py-1 text-xs font-bold hover:bg-yellow-500 hover:text-black" onclick="event.stopPropagation(); Game.choosePerk('${p.id}')">LERNEN</button>`;
+                } else if (isMaxed) {
+                    actionBtn = `<span class="text-green-700 font-bold text-xs border border-green-900 px-2 py-1">MAX</span>`;
+                }
+
                 div.innerHTML = `
-                    <div class="flex items-start gap-3 flex-1">
-                        <span class="text-3xl filter drop-shadow-[0_0_5px_rgba(0,255,0,0.3)] pt-1">${p.icon}</span>
-                        <div class="flex flex-col w-full pr-2">
-                            <div class="flex justify-between w-full">
-                                <span class="font-bold ${isMaxed ? 'text-yellow-500' : 'text-green-300'} text-lg">${p.name}</span>
-                                <div class="tracking-tighter">${levelBar}</div>
-                            </div>
-                            <span class="text-xs text-green-500/80 leading-tight">${p.desc}</span>
-                            <span class="text-[10px] text-gray-500 mt-1 uppercase tracking-widest">Stufe ${currentLvl} / ${maxLvl}</span>
+                    <div class="flex items-center gap-3 flex-1">
+                        <div class="text-3xl bg-green-900/20 w-12 h-12 flex items-center justify-center rounded border border-green-900">${p.icon}</div>
+                        <div class="flex flex-col">
+                            <span class="font-bold ${isMaxed ? 'text-yellow-600' : 'text-green-300'} text-lg">${p.name}</span>
+                            <span class="text-xs text-gray-500">${p.desc}</span>
+                            <div class="mt-1 tracking-widest">${levelBar}</div>
                         </div>
                     </div>
-                    <div class="flex flex-col justify-center pl-2 border-l border-green-900/30">
-                        ${btnHtml}
+                    <div class="ml-2">
+                        ${actionBtn}
                     </div>
                 `;
                 container.appendChild(div);
             });
         }
 
+        // Scroll Position wiederherstellen
         if(scrollPos > 0) {
-            requestAnimationFrame(() => { container.scrollTop = scrollPos; });
+            requestAnimationFrame(() => {
+                container.parentElement.scrollTop = scrollPos;
+            });
         }
     }
 });
