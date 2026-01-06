@@ -45,7 +45,6 @@ window.Combat = {
         this.renderLogs();
     },
 
-    // --- V.A.T.S. INPUT ---
     moveSelection: function(dir) {
         if (typeof this.selectedPart === 'undefined') this.selectedPart = 1;
         this.selectedPart += dir;
@@ -76,7 +75,6 @@ window.Combat = {
         }
     },
 
-    // --- VISUAL FX ---
     triggerFeedback: function(type, value) {
         const layer = document.getElementById('combat-feedback-layer');
         if(!layer) return;
@@ -116,7 +114,17 @@ window.Combat = {
         setTimeout(() => { el.remove(); }, 1000);
     },
 
-    // --- LOGIC UPDATES v0.6.9 ---
+    // --- SAFETY HELPER ---
+    // Holt die aktuelle Waffe sicher ab, ohne abzustürzen
+    getSafeWeapon: function() {
+        let wpn = Game.state.equip.weapon;
+        // Wenn Waffe null, undefined oder keine ID hat -> Fäuste
+        if (!wpn || !wpn.id) {
+            return { id: 'fists', name: 'Fäuste', baseDmg: 2 };
+        }
+        return wpn;
+    },
+
     calculateHitChance: function(partIndex) {
         const part = this.bodyParts[partIndex];
         const perception = Game.getStat('PER');
@@ -124,16 +132,14 @@ window.Combat = {
         let chance = 50 + (perception * 5);
         chance *= part.hitMod;
         
-        // Check weapon type for bonus
-        const wpn = Game.state.equip.weapon;
-        const wId = wpn ? wpn.id.toLowerCase() : 'fists';
+        const wpn = this.getSafeWeapon();
+        const wId = wpn.id.toLowerCase();
         
-        // Ranged Keywords (Whitelist)
         const rangedKeywords = ['pistol', 'rifle', 'gun', 'shotgun', 'smg', 'minigun', 'blaster', 'sniper'];
         const isRanged = rangedKeywords.some(k => wId.includes(k));
 
         if (!isRanged) {
-            chance += 20; // Melee Bonus
+            chance += 20; 
         }
 
         return Math.min(95, Math.floor(chance));
@@ -146,30 +152,25 @@ window.Combat = {
         const part = this.bodyParts[partIndex];
         const hitChance = this.calculateHitChance(partIndex);
         
-        // --- AMMO CHECK FIX ---
-        // 1. Get Weapon
-        let wpn = Game.state.equip.weapon || { id: 'fists', name: "Fäuste", baseDmg: 2 };
+        // 1. Sichere Waffe holen
+        let wpn = this.getSafeWeapon();
         const wId = wpn.id.toLowerCase();
 
-        // 2. Determine Type (Whitelist for Ranged)
+        // 2. Typ bestimmen
         const rangedKeywords = ['pistol', 'rifle', 'gun', 'shotgun', 'smg', 'minigun', 'blaster', 'sniper'];
         const isRanged = rangedKeywords.some(k => wId.includes(k));
         
         // 3. Ammo Logic
-        // Only consume ammo if it IS ranged AND NOT an exception (like Alien Blaster or special tools)
-        // Everything else (Bat, Knife, Fists, etc.) is considered Melee = No Ammo.
         if(isRanged && wId !== 'alien_blaster') { 
              const hasAmmo = Game.removeFromInventory('ammo', 1);
              if(!hasAmmo) {
                  this.log("KLICK! Munition leer!", "text-red-500 font-bold");
                  
-                 // Auto-Switch to Fists
                  Game.unequipItem('weapon');
                  this.log("Wechsle zu Fäusten (Nahkampf)!", "text-yellow-400");
                  
-                 // Update weapon reference for THIS attack calculation
+                 // Fallback für diesen Angriff
                  wpn = { id: 'fists', baseDmg: 2, name: "Fäuste" }; 
-                 // Attack proceeds with Fists immediately
              }
         }
 
@@ -182,20 +183,18 @@ window.Combat = {
         }
 
         if(roll <= hitChance) {
-            // HIT CALCULATION
+            // HIT
             let dmg = wpn.baseDmg || 2;
-            
             if(wpn.props && wpn.props.dmgMult) dmg *= wpn.props.dmgMult;
 
-            // PERK BONUS
+            // PERKS
             if(!isRanged) {
-                // Melee Bonus
+                // Nahkampf
                 dmg += Math.floor(Game.getStat('STR') / 2);
-                
                 const sluggerLvl = Game.getPerkLevel('slugger');
                 if(sluggerLvl > 0) dmg = Math.floor(dmg * (1 + (sluggerLvl * 0.1)));
             } else {
-                // Ranged Bonus
+                // Fernkampf
                 const gunLvl = Game.getPerkLevel('gunslinger');
                 if(gunLvl > 0) dmg = Math.floor(dmg * (1 + (gunLvl * 0.1)));
             }
