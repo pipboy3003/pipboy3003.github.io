@@ -1,6 +1,6 @@
 Object.assign(UI, {
 
-    // [v0.6.2] Status-Speicher für Charakter-Ansicht
+    // [v0.6.2] Status-Speicher
     charTab: 'stats', 
 
     renderInventory: function() {
@@ -58,10 +58,7 @@ Object.assign(UI, {
             }
             
             if(onClick) {
-                btn.onclick = (e) => {
-                    e.stopPropagation(); 
-                    onClick();
-                };
+                btn.onclick = (e) => { e.stopPropagation(); onClick(); };
             }
             return btn;
         };
@@ -145,9 +142,7 @@ Object.assign(UI, {
     },
 
     renderChar: function(mode) {
-        // [v0.6.2] TAB MEMORY FIX
-        // Wenn ein Modus übergeben wird (z.B. durch Klick), speichern wir ihn.
-        // Wenn kein Modus übergeben wird (z.B. durch Auto-Update), nutzen wir den gespeicherten.
+        // [v0.6.3] CLEAN RENDER & TAB MEMORY
         if (mode) this.charTab = mode;
         const currentMode = this.charTab;
 
@@ -206,7 +201,8 @@ Object.assign(UI, {
                 return `<div class="flex justify-between items-center border-b border-green-900/30 py-1 h-14"><span>${label}</span> <div class="flex items-center"><span class="text-yellow-400 font-bold mr-4 text-xl">${val}</span>${btn}</div></div>`;
              }).join('');
 
-             const equipContainer = document.getElementById('dynamic-equip-list') || this.ensureEquipContainer();
+             // [FIX] Direkter Zugriff, kein ensureEquipContainer mehr nötig
+             const equipContainer = document.getElementById('dynamic-equip-list');
              if(equipContainer) {
                 equipContainer.innerHTML = '';
                 const slotConfig = [
@@ -254,21 +250,8 @@ Object.assign(UI, {
         }
     },
 
-    ensureEquipContainer: function() {
-        const oldRef = document.getElementById('equip-weapon-name');
-        if(oldRef) {
-            const container = oldRef.parentElement.parentElement.parentElement;
-            container.innerHTML = '<div id="dynamic-equip-list" class="flex flex-col gap-2"></div>';
-            return document.getElementById('dynamic-equip-list');
-        }
-        return null;
-    },
-
-    // [v0.6.2] LEVELED PERK LISTE & SCROLL FIX
     renderPerksList: function(container) {
         if(!container) return;
-        
-        // SCROLL FIX: Position merken
         const scrollPos = container.scrollTop || 0;
 
         container.innerHTML = '';
@@ -286,7 +269,6 @@ Object.assign(UI, {
                 const isMaxed = currentLvl >= maxLvl;
                 const canAfford = points > 0 && !isMaxed;
                 
-                // Visual Bar
                 let levelBar = '';
                 for(let i=0; i<maxLvl; i++) {
                     levelBar += (i < currentLvl) ? '<span class="text-yellow-400 text-lg">■</span>' : '<span class="text-gray-700 text-lg">□</span>';
@@ -296,7 +278,6 @@ Object.assign(UI, {
                 if(isMaxed) {
                     btnHtml = '<span class="text-green-500 font-bold border border-green-500 px-2 py-1 text-xs bg-green-900/20">MAX</span>';
                 } else if(canAfford) {
-                    // [FIX] event.stopPropagation() prevents bubbling
                     btnHtml = `<button class="action-button text-xs px-3 py-1 bg-yellow-900/20 border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black font-bold" onclick="event.stopPropagation(); Game.choosePerk('${p.id}')">LERNEN (+)</button>`;
                 } else {
                     btnHtml = '<span class="text-gray-600 text-xs border border-gray-800 px-2 py-1">---</span>';
@@ -325,11 +306,8 @@ Object.assign(UI, {
             });
         }
 
-        // SCROLL FIX: Position wiederherstellen
         if(scrollPos > 0) {
-            requestAnimationFrame(() => {
-                container.scrollTop = scrollPos;
-            });
+            requestAnimationFrame(() => { container.scrollTop = scrollPos; });
         }
     }
 });
