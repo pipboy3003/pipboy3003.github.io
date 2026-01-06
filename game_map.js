@@ -41,14 +41,12 @@ Object.assign(Game, {
         }
 
         // --- INTERAKTIONEN ---
-        if (tile === '$') { UI.switchView('shop'); return; }
-        if (tile === '&') { UI.switchView('crafting'); return; }
-        if (tile === 'P') { UI.switchView('clinic'); return; }
-        if (tile === 'E') { this.leaveCity(); return; }
+        // (Alte Shortcuts entfernt, da alles übers Dashboard laufen soll wenn man auf C steht)
         if (tile === 'X') { this.openChest(nx, ny); return; } 
         if (tile === 'v') { this.descendDungeon(); return; }
 
         // --- KOLLISION ---
+        // 'C' ist jetzt begehbar (siehe unten bei move), daher hier nicht blocken
         if(['M', 'W', '#', 'U', 't', 'o', 'Y', '|', 'F', 'T', 'R'].includes(tile) && tile !== 'R') { 
             if(this.state.hiddenItems && this.state.hiddenItems[posKey]) {
                  const itemId = this.state.hiddenItems[posKey];
@@ -76,7 +74,10 @@ Object.assign(Game, {
 
         // --- POI EVENTS ---
         if(tile === 'V') { UI.switchView('vault'); return; }
+        
+        // [FIX] Hier wird enterCity aufgerufen, wenn man auf 'C' tritt
         if(tile === 'C') { this.enterCity(); return; } 
+        
         if(tile === 'S') { this.tryEnterDungeon("market"); return; }
         if(tile === 'H') { this.tryEnterDungeon("cave"); return; }
         if(tile === 'A') { this.tryEnterDungeon("military"); return; }
@@ -124,20 +125,8 @@ Object.assign(Game, {
         const sy = parseInt(sy_in);
         const key = `${sx},${sy}`; 
         
-        // [v0.8.0] RUSTY SPRINGS INTERCEPTOR
-        // Wenn Sektor 3,3 (Stadt) geladen wird, öffne stattdessen das Dashboard
-        if (sx === 3 && sy === 3) {
-            this.state.sector = {x: 3, y: 3};
-            this.state.zone = "Rusty Springs (Hub)";
-            this.state.view = 'city'; 
-            
-            // Verhindere Map Generation und triggere UI
-            if(typeof UI !== 'undefined' && UI.renderCity) UI.renderCity();
-            
-            this.saveGame();
-            return; // STOP! Keine Map generieren.
-        }
-
+        // [FIX] Interceptor entfernt! Map wird jetzt immer generiert.
+        
         const mapSeed = (sx + 1) * 5323 + (sy + 1) * 8237 + 9283;
         if(typeof WorldGen !== 'undefined') WorldGen.setSeed(mapSeed);
         const rng = () => { return typeof WorldGen !== 'undefined' ? WorldGen.rand() : Math.random(); };
@@ -152,6 +141,7 @@ Object.assign(Game, {
             if(this.state.worldPOIs) {
                 this.state.worldPOIs.forEach(poi => {
                     if(poi.x === sx && poi.y === sy) {
+                        // Standard POI Position
                         poiList.push({x: 20, y: 20, type: poi.type});
                         sectorPoiType = poi.type;
                     }
@@ -240,7 +230,9 @@ Object.assign(Game, {
             const t = this.state.currentMap[y][x];
             return !['M', 'W', '#', 'U', 't', 'T', 'o', 'Y', '|', 'F', 'R', 'A', 'K'].includes(t);
         };
+        // Wenn Spieler bereits sicher steht (z.B. nach Rückkehr aus Stadt), nichts tun
         if(isSafe(this.state.player.x, this.state.player.y)) return;
+        
         const rMax = 6;
         for(let r=1; r<=rMax; r++) {
             for(let dy=-r; dy<=r; dy++) {
@@ -355,31 +347,35 @@ Object.assign(Game, {
         setTimeout(() => { this.leaveCity(); }, 4000);
     },
 
+    // [v0.8.1] CITY LOGIC UPDATE
     enterCity: function() {
-        // [v0.8.0] OLD CITY FUNCTION - TRIGGERED WHEN STEPPING ON 'C' ON WORLDMAP
-        // Da wir Rusty Springs durch das Dashboard ersetzt haben, nutzen wir diese Funktion nun,
-        // um den Dashboard-View zu triggern, falls man auf ein City-Tile tritt.
+        // Wir speichern die Position AUF der Karte, damit man nachher wieder dort steht
+        this.state.savedPosition = { x: this.state.player.x, y: this.state.player.y };
+        
+        // Wir wechseln NUR den View, wir laden KEINE neue Map
         this.state.view = 'city';
+        
+        // Öffne Dashboard
         if(typeof UI !== 'undefined' && UI.renderCity) UI.renderCity();
+        
+        UI.log("Betrete Rusty Springs...", "text-yellow-400");
         this.saveGame();
     },
 
     leaveCity: function() {
+        // Zurück zur Map-Ansicht
+        this.state.view = 'map';
+        
+        // Position wiederherstellen (falls nötig, eigentlich steht man ja noch da)
         if(this.state.savedPosition) {
             this.state.player.x = this.state.savedPosition.x;
             this.state.player.y = this.state.savedPosition.y;
             this.state.savedPosition = null;
         }
-        this.state.dungeonLevel = 0; 
         
-        this.loadSector(this.state.sector.x, this.state.sector.y);
-        
-        if(this.state.sectorExploredCache) {
-            this.state.explored = this.state.sectorExploredCache;
-            this.state.sectorExploredCache = null;
-            this.reveal(this.state.player.x, this.state.player.y);
-        }
-
+        // Map neu rendern
+        if(this.renderStaticMap) this.renderStaticMap();
+        UI.switchView('map');
         UI.log("Zurück im Ödland.", "text-green-400");
     }
 });
