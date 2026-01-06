@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## v0.6.1 (Perks & Quests Update)
+- [SYSTEM] **Perk-System 2.0:** Perks sind nicht mehr nur "an/aus", sondern haben jetzt **5 Stufen**.
+  - **Zähigkeit:** +10 HP pro Stufe (Max +50 HP).
+  - **Sanitäter:** +20% Heilwirkung pro Stufe (Max +100%).
+  - **Schatzsucher:** +10% Loot-Menge pro Stufe.
+  - **Mysteriöser Fremder:** +2% Krit-Chance pro Stufe.
+  - *UI:* Anzeige im Charakter-Screen angepasst (Balken-System).
+- [CONTENT] **Neue Quest-Reihe:** 5 neue Aufgaben für den Start hinzugefügt.
+  - *Überleben 101* (Töte Rad-Kakerlaken)
+  - *Zivilisation?* (Finde Rusty Springs)
+  - *Plagenbeseitigung* (Jage Blähfliegen)
+  - *Schrottsammler* (Sammle Ressourcen)
+  - *Gesetzeshüter* (Bekämpfe Raider)
+- [BUGFIX] **Critical Core Fix:** Fehlende Logik-Funktionen in `game_core.js` wiederhergestellt (XP-Berechnung, Speichern, Map-Laden).
+- [BUGFIX] **UI:** Inventar- und Charakter-Anzeige optimiert und stabilisiert.
+
 ## v0.5.5 (UI System Overhaul)
 - [SYSTEM] **Unified UI Logic:** Alte Popup-Systeme (Inventar) wurden entfernt und vollständig in das zentrale Overlay-System integriert.
 - [BUGFIX] **Stimpaks:** Das Kontextmenü (1x Benutzen / Auto-Heal) funktioniert wieder zuverlässig.
