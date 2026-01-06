@@ -1,6 +1,5 @@
 Object.assign(UI, {
 
-    // [v0.7.0] VIEW STATE
     charTab: 'status', 
 
     renderInventory: function() {
@@ -329,43 +328,50 @@ Object.assign(UI, {
         }
     },
 
-    // [v0.8.0] RUSTY SPRINGS OVERHAUL
+    // --- [v0.8.0] RUSTY SPRINGS DASHBOARD ---
     renderCity: function() {
         const view = document.getElementById('view-container');
-        view.innerHTML = ''; 
+        view.innerHTML = ''; // Canvas löschen
 
+        // 1. HEADER
         const header = document.createElement('div');
-        header.className = "city-header flex flex-col items-center justify-center relative";
+        header.className = "city-header flex flex-col items-center justify-center";
         
         const flairs = [
             "Die Luft riecht nach Rost und Ozon.",
             "Ein Generator brummt in der Ferne.",
             "Händler schreien ihre Preise aus.",
-            "Sicherer Hafen im Ödland."
+            "Der sicherste Ort im Sektor."
         ];
         const flair = flairs[Math.floor(Math.random() * flairs.length)];
 
         header.innerHTML = `
-            <div class="text-4xl font-bold text-green-400 tracking-widest text-shadow-glow">RUSTY SPRINGS</div>
-            <div class="text-xs text-green-700 font-mono mt-1 border-t border-green-900 pt-1 w-2/3 text-center">POP: 42 | RAD: NIEDRIG | SEC: HOCH</div>
+            <div class="text-5xl font-bold text-green-400 tracking-widest text-shadow-glow mb-1 font-vt323">RUSTY SPRINGS</div>
+            <div class="flex gap-4 text-xs text-green-700 font-mono border-t border-green-900 pt-2">
+                <span>POP: <span class="text-green-400">142</span></span>
+                <span>SEC: <span class="text-cyan-400">HOCH</span></span>
+                <span>RAD: <span class="text-yellow-600">LOW</span></span>
+            </div>
             <div class="text-gray-500 text-xs italic mt-2">"${flair}"</div>
-            <div class="absolute right-4 top-4 text-yellow-400 font-bold border border-yellow-600 px-2 bg-black/50">
-                💰 ${Game.state.caps} KK
+            
+            <div class="absolute right-4 top-4 bg-black/80 border border-yellow-600 px-3 py-1 rounded text-yellow-400 font-bold shadow-[0_0_10px_orange]">
+                💰 ${Game.state.caps}
             </div>
         `;
         view.appendChild(header);
 
+        // 2. GRID
         const grid = document.createElement('div');
         grid.className = "city-grid flex-grow overflow-y-auto custom-scrollbar";
 
-        // A. HÄNDLER (Der Große)
+        // A. HÄNDLER (Highlight)
         const traderCard = document.createElement('div');
         traderCard.className = "city-card trader";
         traderCard.onclick = () => UI.renderShop(view); 
         traderCard.innerHTML = `
             <div class="icon">🛒</div>
             <div class="label">HANDELSPOSTEN</div>
-            <div class="sub text-yellow-200">An- & Verkauf • Munition • Ausrüstung</div>
+            <div class="sub">Waffen • Munition • Ausrüstung</div>
         `;
         grid.appendChild(traderCard);
 
@@ -376,7 +382,7 @@ Object.assign(UI, {
         docCard.innerHTML = `
             <div class="icon text-red-400">⚕️</div>
             <div class="label text-red-400">KLINIK</div>
-            <div class="sub">Dr. Zimmermann</div>
+            <div class="sub">Dr. Zimmermann (25 KK)</div>
         `;
         grid.appendChild(docCard);
 
@@ -387,38 +393,35 @@ Object.assign(UI, {
         craftCard.innerHTML = `
             <div class="icon text-blue-400">🛠️</div>
             <div class="label text-blue-400">WERKBANK</div>
-            <div class="sub">Zerlegen & Bauen</div>
+            <div class="sub">Items Zerlegen & Bauen</div>
         `;
         grid.appendChild(craftCard);
 
-        // D. LAGER (Safe House)
+        // D. RASTEN
         const restCard = document.createElement('div');
         restCard.className = "city-card";
-        restCard.onclick = () => { Game.rest(); }; 
+        restCard.onclick = () => { 
+            Game.rest(); 
+            UI.log("Du ruhst dich in der Baracke aus...", "text-blue-300");
+        }; 
         restCard.innerHTML = `
             <div class="icon text-green-200">💤</div>
-            <div class="label text-green-200">RASTEN</div>
-            <div class="sub">Gratis & Sicher</div>
+            <div class="label text-green-200">BARACKE</div>
+            <div class="sub">Ausruhen (Gratis)</div>
         `;
         grid.appendChild(restCard);
 
         view.appendChild(grid);
 
+        // 3. FOOTER
         const footer = document.createElement('div');
         footer.className = "p-4 border-t border-green-900 bg-black";
+        // Zurück zur Weltkarte
         footer.innerHTML = `
-            <button class="action-button w-full border-green-500 text-green-500 py-3 font-bold text-xl hover:bg-green-900" onclick="UI.switchView('map')">
-                ZURÜCK INS ÖDLAND (ESC)
+            <button class="action-button w-full border-green-500 text-green-500 py-3 font-bold text-xl hover:bg-green-900" onclick="UI.switchView('worldmap')">
+                STADT VERLASSEN (WELTKARTE)
             </button>
         `;
         view.appendChild(footer);
     }
 });
-
-
-views/city.html (Minimalisiert, da renderCity das jetzt baut):
-
-<div id="view-container" class="w-full h-full bg-black"></div>
-<script>
-    if(UI && UI.renderCity) UI.renderCity();
-</script>
