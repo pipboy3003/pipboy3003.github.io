@@ -1,12 +1,11 @@
 Object.assign(UI, {
 
-    // [v0.6.0] Wiki Overhaul
+    // [v0.6.9a] Wiki Overhaul & Fixes
     renderWiki: function(category = 'monsters') {
         const content = document.getElementById('wiki-content');
         if(!content) return;
 
         // --- HELPER: SELF-HEALING UI ---
-        // Fügt den "PERKS" Button hinzu, falls er im HTML fehlt
         const btnContainer = document.querySelector('#wiki-btn-monsters')?.parentElement;
         if(btnContainer && !document.getElementById('wiki-btn-perks')) {
             const btn = document.createElement('button');
@@ -156,19 +155,20 @@ Object.assign(UI, {
                 html = '<div class="text-center text-gray-500 mt-10">Keine Baupläne in Datenbank.</div>';
             }
         } 
-        // --- 🌟 PERKS ---
+        // --- 🌟 PERKS [FIXED] ---
         else if (category === 'perks') {
             if(Game.perkDefs) {
                 Game.perkDefs.forEach(p => {
-                    // Check ob Spieler Perk hat
-                    const has = Game.state.perks && Game.state.perks.includes(p.id);
+                    // FIX: Benutze getPerkLevel statt .includes
+                    const lvl = Game.getPerkLevel(p.id);
+                    const has = lvl > 0;
                     
                     html += `
                         <div class="flex gap-3 border ${has ? 'border-yellow-500 bg-yellow-900/10' : 'border-green-900/50 bg-green-900/5'} p-3 mb-2 items-center">
                             <div class="text-3xl filter drop-shadow-[0_0_5px_rgba(0,255,0,0.5)]">${p.icon || '🌟'}</div>
                             <div>
                                 <div class="font-bold ${has ? 'text-yellow-400' : 'text-green-400'} text-lg flex items-center gap-2">
-                                    ${p.name} ${has ? '<span class="text-[10px] bg-yellow-500 text-black px-1 rounded">GELERNT</span>' : ''}
+                                    ${p.name} ${has ? `<span class="text-[10px] bg-yellow-500 text-black px-1 rounded">STUFE ${lvl}</span>` : ''}
                                 </div>
                                 <div class="text-sm text-green-200">${p.desc}</div>
                             </div>
