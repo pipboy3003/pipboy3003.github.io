@@ -9,7 +9,6 @@ window.Game = {
     perkDefs: (typeof window.GameData !== 'undefined') ? window.GameData.perks : [],
     questDefs: (typeof window.GameData !== 'undefined') ? window.GameData.questDefs : [],
 
-    // [v2.0] Radio Data
     radioStations: [
         {
             name: "GALAXY NEWS",
@@ -47,7 +46,6 @@ window.Game = {
         }
     ],
 
-    // [v2.0] Audio System
     Audio: {
         ctx: null, masterGain: null, noiseNode: null, noiseGain: null, osc: null, oscGain: null, analyser: null, dataArray: null,
 
@@ -160,7 +158,7 @@ window.Game = {
         }
     },
 
-    // --- GAME LOGIC & UTILS (Waren verloren gegangen) ---
+    // --- GAME LOGIC ---
 
     saveGame: function(force = false) {
         this.isDirty = true;
@@ -207,10 +205,16 @@ window.Game = {
         if(typeof UI !== 'undefined' && UI.update) UI.update();
     },
 
+    // [v0.6.6] Max Slots with Perk
     getMaxSlots: function() {
         if(!this.state) return 10;
         let slots = 10; 
         slots += Math.max(0, this.getStat('STR') - 5); 
+        
+        // Perk: Strong Back
+        const perkLvl = this.getPerkLevel('strong_back');
+        slots += perkLvl;
+
         const backpack = this.state.equip.back; 
         if(backpack && backpack.props && backpack.props.slots) {
             slots += backpack.props.slots;
@@ -244,7 +248,6 @@ window.Game = {
     },
 
     calculateMaxHP: function(end) { 
-        // Helper für Legacy Calls, nutzt jetzt auch Perk Level
         let baseHp = 50 + (end * 10) + (this.state.lvl * 5);
         const toughnessLvl = this.getPerkLevel('toughness');
         baseHp += (toughnessLvl * 10);
@@ -267,18 +270,37 @@ window.Game = {
 
     expToNextLevel: function(lvl) { return Math.floor(100 * Math.pow(lvl, 1.5)); },
 
+    // [v0.6.6] XP Gain with Perk
     gainExp: function(amount) {
-        this.state.xp += amount;
-        UI.log(`+${amount} XP`, "text-yellow-400");
+        // Perk: Swift Learner
+        const perkLvl = this.getPerkLevel('swift_learner');
+        let finalAmount = amount;
+        
+        if (perkLvl > 0) {
+            const multi = 1 + (perkLvl * 0.05); // +5% per level
+            finalAmount = Math.floor(amount * multi);
+        }
+
+        this.state.xp += finalAmount;
+        
+        if(perkLvl > 0 && finalAmount > amount) {
+            UI.log(`+${finalAmount} XP (Bonus!)`, "text-yellow-400");
+        } else {
+            UI.log(`+${finalAmount} XP`, "text-yellow-400");
+        }
+
         let next = this.expToNextLevel(this.state.lvl);
         if(this.state.xp >= next) {
             this.state.lvl++;
             this.state.xp -= next;
             this.state.statPoints++;
+            
+            // 3 Level Rule for Perks
             if(this.state.lvl % 3 === 0) {
                 this.state.perkPoints++;
                 UI.log("🌟 NEUER PERK PUNKT VERFÜGBAR! 🌟", "text-yellow-400 font-bold animate-pulse text-lg");
             }
+            
             this.recalcStats(); 
             this.state.hp = this.state.maxHp; 
             UI.log(`LEVEL UP! Du bist jetzt Level ${this.state.lvl}`, "text-yellow-400 font-bold animate-pulse");
@@ -335,7 +357,7 @@ window.Game = {
                 if(def.reward.caps) { this.state.caps += def.reward.caps; }
                 if(def.reward.items) {
                     def.reward.items.forEach(item => {
-                        // FIX: Zugriff auf Game Actions (addToInventory)
+                        // Safe call
                         if(typeof Game.addToInventory === 'function') {
                             Game.addToInventory(item.id, item.c || 1);
                         }
@@ -426,6 +448,7 @@ window.Game = {
 
             if (saveData) {
                 this.state = saveData;
+                // Basic Init
                 if(!this.state.explored) this.state.explored = {};
                 if(!this.state.view) this.state.view = 'map';
                 if(!this.state.radio) this.state.radio = { on: false, station: 0, trackIndex: 0 };
@@ -449,7 +472,6 @@ window.Game = {
                 this.state.saveSlot = slotIndex;
                 this.checkNewQuests();
                 
-                // Inventory Ammo Fix
                 if(this.state.ammo > 0 && !this.state.inventory.some(i => i.id === 'ammo')) {
                    let ammoLeft = this.state.ammo;
                    while(ammoLeft > 0) {
@@ -495,8 +517,6 @@ window.Game = {
                     startTime: Date.now()
                 };
                 
-                // Add to inventory uses Game actions, but they are assigned later. 
-                // We manually push for init.
                 this.state.inventory.push({id: 'stimpack', count: 1, isNew: true});
                 this.state.inventory.push({id: 'ammo', count: 10, isNew: true});
                 this.syncAmmo();
@@ -510,7 +530,6 @@ window.Game = {
             }
 
             if (isNewGame) { 
-                // Need to ensure Game.loadSector is available (from game_map.js)
                 if(typeof this.loadSector === 'function') this.loadSector(this.state.sector.x, this.state.sector.y); 
             } 
             else { 
