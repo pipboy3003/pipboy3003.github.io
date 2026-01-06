@@ -50,7 +50,7 @@ Object.assign(UI, {
         view.appendChild(wrapper);
     },
 
-    renderCrafting: function(tab = 'create') {
+renderCrafting: function(tab = 'create') {
         Game.state.view = 'crafting';
         const view = document.getElementById('view-container');
         if(!view) return;
@@ -82,10 +82,11 @@ Object.assign(UI, {
         `;
         view.appendChild(wrapper);
 
-        // Content Logik (unverändert, nur Zielcontainer angepasst)
         const container = wrapper.querySelector('#crafting-list');
         
         if (tab === 'create') {
+            // ... (Hier dein Crafting Code unverändert lassen) ...
+            // Ich füge ihn der Vollständigkeit halber ein, damit du copy-pasten kannst:
             const recipes = Game.recipes || [];
             const known = Game.state.knownRecipes || [];
             let knownCount = 0; 
@@ -125,17 +126,27 @@ Object.assign(UI, {
             });
             if(knownCount === 0) container.innerHTML = '<div class="text-gray-500 italic mt-10 text-center">Keine bekannten Baupläne.</div>';
         } else {
-            // SCRAP
+            // --- [FIX] SCRAP TAB: Schrottmetall filtern ---
             let scrappables = [];
             Game.state.inventory.forEach((item, idx) => {
                 const def = Game.items[item.id];
                 if(!def) return;
-                if (['weapon','body','head','legs','feet','arms','junk'].includes(def.type)) scrappables.push({idx, item, def});
+                
+                // WICHTIG: item.id !== 'scrap' (oder wie deine ID für Schrottmetall ist, meist 'junk_metal' oder 'scrap')
+                // Ich nehme an 'scrap' oder 'junk'. Prüfe deine Items ID.
+                // Hier der Fix: Wir verbieten das Zerlegen von Items die bereits 'junk' sind UND 'metal' im Namen haben oder direkt 'scrap' heißen
+                if (item.id === 'scrap' || item.id === 'scrap_metal' || item.id === 'junk_metal') return;
+
+                if (['weapon','body','head','legs','feet','arms','junk'].includes(def.type)) {
+                    scrappables.push({idx, item, def});
+                }
             });
 
             if(scrappables.length === 0) {
-                container.innerHTML = '<div class="text-center text-gray-500 mt-10 p-4 border-2 border-dashed border-gray-800">Kein Schrott im Inventar.</div>';
+                container.innerHTML = '<div class="text-center text-gray-500 mt-10 p-4 border-2 border-dashed border-gray-800">Kein zerlegbares Material im Inventar.</div>';
             } else {
+                container.innerHTML = '<div class="text-xs text-orange-400 mb-4 text-center bg-orange-900/20 p-2 border border-orange-900">WÄHLE EIN ITEM ZUM ZERLEGEN (GIBT SCHROTT)</div>';
+                
                 scrappables.forEach(entry => {
                     const name = entry.item.props && entry.item.props.name ? entry.item.props.name : entry.def.name;
                     const div = document.createElement('div');
