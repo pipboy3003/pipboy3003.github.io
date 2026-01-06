@@ -2,81 +2,88 @@ Object.assign(UI, {
     
     shopQty: 1,
 
-    // --- KLINIK (Dr. Zimmermann) ---
+    // --- KLINIK & WERKBANK (Layout Fixes) ---
     renderClinic: function() {
-        // [v0.9.1] Set State explicitly
         Game.state.view = 'clinic';
-
-        const view = document.getElementById('view-container');
-        if(!view) return;
-        
-        view.innerHTML = `
-            <div class="flex flex-col h-full bg-black/90">
-                <div class="p-4 border-b border-red-500 bg-red-900/20 text-center">
-                    <h2 class="text-3xl text-red-500 font-bold tracking-widest">DR. ZIMMERMANN</h2>
-                    <div class="text-xs text-red-300">ZERTIFIZIERTER* MEDIZINER (*Zertifikat verloren)</div>
-                </div>
-                
-                <div class="flex-grow flex flex-col items-center justify-center p-6 gap-6 text-center">
-                    <div class="text-6xl animate-pulse filter drop-shadow-[0_0_10px_red]">⚕️</div>
-                    
-                    <div class="border border-red-900 p-4 bg-black w-full max-w-md">
-                        <div class="text-green-400 mb-2 font-bold border-b border-green-900 pb-1">PATIENTEN STATUS</div>
-                        <div class="flex justify-between text-lg font-mono">
-                            <span>GESUNDHEIT:</span> 
-                            <span class="${Game.state.hp < Game.state.maxHp ? 'text-red-500 blink-red' : 'text-green-500'}">${Math.floor(Game.state.hp)} / ${Game.state.maxHp}</span>
-                        </div>
-                        <div class="flex justify-between text-lg font-mono">
-                            <span>STRAHLUNG:</span> 
-                            <span class="${Game.state.rads > 0 ? 'text-red-500 animate-pulse' : 'text-green-500'}">${Math.floor(Game.state.rads)} RADS</span>
-                        </div>
-                    </div>
-
-                    <div class="text-gray-400 italic text-sm max-w-md leading-relaxed">
-                        "Ich kann Sie wieder zusammenflicken. Entfernt Strahlung und heilt alle Verletzungen. Kostet aber ein bisschen was für die... Materialien."
-                    </div>
-
-                    <button onclick="Game.heal()" class="action-button w-full max-w-md py-4 text-xl border-red-500 text-red-500 hover:bg-red-900 font-bold" ${Game.state.caps < 25 ? 'disabled' : ''}>
-                        KOMPLETTBEHANDLUNG (25 KK)
-                    </button>
-                </div>
-
-                <div class="p-4 border-t border-red-900">
-                    <button class="action-button w-full border-gray-500 text-gray-500 hover:bg-gray-900" onclick="UI.renderCity()">ZURÜCK ZUM ZENTRUM</button>
-                </div>
-            </div>
-        `;
-    },
-
-    // --- WERKBANK (Crafting & Scrapping) ---
-    renderCrafting: function(tab = 'create') {
-        // [v0.9.1] Set State explicitly (WICHTIG für scrapItem!)
-        Game.state.view = 'crafting';
-
         const view = document.getElementById('view-container');
         if(!view) return;
         view.innerHTML = '';
 
-        // UI Aufbau
-        view.innerHTML = `
-            <div id="crafting-view" class="w-full h-full p-4 flex flex-col gap-4 text-green-500 font-mono bg-black/95">
-                <div class="border-b-2 border-orange-500 pb-2 mb-2 flex justify-between items-end">
-                    <h2 class="text-2xl font-bold text-orange-400">🛠️ WERKBANK</h2>
-                    <div class="text-xs text-orange-300">Zustand: Rostig</div>
-                </div>
+        // WRAPPER
+        const wrapper = document.createElement('div');
+        wrapper.className = "w-full h-full flex flex-col bg-black/95 relative";
+
+        wrapper.innerHTML = `
+            <div class="flex-shrink-0 p-4 border-b-2 border-red-600 bg-red-900/20 text-center shadow-lg shadow-red-900/20">
+                <h2 class="text-3xl text-red-500 font-bold tracking-widest font-vt323">DR. ZIMMERMANN</h2>
+                <div class="text-xs text-red-300 tracking-wider">MEDIZINISCHES ZENTRUM</div>
+            </div>
+            
+            <div class="flex-grow flex flex-col items-center justify-center p-6 gap-6 text-center overflow-y-auto">
+                <div class="text-7xl animate-pulse filter drop-shadow-[0_0_15px_red]">⚕️</div>
                 
-                <div class="flex w-full border-b border-green-900 mb-2">
-                    <button class="flex-1 py-2 font-bold transition-colors ${tab==='create' ? 'bg-green-900/40 text-green-400 border-b-2 border-green-400' : 'text-gray-500 hover:text-green-300'}" onclick="UI.renderCrafting('create')">HERSTELLEN</button>
-                    <button class="flex-1 py-2 font-bold transition-colors ${tab==='scrap' ? 'bg-orange-900/40 text-orange-400 border-b-2 border-orange-400' : 'text-gray-500 hover:text-orange-300'}" onclick="UI.renderCrafting('scrap')">ZERLEGEN</button>
+                <div class="border-2 border-red-800 p-4 bg-black/80 w-full max-w-md shadow-inner shadow-red-900/30">
+                    <div class="text-red-400 mb-2 font-bold border-b border-red-900 pb-1 tracking-widest text-sm">PATIENTEN STATUS</div>
+                    <div class="flex justify-between text-lg font-mono mb-1">
+                        <span>GESUNDHEIT:</span> 
+                        <span class="${Game.state.hp < Game.state.maxHp ? 'text-red-500 blink-red' : 'text-green-500'}">${Math.floor(Game.state.hp)} / ${Game.state.maxHp}</span>
+                    </div>
+                    <div class="flex justify-between text-lg font-mono">
+                        <span>STRAHLUNG:</span> 
+                        <span class="${Game.state.rads > 0 ? 'text-red-500 animate-pulse' : 'text-green-500'}">${Math.floor(Game.state.rads)} RADS</span>
+                    </div>
                 </div>
 
-                <div id="crafting-list" class="flex-grow overflow-y-auto custom-scrollbar pr-2 space-y-2"></div>
-                
-                <button onclick="UI.renderCity()" class="p-3 border border-gray-600 text-gray-500 hover:bg-gray-900/50 mt-2 font-bold w-full uppercase tracking-widest">Zurück zum Zentrum</button>
+                <div class="text-gray-400 italic text-sm max-w-md leading-relaxed border-l-2 border-red-900 pl-3 text-left">
+                    "Ich kann Sie wieder zusammenflicken. Entfernt Strahlung und heilt alle Verletzungen. Kostet aber ein bisschen was für die... Materialien."
+                </div>
+
+                <button onclick="Game.heal()" class="action-button w-full max-w-md py-4 text-xl border-2 border-red-500 text-red-500 hover:bg-red-900/50 font-bold transition-all" ${Game.state.caps < 25 ? 'disabled' : ''}>
+                    KOMPLETTBEHANDLUNG (25 KK)
+                </button>
+            </div>
+
+            <div class="flex-shrink-0 p-3 border-t border-red-900 bg-[#0a0000]">
+                <button class="action-button w-full border-gray-600 text-gray-500 hover:text-white hover:border-white transition-colors" onclick="UI.renderCity()">ZURÜCK ZUM ZENTRUM</button>
             </div>
         `;
+        view.appendChild(wrapper);
+    },
 
-        const container = document.getElementById('crafting-list');
+    renderCrafting: function(tab = 'create') {
+        Game.state.view = 'crafting';
+        const view = document.getElementById('view-container');
+        if(!view) return;
+        view.innerHTML = '';
+
+        // WRAPPER
+        const wrapper = document.createElement('div');
+        wrapper.className = "w-full h-full flex flex-col bg-black/95 relative";
+
+        wrapper.innerHTML = `
+            <div class="flex-shrink-0 p-4 border-b-2 border-blue-500 bg-blue-900/20 flex justify-between items-end shadow-lg shadow-blue-900/20">
+                <div>
+                    <h2 class="text-3xl text-blue-400 font-bold font-vt323 tracking-widest">WERKBANK</h2>
+                    <div class="text-xs text-blue-300 tracking-wider">Zustand: Rostig, aber funktional</div>
+                </div>
+                <div class="text-4xl text-blue-500 opacity-50">🛠️</div>
+            </div>
+            
+            <div class="flex-shrink-0 flex w-full border-b border-blue-900 bg-black">
+                <button class="flex-1 py-3 font-bold transition-colors uppercase tracking-wider ${tab==='create' ? 'bg-blue-900/40 text-blue-300 border-b-4 border-blue-500' : 'text-gray-600 hover:text-blue-300 hover:bg-blue-900/20'}" onclick="UI.renderCrafting('create')">HERSTELLEN</button>
+                <button class="flex-1 py-3 font-bold transition-colors uppercase tracking-wider ${tab==='scrap' ? 'bg-orange-900/40 text-orange-300 border-b-4 border-orange-500' : 'text-gray-600 hover:text-orange-300 hover:bg-orange-900/20'}" onclick="UI.renderCrafting('scrap')">ZERLEGEN</button>
+            </div>
+
+            <div id="crafting-list" class="flex-grow overflow-y-auto custom-scrollbar p-3 space-y-2 bg-[#00050a]"></div>
+            
+            <div class="flex-shrink-0 p-3 border-t border-blue-900 bg-[#000205]">
+                <button onclick="UI.renderCity()" class="action-button w-full border-gray-600 text-gray-500 hover:text-white hover:border-white transition-colors">ZURÜCK ZUM ZENTRUM</button>
+            </div>
+        `;
+        view.appendChild(wrapper);
+
+        // Content Logik (unverändert, nur Zielcontainer angepasst)
+        const container = wrapper.querySelector('#crafting-list');
         
         if (tab === 'create') {
             const recipes = Game.recipes || [];
@@ -84,12 +91,11 @@ Object.assign(UI, {
             let knownCount = 0; 
 
             recipes.forEach(recipe => {
-                if(recipe.type === 'cooking') return; // Cooking gehört ans Campfire
-                if(!known.includes(recipe.id) && recipe.lvl > 1) return; // Nur bekannte oder Level 1 Rezepte zeigen
+                if(recipe.type === 'cooking') return; 
+                if(!known.includes(recipe.id) && recipe.lvl > 1) return; 
                 knownCount++;
 
                 const outItem = (recipe.out === 'AMMO' ? {name: "15x Munition"} : Game.items[recipe.out]) || {name: "Unbekanntes Item"};
-                
                 let reqHtml = '';
                 let canCraft = true;
                 
@@ -97,61 +103,46 @@ Object.assign(UI, {
                     const countNeeded = recipe.req[reqId];
                     const invItem = Game.state.inventory.find(i => i.id === reqId);
                     const countHave = invItem ? invItem.count : 0;
-                    
                     const reqDef = Game.items[reqId];
                     const reqName = reqDef ? reqDef.name : reqId;
-
-                    let color = "text-green-500";
+                    let color = "text-green-600";
                     if (countHave < countNeeded) { canCraft = false; color = "text-red-500 font-bold"; }
-                    reqHtml += `<div class="${color} text-xs">• ${reqName}: ${countHave}/${countNeeded}</div>`;
+                    reqHtml += `<div class="${color} text-xs uppercase">• ${reqName}: ${countHave}/${countNeeded}</div>`;
                 }
                 
-                if(Game.state.lvl < recipe.lvl) { 
-                    canCraft = false; 
-                    reqHtml += `<div class="text-red-500 text-xs mt-1 font-bold">Benötigt Level ${recipe.lvl}</div>`; 
-                }
+                if(Game.state.lvl < recipe.lvl) { canCraft = false; reqHtml += `<div class="text-red-500 text-xs mt-1 font-bold">Benötigt Level ${recipe.lvl}</div>`; }
 
                 const div = document.createElement('div');
-                div.className = `border ${canCraft ? 'border-green-500 bg-green-900/10' : 'border-gray-800 bg-black opacity-60'} p-3 mb-2 transition-colors`;
-                
+                div.className = `border ${canCraft ? 'border-green-600 bg-green-900/10' : 'border-gray-800 bg-black opacity-50'} p-3 flex justify-between items-center transition-all hover:bg-green-900/20`;
                 div.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <div class="font-bold text-yellow-400 text-lg">${outItem.name}</div>
-                        <button class="action-button text-sm px-4 py-1 ${canCraft ? 'border-green-500 text-green-500 hover:bg-green-500 hover:text-black' : 'border-gray-600 text-gray-600 cursor-not-allowed'}" onclick="Game.craftItem('${recipe.id}')" ${canCraft ? '' : 'disabled'}>BAUEN</button>
+                    <div>
+                        <div class="font-bold ${canCraft ? 'text-green-300' : 'text-gray-500'} text-lg">${outItem.name}</div>
+                        <div class="grid grid-cols-2 gap-x-4 mt-1 border-l-2 border-green-900 pl-2">${reqHtml}</div>
                     </div>
-                    <div class="pl-2 border-l-2 border-green-900 grid grid-cols-2 gap-2">${reqHtml}</div>
+                    <button class="action-button text-sm px-4 py-2 border-2 ${canCraft ? 'border-green-500 text-green-500 hover:bg-green-500 hover:text-black font-bold' : 'border-gray-600 text-gray-600 cursor-not-allowed'}" onclick="Game.craftItem('${recipe.id}')" ${canCraft ? '' : 'disabled'}>FERTIGEN</button>
                 `;
                 container.appendChild(div);
             });
-            
-            if(knownCount === 0) {
-                container.innerHTML = '<div class="text-gray-500 italic mt-10 text-center border-t border-gray-800 pt-4">Du hast noch keine Baupläne gelernt.<br><span class="text-xs text-green-700">Suche in Dungeons oder der Wildnis nach Blueprints!</span></div>';
-            }
-        } 
-        else {
-            // SCRAP TAB
+            if(knownCount === 0) container.innerHTML = '<div class="text-gray-500 italic mt-10 text-center">Keine bekannten Baupläne.</div>';
+        } else {
+            // SCRAP
             let scrappables = [];
             Game.state.inventory.forEach((item, idx) => {
                 const def = Game.items[item.id];
                 if(!def) return;
-
-                if (['weapon','body','head','legs','feet','arms','junk'].includes(def.type)) {
-                    scrappables.push({idx, item, def});
-                }
+                if (['weapon','body','head','legs','feet','arms','junk'].includes(def.type)) scrappables.push({idx, item, def});
             });
 
             if(scrappables.length === 0) {
-                container.innerHTML = '<div class="text-center text-gray-500 mt-10 p-4 border border-gray-800 bg-black">Keine zerlegbaren Gegenstände (Waffen/Rüstung/Schrott) im Inventar.</div>';
+                container.innerHTML = '<div class="text-center text-gray-500 mt-10 p-4 border-2 border-dashed border-gray-800">Kein Schrott im Inventar.</div>';
             } else {
-                container.innerHTML = '<div class="text-xs text-orange-400 mb-4 text-center bg-orange-900/20 p-2 border border-orange-900">WÄHLE EIN ITEM ZUM ZERLEGEN (GIBT SCHROTT)</div>';
-                
                 scrappables.forEach(entry => {
                     const name = entry.item.props && entry.item.props.name ? entry.item.props.name : entry.def.name;
                     const div = document.createElement('div');
-                    div.className = "flex justify-between items-center p-3 mb-2 border border-orange-700 bg-orange-900/10 hover:bg-orange-900/20 transition-colors";
+                    div.className = "flex justify-between items-center p-3 border border-orange-800 bg-orange-900/10 hover:bg-orange-900/20 transition-colors";
                     div.innerHTML = `
-                        <div class="font-bold text-orange-200">${name} <span class="text-xs text-gray-500">(${entry.item.count}x)</span></div>
-                        <button class="border border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-black px-4 py-1 text-xs font-bold transition-colors uppercase" onclick="Game.scrapItem(${entry.idx})">ZERLEGEN</button>
+                        <div class="font-bold text-orange-300">${name} <span class="text-xs text-orange-600 font-normal ml-2">(${entry.item.count}x)</span></div>
+                        <button class="border border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-black px-3 py-1 text-xs font-bold transition-colors uppercase" onclick="Game.scrapItem(${entry.idx})">ZERLEGEN</button>
                     `;
                     container.appendChild(div);
                 });
@@ -159,9 +150,7 @@ Object.assign(UI, {
         }
     },
 
-// ==========================================
-    // --- SHOP REDESIGN (Handelsposten) [v0.9.2] ---
-    // ==========================================
+    // --- SHOP REDESIGN (Wrapper Fix) ---
     renderShop: function(mode = 'buy') {
         Game.state.view = 'shop';
         Game.checkShopRestock(); 
@@ -170,59 +159,63 @@ Object.assign(UI, {
         if(!view) return;
         view.innerHTML = '';
 
-        // 1. HEADER (Cash Register Style)
+        // WRAPPER
+        const wrapper = document.createElement('div');
+        wrapper.className = "w-full h-full flex flex-col bg-black relative";
+
+        // 1. HEADER
         const header = document.createElement('div');
-        header.className = "flex justify-between items-end p-4 border-b-4 border-yellow-600 bg-[#1a1500] relative shadow-md";
+        header.className = "flex-shrink-0 flex justify-between items-end p-4 border-b-4 border-yellow-600 bg-[#1a1500] shadow-md z-10";
         header.innerHTML = `
-            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-500 to-transparent opacity-50"></div>
             <div>
                 <h2 class="text-3xl text-yellow-400 font-bold font-vt323 tracking-wider">HANDELSPOSTEN</h2>
-                <div class="text-sm text-yellow-700 font-mono">HÄNDLER KAPITAL: <span class="font-bold">${Game.state.shop.merchantCaps} KK</span></div>
+                <div class="text-xs text-yellow-700 font-mono mt-1">HÄNDLER: <span class="font-bold text-yellow-500">${Game.state.shop.merchantCaps} KK</span></div>
             </div>
-            <div class="flex flex-col items-end p-2 bg-black/50 border-2 border-yellow-500 rounded shadow-[inset_0_0_10px_rgba(255,200,0,0.2)]">
+            <div class="bg-black/50 border-2 border-yellow-500 p-2 flex flex-col items-end shadow-inner">
                 <span class="text-[10px] text-yellow-600 uppercase tracking-widest">DEIN VERMÖGEN</span>
-                <span class="text-2xl text-yellow-300 font-bold font-vt323">${Game.state.caps} 📜</span>
+                <span class="text-2xl text-yellow-300 font-bold font-vt323">${Game.state.caps} KK</span>
             </div>
         `;
-        view.appendChild(header);
+        wrapper.appendChild(header);
 
-        // 2. CONTROL PANEL (Tabs & Qty)
+        // 2. CONTROLS
         const controls = document.createElement('div');
-        controls.className = "bg-[#110d00] border-b-2 border-yellow-900 p-3 flex flex-col gap-3 shadow-inner";
+        controls.className = "flex-shrink-0 bg-[#110d00] border-b-2 border-yellow-900 p-3 flex flex-col gap-3 shadow-inner";
         
-        // TABS as sturdy switches
         controls.innerHTML = `
             <div class="flex w-full gap-2">
-                <button class="flex-1 py-3 font-bold text-lg uppercase tracking-wider border-2 transition-all ${mode==='buy' ? 'bg-yellow-500 text-black border-yellow-500 shadow-[inset_0_2px_5px_rgba(0,0,0,0.5)]' : 'bg-black text-yellow-600 border-yellow-800 hover:border-yellow-500 hover:text-yellow-400'}" onclick="UI.renderShop('buy')">KAUFEN</button>
-                <button class="flex-1 py-3 font-bold text-lg uppercase tracking-wider border-2 transition-all ${mode==='sell' ? 'bg-green-500 text-black border-green-500 shadow-[inset_0_2px_5px_rgba(0,0,0,0.5)]' : 'bg-black text-green-600 border-green-800 hover:border-green-500 hover:text-green-400'}" onclick="UI.renderShop('sell')">VERKAUFEN</button>
+                <button class="flex-1 py-2 font-bold text-lg uppercase tracking-wider border-2 transition-all ${mode==='buy' ? 'bg-yellow-500 text-black border-yellow-500 shadow-inner' : 'bg-black text-yellow-700 border-yellow-900 hover:text-yellow-500'}" onclick="UI.renderShop('buy')">KAUFEN</button>
+                <button class="flex-1 py-2 font-bold text-lg uppercase tracking-wider border-2 transition-all ${mode==='sell' ? 'bg-green-600 text-black border-green-600 shadow-inner' : 'bg-black text-green-700 border-green-900 hover:text-green-500'}" onclick="UI.renderShop('sell')">VERKAUFEN</button>
             </div>
         `;
         
-        // QTY BUTTONS as smaller mechanical buttons
         const qtyRow = document.createElement('div');
-        qtyRow.className = "flex justify-center gap-2 px-2 pt-2 border-t border-yellow-900/30";
+        qtyRow.className = "flex justify-center gap-2 px-2 pt-1";
         const makeQtyBtn = (label, val) => {
             const isActive = (this.shopQty === val);
-            return `<button class="px-4 py-1 text-xs font-bold border-2 uppercase tracking-widest transition-all ${isActive ? 'bg-yellow-500 text-black border-yellow-500 shadow-inner' : 'bg-[#2a2510] text-yellow-500 border-yellow-700 hover:border-yellow-400 hover:bg-[#3a3520]'}" onclick="UI.shopQty = '${val}'; UI.renderShop('${mode}')">${label}</button>`;
+            return `<button class="px-4 py-1 text-xs font-bold border uppercase tracking-widest transition-all ${isActive ? 'bg-yellow-600 text-black border-yellow-600' : 'bg-[#1a1500] text-yellow-600 border-yellow-900 hover:border-yellow-600'}" onclick="UI.shopQty = '${val}'; UI.renderShop('${mode}')">${label}</button>`;
         };
-        qtyRow.innerHTML = `<span class="text-xs text-yellow-800 self-center mr-2 font-bold">MENGE:</span>` + makeQtyBtn("1x", 1) + makeQtyBtn("5x", 5) + makeQtyBtn("MAX", 'max');
+        qtyRow.innerHTML = `<span class="text-xs text-yellow-900 self-center mr-2 font-bold">MENGE:</span>` + makeQtyBtn("1x", 1) + makeQtyBtn("5x", 5) + makeQtyBtn("MAX", 'max');
         controls.appendChild(qtyRow);
-        view.appendChild(controls);
+        wrapper.appendChild(controls);
 
-        // 3. CONTENT LIST
+        // 3. LIST
         const content = document.createElement('div');
         content.id = "shop-list";
         content.className = "flex-grow overflow-y-auto p-3 custom-scrollbar bg-[#0a0800]";
-        view.appendChild(content);
-
-        if(mode === 'buy') this.renderShopBuy(content);
-        else this.renderShopSell(content);
+        wrapper.appendChild(content);
 
         // 4. FOOTER
         const footer = document.createElement('div');
-        footer.className = "p-3 border-t-4 border-yellow-900 bg-[#1a1500]";
-        footer.innerHTML = `<button class="action-button w-full border-2 border-yellow-700 text-yellow-600 hover:bg-yellow-900/50 hover:text-yellow-300 py-3 font-bold tracking-widest uppercase" onclick="UI.renderCity()"><< ZURÜCK ZUM ZENTRUM</button>`;
-        view.appendChild(footer);
+        footer.className = "flex-shrink-0 p-3 border-t-4 border-yellow-900 bg-[#1a1500]";
+        footer.innerHTML = `<button class="action-button w-full border-2 border-yellow-800 text-yellow-700 hover:border-yellow-500 hover:text-yellow-400 transition-colors py-3 font-bold tracking-widest uppercase" onclick="UI.renderCity()">ZURÜCK ZUM ZENTRUM</button>`;
+        wrapper.appendChild(footer);
+
+        view.appendChild(wrapper);
+
+        // Populate List
+        if(mode === 'buy') this.renderShopBuy(content);
+        else this.renderShopSell(content);
     },
 
     renderShopBuy: function(container) {
@@ -233,56 +226,49 @@ Object.assign(UI, {
         const stock = Game.state.shop.stock || {};
         const ammoStock = Game.state.shop.ammoStock || 0;
 
-        // HELPER: Create Item Slot (Buy)
-        const createBuySlot = (icon, name, stockCount, price, onClick, isSpecial=false) => {
+        // HELPER
+        const createSlot = (icon, name, stock, price, onClick, isHighlight=false) => {
             const canBuy = Game.state.caps >= price;
-            const borderColor = isSpecial ? 'border-blue-500' : (canBuy ? 'border-yellow-600' : 'border-red-900');
-            const bgColor = isSpecial ? 'bg-blue-900/10' : (canBuy ? 'bg-yellow-900/10' : 'bg-red-900/10');
-            const textColor = isSpecial ? 'text-blue-300' : (canBuy ? 'text-yellow-300' : 'text-gray-600');
-            const priceColor = canBuy ? 'text-yellow-400' : 'text-red-500';
-
-            const div = document.createElement('div');
-            div.className = `flex justify-between items-stretch mb-2 border-2 ${borderColor} ${bgColor} ${canBuy ? 'hover:bg-opacity-30 cursor-pointer group' : 'opacity-60 grayscale'} transition-all h-18 shadow-sm`;
+            const borderColor = isHighlight ? 'border-blue-600' : (canBuy ? 'border-yellow-700' : 'border-red-900');
+            const bgClass = isHighlight ? 'bg-blue-900/20' : (canBuy ? 'bg-yellow-900/10' : 'bg-red-900/10 opacity-50');
+            const textClass = isHighlight ? 'text-blue-300' : (canBuy ? 'text-yellow-200' : 'text-gray-500');
             
-            div.innerHTML = `
+            const el = document.createElement('div');
+            el.className = `flex justify-between items-center mb-2 border-2 ${borderColor} ${bgClass} h-16 transition-all ${canBuy ? 'hover:bg-yellow-900/30 cursor-pointer group' : ''}`;
+            
+            el.innerHTML = `
                 <div class="flex items-center gap-3 p-2 flex-grow overflow-hidden">
-                    <div class="text-3xl w-12 h-12 flex items-center justify-center bg-black/30 border border-${isSpecial?'blue':'yellow'}-800 rounded group-hover:scale-110 transition-transform">${icon}</div>
+                    <div class="text-3xl w-12 h-12 flex items-center justify-center bg-black/40 border border-yellow-900/50 rounded">${icon}</div>
                     <div class="flex flex-col truncate">
-                        <span class="font-bold ${textColor} text-lg truncate leading-tight font-vt323">${name}</span>
-                        <span class="text-xs ${isSpecial?'text-blue-500':'text-yellow-700'} font-mono">Vorrat: ${stockCount}</span>
+                        <span class="font-bold ${textClass} text-lg font-vt323 truncate leading-none pt-1">${name}</span>
+                        <span class="text-xs text-yellow-700 font-mono uppercase">Lager: ${stock}</span>
                     </div>
                 </div>
-                <div class="flex flex-col items-end justify-center border-l-2 ${borderColor} bg-black/20 min-w-[90px]">
-                     <div class="font-bold ${priceColor} text-lg p-1 text-center w-full border-b ${borderColor} font-vt323">${price} KK</div>
-                     <button class="flex-grow w-full text-xs font-bold uppercase tracking-wider hover:bg-${isSpecial?'blue':'yellow'}-500 hover:text-black transition-colors ${textColor}" ${canBuy ? '' : 'disabled'}>
-                        KAUFEN
-                     </button>
+                <div class="h-full flex flex-col justify-center items-end border-l-2 ${borderColor} bg-black/30 min-w-[80px]">
+                    <div class="font-bold ${canBuy ? 'text-yellow-400' : 'text-red-500'} text-lg w-full text-center border-b border-white/10 font-vt323">${price}</div>
+                    <button class="flex-grow w-full text-[10px] font-bold uppercase tracking-wider hover:bg-yellow-500 hover:text-black transition-colors ${canBuy ? 'text-yellow-600' : 'text-red-900'}" ${canBuy?'':'disabled'}>KAUFEN</button>
                 </div>
             `;
             if(canBuy) {
-                div.querySelector('button').onclick = (e) => { e.stopPropagation(); onClick(); };
-                div.onclick = onClick;
+                el.onclick = onClick;
+                el.querySelector('button').onclick = (e) => { e.stopPropagation(); onClick(); };
             }
-            return div;
+            return el;
         };
 
-        // Special Ammo Offer
         if(ammoStock > 0) {
-            container.appendChild(createBuySlot("🧨", "10x MUNITION PAKET", ammoStock, 10, () => Game.buyAmmo(UI.shopQty), true));
-            // Separator
-             container.innerHTML += `<div class="h-px bg-yellow-900/50 my-4 relative"><span class="absolute left-1/2 -top-2 -translate-x-1/2 bg-[#0a0800] px-2 text-xs text-yellow-800 font-mono lowercase">reguläres angebot</span></div>`;
+            container.appendChild(createSlot("🧨", "10x MUNITION", ammoStock, 10, () => Game.buyAmmo(UI.shopQty), true));
+            container.innerHTML += `<div class="h-px bg-yellow-900/50 my-4 mx-2"></div>`;
         }
 
-        // Categories
         const categories = {
-            'consumable': { title: '💊 HILFSMITTEL', items: [] },
+            'consumable': { title: '💊 MEDIZIN', items: [] },
             'weapon': { title: '🔫 WAFFEN', items: [] },
             'body': { title: '🛡️ RÜSTUNG', items: [] },
             'misc': { title: '📦 SONSTIGES', items: [] } 
         };
 
-        const sortedKeys = Object.keys(stock).sort((a,b) => (Game.items[a]?.cost || 0) - (Game.items[b]?.cost || 0));
-        sortedKeys.forEach(key => {
+        Object.keys(stock).forEach(key => {
             if(stock[key] <= 0) return;
             const item = Game.items[key];
             if(!item) return;
@@ -290,26 +276,20 @@ Object.assign(UI, {
             cat.items.push({key, ...item});
         });
 
-        let hasItems = false;
         for(let catKey in categories) {
             const cat = categories[catKey];
             if(cat.items.length > 0) {
-                hasItems = true;
                 const header = document.createElement('h3');
-                header.className = "text-yellow-600 font-bold border-b-2 border-yellow-800 mt-6 mb-3 pb-1 pl-2 text-sm uppercase tracking-[0.2em] bg-yellow-900/20 font-mono";
+                header.className = "text-yellow-600 font-bold border-b border-yellow-800 mt-4 mb-2 pl-1 text-xs uppercase tracking-widest font-mono";
                 header.textContent = cat.title;
                 container.appendChild(header);
 
                 cat.items.forEach(data => {
                     let icon = "📦";
-                    if(data.type === 'weapon') icon = "🔫"; if(data.type === 'body') icon = "🛡️"; if(data.type === 'consumable') icon = "💉";
-                    container.appendChild(createBuySlot(icon, data.name, stock[data.key], data.cost, () => Game.buyItem(data.key, UI.shopQty)));
+                    if(data.type==='weapon') icon="🔫"; if(data.type==='body') icon="🛡️"; if(data.type==='consumable') icon="💉";
+                    container.appendChild(createSlot(icon, data.name, stock[data.key], data.cost, () => Game.buyItem(data.key, UI.shopQty)));
                 });
             }
-        }
-
-        if(ammoStock <= 0 && !hasItems) {
-            container.innerHTML = '<div class="text-center text-yellow-800 mt-10 font-mono border-2 border-yellow-900 p-4 border-dashed">ALLES AUSVERKAUFT.<br>Komm später wieder.</div>';
         }
     },
 
@@ -319,11 +299,9 @@ Object.assign(UI, {
         container.innerHTML = '';
 
         if(Game.state.inventory.length === 0) {
-            container.innerHTML = '<div class="text-center text-green-800 mt-10 font-mono border-2 border-green-900 p-4 border-dashed">DEIN INVENTAR IST LEER.</div>';
+            container.innerHTML = '<div class="text-center text-green-800 mt-10 font-mono border-2 border-dashed border-green-900 p-6">INVENTAR LEER</div>';
             return;
         }
-
-        container.innerHTML = `<div class="text-xs text-green-700 mb-4 text-center bg-green-900/20 p-2 border border-green-900 font-mono uppercase tracking-widest">Wähle Items zum Verkauf</div>`;
 
         Game.state.inventory.forEach((item, idx) => {
             const def = Game.items[item.id];
@@ -332,37 +310,22 @@ Object.assign(UI, {
             let valMult = item.props && item.props.valMult ? item.props.valMult : 1;
             let sellPrice = Math.floor((def.cost * 0.25) * valMult);
             if(sellPrice < 1) sellPrice = 1;
-
-            const name = item.props && item.props.name ? item.props.name : def.name;
             const canSell = Game.state.shop.merchantCaps >= sellPrice;
-            
-            const borderColor = canSell ? 'border-green-600' : 'border-red-900';
-            const bgColor = canSell ? 'bg-green-900/10' : 'bg-red-900/10';
-            const textColor = canSell ? 'text-green-300' : 'text-gray-600';
+            const name = item.props ? item.props.name : def.name;
 
             const div = document.createElement('div');
-            div.className = `flex justify-between items-stretch mb-2 border-2 ${borderColor} ${bgColor} ${canSell ? 'hover:bg-opacity-30 cursor-pointer group' : 'opacity-60 grayscale'} transition-all h-16 shadow-sm`;
+            div.className = `flex justify-between items-center mb-2 border-2 ${canSell ? 'border-green-700 bg-green-900/10 hover:bg-green-900/20 cursor-pointer' : 'border-red-900 opacity-50'} h-14 transition-all`;
             
-            let icon = "📦";
-            if(def.type === 'weapon') icon = "🔫"; if(def.type === 'body') icon = "🛡️"; if(def.type === 'consumable') icon = "💉"; if(def.type === 'junk') icon = "⚙️";
-
             div.innerHTML = `
                 <div class="flex items-center gap-3 p-2 flex-grow overflow-hidden">
-                     <div class="text-2xl w-10 h-10 flex items-center justify-center bg-black/30 border border-green-800 rounded group-hover:scale-110 transition-transform">${icon}</div>
-                    <div class="flex flex-col truncate">
-                        <span class="font-bold ${textColor} text-lg truncate leading-tight font-vt323">${name}</span>
-                        <span class="text-xs text-green-700 font-mono">Im Besitz: ${item.count}x</span>
-                    </div>
+                    <div class="text-green-500 font-bold text-lg font-vt323 truncate">${name} <span class="text-green-800 text-sm font-sans">x${item.count}</span></div>
                 </div>
-                <div class="flex flex-col items-end justify-center border-l-2 ${borderColor} bg-black/20 min-w-[90px]">
-                     <div class="font-bold text-green-400 text-lg p-1 text-center w-full border-b ${borderColor} font-vt323">${sellPrice} KK</div>
-                     <button class="flex-grow w-full text-xs font-bold uppercase tracking-wider hover:bg-green-500 hover:text-black transition-colors ${textColor}" ${canSell ? '' : 'disabled'}>
-                        VERKAUFEN
-                     </button>
+                <div class="h-full flex flex-col justify-center items-end border-l-2 border-green-800 bg-black/30 min-w-[80px]">
+                    <div class="font-bold text-green-400 text-lg w-full text-center border-b border-green-900 font-vt323">${sellPrice}</div>
+                    <button class="flex-grow w-full text-[10px] font-bold uppercase tracking-wider hover:bg-green-600 hover:text-black transition-colors text-green-700">VERKAUFEN</button>
                 </div>
             `;
-             if(canSell) {
-                div.querySelector('button').onclick = (e) => { e.stopPropagation(); Game.sellItem(idx, UI.shopQty); };
+            if(canSell) {
                 div.onclick = () => Game.sellItem(idx, UI.shopQty);
             }
             container.appendChild(div);
