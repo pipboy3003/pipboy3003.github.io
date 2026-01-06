@@ -11,19 +11,23 @@ window.Combat = {
     ],
 
     start: function(enemyEntity) {
+        // 1. Gegner initialisieren
         Game.state.enemy = JSON.parse(JSON.stringify(enemyEntity)); 
         Game.state.enemy.maxHp = Game.state.enemy.hp; 
         this.enemy = Game.state.enemy;
 
+        // 2. View Modus SOFORT setzen für Canvas Loop
         Game.state.view = 'combat';
         
         this.logData = [];
         this.turn = 'player';
         this.selectedPart = 1; 
         
-        this.log(`Kampf gestartet gegen: ${this.enemy.name}`, 'text-yellow-400 blink-red');
+        // 3. UI Umschalten
         UI.switchView('combat').then(() => {
-            this.render();
+            // Log Initiale Nachricht
+            this.log(`Kampf gegen: ${this.enemy.name}`, 'text-yellow-400 blink-red');
+            this.renderLogs(); // Nur Logs rendern, Grafik macht der Loop
             this.moveSelection(0); 
         });
     },
@@ -40,9 +44,11 @@ window.Combat = {
         el.innerHTML = this.logData.map(l => `<div class="${l.c}">${l.t}</div>`).join('');
     },
 
+    // Die Grafik macht jetzt der Canvas Loop (Game.draw), hier nur noch UI Updates
     render: function() {
-        UI.renderCombat();
         this.renderLogs();
+        // Hier könnte man HTML-Overlay Updates machen (HP Balken etc.)
+        if(UI.updateCombatUI) UI.updateCombatUI(); 
     },
 
     moveSelection: function(dir) {
@@ -52,6 +58,7 @@ window.Combat = {
         if (this.selectedPart < 0) this.selectedPart = 2;
         if (this.selectedPart > 2) this.selectedPart = 0;
 
+        // Visualisiere Auswahl im HTML Overlay (VAT Buttons)
         for(let i=0; i<3; i++) {
             const btn = document.getElementById(`btn-vats-${i}`);
             if(btn) {
@@ -61,7 +68,6 @@ window.Combat = {
                 }
             }
         }
-        UI.renderCombat(); 
     },
     
     selectPart: function(index) {
@@ -99,11 +105,11 @@ window.Combat = {
             el.innerHTML = `-${value}`;
             el.className += " text-red-600 animate-shake"; 
             
-            const flash = document.getElementById('damage-flash');
-            if(flash) {
-                flash.classList.remove('hidden');
-                flash.style.opacity = 0.5;
-                setTimeout(() => { flash.style.opacity = 0; flash.classList.add('hidden'); }, 300);
+            // Screen Shake Effekt auch via CSS triggern
+            const screen = document.getElementById('game-screen');
+            if(screen) {
+                screen.classList.add('shake-anim');
+                setTimeout(() => screen.classList.remove('shake-anim'), 200);
             }
         } else if(type === 'dodge') {
             el.innerHTML = "AUSGEWICHEN";
@@ -114,27 +120,15 @@ window.Combat = {
         setTimeout(() => { el.remove(); }, 1000);
     },
 
-    // --- SAFETY HELPER: REPAIR WEAPON ID ---
     getSafeWeapon: function() {
         let wpn = Game.state.equip.weapon;
-        
-        // 1. Wenn gar keine Waffe da ist -> Fäuste
         if (!wpn) return { id: 'fists', name: 'Fäuste', baseDmg: 2 };
-
-        // 2. Wenn ID fehlt, versuche sie über den Namen zu finden (Legacy Save Fix)
         if (!wpn.id && wpn.name) {
             const foundId = Object.keys(Game.items).find(k => Game.items[k].name === wpn.name);
-            if(foundId) {
-                wpn.id = foundId; // Repariere das Objekt im State
-                // Optional: Savegame dirty markieren, aber hier reicht Laufzeit-Fix
-            } else {
-                return { id: 'fists', name: 'Fäuste (Fallback)', baseDmg: 2 };
-            }
+            if(foundId) wpn.id = foundId; 
+            else return { id: 'fists', name: 'Fäuste (Fallback)', baseDmg: 2 };
         }
-        
-        // 3. Fallback, falls immer noch keine ID
         if (!wpn.id) return { id: 'fists', name: 'Fäuste', baseDmg: 2 };
-
         return wpn;
     },
 
@@ -148,7 +142,6 @@ window.Combat = {
         const wpn = this.getSafeWeapon();
         const wId = wpn.id.toLowerCase();
         
-        // Erweiterte Keywords für Fernkampf
         const rangedKeywords = ['pistol', 'rifle', 'gun', 'shotgun', 'smg', 'minigun', 'blaster', 'sniper', 'cannon', 'gewehr', 'flinte'];
         const isRanged = rangedKeywords.some(k => wId.includes(k));
 
@@ -166,59 +159,42 @@ window.Combat = {
         const part = this.bodyParts[partIndex];
         const hitChance = this.calculateHitChance(partIndex);
         
-        // --- AMMO CHECK ---
         let wpn = this.getSafeWeapon();
         const wId = wpn.id.toLowerCase();
 
-        // Check: Ist es eine Fernkampfwaffe?
         const rangedKeywords = ['pistol', 'rifle', 'gun', 'shotgun', 'smg', 'minigun', 'blaster', 'sniper', 'cannon', 'gewehr', 'flinte'];
         const isRanged = rangedKeywords.some(k => wId.includes(k));
         
-        // Nur Munition verbrauchen, wenn Fernkampf UND nicht Alien Blaster (oder andere Ausnahmen)
         if(isRanged && wId !== 'alien_blaster') { 
              const hasAmmo = Game.removeFromInventory('ammo', 1);
              if(!hasAmmo) {
                  this.log("KLICK! Munition leer!", "text-red-500 font-bold");
-                 
-                 // Fallback auf Nahkampf für diesen Zug
                  this.log("Schlage mit dem Kolben zu!", "text-yellow-400 text-xs italic");
-                 
-                 // Temporäre "Waffe" für diesen Schlag bauen
                  wpn = { id: 'rifle_butt', baseDmg: 2, name: "Waffenkolben" }; 
-                 // Wir legen die Waffe NICHT ab, damit der Spieler sie nicht verliert/neu ausrüsten muss.
-                 // Er macht einfach nur wenig Schaden diese Runde.
              }
         }
 
         const roll = Math.random() * 100;
         
-        const screen = document.getElementById('game-screen');
-        if(screen) {
-            screen.classList.add('shake-anim'); 
-            setTimeout(() => screen.classList.remove('shake-anim'), 200);
-        }
+        // Attack Animation Feedback
+        this.triggerFeedback('atk');
 
         if(roll <= hitChance) {
             // HIT
             let dmg = wpn.baseDmg || 2;
             if(wpn.props && wpn.props.dmgMult) dmg *= wpn.props.dmgMult;
 
-            // PERKS
             if(!isRanged || wpn.id === 'rifle_butt') {
-                // Nahkampf Bonus
                 dmg += Math.floor(Game.getStat('STR') / 2);
-                
                 const sluggerLvl = Game.getPerkLevel('slugger');
                 if(sluggerLvl > 0) dmg = Math.floor(dmg * (1 + (sluggerLvl * 0.1)));
             } else {
-                // Fernkampf Bonus
                 const gunLvl = Game.getPerkLevel('gunslinger');
                 if(gunLvl > 0) dmg = Math.floor(dmg * (1 + (gunLvl * 0.1)));
             }
 
             dmg *= part.dmgMod;
 
-            // CRIT
             let isCrit = false;
             let critChance = Game.state.critChance || 5; 
             
@@ -236,12 +212,6 @@ window.Combat = {
             
             this.log(`Treffer: ${part.name} für ${dmg} Schaden!`, 'text-green-400 font-bold');
             this.triggerFeedback(isCrit ? 'crit' : 'hit', dmg);
-
-            const el = document.getElementById('enemy-img'); 
-            if(el) {
-                el.classList.add('animate-pulse');
-                setTimeout(() => el.classList.remove('animate-pulse'), 200);
-            }
 
             if(this.enemy.hp <= 0) {
                 this.win();
@@ -296,22 +266,25 @@ window.Combat = {
         }
 
         this.turn = 'player';
-        UI.update(); 
         this.render();
+        if(typeof UI.update === 'function') UI.update(); 
     },
 
     win: function() {
         this.log(`${this.enemy.name} besiegt!`, 'text-yellow-400 font-bold');
         
+        // XP
         const xpBase = Array.isArray(this.enemy.xp) ? (this.enemy.xp[0] + Math.floor(Math.random()*(this.enemy.xp[1]-this.enemy.xp[0]))) : this.enemy.xp;
         Game.gainExp(xpBase);
         
+        // Caps
         if(this.enemy.loot > 0) {
             let caps = Math.floor(Math.random() * this.enemy.loot) + 1;
             Game.state.caps += caps;
             this.log(`Gefunden: ${caps} Kronkorken`, 'text-yellow-200');
         }
         
+        // Drops
         if(this.enemy.drops) {
             this.enemy.drops.forEach(d => {
                 if(Math.random() < d.c) {
@@ -320,6 +293,7 @@ window.Combat = {
             });
         }
 
+        // Quests
         let mobId = null;
         if(Game.monsters) {
             for(let k in Game.monsters) {
@@ -337,8 +311,10 @@ window.Combat = {
         Game.state.kills++;
         Game.saveGame();
 
+        // [WICHTIG] Kurze Verzögerung für Sieg-Effekt, dann zur Map zurück
         setTimeout(() => {
-            Game.state.enemy = null;
+            Game.state.view = 'map'; // Damit drawLoop umschaltet
+            Game.state.enemy = null; // Gegner entfernen
             UI.switchView('map');
         }, 1500);
     },
@@ -348,6 +324,7 @@ window.Combat = {
             this.log("Flucht gelungen!", 'text-green-400');
             this.triggerFeedback('dodge'); 
             setTimeout(() => {
+                Game.state.view = 'map';
                 Game.state.enemy = null;
                 UI.switchView('map');
             }, 800);
