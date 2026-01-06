@@ -36,7 +36,6 @@ Object.assign(UI, {
             }
         });
         
-        // FIX: Enter in New Char Screen
         if(this.els.inputNewCharName) {
             this.els.inputNewCharName.addEventListener("keydown", (e) => {
                 if (e.key === "Enter") {
@@ -48,7 +47,6 @@ Object.assign(UI, {
 
         if (this.els.btnCharSelectAction) this.els.btnCharSelectAction.onclick = () => this.triggerCharSlot();
         if (this.els.btnCharDeleteAction) this.els.btnCharDeleteAction.onclick = () => this.triggerDeleteSlot();
-        // UPDATE: Back Button Handler
         if (this.els.btnCharBack) this.els.btnCharBack.onclick = () => this.logout("ZURÜCK ZUM LOGIN");
 
         if(this.els.btnCreateCharConfirm) {
@@ -100,14 +98,35 @@ Object.assign(UI, {
             };
         }
 
-        // [v0.6.4] SMART CHAR CLICK (Merged)
+        // SMART CHAR CLICK (Header) - Bleibt intelligent
         const btnCharHeader = document.getElementById('header-char-info');
         if(btnCharHeader) {
             btnCharHeader.onclick = () => {
                 if (Game.state.statPoints > 0) this.charTab = 'stats';
                 else if (Game.state.perkPoints > 0) this.charTab = 'perks';
-                else this.charTab = 'stats';
+                else this.charTab = 'status'; // Default Header Klick
                 this.switchView('char');
+            };
+        }
+
+        // --- HAUPTMENÜ NAVIGATION ---
+        const navMap = {
+            'btn-inv': 'inventory',
+            'btn-char': 'char',
+            'btn-map': 'map',
+            'btn-quests': 'journal',
+            'btn-wiki': 'wiki',
+            'btn-radio': 'radio'
+        };
+
+        for (const [id, view] of Object.entries(navMap)) {
+            const el = document.getElementById(id);
+            if(el) el.onclick = () => { 
+                // [FIX] Hier erzwingen wir den 'status' Tab beim Menü-Klick
+                if(view === 'char') this.charTab = 'status'; 
+                
+                this.switchView(view); 
+                this.toggleNav(false); 
             };
         }
         
@@ -138,14 +157,21 @@ Object.assign(UI, {
         }
 
         if(this.els.playerCount) this.els.playerCount.onclick = () => this.togglePlayerList();
+        
+        // Direkte Buttons (Desktop / Shortcuts)
         if(this.els.btnInv) this.els.btnInv.onclick = () => this.toggleView('inventory');
         if(this.els.btnWiki) this.els.btnWiki.onclick = () => this.toggleView('wiki');
         if(this.els.btnMap) this.els.btnMap.onclick = () => this.toggleView('worldmap');
-        if(this.els.btnChar) this.els.btnChar.onclick = () => this.toggleView('char');
+        
+        if(this.els.btnChar) this.els.btnChar.onclick = () => {
+            // [FIX] Auch hier Reset auf Status
+            this.charTab = 'status';
+            this.toggleView('char');
+        };
+        
         if(this.els.btnQuests) this.els.btnQuests.onclick = () => this.toggleView('quests');
         if(this.els.btnSpawnRandom) this.els.btnSpawnRandom.onclick = () => this.selectSpawn(null);
 
-        // Mobile D-Pad Toggle (falls du den noch willst, sonst ignorieren)
         const btnDpad = document.getElementById('btn-toggle-dpad');
         if(btnDpad) btnDpad.onclick = () => {
             const dpad = document.getElementById('dpad-overlay');
@@ -159,7 +185,6 @@ Object.assign(UI, {
             this.els.touchArea.addEventListener('touchcancel', (e) => this.handleTouchEnd(e));
         }
 
-        // INPUT METHOD DETECTION
         ['mousemove', 'mousedown', 'touchstart'].forEach(evt => {
             window.addEventListener(evt, (e) => {
                 this.lastInputTime = Date.now();
@@ -169,14 +194,11 @@ Object.assign(UI, {
                     this.inputMethod = 'touch';
                 }
                 
-                // NEW: Mouse Lockpicking
                 if(Game.state && Game.state.view === 'lockpicking' && evt === 'mousemove') {
-                    // Normalize mouse X to -90 to 90 based on screen width center
                     const w = window.innerWidth;
                     const center = w / 2;
                     const mouseX = e.clientX;
                     const delta = mouseX - center;
-                    // Scale it so half screen is 90 deg
                     let angle = (delta / (w/3)) * 90;
                     if(angle < -90) angle = -90; 
                     if(angle > 90) angle = 90;
@@ -193,7 +215,6 @@ Object.assign(UI, {
             this.lastInputTime = Date.now();
             this.inputMethod = 'key';
             
-            // FIX: Prevent browser scrolling with Arrow Keys and Space
             const preventKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "Space", "PageUp", "PageDown", "Home", "End"];
             const targetTag = e.target.tagName.toLowerCase();
             
@@ -231,7 +252,6 @@ Object.assign(UI, {
             return;
         }
         
-        // NEW: Lockpicking Controls
         if (Game.state.view === 'lockpicking') {
             if (e.key === 'ArrowLeft' || e.key === 'a') MiniGames.lockpicking.rotatePin(-5);
             if (e.key === 'ArrowRight' || e.key === 'd') MiniGames.lockpicking.rotatePin(5);
@@ -240,7 +260,6 @@ Object.assign(UI, {
             return;
         }
         
-        // NEW: Hacking Controls (Esc to exit)
         if (Game.state.view === 'hacking') {
              if (e.key === 'Escape') MiniGames.hacking.end();
              return;
@@ -293,7 +312,11 @@ Object.assign(UI, {
             // Shortcuts
             const k = e.key.toLowerCase();
             if(k === 'i') this.switchView('inventory');
-            else if(k === 'c') this.switchView('char');
+            else if(k === 'c') {
+                // Shortcut C öffnet Status
+                this.charTab = 'status'; 
+                this.switchView('char');
+            }
             else if(k === 'm') this.switchView('map');
             else if(k === 'j') this.switchView('journal');
         }
@@ -445,7 +468,6 @@ Object.assign(UI, {
         const buttons = Array.from(container.querySelectorAll('button:not([disabled])'));
         this.focusableEls = buttons.filter(b => b.offsetParent !== null && b.style.display !== 'none');
         
-        // FIX: No focus on mobile unless keys were used
         if(this.inputMethod === 'touch') {
             this.focusIndex = -1;
         } else {
@@ -474,11 +496,9 @@ Object.assign(UI, {
 
     updateFocusVisuals: function() {
         document.querySelectorAll('.key-focus').forEach(el => el.classList.remove('key-focus'));
-        // FIX: Only show focus ring if input method is key
         if (this.inputMethod === 'key' && this.focusIndex !== -1 && this.focusableEls[this.focusIndex]) {
             const el = this.focusableEls[this.focusIndex];
             el.classList.add('key-focus');
-            // FIX: Use 'nearest' to prevent screen wandering/jumping
             el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
         }
     },
