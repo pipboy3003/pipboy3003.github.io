@@ -3,32 +3,25 @@
 html, body { width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; position: fixed; }
 body { background-color: #000; color: var(--pip-green); font-family: 'VT323', monospace; display: flex; justify-content: center; align-items: center; user-select: none; -webkit-user-select: none; cursor: crosshair; }
 
-/* WICHTIG FÜR PIXEL ART: Verhindert Weichzeichnen des Canvas */
 canvas {
-    image-rendering: pixelated; /* Chrome/Standard */
-    image-rendering: crisp-edges; /* Firefox */
+    image-rendering: pixelated; 
+    image-rendering: crisp-edges; 
     image-rendering: -moz-crisp-edges;
 }
 
 #view-container > * { max-width: 100%; overflow-x: hidden; }
 
-/* [v0.9.2] Camp Fire Animation */
 @keyframes fireFlicker {
     0% { opacity: 0.8; transform: scale(1); text-shadow: 0 0 4px red; }
     50% { opacity: 1; transform: scale(1.1); text-shadow: 0 0 10px orange; }
     100% { opacity: 0.8; transform: scale(1); text-shadow: 0 0 4px red; }
 }
 
-.fire-anim {
-    display: inline-block;
-    animation: fireFlicker 0.8s infinite alternate ease-in-out;
-}
+.fire-anim { display: inline-block; animation: fireFlicker 0.8s infinite alternate ease-in-out; }
 .fire-anim:nth-child(1) { animation-delay: 0s; }
 .fire-anim:nth-child(2) { animation-delay: 0.2s; }
 .fire-anim:nth-child(3) { animation-delay: 0.4s; }
 
-
-/* ANIMATIONS & EFFECTS */
 .scanline {
     width: 100%; height: 100px; z-index: 10;
     background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(26, 255, 26, 0.04) 50%, rgba(0,0,0,0) 100%);
@@ -50,14 +43,12 @@ canvas {
 .crt-flicker { animation: flicker 0.15s infinite; }
 @keyframes flicker { 0% { opacity: 0.97; } 50% { opacity: 1; } 100% { opacity: 0.98; } }
 
-/* BOOT ANIMATIONS */
 .gear-spin { animation: spin 4s linear infinite; transform-origin: center; }
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
 .vault-wink { animation: wink 2s infinite steps(1); }
 @keyframes wink { 0%, 45%, 55%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-/* GLOWS */
 .alert-glow-red { animation: pulse-red-intense 1.5s infinite !important; border-width: 2px !important; font-weight: bold !important; }
 @keyframes pulse-red-intense { 0% { box-shadow: 0 0 5px red; border-color: #800000; color: #ffcccc; } 50% { box-shadow: 0 0 25px red, inset 0 0 10px red; border-color: red; color: white; background-color: rgba(255, 0, 0, 0.2); } 100% { box-shadow: 0 0 5px red; border-color: #800000; color: #ffcccc; } }
 .alert-glow-yellow { animation: pulse-yellow-intense 1.5s infinite !important; border-width: 2px !important; font-weight: bold !important; }
@@ -75,7 +66,6 @@ canvas {
 }
 @keyframes pulse-focus { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
-/* [v0.9.18] Level Up Text Glow */
 .lvl-ready-glow {
     animation: pulse-lvl-text 1s infinite alternate;
     color: #ffd700 !important;
@@ -85,13 +75,11 @@ canvas {
     color: #ffd700 !important;
     text-shadow: 0 0 5px #b8860b;
 }
-
 @keyframes pulse-lvl-text {
     0% { transform: scale(1); text-shadow: 0 0 5px #b8860b; }
     100% { transform: scale(1.02); text-shadow: 0 0 15px #ffd700, 0 0 2px white; }
 }
 
-/* MINIGAME STYLES */
 .lock-container { position: relative; width: 250px; height: 250px; border-radius: 50%; border: 4px solid #333; background: radial-gradient(circle, #222, #000); box-shadow: inset 0 0 30px #000; margin: 0 auto; }
 .lock-inner { position: absolute; top: 10%; left: 10%; width: 80%; height: 80%; border-radius: 50%; border: 2px dashed #444; transition: transform 0.1s; }
 .lock-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; background: #111; border-radius: 50%; border: 1px solid #555; }
@@ -102,7 +90,6 @@ canvas {
 .hack-row:hover, .hack-row.selected { background-color: var(--pip-green); color: black; font-weight: bold; }
 .hack-hex { color: #0d47a1; margin-right: 10px; }
 
-/* SCROLLBAR & BASE */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: #001100; border-left: 1px solid var(--pip-dim); }
 ::-webkit-scrollbar-thumb { background: var(--pip-dim); border: 1px solid var(--pip-green); }
@@ -117,7 +104,6 @@ canvas {
 .crt-effect-container { position: relative; overflow: hidden; background-color: #000; width: 100%; height: 100%; }
 .crt-effect-container::before { content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03)); z-index: 10; background-size: 100% 3px, 4px 100%; pointer-events: none; }
 
-/* UI ELEMENTS */
 .action-button { background-color: #0f1f0f; color: var(--pip-green); border: 1px solid var(--pip-green); padding: 5px 10px; margin: 2px; cursor: pointer; text-transform: uppercase; font-size: 1.25rem; transition: all 0.1s; font-family: 'VT323', monospace; display: flex; align-items: center; justify-content: center; }
 .action-button:hover { background-color: var(--pip-green); color: black; }
 .action-button:active { transform: scale(0.95); }
@@ -133,10 +119,8 @@ canvas {
 .char-slot:hover { border-color: var(--pip-green); background: rgba(0,40,0,0.8); }
 .char-slot.active-slot { border-color: var(--pip-green); background: var(--pip-green); color: black; font-weight: bold; }
 .char-slot.active-slot * { color: #000 !important; text-shadow: none !important; }
-
 .char-slot.empty-slot { opacity: 0.5; font-style: italic; }
 
-/* SCREENS & OVERLAYS */
 #login-screen, #spawn-screen, #reset-overlay, #manual-overlay, #changelog-overlay, #char-select-screen, #delete-confirm-overlay { position: absolute; inset: 0; z-index: 999; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; height: 100%; }
 .login-box { border: 2px solid var(--pip-green); padding: 20px; text-align: center; box-shadow: 0 0 20px var(--pip-dim); width: 90%; max-width: 400px; display: flex; flex-direction: column; background: rgba(0, 10, 0, 0.9); z-index: 20; position: relative; min-height: 400px; justify-content: center; }
 #login-form { width: 100%; display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
@@ -144,13 +128,11 @@ canvas {
 input.login-input { background: #000; border: 2px solid var(--pip-green); color: var(--pip-green); font-family: inherit; font-size: 20px; padding: 10px; text-align: center; outline: none; width: 100%; }
 input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
 
-/* BOOT SEQUENCE IN LOGIN */
 #boot-sequence { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; }
 .boot-icon { width: 80px; height: 80px; margin-bottom: 20px; }
 .boot-line { margin-bottom: 2px; white-space: nowrap; overflow: hidden; opacity: 0; animation: type-line 0.1s forwards; text-align: left; width: 100%; padding-left: 20px; font-size: 0.9rem; }
 @keyframes type-line { to { opacity: 1; } }
 
-/* LAYOUTS */
 #main-content { flex-grow: 1; display: flex; overflow: hidden; min-height: 0; position: relative; width: 100%; }
 #main-panel { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; width: 100%; }
 #layout-split { display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; min-height: 0; width: 100%; }
@@ -176,7 +158,7 @@ input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
 }
 
 .equip-slot {
-    border: 1px solid #1b5e20; /* Dunkelgrün */
+    border: 1px solid #1b5e20;
     background: rgba(0, 20, 0, 0.5);
     min-height: 60px;
     display: flex;
@@ -190,26 +172,13 @@ input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
     cursor: default;
 }
 
-.equip-slot.filled {
-    border-color: #39ff14; /* Hellgrün */
-    background: rgba(57, 255, 20, 0.1);
-    cursor: pointer;
-}
-.equip-slot.filled:hover {
-    background: rgba(57, 255, 20, 0.2);
-    box-shadow: 0 0 10px #39ff14;
-}
-
-.equip-slot.empty {
-    opacity: 0.5;
-    border-style: dashed;
-}
-
+.equip-slot.filled { border-color: #39ff14; background: rgba(57, 255, 20, 0.1); cursor: pointer; }
+.equip-slot.filled:hover { background: rgba(57, 255, 20, 0.2); box-shadow: 0 0 10px #39ff14; }
+.equip-slot.empty { opacity: 0.5; border-style: dashed; }
 .equip-slot .icon { font-size: 1.5rem; margin-bottom: 2px; }
 .equip-slot .label { font-size: 0.6rem; text-transform: uppercase; color: #888; }
 .equip-slot .item-name { font-size: 0.7rem; font-weight: bold; color: #39ff14; line-height: 1.1; word-break: break-word; }
 
-/* Grid Positionierung */
 .slot-head { grid-column: 2; grid-row: 1; }
 .slot-body { grid-column: 2; grid-row: 2; }
 .slot-legs { grid-column: 2; grid-row: 3; }
@@ -218,41 +187,31 @@ input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
 .slot-arms { grid-column: 3; grid-row: 2; }
 .slot-back { grid-column: 3; grid-row: 1; }
 
-/* Tabs */
-.char-tab-btn {
-    border-bottom: 2px solid transparent;
-    opacity: 0.6;
-    transition: all 0.2s;
-}
+.char-tab-btn { border-bottom: 2px solid transparent; opacity: 0.6; transition: all 0.2s; }
 .char-tab-btn:hover { opacity: 1; background: rgba(0, 50, 0, 0.3); }
-.char-tab-btn.active {
-    border-bottom: 2px solid #39ff14;
-    color: #39ff14;
-    opacity: 1;
-    text-shadow: 0 0 5px #39ff14;
-    background: rgba(0, 30, 0, 0.5);
-}
+.char-tab-btn.active { border-bottom: 2px solid #39ff14; color: #39ff14; opacity: 1; text-shadow: 0 0 5px #39ff14; background: rgba(0, 30, 0, 0.5); }
 
-/* --- RUSTY SPRINGS OVERHAUL (v0.8.0) --- */
+/* --- [v0.8.0] RUSTY SPRINGS DASHBOARD --- */
 .city-header {
-    background: linear-gradient(to bottom, #0a2a0a, #000);
+    background: linear-gradient(to bottom, #051505, #000);
     border-bottom: 2px solid #39ff14;
-    padding: 15px;
+    padding: 20px;
     text-align: center;
-    margin-bottom: 10px;
+    position: relative;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.8);
 }
 
 .city-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto; /* Händler ist hoch, andere klein */
-    gap: 12px;
-    padding: 10px;
+    grid-template-rows: 180px auto; 
+    gap: 15px;
+    padding: 15px;
 }
 
 .city-card {
-    border: 2px solid #1b5e20;
-    background: rgba(0, 20, 0, 0.6);
+    border: 1px solid #1b5e20;
+    background: rgba(0, 20, 0, 0.8);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -261,41 +220,68 @@ input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
     transition: all 0.2s;
     position: relative;
     overflow: hidden;
+    padding: 10px;
+    text-align: center;
 }
 
 .city-card:hover {
     border-color: #39ff14;
-    background: rgba(57, 255, 20, 0.15);
-    box-shadow: 0 0 15px #39ff14;
+    background: rgba(57, 255, 20, 0.1);
+    box-shadow: 0 0 15px #39ff14, inset 0 0 10px rgba(57, 255, 20, 0.2);
     transform: translateY(-2px);
+    z-index: 10;
 }
 
-.city-card .icon { font-size: 3rem; margin-bottom: 5px; text-shadow: 0 0 10px rgba(57, 255, 20, 0.5); }
-.city-card .label { font-size: 1.2rem; font-weight: bold; color: #39ff14; text-transform: uppercase; letter-spacing: 2px; }
-.city-card .sub { font-size: 0.8rem; color: #888; font-style: italic; }
+.city-card .icon { 
+    font-size: 3rem; 
+    margin-bottom: 10px; 
+    filter: drop-shadow(0 0 5px rgba(57,255,20,0.5));
+    transition: transform 0.2s;
+}
+.city-card:hover .icon { transform: scale(1.1); }
 
-/* Spezieller Style für den Händler (Groß) */
+.city-card .label { 
+    font-size: 1.2rem; 
+    font-weight: bold; 
+    color: #39ff14; 
+    text-transform: uppercase; 
+    letter-spacing: 2px; 
+    text-shadow: 0 0 5px rgba(57,255,20,0.5);
+}
+
+.city-card .sub { 
+    font-size: 0.75rem; 
+    color: #888; 
+    font-style: italic; 
+    margin-top: 5px; 
+    font-family: monospace;
+}
+
+/* HÄNDLER SPECIAL STYLE */
 .city-card.trader {
-    grid-column: 1 / -1; /* Volle Breite */
-    padding: 20px;
-    border-color: #eab308; /* Goldener Rahmen */
-    background: linear-gradient(45deg, rgba(20, 20, 0, 0.8), rgba(60, 50, 0, 0.5));
+    grid-column: 1 / -1; 
+    background: linear-gradient(45deg, rgba(20, 20, 0, 0.9), rgba(60, 50, 0, 0.3));
+    border-color: #b8860b; 
 }
 .city-card.trader:hover {
     border-color: #ffd700;
-    box-shadow: 0 0 20px #ffd700;
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
 }
-.city-card.trader .icon { 
-    font-size: 5rem; /* RIESIG wie gewünscht */ 
+.city-card.trader .icon {
+    font-size: 6rem;
     color: #ffd700;
-    animation: pulse-slow 3s infinite;
+    animation: pulse-trader 4s infinite ease-in-out;
 }
-.city-card.trader .label { color: #ffd700; font-size: 1.5rem; }
+.city-card.trader .label { color: #ffd700; font-size: 2rem; }
+.city-card.trader .sub { color: #eecfa1; font-size: 0.9rem; }
 
-@keyframes pulse-slow { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+@keyframes pulse-trader { 
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px #b8860b); } 
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 20px #ffd700); } 
+}
 
 .city-card::before {
     content: " "; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
-    background-size: 100% 4px; pointer-events: none; z-index: 1;
+    background: linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.4) 50%);
+    background-size: 100% 4px; pointer-events: none;
 }
