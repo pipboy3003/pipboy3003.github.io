@@ -139,7 +139,7 @@ window.Game = {
         this.cacheCtx = this.cacheCanvas.getContext('2d'); 
     }, 
     
-    initCanvas: function() { 
+initCanvas: function() { 
         const cvs = document.getElementById('game-canvas'); 
         if(!cvs) return; 
         const viewContainer = document.getElementById('view-container'); 
@@ -147,16 +147,20 @@ window.Game = {
         cvs.height = viewContainer.clientHeight; 
         this.ctx = cvs.getContext('2d'); 
         this.ctx.imageSmoothingEnabled = false;
+        
+        // Loop neu starten
         if(this.loopId) cancelAnimationFrame(this.loopId); 
         this.drawLoop(); 
     },
 
-    // --- WICHTIGES UPDATE HIER ---
     drawLoop: function() { 
-        // Wir prüfen jetzt auf 'map' ODER 'combat', damit der Loop weiterläuft
+        // [FIX] Loop läuft weiter bei 'map' ODER 'combat'
         if(this.state && (this.state.view === 'map' || this.state.view === 'combat') && !this.state.isGameOver) {
             this.draw(); 
             this.loopId = requestAnimationFrame(() => this.drawLoop());
+        } else {
+            // Falls der Loop stoppt (z.B. im Inventar), loggen wir das zur Sicherheit
+            // console.log("Draw Loop paused (View: " + (this.state ? this.state.view : 'null') + ")");
         }
     },
 
