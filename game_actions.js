@@ -88,20 +88,25 @@ Object.assign(Game, {
     },
 
     // [v0.7.4] Auto-Close Clinic
-    heal: function() { 
+heal: function() { 
         if(this.state.caps >= 25) { 
             this.state.caps -= 25; 
+            
+            // Logik
             this.state.rads = 0; 
             this.state.hp = this.state.maxHp; 
-            UI.log("Dr. Zimmermann: 'Alles wieder gut!' (-RADS, +HP)", "text-green-400");
+            
+            // Neuer Text
+            UI.log("BEHANDLUNG ERFOLGREICH: Alle RADS entfernt, Gesundheit vollständig wiederhergestellt.", "text-green-400 font-bold");
             UI.update(); 
             
-            // Auto-Close nach 1 Sekunde
+            // Auto-Close zum City Dashboard
             setTimeout(() => {
                 if (Game.state.view === 'clinic') {
-                    UI.switchView('city');
+                    // Da wir im Dashboard Modul sind, rufen wir direkt das Dashboard auf
+                    if(typeof UI.renderCity === 'function') UI.renderCity();
                 }
-            }, 1000);
+            }, 1500); // 1.5 sekunden lesen lassen
 
         } else { UI.log("Zu wenig Kronkorken.", "text-red-500"); }
     },
