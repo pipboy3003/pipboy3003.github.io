@@ -1,9 +1,8 @@
 Object.assign(UI, {
 
     // [v0.7.0] VIEW STATE
-    charTab: 'status', // 'status', 'stats', 'perks'
+    charTab: 'status', 
 
-    // --- INVENTAR (Dein Original Code) ---
     renderInventory: function() {
         const list = document.getElementById('inventory-list');
         const countDisplay = document.getElementById('inv-count');
@@ -145,18 +144,15 @@ Object.assign(UI, {
         }
     },
 
-    // --- [v0.7.0] CHARAKTER HAUPTFUNKTION ---
     renderChar: function(mode) {
         if(mode) this.charTab = mode;
         const tab = this.charTab;
 
-        // 1. Basic Info Update (Header)
         const elName = document.getElementById('char-sheet-name');
         const elLvl = document.getElementById('char-sheet-lvl');
         if(elName) elName.textContent = Game.state.playerName;
         if(elLvl) elLvl.textContent = Game.state.lvl;
 
-        // 2. Tabs umschalten (Visuals)
         ['status', 'stats', 'perks'].forEach(t => {
             const btn = document.getElementById(`tab-btn-${t}`);
             const view = document.getElementById(`view-${t}`);
@@ -171,15 +167,12 @@ Object.assign(UI, {
             }
         });
 
-        // 3. Inhalt rendern je nach Tab
         if(tab === 'status') this.renderCharStatus();
         else if(tab === 'stats') this.renderCharStats();
         else if(tab === 'perks') this.renderCharPerks();
     },
 
-    // --- TAB 1: STATUS (Equip Grid & Summary) ---
     renderCharStatus: function() {
-        // Stats Summary
         document.getElementById('sheet-hp').textContent = `${Math.floor(Game.state.hp)}/${Game.state.maxHp}`;
         
         const nextXp = Game.expToNextLevel(Game.state.lvl);
@@ -193,7 +186,6 @@ Object.assign(UI, {
 
         document.getElementById('sheet-crit').textContent = `${Game.state.critChance}%`;
 
-        // Alert Box (Level Up Button)
         const alertBox = document.getElementById('status-points-alert');
         if(Game.state.statPoints > 0 || Game.state.perkPoints > 0) {
             alertBox.classList.remove('hidden');
@@ -205,7 +197,6 @@ Object.assign(UI, {
             alertBox.classList.add('hidden');
         }
 
-        // GRID RENDERER
         const slots = ['head', 'back', 'weapon', 'body', 'arms', 'legs', 'feet'];
         
         slots.forEach(slot => {
@@ -214,7 +205,6 @@ Object.assign(UI, {
 
             const item = Game.state.equip[slot];
             
-            // Leerer Slot Check
             const isEmpty = !item || 
                            (slot === 'back' && !item.props) || 
                            (!item.name || item.name === 'Fäuste' || item.name === 'Vault-Anzug' || item.name === 'Kein Rucksack');
@@ -224,7 +214,6 @@ Object.assign(UI, {
                 el.classList.add('empty');
                 el.querySelector('.item-name').textContent = "---";
                 el.querySelector('.item-name').className = "item-name text-gray-600";
-                // Click deaktivieren oder Info anzeigen
                 el.onclick = null; 
             } else {
                 el.classList.add('filled');
@@ -234,13 +223,11 @@ Object.assign(UI, {
                 
                 el.querySelector('.item-name').textContent = name;
                 el.querySelector('.item-name').className = `item-name ${color}`;
-                // Click aktivieren -> Dialog öffnen
                 el.onclick = () => UI.showEquippedDialog(slot);
             }
         });
     },
 
-    // --- TAB 2: SPECIAL ---
     renderCharStats: function() {
         const container = document.getElementById('special-list');
         const pointsEl = document.getElementById('sheet-stat-points');
@@ -256,7 +243,6 @@ Object.assign(UI, {
             const val = Game.getStat(key);
             const label = (window.GameData && window.GameData.statLabels && window.GameData.statLabels[key]) ? window.GameData.statLabels[key] : key;
             
-            // Progress Bar visual (1-10)
             let bar = '';
             for(let i=1; i<=10; i++) {
                 bar += (i <= val) ? '<div class="h-2 w-full bg-[#39ff14] mr-0.5"></div>' : '<div class="h-2 w-full bg-green-900/30 mr-0.5"></div>';
@@ -286,13 +272,11 @@ Object.assign(UI, {
         });
     },
 
-    // --- TAB 3: PERKS ---
     renderCharPerks: function() {
         const container = document.getElementById('perks-list');
         const pointsEl = document.getElementById('sheet-perk-points');
         if(!container) return;
 
-        // Scroll Position merken
         const scrollPos = container.parentElement.scrollTop || 0;
 
         container.innerHTML = '';
@@ -306,7 +290,6 @@ Object.assign(UI, {
                 const isMaxed = currentLvl >= maxLvl;
                 const canAfford = points > 0 && !isMaxed;
                 
-                // Visual Bar
                 let levelBar = '';
                 for(let i=0; i<maxLvl; i++) {
                     levelBar += (i < currentLvl) ? '<span class="text-yellow-400 text-sm">●</span>' : '<span class="text-gray-700 text-sm">○</span>';
@@ -339,11 +322,103 @@ Object.assign(UI, {
             });
         }
 
-        // Scroll Position wiederherstellen
         if(scrollPos > 0) {
             requestAnimationFrame(() => {
                 container.parentElement.scrollTop = scrollPos;
             });
         }
+    },
+
+    // [v0.8.0] RUSTY SPRINGS OVERHAUL
+    renderCity: function() {
+        const view = document.getElementById('view-container');
+        view.innerHTML = ''; 
+
+        const header = document.createElement('div');
+        header.className = "city-header flex flex-col items-center justify-center relative";
+        
+        const flairs = [
+            "Die Luft riecht nach Rost und Ozon.",
+            "Ein Generator brummt in der Ferne.",
+            "Händler schreien ihre Preise aus.",
+            "Sicherer Hafen im Ödland."
+        ];
+        const flair = flairs[Math.floor(Math.random() * flairs.length)];
+
+        header.innerHTML = `
+            <div class="text-4xl font-bold text-green-400 tracking-widest text-shadow-glow">RUSTY SPRINGS</div>
+            <div class="text-xs text-green-700 font-mono mt-1 border-t border-green-900 pt-1 w-2/3 text-center">POP: 42 | RAD: NIEDRIG | SEC: HOCH</div>
+            <div class="text-gray-500 text-xs italic mt-2">"${flair}"</div>
+            <div class="absolute right-4 top-4 text-yellow-400 font-bold border border-yellow-600 px-2 bg-black/50">
+                💰 ${Game.state.caps} KK
+            </div>
+        `;
+        view.appendChild(header);
+
+        const grid = document.createElement('div');
+        grid.className = "city-grid flex-grow overflow-y-auto custom-scrollbar";
+
+        // A. HÄNDLER (Der Große)
+        const traderCard = document.createElement('div');
+        traderCard.className = "city-card trader";
+        traderCard.onclick = () => UI.renderShop(view); 
+        traderCard.innerHTML = `
+            <div class="icon">🛒</div>
+            <div class="label">HANDELSPOSTEN</div>
+            <div class="sub text-yellow-200">An- & Verkauf • Munition • Ausrüstung</div>
+        `;
+        grid.appendChild(traderCard);
+
+        // B. ARZT
+        const docCard = document.createElement('div');
+        docCard.className = "city-card";
+        docCard.onclick = () => UI.renderClinic(view);
+        docCard.innerHTML = `
+            <div class="icon text-red-400">⚕️</div>
+            <div class="label text-red-400">KLINIK</div>
+            <div class="sub">Dr. Zimmermann</div>
+        `;
+        grid.appendChild(docCard);
+
+        // C. WERKBANK
+        const craftCard = document.createElement('div');
+        craftCard.className = "city-card";
+        craftCard.onclick = () => UI.renderCrafting();
+        craftCard.innerHTML = `
+            <div class="icon text-blue-400">🛠️</div>
+            <div class="label text-blue-400">WERKBANK</div>
+            <div class="sub">Zerlegen & Bauen</div>
+        `;
+        grid.appendChild(craftCard);
+
+        // D. LAGER (Safe House)
+        const restCard = document.createElement('div');
+        restCard.className = "city-card";
+        restCard.onclick = () => { Game.rest(); }; 
+        restCard.innerHTML = `
+            <div class="icon text-green-200">💤</div>
+            <div class="label text-green-200">RASTEN</div>
+            <div class="sub">Gratis & Sicher</div>
+        `;
+        grid.appendChild(restCard);
+
+        view.appendChild(grid);
+
+        const footer = document.createElement('div');
+        footer.className = "p-4 border-t border-green-900 bg-black";
+        footer.innerHTML = `
+            <button class="action-button w-full border-green-500 text-green-500 py-3 font-bold text-xl hover:bg-green-900" onclick="UI.switchView('map')">
+                ZURÜCK INS ÖDLAND (ESC)
+            </button>
+        `;
+        view.appendChild(footer);
     }
 });
+
+
+views/city.html (Minimalisiert, da renderCity das jetzt baut):
+
+<div id="view-container" class="w-full h-full bg-black"></div>
+<script>
+    if(UI && UI.renderCity) UI.renderCity();
+</script>
