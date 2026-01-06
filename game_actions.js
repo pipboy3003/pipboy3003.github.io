@@ -15,15 +15,29 @@ Object.assign(Game, {
         }
     },
     
+    // [v0.6.6] Rads with Resistance Perk
     addRadiation: function(amount) {
         if(!this.state) return;
         if(typeof this.state.rads === 'undefined') this.state.rads = 0;
-        this.state.rads = Math.min(this.state.maxHp, Math.max(0, this.state.rads + amount));
-        if(amount > 0) UI.log(`+${amount} RADS!`, "text-red-500 font-bold animate-pulse");
-        else UI.log(`${Math.abs(amount)} RADS entfernt.`, "text-green-300");
+        
+        let finalAmount = amount;
+        if (amount > 0) {
+            const perkLvl = this.getPerkLevel('rad_resistant');
+            if (perkLvl > 0) {
+                const reduction = perkLvl * 0.10; // -10% per level
+                finalAmount = Math.ceil(amount * (1 - reduction));
+            }
+        }
+
+        this.state.rads = Math.min(this.state.maxHp, Math.max(0, this.state.rads + finalAmount));
+        
+        if(finalAmount > 0) UI.log(`+${finalAmount} RADS!`, "text-red-500 font-bold animate-pulse");
+        else if(finalAmount < 0) UI.log(`${Math.abs(finalAmount)} RADS entfernt.`, "text-green-300");
+        
         const effectiveMax = this.state.maxHp - this.state.rads;
         if(this.state.hp > effectiveMax) { this.state.hp = effectiveMax; }
-        if(this.state.hp <= 0 && amount > 0) {
+        
+        if(this.state.hp <= 0 && finalAmount > 0) {
             this.state.hp = 0; this.state.isGameOver = true;
             if(UI && UI.showGameOver) UI.showGameOver();
         }
@@ -324,40 +338,61 @@ Object.assign(Game, {
         this.saveGame();
     },
 
+    // [v0.7.3] Scrap Item with Perk (Only at Workbench)
     scrapItem: function(invIndex) {
         if(!this.state.inventory || !this.state.inventory[invIndex]) return;
+        
+        // Safety Check: Nur an Werkbank (view 'crafting')
+        if (this.state.view !== 'crafting') {
+            UI.log("Zerlegen nur an einer Werkbank möglich!", "text-red-500");
+            return;
+        }
+
         const item = this.state.inventory[invIndex];
         const def = this.items[item.id];
         if(!def) return;
 
         let name = (item.props && item.props.name) ? item.props.name : def.name;
-        let value = def.cost || 10;
+        let value = def.cost || 5;
         
         this.state.inventory.splice(invIndex, 1);
 
-        let scrapAmount = Math.max(1, Math.floor(value / 25)); 
+        // FORMEL (GENEROUS): mind. 1 Schrott, plus Perk Bonus
+        let scrapAmount = Math.max(1, Math.floor(value / 10)); 
+        
+        const perkLvl = this.getPerkLevel('scrapper');
+        if(perkLvl > 0) {
+            scrapAmount += perkLvl; // +1 pro Stufe
+        }
+
         this.addToInventory('junk_metal', scrapAmount);
         
         let msg = `Zerlegt: ${name} -> ${scrapAmount}x Schrott`;
 
-        if(value >= 100 && Math.random() < 0.5) {
-            let screws = Math.max(1, Math.floor(value / 100));
+        let screwChance = 0.3 + (perkLvl * 0.15); 
+        // Auch "Junk" Items sollten Schrauben geben können
+        const isComplex = def.type === 'weapon' || def.type === 'junk' || def.type === 'tool';
+
+        if(isComplex && Math.random() < screwChance) {
+            let screws = Math.max(1, Math.floor(value / 50));
+            if (perkLvl >= 2 && Math.random() < 0.4) screws *= 2;
             this.addToInventory('screws', screws);
             msg += `, ${screws}x Schrauben`;
         }
-        if(value >= 200 && Math.random() < 0.3) {
-            this.addToInventory('plastic', 1);
-            msg += `, 1x Plastik`;
+        
+        let plasticChance = 0.2 + (perkLvl * 0.15);
+        if(value >= 100 && Math.random() < plasticChance) {
+            let plastic = 1;
+            if (perkLvl >= 3) plastic += 1;
+            this.addToInventory('plastic', plastic);
+            msg += `, ${plastic}x Plastik`;
         }
 
         UI.log(msg, "text-orange-400 font-bold");
         
         UI.update();
-        
-        if(this.state.view === 'crafting' && typeof UI.renderCrafting === 'function') {
+        if(typeof UI.renderCrafting === 'function') {
             UI.renderCrafting('scrap');
-        } else if(this.state.view === 'inventory') {
-            UI.renderInventory();
         }
         
         this.saveGame();
@@ -390,12 +425,8 @@ Object.assign(Game, {
         else this.state.equip[slot] = null; 
 
         UI.log(`${item.name} abgelegt.`, "text-yellow-400");
-        
-        // [v0.6.0] RECALC
         this.recalcStats();
-        
         if(typeof UI !== 'undefined' && this.state.view === 'char') UI.renderChar(); 
-        
         this.saveGame();
     },
 
@@ -460,11 +491,9 @@ Object.assign(Game, {
             if(itemDef.effect === 'heal' || itemDef.effect === 'heal_rad') { 
                 let healAmt = itemDef.val; 
                 
-                // [v0.6.0] PERK: MEDIC (Leveled)
-                // Level 1 = +20%, Level 5 = +100%
                 const medicLvl = this.getPerkLevel('medic');
                 if(medicLvl > 0) {
-                    const bonus = 1 + (medicLvl * 0.2); // 1.2 to 2.0
+                    const bonus = 1 + (medicLvl * 0.2); 
                     healAmt = Math.floor(healAmt * bonus);
                 }
 
@@ -521,9 +550,7 @@ Object.assign(Game, {
                 const displayName = invItem.props ? invItem.props.name : itemDef.name;
                 UI.log(`Ausgerüstet: ${displayName}`, "text-yellow-400"); 
                 
-                // [v0.6.0] RECALC (Important for armor stats)
                 this.recalcStats();
-                
                 const effectiveMax = this.state.maxHp - (this.state.rads || 0);
                 if(this.state.hp > effectiveMax) this.state.hp = effectiveMax;
             }
