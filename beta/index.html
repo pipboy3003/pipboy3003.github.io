@@ -233,7 +233,7 @@
             if(loginVerDisplay) { loginVerDisplay.textContent = displayVer; }
             
             // LOAD SCRIPTS WITH TIMESTAMP (devVer) TO IGNORE CACHE
-            loadScript('data_core.js?v=' + devVer)
+            loadScript('data/data_core.js?v=' + devVer)
                 .then(() => loadScript('world_gen.js?v=' + devVer))
                 .then(() => loadScript('network.js?v=' + devVer))
                 .then(() => loadScript('minigames.js?v=' + devVer))
