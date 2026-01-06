@@ -1,8 +1,8 @@
 window.Combat = {
     enemy: null,
-    turn: 'player', // 'player' or 'enemy'
-    logData: [], // Umbenannt, da 'log' Funktionsname ist
-    selectedPart: 1, // 0: Head, 1: Body, 2: Legs
+    turn: 'player', 
+    logData: [], 
+    selectedPart: 1, 
     
     bodyParts: [
         { name: "KOPF", hitMod: 0.6, dmgMod: 2.0 }, 
@@ -11,9 +11,8 @@ window.Combat = {
     ],
 
     start: function(enemyEntity) {
-        // Deep copy enemy to avoid modifying original template
         Game.state.enemy = JSON.parse(JSON.stringify(enemyEntity)); 
-        Game.state.enemy.maxHp = Game.state.enemy.hp; // Ensure maxHp is set
+        Game.state.enemy.maxHp = Game.state.enemy.hp; 
         this.enemy = Game.state.enemy;
 
         Game.state.view = 'combat';
@@ -22,13 +21,9 @@ window.Combat = {
         this.turn = 'player';
         this.selectedPart = 1; 
         
-        // Soundeffekt (Dummy Call, falls Audio später erweitert wird)
-        // if(Game.Audio) Game.Audio.playEffect('combat_start');
-
         this.log(`Kampf gestartet gegen: ${this.enemy.name}`, 'text-yellow-400 blink-red');
         UI.switchView('combat').then(() => {
             this.render();
-            // Highlight initial selection
             this.moveSelection(0); 
         });
     },
@@ -50,7 +45,6 @@ window.Combat = {
         this.renderLogs();
     },
 
-    // --- V.A.T.S. INPUT ---
     moveSelection: function(dir) {
         if (typeof this.selectedPart === 'undefined') this.selectedPart = 1;
         this.selectedPart += dir;
@@ -58,7 +52,6 @@ window.Combat = {
         if (this.selectedPart < 0) this.selectedPart = 2;
         if (this.selectedPart > 2) this.selectedPart = 0;
 
-        // Visual Feedback Update
         for(let i=0; i<3; i++) {
             const btn = document.getElementById(`btn-vats-${i}`);
             if(btn) {
@@ -68,15 +61,12 @@ window.Combat = {
                 }
             }
         }
-        
-        // Update Hit Chance Display live
         UI.renderCombat(); 
     },
     
-    // UI Click Helper
     selectPart: function(index) {
         this.selectedPart = index;
-        this.moveSelection(0); // Trigger visual update
+        this.moveSelection(0); 
     },
 
     confirmSelection: function() {
@@ -85,7 +75,6 @@ window.Combat = {
         }
     },
 
-    // --- VISUAL FX ---
     triggerFeedback: function(type, value) {
         const layer = document.getElementById('combat-feedback-layer');
         if(!layer) return;
@@ -125,21 +114,24 @@ window.Combat = {
         setTimeout(() => { el.remove(); }, 1000);
     },
 
-    // --- CORE MECHANICS ---
+    // --- LOGIC UPDATES v0.6.8 ---
     calculateHitChance: function(partIndex) {
         const part = this.bodyParts[partIndex];
         const perception = Game.getStat('PER');
         
-        // Base: 50% + (PER * 5)
         let chance = 50 + (perception * 5);
-        
-        // Zone Modifier
         chance *= part.hitMod;
         
-        // Distance Logic (Simulated)
-        const weapon = Game.state.equip.weapon;
-        if(weapon && (!weapon.type || ['fists','knife','bat','machete','sledgehammer'].includes(weapon.id))) {
-            chance += 20; // Melee is easier to hit
+        // Nahkampfwaffen sind leichter zu treffen
+        const wpn = Game.state.equip.weapon;
+        const wId = wpn ? wpn.id.toLowerCase() : 'fists';
+        
+        // Check auf Keywords für Fernkampf
+        const rangedKeywords = ['pistol', 'rifle', 'gun', 'shotgun', 'smg', 'minigun', 'blaster', 'sniper'];
+        const isRanged = rangedKeywords.some(k => wId.includes(k));
+
+        if (!isRanged) {
+            chance += 20; // Bonus für Nahkampf
         }
 
         return Math.min(95, Math.floor(chance));
@@ -152,68 +144,60 @@ window.Combat = {
         const part = this.bodyParts[partIndex];
         const hitChance = this.calculateHitChance(partIndex);
         
-        // --- AMMO CHECK ---
+        // --- MUNITIONS LOGIK (FIXED) ---
         let wpn = Game.state.equip.weapon || { id: 'fists', name: "Fäuste" };
-        const isMelee = ['fists','knife','bat','machete','sledgehammer'].includes(wpn.id);
+        const wId = wpn.id.toLowerCase();
+
+        // Wir definieren was Fernkampf ist anhand von Keywords im ID-Namen
+        const rangedKeywords = ['pistol', 'rifle', 'gun', 'shotgun', 'smg', 'minigun', 'blaster', 'sniper'];
+        const isRanged = rangedKeywords.some(k => wId.includes(k));
         
-        // Wenn Waffe Munition braucht (nicht Melee und kein "Special" Item)
-        if(!isMelee && wpn.id !== 'alien_blaster') { // Alien Blaster hat evtl eigene Ammo, hier als Beispiel
+        // Nur wenn es eine Fernkampfwaffe ist UND nicht der Alien Blaster (Ausnahme)
+        if(isRanged && wId !== 'alien_blaster') { 
              const hasAmmo = Game.removeFromInventory('ammo', 1);
              if(!hasAmmo) {
                  this.log("KLICK! Munition leer!", "text-red-500 font-bold");
                  
-                 // Auto-Switch to Fists?
+                 // Automatisch auf Fäuste wechseln, damit der Spieler nicht feststeckt
                  Game.unequipItem('weapon');
-                 // Check if switch worked
-                 wpn = Game.state.equip.weapon || { id: 'fists', name: "Fäuste" };
+                 this.log("Wechsle zu Fäusten (Nahkampf)!", "text-yellow-400");
                  
-                 if(['fists'].includes(wpn.id)) {
-                     this.log("Wechsle zu Nahkampf!", "text-yellow-400");
-                     // Continue attack logic with fists
-                 } else {
-                     this.triggerFeedback('miss');
-                     return; // Stop attack
-                 }
+                 // Neu laden der Waffe (jetzt Fäuste) für Schadensberechnung
+                 wpn = { id: 'fists', baseDmg: 2, name: "Fäuste" }; 
+                 // Angriff geht direkt weiter mit Fäusten in dieser Runde
              }
         }
 
         const roll = Math.random() * 100;
         
-        // Player Animation Shake
         const screen = document.getElementById('game-screen');
         if(screen) {
-            screen.classList.add('shake-anim'); // Ensure CSS has this class
+            screen.classList.add('shake-anim'); 
             setTimeout(() => screen.classList.remove('shake-anim'), 200);
         }
 
         if(roll <= hitChance) {
-            // HIT CALCULATION
+            // TREFFER
             let dmg = wpn.baseDmg || 2;
             
-            // Mods
             if(wpn.props && wpn.props.dmgMult) dmg *= wpn.props.dmgMult;
 
-            // Stats Bonus
-            if(isMelee) {
-                // Strength Bonus
+            // PERK BONUS BERECHNUNG
+            if(!isRanged) {
+                // Nahkampf: Stärke Bonus + Schläger Perk
                 dmg += Math.floor(Game.getStat('STR') / 2);
                 
-                // Perk: Slugger
                 const sluggerLvl = Game.getPerkLevel('slugger');
                 if(sluggerLvl > 0) dmg = Math.floor(dmg * (1 + (sluggerLvl * 0.1)));
             } else {
-                // Perk: Gunslinger
+                // Fernkampf: Revolverheld Perk
                 const gunLvl = Game.getPerkLevel('gunslinger');
                 if(gunLvl > 0) dmg = Math.floor(dmg * (1 + (gunLvl * 0.1)));
             }
 
-            // Zone Modifier
             dmg *= part.dmgMod;
 
-            // Critical Hit
             let isCrit = false;
-            // Base Crit Chance from Game Core (Luck based)
-            // Plus Mysterious Stranger Perk check logic
             let critChance = Game.state.critChance || 5; 
             
             if(Math.random() * 100 <= critChance) {
@@ -231,7 +215,6 @@ window.Combat = {
             this.log(`Treffer: ${part.name} für ${dmg} Schaden!`, 'text-green-400 font-bold');
             this.triggerFeedback(isCrit ? 'crit' : 'hit', dmg);
 
-            // Enemy Shake
             const el = document.getElementById('enemy-img'); 
             if(el) {
                 el.classList.add('animate-pulse');
@@ -248,37 +231,32 @@ window.Combat = {
         }
 
         this.turn = 'enemy';
-        this.render(); // Update Logs & UI
+        this.render(); 
         setTimeout(() => this.enemyTurn(), 1000);
     },
 
     enemyTurn: function() {
         if(!this.enemy || this.enemy.hp <= 0) return;
         
-        // Enemy Hit Chance vs Agility
         const agi = Game.getStat('AGI');
-        const enemyHitChance = 85 - (agi * 3); // Max 30% dodge chance at 10 AGI
+        const enemyHitChance = 85 - (agi * 3); 
         
         const roll = Math.random() * 100;
 
         if(roll <= enemyHitChance) {
             let dmg = this.enemy.dmg;
             
-            // Armor Calculation
             let armor = 0;
             const slots = ['body', 'head', 'legs', 'feet', 'arms'];
             slots.forEach(s => {
                 if(Game.state.equip[s]) {
                     if (Game.state.equip[s].def) armor += Game.state.equip[s].def;
-                    // Check Props Bonus (e.g. Legendary Armor)
                     if (Game.state.equip[s].props && Game.state.equip[s].props.bonus && Game.state.equip[s].props.bonus.DEF) {
                         armor += Game.state.equip[s].props.bonus.DEF;
                     }
                 }
             });
             
-            // Damage Reduction: Armor reduces damage flat, minimum 1 dmg
-            // Optional: Percentage reduction logic can be added here
             let dmgTaken = Math.max(1, dmg - Math.floor(armor / 2));
             
             Game.state.hp -= dmgTaken;
@@ -303,29 +281,23 @@ window.Combat = {
     win: function() {
         this.log(`${this.enemy.name} besiegt!`, 'text-yellow-400 font-bold');
         
-        // XP Reward (Perk Logic for XP handled in Game.gainExp)
         const xpBase = Array.isArray(this.enemy.xp) ? (this.enemy.xp[0] + Math.floor(Math.random()*(this.enemy.xp[1]-this.enemy.xp[0]))) : this.enemy.xp;
         Game.gainExp(xpBase);
         
-        // Loot (Perk: Fortune Finder already applied to this.enemy.loot in Game.startCombat)
         if(this.enemy.loot > 0) {
             let caps = Math.floor(Math.random() * this.enemy.loot) + 1;
             Game.state.caps += caps;
             this.log(`Gefunden: ${caps} Kronkorken`, 'text-yellow-200');
         }
         
-        // Drops
         if(this.enemy.drops) {
             this.enemy.drops.forEach(d => {
                 if(Math.random() < d.c) {
                     Game.addToInventory(d.id, 1);
-                    // UI Log happens in addToInventory
                 }
             });
         }
 
-        // Quest Progress
-        // Try to find Mob ID by Name match (Reverse Lookup)
         let mobId = null;
         if(Game.monsters) {
             for(let k in Game.monsters) {
