@@ -1,4 +1,20 @@
+
 # CHANGELOG
+## v0.7.0 (Character Dashboard Overhaul)
+- [UI] **Neues Charakter-Menü (Dashboard):** Komplettes Redesign der Charakter-Ansicht.
+  - **Grid-Layout:** Visuelle "Paper Doll" Ansicht für Ausrüstung (Kopf, Körper, Waffe, etc. als Grid).
+  - **Tabs:** Aufteilung in 3 klare Bereiche: **STATUS**, **S.P.E.C.I.A.L.** und **PERKS**.
+  - **Visuals:** Neue CSS-Styles für Slots, Tabs und Fortschrittsbalken.
+- [UX] **Smart Header:** Klick auf Name/Level im HUD öffnet intelligent das Charakter-Menü:
+  - Hast du **Stat-Punkte**? -> Öffnet S.P.E.C.I.A.L. Tab.
+  - Hast du **Perk-Punkte**? -> Öffnet Perk Tab.
+  - Sonst -> Öffnet Status Tab.
+- [CONTROLS] **Input Update:**
+  - Verbesserte **Touch-Steuerung** (virtueller Joystick Logik integriert).
+  - **Mouse-Lockpicking:** Das Schlossknacken reagiert nun auch auf Mausbewegung.
+- [SYSTEM] **State Memory:** Das Charakter-Menü merkt sich nun den offenen Tab und die Scroll-Position (kein Rausfliegen mehr beim Skillen).
+- [BUGFIX] **Game Core:** Kritische Funktionen (`saveGame`, `gainExp`) wiederhergestellt, die kurzzeitig fehlten.
+- [BUGFIX] **Ghost UI:** Alte HTML-Fragmente aus dem Charakter-Screen entfernt, die manchmal kurz aufblitzten.
 
 ## v0.6.1 (Perks & Quests Update)
 - [SYSTEM] **Perk-System 2.0:** Perks sind nicht mehr nur "an/aus", sondern haben jetzt **5 Stufen**.
