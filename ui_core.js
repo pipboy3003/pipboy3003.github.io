@@ -1,4 +1,5 @@
-const UI = {
+// [FIX] Definieren wir UI direkt global, damit Erweiterungs-Skripte (wie ui_view_inv.js) es sofort finden.
+window.UI = {
     els: {},
     timerInterval: null,
     lastInputTime: Date.now(),
@@ -118,7 +119,7 @@ const UI = {
             newCharOverlay: document.getElementById('new-char-overlay'),
             inputNewCharName: document.getElementById('new-char-name'),
             btnCreateCharConfirm: document.getElementById('btn-create-char'),
-            // [REMOVED] btnCharSelectAction
+            // [REMOVED] btnCharSelectAction -> Wird nicht mehr benötigt
             btnCharDeleteAction: document.getElementById('btn-char-delete-action'),
             btnCharBack: document.getElementById('btn-char-back'),
             
@@ -147,26 +148,20 @@ const UI = {
         if(this.els.headerCharInfo) {
             this.els.headerCharInfo.addEventListener('click', () => {
                 const hasStats = Game.state.statPoints > 0;
-                const hasPerks = Game.state.perkPoints > 0; // Assuming perkPoints key
+                const hasPerks = Game.state.perkPoints > 0; 
                 
                 if(hasStats) {
-                    // Prio 1: Stats
                     this.switchView('char'); 
-                    // ToDo: Force Stat Tab if needed
                 } else if (hasPerks) {
-                    // Prio 2: Perks
                     this.switchView('char');
-                    // ToDo: Force Perk Tab switch here if possible
-                    // setTimeout(() => document.getElementById('tab-perks')?.click(), 100);
                 } else {
-                    // Default
                     this.switchView('char');
                 }
             });
         }
 
         window.Game = Game;
-        window.UI = this;
+        // window.UI ist jetzt bereits definiert
 
         if(this.initInput) this.initInput();
         
@@ -321,8 +316,6 @@ const UI = {
             if(slots[index]) slots[index].classList.add('active-slot');
         }
         
-        // --- BUTTON TOGGLE LOGIC REMOVED ---
-
         const save = this.currentSaves ? this.currentSaves[index] : null;
         if (this.els.btnCharDeleteAction) {
             if (save) {
