@@ -12,17 +12,13 @@ Object.assign(UI, {
         if(this.els.charSlotsList) this.els.charSlotsList.innerHTML = '';
 
         // [FIX] ZURÜCK-BUTTON LOGIK
-        // Wir suchen den Button explizit und überschreiben onclick, um sicherzugehen
         const btnBack = document.getElementById('btn-char-back');
         if (btnBack) {
             btnBack.onclick = () => {
-                // Modus beenden
                 this.charSelectMode = false;
-                // UI umschalten
                 if(this.els.charSelectScreen) this.els.charSelectScreen.style.display = 'none';
                 if(this.els.loginScreen) {
                     this.els.loginScreen.style.display = 'flex'; 
-                    // Optional: Login-Screen wieder "hübsch" machen (z.B. Input leeren oder so)
                 }
             };
         } else {
@@ -32,7 +28,8 @@ Object.assign(UI, {
         // Slots rendern
         for (let i = 0; i < 5; i++) {
             const slot = document.createElement('div');
-            slot.className = "char-slot border-2 border-green-900 bg-black/80 p-4 mb-2 cursor-pointer hover:border-yellow-400 hover:bg-green-900/30 transition-all flex justify-between items-center";
+            // Basis-Style für volle Slots
+            slot.className = "char-slot border-2 border-green-900 bg-black/80 p-4 mb-2 cursor-pointer hover:border-yellow-400 hover:bg-green-900/30 transition-all flex justify-between items-center group relative overflow-hidden";
             slot.dataset.index = i;
             
             const save = saves[i];
@@ -42,32 +39,31 @@ Object.assign(UI, {
                 const lvl = save.lvl || 1;
                 const loc = save.sector ? `[${save.sector.x},${save.sector.y}]` : "[?,?]";
                 
-                // Lebendig oder Tot Check
                 const isDead = (save.hp !== undefined && save.hp <= 0);
                 const statusIcon = isDead ? "💀" : "👤";
                 const statusClass = isDead ? "text-red-500" : "text-yellow-400";
 
                 slot.innerHTML = `
-                    <div class="flex flex-col">
+                    <div class="flex flex-col z-10">
                         <span class="text-xl ${statusClass} font-bold tracking-wider">${statusIcon} ${name}</span>
                         <span class="text-xs text-green-300 font-mono">Level ${lvl} | Sektor ${loc}</span>
                     </div>
-                    <div class="text-xs text-gray-500 font-bold">SLOT ${i+1}</div>
+                    <div class="z-10 flex items-center gap-2">
+                        <div class="text-xs text-gray-500 font-bold mr-2">SLOT ${i+1}</div>
+                        <button class="bg-green-600 text-black font-bold px-3 py-1 text-xs rounded hover:bg-green-400 transition-colors shadow-[0_0_10px_#39ff14]">START ▶</button>
+                    </div>
+                    <div class="absolute inset-0 bg-green-900/0 group-hover:bg-green-900/10 transition-colors z-0"></div>
                 `;
             } else {
-                slot.classList.add('opacity-50');
+                // LEERER SLOT -> DESIGN ALS "CREATE NEW" BUTTON
+                slot.className = "char-slot border-2 border-dashed border-gray-700 bg-black/50 p-4 mb-2 cursor-pointer hover:border-yellow-400 hover:bg-yellow-900/10 transition-all flex justify-center items-center group min-h-[80px]";
                 slot.innerHTML = `
-                    <div class="flex flex-col">
-                        <span class="text-xl text-gray-400 font-bold">[ LEER ]</span>
-                        <span class="text-xs text-gray-600">Neuen Charakter erstellen</span>
+                    <div class="text-gray-500 group-hover:text-yellow-400 font-bold tracking-widest flex items-center gap-2 transition-colors">
+                        <span class="text-3xl">+</span> NEUEN CHARAKTER ERSTELLEN
                     </div>
-                    <div class="text-xs text-gray-700">SLOT ${i+1}</div>
                 `;
             }
             
-            // Klick auf Slot wählt ihn aus (für Start oder Löschen)
-            // Die eigentliche "Start Game" Logik passiert dann über den "Charakter Erstellen/Laden" Button, 
-            // den UI Core steuert (via selectSlot).
             slot.onclick = () => {
                 if(typeof this.selectSlot === 'function') {
                     this.selectSlot(i);
