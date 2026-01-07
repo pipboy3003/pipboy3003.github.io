@@ -130,11 +130,18 @@ Object.assign(UI, {
             Game.state.inventory.forEach((item, idx) => {
                 const def = Game.items[item.id];
                 if(!def) return;
-                if (['weapon','body','head','legs','feet','arms','junk'].includes(def.type)) scrappables.push({idx, item, def});
+                
+                // [FIX] Verhindern, dass Bau-Ressourcen (Schrottmetall) oder Baupläne in der Zerlegen-Liste auftauchen
+                if (item.id === 'junk_metal') return;
+                if (def.type === 'blueprint') return;
+
+                if (['weapon','body','head','legs','feet','arms','junk'].includes(def.type)) {
+                    scrappables.push({idx, item, def});
+                }
             });
 
             if(scrappables.length === 0) {
-                container.innerHTML = '<div class="text-center text-gray-500 mt-10 p-4 border-2 border-dashed border-gray-800">Kein Schrott im Inventar.</div>';
+                container.innerHTML = '<div class="text-center text-gray-500 mt-10 p-4 border-2 border-dashed border-gray-800">Kein zerlegbarer Schrott im Inventar.</div>';
             } else {
                 scrappables.forEach(entry => {
                     const name = entry.item.props && entry.item.props.name ? entry.item.props.name : entry.def.name;
