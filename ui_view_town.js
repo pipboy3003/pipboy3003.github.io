@@ -390,7 +390,7 @@ Object.assign(UI, {
                 </div>
                 <div class="bg-black/60 border-2 border-yellow-600 p-2 flex flex-col items-end shadow-[0_0_15px_rgba(200,150,0,0.3)] min-w-[120px]">
                     <span class="text-[10px] text-yellow-700 font-bold tracking-widest">VERMÖGEN</span>
-                    <span class="text-2xl text-yellow-400 font-bold font-vt323 tracking-wider">${Game.state.caps} 📜</span>
+                    <span class="text-2xl text-yellow-400 font-bold font-vt323 tracking-wider">${Game.state.caps} KK</span>
                 </div>
             </div>
 
@@ -480,5 +480,5 @@ Object.assign(UI, {
         wrapper.appendChild(footer);
 
         view.appendChild(wrapper);
-    },
+    }
 });
