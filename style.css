@@ -80,13 +80,12 @@ canvas {
 @keyframes pulse-lvl-text {
     0% { 
         transform: scale(1); 
-        box-shadow: 0 0 5px #b8860b; 
+        box-shadow: 0 0 2px #b8860b; 
         border-color: #b8860b;
     }
     100% { 
         transform: scale(1.05); /* Größeres Pulsieren (5%) */
-        text-shadow: 0 0 20px #ffd700, 0 0 30px white; 
-        box-shadow: 0 0 30px #ffd700, inset 0 0 20px #ffd700;
+        box-shadow: 0 0 15px #ffd700, inset 0 0 10px #ffd700;
         border-color: #fff;
         background-color: rgba(255, 215, 0, 0.4);
     }
