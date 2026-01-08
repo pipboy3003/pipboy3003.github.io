@@ -173,12 +173,10 @@ Object.assign(UI, {
         const header = document.createElement('div');
         header.className = "flex-shrink-0 flex justify-between items-end p-4 border-b-4 border-yellow-600 bg-[#1a1500] shadow-md z-10";
         
-        // --- NEW: INVENTAR ANZEIGE HINZUGEFÜGT ---
         const usedSlots = Game.getUsedSlots();
         const maxSlots = Game.getMaxSlots();
         const isFull = usedSlots >= maxSlots;
         const invColor = isFull ? "text-red-500 animate-pulse" : "text-yellow-300";
-        // -------------------------------------------
 
         header.innerHTML = `
             <div>
@@ -235,7 +233,6 @@ Object.assign(UI, {
 
         view.appendChild(wrapper);
 
-        // Populate List
         if(mode === 'buy') this.renderShopBuy(content);
         else this.renderShopSell(content);
     },
@@ -248,7 +245,6 @@ Object.assign(UI, {
         const stock = Game.state.shop.stock || {};
         const ammoStock = Game.state.shop.ammoStock || 0;
 
-        // HELPER
         const createSlot = (icon, name, stock, price, onClick, isHighlight=false) => {
             const canBuy = Game.state.caps >= price;
             const borderColor = isHighlight ? 'border-blue-600' : (canBuy ? 'border-yellow-700' : 'border-red-900');
@@ -419,7 +415,7 @@ Object.assign(UI, {
         grid.appendChild(craftCard);
 
         // --- BARACKE ENTFERNT ---
-        // (Wunsch des Nutzers: "Der Baracken Knopf muss weg")
+        // (Hier war früher der restCard Block)
 
         view.appendChild(grid);
 
