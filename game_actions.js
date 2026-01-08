@@ -839,28 +839,6 @@ Object.assign(Game, {
         
         if(typeof UI.renderCamp === 'function') UI.renderCamp();
     },
-
-    toggleRadio: function() { 
-        this.state.radio.on = !this.state.radio.on; 
-        if(Game.Audio) {
-            Game.Audio.toggle(this.state.radio.on, this.state.radio.station);
-        }
-        UI.renderRadio(); 
-    },
-
-    tuningRadio: function(dir) {
-        if(!this.state.radio.on) return;
-        let next = this.state.radio.station + dir;
-        if(next < 0) next = this.radioStations.length - 1;
-        if(next >= this.radioStations.length) next = 0;
-        this.state.radio.station = next;
-        this.state.radio.trackIndex = 0;
-        
-        if(Game.Audio && this.state.radio.on) {
-            Game.Audio.playStation(next);
-        }
-        UI.renderRadio();
-    }
 });
 // Add addItem helper if missing
 Game.addItem = Game.addToInventory;
