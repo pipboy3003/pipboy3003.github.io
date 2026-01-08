@@ -1,8 +1,9 @@
+// [TIMESTAMP] 2026-01-09 00:40:00 - game_core.js - Ammo Stock Logic 30-110
+
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     WORLD_W: 10, WORLD_H: 10, 
     
-    // Daten laden (mit Fallback)
     colors: (typeof window.GameData !== 'undefined') ? window.GameData.colors : {},
     items: (typeof window.GameData !== 'undefined') ? window.GameData.items : {},
     monsters: (typeof window.GameData !== 'undefined') ? window.GameData.monsters : {},
@@ -19,10 +20,7 @@ window.Game = {
     },
 
     state: null, worldData: {}, ctx: null, loopId: null, camera: { x: 0, y: 0 }, cacheCanvas: null, cacheCtx: null,
-    
-    // [PERFORMANCE] Save throttling
-    saveTimer: null,
-    isDirty: false,
+    saveTimer: null, isDirty: false,
 
     initCache: function() { 
         this.cacheCanvas = document.createElement('canvas'); 
@@ -50,8 +48,6 @@ window.Game = {
         }
     },
 
-    // --- GAME LOGIC ---
-
     saveGame: function(force = false) {
         this.isDirty = true;
         if (force) { this.performSave(); return; }
@@ -75,7 +71,6 @@ window.Game = {
         return this.state.perks[perkId] || 0;
     },
 
-    // [v0.6.0] STATS RECALCULATION
     recalcStats: function() {
         if(!this.state) return;
         
@@ -95,16 +90,12 @@ window.Game = {
         if(typeof UI !== 'undefined' && UI.update) UI.update();
     },
 
-    // [v0.6.6] Max Slots with Perk
     getMaxSlots: function() {
         if(!this.state) return 10;
         let slots = 10; 
         slots += Math.max(0, this.getStat('STR') - 5); 
-        
-        // Perk: Strong Back
         const perkLvl = this.getPerkLevel('strong_back');
         slots += perkLvl; 
-
         const backpack = this.state.equip.back; 
         if(backpack && backpack.props && backpack.props.slots) {
             slots += backpack.props.slots;
@@ -153,13 +144,12 @@ window.Game = {
 
     expToNextLevel: function(lvl) { return Math.floor(100 * Math.pow(lvl, 1.5)); },
 
-    // [v0.6.6] XP Gain with Perk
     gainExp: function(amount) {
         const perkLvl = this.getPerkLevel('swift_learner');
         let finalAmount = amount;
         
         if (perkLvl > 0) {
-            const multi = 1 + (perkLvl * 0.05); // +5% per level
+            const multi = 1 + (perkLvl * 0.05); 
             finalAmount = Math.floor(amount * multi);
         }
 
@@ -176,13 +166,10 @@ window.Game = {
             this.state.lvl++;
             this.state.xp -= next;
             this.state.statPoints++;
-            
-            // 3 Level Rule for Perks
             if(this.state.lvl % 3 === 0) {
                 this.state.perkPoints++;
                 UI.log("🌟 NEUER PERK PUNKT VERFÜGBAR! 🌟", "text-yellow-400 font-bold animate-pulse text-lg");
             }
-            
             this.recalcStats(); 
             this.state.hp = this.state.maxHp; 
             UI.log(`LEVEL UP! Du bist jetzt Level ${this.state.lvl}`, "text-yellow-400 font-bold animate-pulse");
@@ -263,7 +250,12 @@ window.Game = {
             stock['stimpack'] = 2 + Math.floor(Math.random() * 4);
             stock['radaway'] = 1 + Math.floor(Math.random() * 3);
             stock['nuka_cola'] = 3 + Math.floor(Math.random() * 5);
-            this.state.shop.ammoStock = 50 + Math.floor(Math.random() * 100); 
+            
+            // [FIX] Ammo: 30 bis 110 in 10er Schritten
+            // Math.random() * 9 ergibt 0..8. 
+            // 0*10=0 + 30 = 30
+            // 8*10=80 + 30 = 110
+            this.state.shop.ammoStock = 30 + (Math.floor(Math.random() * 9) * 10); 
 
             const weapons = Object.keys(this.items).filter(k => this.items[k].type === 'weapon' && !k.includes('legendary') && !k.startsWith('rusty'));
             const armor = Object.keys(this.items).filter(k => this.items[k].type === 'body');
@@ -284,7 +276,7 @@ window.Game = {
 
             this.state.shop.merchantCaps = 500 + Math.floor(Math.random() * 1000);
             this.state.shop.stock = stock;
-            this.state.shop.nextRestock = now + (60 * 60 * 1000); // 1 Stunde Restock Time
+            this.state.shop.nextRestock = now + (60 * 60 * 1000); 
             if(typeof UI !== 'undefined') UI.log("INFO: Der Händler hat neue Ware & Kronkorken.", "text-green-500 italic");
         }
     },
@@ -328,7 +320,6 @@ window.Game = {
 
             if (saveData) {
                 this.state = saveData;
-                // Basic Init Fallbacks
                 if(!this.state.explored) this.state.explored = {};
                 if(!this.state.view) this.state.view = 'map';
                 if(typeof this.state.rads === 'undefined') this.state.rads = 0;
@@ -351,7 +342,6 @@ window.Game = {
                 this.state.saveSlot = slotIndex;
                 this.checkNewQuests();
                 
-                // Ammo Fix
                 if(this.state.ammo > 0 && !this.state.inventory.some(i => i.id === 'ammo')) {
                    let ammoLeft = this.state.ammo;
                    while(ammoLeft > 0) {
