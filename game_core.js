@@ -2,121 +2,13 @@ window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     WORLD_W: 10, WORLD_H: 10, 
     
+    // Daten laden (mit Fallback)
     colors: (typeof window.GameData !== 'undefined') ? window.GameData.colors : {},
     items: (typeof window.GameData !== 'undefined') ? window.GameData.items : {},
     monsters: (typeof window.GameData !== 'undefined') ? window.GameData.monsters : {},
     recipes: (typeof window.GameData !== 'undefined') ? window.GameData.recipes : [],
     perkDefs: (typeof window.GameData !== 'undefined') ? window.GameData.perks : [],
     questDefs: (typeof window.GameData !== 'undefined') ? window.GameData.questDefs : [],
-
-    radioStations: [
-        {
-            name: "GALAXY NEWS",
-            freq: "101.5",
-            synthType: "square", 
-            pitch: 220, 
-            tracks: [
-                "Nachrichten: Supermutanten in Sektor 7 gesichtet...",
-                "Song: 'I Don't Want to Set the World on Fire'",
-                "Three Dog: 'Kämpft den guten Kampf!'",
-                "Werbung: Nuka Cola - Trink das Strahlen!"
-            ]
-        },
-        {
-            name: "ENCLAVE RADIO",
-            freq: "98.2",
-            synthType: "sawtooth", 
-            pitch: 110,
-            tracks: [
-                "Präsident Eden: 'Die Wiederherstellung Amerikas...'",
-                "Marschmusik: 'Stars and Stripes Forever'",
-                "Hymne: 'America the Beautiful'"
-            ]
-        },
-        {
-            name: "KLASSIK FM",
-            freq: "88.0",
-            synthType: "sine", 
-            pitch: 440,
-            tracks: [
-                "Agatha: 'Eine Melodie für das Ödland...'",
-                "Violin Solo No. 4",
-                "Bach: Cello Suite"
-            ]
-        }
-    ],
-
-    Audio: {
-        ctx: null, masterGain: null, noiseNode: null, noiseGain: null, osc: null, oscGain: null, analyser: null, dataArray: null,
-
-        init: function() {
-            if(this.ctx) return;
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            this.ctx = new AudioContext();
-            this.masterGain = this.ctx.createGain();
-            this.masterGain.gain.value = 0.4;
-            this.masterGain.connect(this.ctx.destination);
-            this.analyser = this.ctx.createAnalyser();
-            this.analyser.fftSize = 64; 
-            this.masterGain.connect(this.analyser);
-            const bufferLength = this.analyser.frequencyBinCount;
-            this.dataArray = new Uint8Array(bufferLength);
-        },
-
-        toggle: function(isOn, stationIndex) {
-            this.init();
-            if(this.ctx.state === 'suspended') this.ctx.resume();
-            if(isOn) { this.startStatic(); this.playStation(stationIndex); } else { this.stopAll(); }
-        },
-
-        startStatic: function() {
-            if(this.noiseNode) return;
-            const bufferSize = this.ctx.sampleRate * 2; 
-            const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
-            this.noiseNode = this.ctx.createBufferSource();
-            this.noiseNode.buffer = buffer;
-            this.noiseNode.loop = true;
-            this.noiseGain = this.ctx.createGain();
-            this.noiseGain.gain.value = 0.05; 
-            this.noiseNode.connect(this.noiseGain);
-            this.noiseGain.connect(this.masterGain);
-            this.noiseNode.start();
-        },
-
-        playStation: function(index) {
-            if(this.osc) { this.osc.stop(); this.osc = null; }
-            const station = Game.radioStations[index];
-            if(!station) return;
-            this.osc = this.ctx.createOscillator();
-            this.osc.type = station.synthType || 'sine';
-            this.osc.frequency.setValueAtTime(station.pitch || 440, this.ctx.currentTime);
-            const lfo = this.ctx.createOscillator();
-            lfo.frequency.value = 2; 
-            const lfoGain = this.ctx.createGain();
-            lfoGain.gain.value = 10;
-            lfo.connect(lfoGain);
-            lfoGain.connect(this.osc.frequency);
-            lfo.start();
-            this.oscGain = this.ctx.createGain();
-            this.oscGain.gain.value = 0.1;
-            this.osc.connect(this.oscGain);
-            this.oscGain.connect(this.masterGain);
-            this.osc.start();
-        },
-
-        stopAll: function() {
-            if(this.noiseNode) { this.noiseNode.stop(); this.noiseNode = null; }
-            if(this.osc) { this.osc.stop(); this.osc = null; }
-        },
-
-        getVisualData: function() {
-            if(!this.analyser) return [0,0,0,0,0];
-            this.analyser.getByteFrequencyData(this.dataArray);
-            return this.dataArray;
-        }
-    },
 
     lootPrefixes: {
         'rusty': { name: 'Rostige', dmgMult: 0.8, valMult: 0.5, color: 'text-gray-500' },
@@ -178,10 +70,8 @@ window.Game = {
 
     hardReset: function() { if(typeof Network !== 'undefined') Network.deleteSave(); this.state = null; location.reload(); },
 
-    // [v0.6.0] PERK HELPER 
     getPerkLevel: function(perkId) {
         if (!this.state || !this.state.perks) return 0;
-        if (Array.isArray(this.state.perks)) return this.state.perks.includes(perkId) ? 1 : 0;
         return this.state.perks[perkId] || 0;
     },
 
@@ -213,7 +103,7 @@ window.Game = {
         
         // Perk: Strong Back
         const perkLvl = this.getPerkLevel('strong_back');
-        slots += perkLvl;
+        slots += perkLvl; 
 
         const backpack = this.state.equip.back; 
         if(backpack && backpack.props && backpack.props.slots) {
@@ -247,13 +137,6 @@ window.Game = {
         if(typeof UI !== 'undefined' && UI.update) UI.update();
     },
 
-    calculateMaxHP: function(end) { 
-        let baseHp = 50 + (end * 10) + (this.state.lvl * 5);
-        const toughnessLvl = this.getPerkLevel('toughness');
-        baseHp += (toughnessLvl * 10);
-        return baseHp;
-    }, 
-    
     getStat: function(key) {
         if(!this.state) return 5;
         let val = this.state.stats[key] || 5;
@@ -272,7 +155,6 @@ window.Game = {
 
     // [v0.6.6] XP Gain with Perk
     gainExp: function(amount) {
-        // Perk: Swift Learner
         const perkLvl = this.getPerkLevel('swift_learner');
         let finalAmount = amount;
         
@@ -357,9 +239,8 @@ window.Game = {
                 if(def.reward.caps) { this.state.caps += def.reward.caps; }
                 if(def.reward.items) {
                     def.reward.items.forEach(item => {
-                        // Safe call
-                        if(typeof Game.addToInventory === 'function') {
-                            Game.addToInventory(item.id, item.c || 1);
+                        if(typeof Game.addItem === 'function') {
+                            Game.addItem(item.id, item.c || 1);
                         }
                     });
                 }
@@ -382,7 +263,7 @@ window.Game = {
             stock['stimpack'] = 2 + Math.floor(Math.random() * 4);
             stock['radaway'] = 1 + Math.floor(Math.random() * 3);
             stock['nuka_cola'] = 3 + Math.floor(Math.random() * 5);
-            this.state.shop.ammoStock = 5 + Math.floor(Math.random() * 10); 
+            this.state.shop.ammoStock = 50 + Math.floor(Math.random() * 100); 
 
             const weapons = Object.keys(this.items).filter(k => this.items[k].type === 'weapon' && !k.includes('legendary') && !k.startsWith('rusty'));
             const armor = Object.keys(this.items).filter(k => this.items[k].type === 'body');
@@ -399,13 +280,12 @@ window.Game = {
             if(Math.random() < 0.3) stock['backpack_small'] = 1;
             if(Math.random() < 0.1) stock['backpack_medium'] = 1;
 
-            stock['lockpick'] = 5;
             stock['camp_kit'] = 1;
 
             this.state.shop.merchantCaps = 500 + Math.floor(Math.random() * 1000);
             this.state.shop.stock = stock;
-            this.state.shop.nextRestock = now + (15 * 60 * 1000); 
-            UI.log("INFO: Der Händler hat neue Ware & Kronkorken.", "text-green-500 italic");
+            this.state.shop.nextRestock = now + (60 * 60 * 1000); // 1 Stunde Restock Time
+            if(typeof UI !== 'undefined') UI.log("INFO: Der Händler hat neue Ware & Kronkorken.", "text-green-500 italic");
         }
     },
 
@@ -414,7 +294,7 @@ window.Game = {
         if(!itemDef || itemDef.type !== 'weapon') return { id: baseId, count: 1 };
         const roll = Math.random();
         let prefixKey = null;
-        if(roll < 0.3) prefixKey = 'rusty';       
+        if(roll < 0.3) prefixKey = 'rusty';        
         else if(roll < 0.45) prefixKey = 'precise'; 
         else if(roll < 0.55) prefixKey = 'hardened';
         else if(roll < 0.58) prefixKey = 'radiated';
@@ -439,7 +319,7 @@ window.Game = {
             this.items.backpack_small = { name: "Leder-Ranzen", type: "back", cost: 150, slot: "back", props: { slots: 5 }, icon: "🎒" };
             this.items.backpack_medium = { name: "Reiserucksack", type: "back", cost: 400, slot: "back", props: { slots: 10 }, icon: "🎒" };
             this.items.backpack_large = { name: "Militär-Rucksack", type: "back", cost: 900, slot: "back", props: { slots: 20 }, icon: "🎒" };
-            this.items.ammo = { name: "Patronen (5.56mm)", type: "ammo", cost: 2, icon: "bullet" };
+            this.items.ammo = { name: "Munition", type: "ammo", cost: 2, icon: "bullet" };
         }
 
         try {
@@ -448,10 +328,9 @@ window.Game = {
 
             if (saveData) {
                 this.state = saveData;
-                // Basic Init
+                // Basic Init Fallbacks
                 if(!this.state.explored) this.state.explored = {};
                 if(!this.state.view) this.state.view = 'map';
-                if(!this.state.radio) this.state.radio = { on: false, station: 0, trackIndex: 0 };
                 if(typeof this.state.rads === 'undefined') this.state.rads = 0;
                 if(!this.state.activeQuests) this.state.activeQuests = [];
                 if(!this.state.completedQuests) this.state.completedQuests = [];
@@ -472,6 +351,7 @@ window.Game = {
                 this.state.saveSlot = slotIndex;
                 this.checkNewQuests();
                 
+                // Ammo Fix
                 if(this.state.ammo > 0 && !this.state.inventory.some(i => i.id === 'ammo')) {
                    let ammoLeft = this.state.ammo;
                    while(ammoLeft > 0) {
@@ -483,7 +363,7 @@ window.Game = {
                 this.syncAmmo();
                 this.recalcStats();
 
-                UI.log(">> Spielstand geladen.", "text-cyan-400");
+                if(typeof UI !== 'undefined') UI.log(">> Spielstand geladen.", "text-cyan-400");
             } else {
                 isNewGame = true;
                 this.state = {
@@ -502,7 +382,6 @@ window.Game = {
                     hp: 100, maxHp: 100, xp: 0, lvl: 1, caps: 50, ammo: 0, statPoints: 0, 
                     perkPoints: 0, perks: {}, 
                     camp: null, 
-                    radio: { on: false, station: 0, trackIndex: 0 },
                     rads: 0,
                     kills: 0, 
                     view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, 
@@ -525,7 +404,7 @@ window.Game = {
                 this.state.hp = this.state.maxHp;
                 
                 this.checkNewQuests(); 
-                UI.log(">> Neuer Charakter erstellt.", "text-green-400");
+                if(typeof UI !== 'undefined') UI.log(">> Neuer Charakter erstellt.", "text-green-400");
                 this.saveGame(true); 
             }
 
@@ -537,10 +416,12 @@ window.Game = {
                 if(this.reveal) this.reveal(this.state.player.x, this.state.player.y); 
             }
 
-            UI.switchView('map').then(() => { 
-                if(UI.els.gameOver) UI.els.gameOver.classList.add('hidden'); 
-                if(isNewGame) { setTimeout(() => UI.showPermadeathWarning(), 500); }
-            });
+            if(typeof UI !== 'undefined') {
+                UI.switchView('map').then(() => { 
+                    if(UI.els.gameOver) UI.els.gameOver.classList.add('hidden'); 
+                    if(isNewGame) { setTimeout(() => UI.showPermadeathWarning(), 500); }
+                });
+            }
         } catch(e) {
             console.error(e);
         }
