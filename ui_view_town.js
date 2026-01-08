@@ -288,7 +288,7 @@ Object.assign(UI, {
                         <span class="text-xs ${colorSub} font-mono uppercase">Vorrat: ${qty} | Preis: ${price} KK</span>
                     </div>
                 </div>
-                <div class="h-full flex flex-col justify-center items-end border-l-2 ${colorBorder} bg-black/30 min-w-[100px]">
+                <div class="h-full flex flex-col justify-center items-end border-l-2 ${colorBorder} bg-black/30 min-w-[100px] pointer-events-none">
                     <button class="w-full h-full text-sm font-bold uppercase tracking-wider bg-transparent border-none ${colorBtn}" style="pointer-events: none;">
                         KAUFEN
                     </button>
