@@ -1,5 +1,4 @@
-// [TIMESTAMP] 2026-01-09 00:05:00 - ui_view_town.js - Unified Shop Design & Ammo Fix
-
+// [TIMESTAMP] 2026-01-09 00:25:00 - ui_view_town.js - HARDCORE ONCLICK FIX
 Object.assign(UI, {
     
     shopQty: 1,
@@ -238,24 +237,16 @@ Object.assign(UI, {
         const ammoStock = (Game.state.shop.ammoStock !== undefined) ? Game.state.shop.ammoStock : 0;
         const myCaps = Game.state.caps;
 
-        // --- HELPER: UNIFIED ROW CREATOR ---
+        // --- GENERISCHE ZEILEN-ERSTELLUNG (HARDCODED EVENTS) ---
         const createRow = (icon, name, qty, price, key, isAmmo = false) => {
             const canBuy = myCaps >= price;
             
-            // Farben definieren
-            let theme = 'yellow'; // Standard
-            if (isAmmo) theme = 'blue';
-            if (!canBuy) theme = 'red';
-
-            const borderColor = `border-${theme}-600`; // oder 700/900 je nach Theme
-            if (!canBuy) { /* Red Logic already handled by theme=red vars below */ }
-            
-            // Tailwind Mapping für dynamische Farben (etwas messy, aber funktional)
+            // Design Config
             let colorText = isAmmo ? 'text-blue-300' : 'text-yellow-200';
             let colorBorder = isAmmo ? 'border-blue-500' : 'border-yellow-700';
             let colorBg = isAmmo ? 'bg-blue-900/20' : 'bg-yellow-900/10';
             let colorSub = isAmmo ? 'text-blue-600' : 'text-yellow-700';
-            let colorBtn = isAmmo ? 'text-blue-400' : 'text-yellow-500';
+            let colorBtn = isAmmo ? 'text-blue-400' : 'text-yellow-600';
 
             if (!canBuy) {
                 colorText = 'text-gray-500';
@@ -266,16 +257,13 @@ Object.assign(UI, {
             }
 
             const row = document.createElement('div');
-            // Full Row Clickable Styling
             row.className = `shop-item-row flex justify-between items-center mb-2 border-2 ${colorBorder} ${colorBg} h-16 relative z-50 transition-all select-none`;
             
+            // WICHTIG: Das onclick Attribut direkt setzen!
             if (canBuy) {
                 row.style.cursor = 'pointer';
-                row.onclick = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    Game.buyItem(key, UI.shopQty);
-                };
+                row.setAttribute('onclick', `Game.buyItem('${key}', UI.shopQty)`);
+                row.setAttribute('role', 'button');
             } else {
                 row.style.cursor = 'not-allowed';
             }
@@ -289,7 +277,7 @@ Object.assign(UI, {
                     </div>
                 </div>
                 <div class="h-full flex flex-col justify-center items-end border-l-2 ${colorBorder} bg-black/30 min-w-[100px] pointer-events-none">
-                    <button class="w-full h-full text-sm font-bold uppercase tracking-wider bg-transparent border-none ${colorBtn}" style="pointer-events: none;">
+                    <button class="w-full h-full text-sm font-bold uppercase tracking-wider bg-transparent border-none ${colorBtn}">
                         KAUFEN
                     </button>
                 </div>
@@ -297,7 +285,7 @@ Object.assign(UI, {
             return row;
         };
 
-        // 1. MUNITION (Wenn vorhanden)
+        // 1. MUNITION (Verschwindet wenn leer)
         if(ammoStock > 0) {
             container.appendChild(createRow("🧨", "10x MUNITION", ammoStock, 10, 'ammo', true));
             container.innerHTML += `<div class="h-px bg-yellow-900/50 my-4 mx-2"></div>`;
@@ -368,14 +356,11 @@ Object.assign(UI, {
 
             const div = document.createElement('div');
             // Full Row Clickable for Sell too
-            div.className = `shop-item-row flex justify-between items-center mb-2 border-2 ${canSell ? 'border-green-700 bg-green-900/10 hover:bg-green-900/20 cursor-pointer' : 'border-red-900 opacity-50'} h-14 transition-all select-none relative z-50`;
+            div.className = `shop-item-row flex justify-between items-center mb-2 border-2 ${canSell ? 'border-green-700 bg-green-900/10 hover:bg-green-900/20' : 'border-red-900 opacity-50'} h-14 transition-all select-none relative z-50`;
             
             if(canSell) {
-                div.onclick = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    Game.sellItem(idx, UI.shopQty);
-                };
+                div.style.cursor = 'pointer';
+                div.setAttribute('onclick', `Game.sellItem(${idx}, UI.shopQty)`);
             } else {
                 div.style.cursor = 'not-allowed';
             }
@@ -384,9 +369,9 @@ Object.assign(UI, {
                 <div class="flex items-center gap-3 p-2 flex-grow overflow-hidden pointer-events-none">
                     <div class="text-green-500 font-bold text-lg font-vt323 truncate">${name} <span class="text-green-800 text-sm font-sans">x${item.count}</span></div>
                 </div>
-                <div class="h-full flex flex-col justify-center items-end border-l-2 border-green-800 bg-black/30 min-w-[100px]">
+                <div class="h-full flex flex-col justify-center items-end border-l-2 border-green-800 bg-black/30 min-w-[100px] pointer-events-none">
                     <div class="font-bold text-green-400 text-lg w-full text-center border-b border-green-900 font-vt323">${sellPrice}</div>
-                    <button class="flex-grow w-full h-full text-[10px] font-bold uppercase tracking-wider hover:bg-green-600 hover:text-black transition-colors text-green-700" style="pointer-events: none;">VERKAUFEN</button>
+                    <button class="flex-grow w-full h-full text-[10px] font-bold uppercase tracking-wider hover:bg-green-600 hover:text-black transition-colors text-green-700">VERKAUFEN</button>
                 </div>
             `;
             container.appendChild(div);
@@ -487,17 +472,17 @@ Object.assign(UI, {
         };
 
         grid.appendChild(createCard({
-            type: 'trader', icon: "🛒", label: "Handelsposten", sub: "Waffen • Munition • An- & Verkauf",
+            type: 'trader', icon: "🛒", label: "HANDELSPOSTEN", sub: "Waffen • Munition • An- & Verkauf",
             onClick: () => { if(UI.renderShop) UI.renderShop(); }
         }));
 
         grid.appendChild(createCard({
-            type: 'clinic', icon: "⚕️", label: "Klinik", sub: "Dr. Zimmermann",
+            type: 'clinic', icon: "⚕️", label: "KLINIK", sub: "Dr. Zimmermann",
             onClick: () => { if(UI.renderClinic) UI.renderClinic(); }
         }));
 
         grid.appendChild(createCard({
-            type: 'craft', icon: "🛠️", label: "Werkbank", sub: "Zerlegen & Bauen",
+            type: 'craft', icon: "🛠️", label: "WERKBANK", sub: "Zerlegen & Bauen",
             onClick: () => { if(UI.renderCrafting) UI.renderCrafting(); }
         }));
 
@@ -507,7 +492,7 @@ Object.assign(UI, {
         footer.className = "flex-shrink-0 p-3 border-t-4 border-green-900 bg-[#001100]";
         footer.innerHTML = `
             <button class="action-button w-full border-2 border-green-600 text-green-500 py-3 font-bold text-xl hover:bg-green-900/50 hover:text-green-200 transition-all uppercase tracking-[0.15em]" onclick="Game.leaveCity()">
-                <span class="mr-2">🚪</span> Zurück ins Ödland
+                <span class="mr-2">🚪</span> ZURÜCK INS ÖDLAND (ESC)
             </button>
         `;
         wrapper.appendChild(footer);
