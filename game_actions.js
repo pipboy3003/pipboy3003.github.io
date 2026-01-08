@@ -111,136 +111,157 @@ Object.assign(Game, {
         } else { UI.log("Zu wenig Kronkorken.", "text-red-500"); }
     },
     
-    buyAmmo: function(mode = 1) { 
-        this.buyItem('ammo', mode);
+    buyAmmo: function(qty) { 
+        this.buyItem('ammo', qty);
     },
     
-    buyItem: function(key, mode = 1) { 
-        const item = this.items[key]; 
-        if(!item) return;
-
-        let stock = 0;
-        if(key === 'ammo') {
-             stock = this.state.shop.ammoStock || 0;
-        } else {
-             stock = (this.state.shop.stock && this.state.shop.stock[key]) ? this.state.shop.stock[key] : 0;
-        }
-
-        if(stock <= 0) {
-            UI.log("Dieser Artikel ist ausverkauft.", "text-red-500");
+    // Generische Kauf-Funktion
+    buyItem: function(id, qtyMode = 1) {
+        const item = Game.items[id];
+        if (!item) {
+            if(typeof UI !== 'undefined') UI.error("Item-Daten fehlen für: " + id);
             return;
         }
 
-        let amount = 1;
-        let costPerUnit = (key === 'ammo') ? 10 : item.cost; 
-
-        if (mode === 'max') {
-            const maxAfford = Math.floor(this.state.caps / costPerUnit);
-            amount = Math.min(stock, maxAfford);
-        } else {
-            amount = mode;
-        }
-
-        if(amount <= 0) {
-            if(this.state.caps < costPerUnit) UI.log("Zu wenig Kronkorken.", "text-red-500");
-            return;
-        }
-
-        if(amount > stock) amount = stock;
-        const totalCost = amount * costPerUnit;
-
-        if (key === 'camp_kit') {
-            const hasCamp = this.state.inventory && this.state.inventory.some(i => i.id === 'camp_kit');
-            if (hasCamp) { UI.log("Du besitzt bereits einen Zeltbausatz!", "text-orange-500"); return; }
-            if (amount > 1) amount = 1; 
-        }
-
-        if(this.state.caps >= totalCost) { 
-            let successCount = 0;
-            let countToAdd = (key === 'ammo') ? 10 : 1;
-            
-            const isStackable = (this.getStackLimit(key) > 1);
-            
-            if(isStackable) {
-                if(this.addToInventory(key, countToAdd * amount)) {
-                    successCount = amount;
-                }
-            } else {
-                for(let i=0; i<amount; i++) {
-                    if(this.addToInventory(key, 1)) successCount++;
-                    else break; 
-                }
-            }
-
-            if(successCount > 0) {
-                const finalCost = successCount * costPerUnit;
-                this.state.caps -= finalCost;
-                
-                if(key === 'ammo') {
-                    this.state.shop.ammoStock -= successCount;
-                } else {
-                    if(this.state.shop.stock[key]) this.state.shop.stock[key] -= successCount;
-                }
-
-                UI.log(`Gekauft: ${successCount}x ${item.name} (-${finalCost} KK)`, "text-green-400");
-                
-                const con = document.getElementById('shop-list');
-                if(con) {
-                    if(typeof UI.renderShopBuy === 'function') UI.renderShopBuy();
-                    else UI.renderShop(con);
-                }
-                UI.update();
-            }
-        } else { UI.log("Zu wenig Kronkorken.", "text-red-500"); } 
-    },
-
-    sellItem: function(invIndex, mode = 1) {
-        if(!this.state.inventory[invIndex]) return;
-        const item = this.state.inventory[invIndex];
-        const def = this.items[item.id];
-        if(!def) return;
-
-        let valMult = 1;
-        if(item.props && item.props.valMult) valMult = item.props.valMult;
-        let sellPrice = Math.floor((def.cost * 0.25) * valMult);
-        if(sellPrice < 1) sellPrice = 1;
-
-        let amount = 1;
-        if (mode === 'max') {
-            const maxAfford = Math.floor(this.state.shop.merchantCaps / sellPrice);
-            amount = Math.min(item.count, maxAfford);
-        } else {
-            amount = mode;
-        }
-
-        if(amount > item.count) amount = item.count;
-        
-        if(amount <= 0 && this.state.shop.merchantCaps < sellPrice) {
-            UI.log("Händler: 'Ich habe nicht genug Kronkorken!'", "text-red-500");
-            return;
-        }
-        if(amount <= 0) return; 
-
-        const totalEarned = amount * sellPrice;
-
-        if(this.state.shop.merchantCaps < totalEarned) {
-             UI.log("Händler: 'Ich habe nicht genug Kronkorken für diese Menge!'", "text-red-500");
+        // Lagerbestand prüfen
+        const stock = (Game.state.shop.stock && Game.state.shop.stock[id] !== undefined) ? Game.state.shop.stock[id] : 0;
+        // Ammo ist oft unendlich oder separat geregelt, sonst '&&' entfernen
+        if (stock <= 0 && id !== 'ammo') { 
+             if(typeof UI !== 'undefined') UI.error("Händler hat das nicht mehr.");
              return;
         }
 
-        this.state.caps += totalEarned;
-        this.state.shop.merchantCaps -= totalEarned;
-        
-        item.count -= amount;
-        if(item.count <= 0) {
-            this.state.inventory.splice(invIndex, 1);
+        // Menge berechnen
+        let amount = 1;
+        if (typeof qtyMode === 'number') {
+            amount = qtyMode;
+        } else if (qtyMode === 'max') {
+            // Berechne wie viel ich mir leisten kann
+            const maxAffordable = Math.floor(Game.state.caps / item.cost);
+            amount = maxAffordable;
+            
+            // Aber nicht mehr als der Händler hat (außer Ammo ist unendlich)
+            if (amount > stock && id !== 'ammo') amount = stock;
+            
+            // Begrenzen auf sinnvolle Menge (z.B. Stacksize oder Gewicht)
+            // Hier vereinfacht: Wenn 0 rauskommt, versuche 1 (wird dann bei Cost check failen)
+            if (amount < 1) amount = 1;
         }
-        if(item.id === 'ammo') this.syncAmmo();
 
-        UI.log(`Verkauft: ${amount}x ${def.name} (+${totalEarned} KK)`, "text-yellow-400");
+        // Check: Hat Händler genug?
+        if (id !== 'ammo' && amount > stock) {
+            if(typeof UI !== 'undefined') UI.error("Händler hat nur noch " + stock + " Stück.");
+            return;
+        }
+
+        // Check: Kosten
+        const totalCost = item.cost * amount;
+        if (Game.state.caps < totalCost) {
+            if(typeof UI !== 'undefined') UI.error("Nicht genug Kronkorken! (" + totalCost + " benötigt)");
+            return;
+        }
+
+        // Zelt-Logik: Nur wenn man keins hat (weder Inv noch gebaut)
+        if (id === 'camp_kit') {
+            const hasKit = Game.state.inventory.some(i => i.id === 'camp_kit');
+            const hasBuilt = !!Game.state.camp;
+            if (hasKit || hasBuilt) {
+                if(typeof UI !== 'undefined') UI.error("Du kannst nur einen Zeltbausatz besitzen/bauen.");
+                return;
+            }
+        }
+
+        // Check: Gewicht / Platz (Optional, falls du Gewicht nutzt)
+        if (Game.getUsedSlots() + amount > Game.getMaxSlots()) { // Vereinfacht: 1 Slot pro Item
+             // Falls Items stacken, müsste hier komplexere Logik hin. 
+             // Gehen wir davon aus, sie stacken noch nicht im Slot-Count:
+             // if(typeof UI !== 'undefined') UI.error("Inventar voll!");
+             // return;
+        }
+
+        // --- TRANSAKTION ---
+        Game.state.caps -= totalCost;
+        Game.state.shop.merchantCaps += totalCost; // Händler bekommt das Geld
         
-        if(typeof UI !== 'undefined' && UI.renderShopSell) UI.renderShopSell();
-        this.saveGame();
+        // Händler Lager reduzieren (Ammo ist im 'stock' Objekt oft nicht drin, wenn es extra ist)
+        if (Game.state.shop.stock[id] !== undefined) {
+            Game.state.shop.stock[id] -= amount;
+        } else if (id === 'ammo') {
+            // Falls Ammo separat im State liegt
+            if(Game.state.shop.ammoStock) Game.state.shop.ammoStock -= amount;
+        }
+
+        // Item zum Inventar hinzufügen
+        Game.addItem(id, amount); // Achtung: addItem muss in game_actions.js definiert sein! 
+        // Falls nicht, hier die Logik einfügen oder sicherstellen, dass addToInventory verwendet wird.
+        // Game.addToInventory(id, amount); 
+
+        if(typeof UI !== 'undefined') {
+            UI.log(`Gekauft: ${amount}x ${item.name} für ${totalCost} KK.`);
+            // UI Update erzwingen
+            if (Game.state.view === 'shop') UI.renderShop('buy'); 
+        }
+        
+        Game.saveGame();
+    },
+
+    // Generische Verkauf-Funktion
+    sellItem: function(invIndex, qtyMode = 1) {
+        const entry = Game.state.inventory[invIndex];
+        if (!entry) return;
+
+        const item = Game.items[entry.id];
+        if (!item) return;
+
+        // Preis berechnen (25% vom Wert)
+        let valMult = entry.props && entry.props.valMult ? entry.props.valMult : 1;
+        let unitPrice = Math.floor((item.cost * 0.25) * valMult);
+        if (unitPrice < 1) unitPrice = 1;
+
+        // Menge berechnen
+        let amount = 1;
+        if (typeof qtyMode === 'number') {
+            amount = qtyMode;
+        } else if (qtyMode === 'max') {
+            amount = entry.count;
+            // Optional: Begrenzen durch Händler-Geld
+            const maxMerchantCanBuy = Math.floor(Game.state.shop.merchantCaps / unitPrice);
+            if (amount > maxMerchantCanBuy) amount = maxMerchantCanBuy;
+        }
+
+        if (amount > entry.count) amount = entry.count;
+        if (amount <= 0) {
+             if(typeof UI !== 'undefined') UI.error("Der Händler ist pleite!");
+             return;
+        }
+
+        const totalValue = unitPrice * amount;
+
+        // Check: Hat Händler genug Geld?
+        if (Game.state.shop.merchantCaps < totalValue) {
+            if(typeof UI !== 'undefined') UI.error("Der Händler hat nicht genug Kronkorken.");
+            return;
+        }
+
+        // --- TRANSAKTION ---
+        Game.state.caps += totalValue;
+        Game.state.shop.merchantCaps -= totalValue;
+
+        // Item entfernen
+        // Achtung: removeItem/removeFromInventory muss Index oder ID handhaben können. 
+        // Hier sicherstellen, dass die richtige Funktion aufgerufen wird.
+        Game.removeFromInventory(entry.id, amount); 
+        
+        // Füge Item dem Händler hinzu (Restocking Logik)
+        if (!Game.state.shop.stock[entry.id]) Game.state.shop.stock[entry.id] = 0;
+        Game.state.shop.stock[entry.id] += amount;
+
+        if(typeof UI !== 'undefined') {
+            UI.log(`Verkauft: ${amount}x ${item.name} für ${totalValue} KK.`);
+            if (Game.state.view === 'shop') UI.renderShop('sell');
+        }
+        
+        Game.saveGame();
     },
 
     addToInventory: function(idOrItem, count=1) { 
@@ -841,3 +862,5 @@ Object.assign(Game, {
         UI.renderRadio();
     }
 });
+// Add addItem helper if missing
+Game.addItem = Game.addToInventory;
