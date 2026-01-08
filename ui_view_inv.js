@@ -169,6 +169,20 @@ Object.assign(UI, {
             }
         });
 
+        // --- NEW: TAB GLOW LOGIC ---
+        const btnStats = document.getElementById('tab-btn-stats');
+        if(btnStats) {
+            if(Game.state.statPoints > 0) btnStats.classList.add('alert-glow-yellow');
+            else btnStats.classList.remove('alert-glow-yellow');
+        }
+
+        const btnPerks = document.getElementById('tab-btn-perks');
+        if(btnPerks) {
+            if(Game.state.perkPoints > 0) btnPerks.classList.add('alert-glow-yellow');
+            else btnPerks.classList.remove('alert-glow-yellow');
+        }
+        // ---------------------------
+
         if(tab === 'status') this.renderCharStatus();
         else if(tab === 'stats') this.renderCharStats();
         else if(tab === 'perks') this.renderCharPerks();
@@ -188,6 +202,7 @@ Object.assign(UI, {
 
         document.getElementById('sheet-crit').textContent = `${Game.state.critChance}%`;
 
+        // Der Alert-Kasten kann drin bleiben, stört nicht
         const alertBox = document.getElementById('status-points-alert');
         if(Game.state.statPoints > 0 || Game.state.perkPoints > 0) {
             alertBox.classList.remove('hidden');
@@ -329,96 +344,5 @@ Object.assign(UI, {
                 container.parentElement.scrollTop = scrollPos;
             });
         }
-    },
-
-    // --- [v0.8.3] RUSTY SPRINGS DASHBOARD ---
-    renderCity: function() {
-        const view = document.getElementById('view-container');
-        view.innerHTML = ''; 
-
-        // 1. HEADER
-        const header = document.createElement('div');
-        header.className = "city-header flex flex-col items-center justify-center relative";
-        
-        const flairs = [
-            "Die Luft riecht nach Rost und Ozon.",
-            "Ein Generator brummt in der Ferne.",
-            "Händler schreien ihre Preise aus.",
-            "Der sicherste Ort im Sektor."
-        ];
-        const flair = flairs[Math.floor(Math.random() * flairs.length)];
-
-        header.innerHTML = `
-            <div class="text-4xl font-bold text-green-400 tracking-widest text-shadow-glow">RUSTY SPRINGS</div>
-            <div class="text-xs text-green-700 font-mono mt-1 border-t border-green-900 pt-1 w-2/3 text-center">POP: 142 | RAD: NIEDRIG | SEC: HOCH</div>
-            <div class="text-gray-500 text-xs italic mt-2">"${flair}"</div>
-            <div class="absolute right-4 top-4 text-yellow-400 font-bold border border-yellow-600 px-2 bg-black/50">
-                💰 ${Game.state.caps} KK
-            </div>
-        `;
-        view.appendChild(header);
-
-        // 2. GRID
-        const grid = document.createElement('div');
-        grid.className = "city-grid flex-grow overflow-y-auto custom-scrollbar";
-
-        // A. HÄNDLER
-        const traderCard = document.createElement('div');
-        traderCard.className = "city-card trader";
-        traderCard.onclick = () => UI.renderShop(view); 
-        traderCard.innerHTML = `
-            <div class="icon">🛒</div>
-            <div class="label">HANDELSPOSTEN</div>
-            <div class="sub text-yellow-200">An- & Verkauf • Munition • Ausrüstung</div>
-        `;
-        grid.appendChild(traderCard);
-
-        // B. ARZT
-        const docCard = document.createElement('div');
-        docCard.className = "city-card";
-        docCard.onclick = () => UI.renderClinic(view);
-        docCard.innerHTML = `
-            <div class="icon text-red-400">⚕️</div>
-            <div class="label text-red-400">KLINIK</div>
-            <div class="sub">Dr. Zimmermann</div>
-        `;
-        grid.appendChild(docCard);
-
-        // C. WERKBANK
-        const craftCard = document.createElement('div');
-        craftCard.className = "city-card";
-        craftCard.onclick = () => UI.renderCrafting();
-        craftCard.innerHTML = `
-            <div class="icon text-blue-400">🛠️</div>
-            <div class="label text-blue-400">WERKBANK</div>
-            <div class="sub">Zerlegen & Bauen</div>
-        `;
-        grid.appendChild(craftCard);
-
-        // D. RASTEN
-        const restCard = document.createElement('div');
-        restCard.className = "city-card";
-        restCard.onclick = () => { 
-            Game.rest(); 
-            UI.log("Du ruhst dich in der Baracke aus...", "text-blue-300");
-        }; 
-        restCard.innerHTML = `
-            <div class="icon text-green-200">💤</div>
-            <div class="label text-green-200">BARACKE</div>
-            <div class="sub">Ausruhen (Gratis)</div>
-        `;
-        grid.appendChild(restCard);
-
-        view.appendChild(grid);
-
-        // 3. FOOTER
-        const footer = document.createElement('div');
-        footer.className = "p-4 border-t border-green-900 bg-black";
-        footer.innerHTML = `
-            <button class="action-button w-full border-green-500 text-green-500 py-3 font-bold text-xl hover:bg-green-900" onclick="Game.leaveCity()">
-                ZURÜCK INS ÖDLAND (ESC)
-            </button>
-        `;
-        view.appendChild(footer);
     }
 });
