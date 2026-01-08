@@ -231,7 +231,7 @@ input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
 .char-tab-btn:hover { opacity: 1; background: rgba(0, 50, 0, 0.3); }
 .char-tab-btn.active { border-bottom: 2px solid #39ff14; color: #39ff14; opacity: 1; text-shadow: 0 0 5px #39ff14; background: rgba(0, 30, 0, 0.5); }
 
-/* --- CITY DASHBOARD --- */
+/* --- [UPDATED] CITY DASHBOARD (Mobile Fix) --- */
 .city-header {
     background: linear-gradient(to bottom, #051505, #000);
     border-bottom: 2px solid #39ff14;
@@ -239,14 +239,31 @@ input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
     text-align: center;
     position: relative;
     box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+    flex-shrink: 0; /* Header darf nicht schrumpfen */
 }
 
+/* BASE GRID (Mobile: 1 Spalte) */
 .city-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 180px auto; 
+    grid-template-columns: 1fr; /* 1 Spalte für Handy */
+    grid-auto-rows: minmax(100px, auto); /* Flexible Höhe */
     gap: 15px;
     padding: 15px;
+    flex-grow: 1; /* Füllt den Platz zwischen Header und Footer */
+    overflow-y: auto; /* Scrollbar wenn nötig */
+}
+
+/* DESKTOP/TABLET GRID (ab 768px: 2 Spalten) */
+@media (min-width: 768px) {
+    .city-grid {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 180px auto; 
+    }
+    
+    /* Händler oben über volle Breite nur bei Desktop */
+    .city-card.trader {
+        grid-column: 1 / -1; 
+    }
 }
 
 .city-card {
@@ -260,8 +277,9 @@ input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
     transition: all 0.2s;
     position: relative;
     overflow: hidden;
-    padding: 10px;
+    padding: 15px;
     text-align: center;
+    min-height: 120px; /* Touch-freundliche Höhe */
 }
 
 @media (hover: hover) {
@@ -301,7 +319,6 @@ input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
 
 /* HÄNDLER SPECIAL STYLE */
 .city-card.trader {
-    grid-column: 1 / -1; 
     background: linear-gradient(45deg, rgba(20, 20, 0, 0.9), rgba(60, 50, 0, 0.3));
     border-color: #b8860b; 
 }
