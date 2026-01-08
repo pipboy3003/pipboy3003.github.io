@@ -11,6 +11,7 @@ canvas {
 
 #view-container > * { max-width: 100%; overflow-x: hidden; }
 
+/* --- ANIMATIONEN --- */
 @keyframes fireFlicker {
     0% { opacity: 0.8; transform: scale(1); text-shadow: 0 0 4px red; }
     50% { opacity: 1; transform: scale(1.1); text-shadow: 0 0 10px orange; }
@@ -49,16 +50,32 @@ canvas {
 .vault-wink { animation: wink 2s infinite steps(1); }
 @keyframes wink { 0%, 45%, 55%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
+/* --- ALERTS & GLOWS --- */
 .alert-glow-red { animation: pulse-red-intense 1.5s infinite !important; border-width: 2px !important; font-weight: bold !important; }
-@keyframes pulse-red-intense { 0% { box-shadow: 0 0 5px red; border-color: #800000; color: #ffcccc; } 50% { box-shadow: 0 0 25px red, inset 0 0 10px red; border-color: red; color: white; background-color: rgba(255, 0, 0, 0.2); } 100% { box-shadow: 0 0 5px red; border-color: #800000; color: #ffcccc; } }
-/* Kombinierte Definition für identischen Look */
+@keyframes pulse-red-intense { 
+    0% { box-shadow: 0 0 5px red; border-color: #800000; color: #ffcccc; } 
+    50% { box-shadow: 0 0 25px red, inset 0 0 10px red; border-color: red; color: white; background-color: rgba(255, 0, 0, 0.2); } 
+    100% { box-shadow: 0 0 5px red; border-color: #800000; color: #ffcccc; } 
+}
+
+/* Kombinierter Gelber Glow (Menü & Level Up & Tabs) */
 .alert-glow-yellow, .lvl-ready-glow { 
     animation: pulse-yellow-intense 1.5s infinite !important; 
-    border: 2px solid #ffd700 !important; /* 'solid' ist wichtig für den Header */
-    font-weight: bold !important;}
-@keyframes pulse-yellow-intense { 0% { box-shadow: 0 0 5px #ffd700; border-color: #b8860b; color: #ffffcc; } 50% { box-shadow: 0 0 25px #ffd700, inset 0 0 10px #ffd700; border-color: #ffd700; color: white; background-color: rgba(255, 215, 0, 0.2); } 100% { box-shadow: 0 0 5px #ffd700; border-color: #b8860b; color: #ffffcc; } }
+    border: 2px solid #ffd700 !important; 
+    font-weight: bold !important; 
+}
+@keyframes pulse-yellow-intense { 
+    0% { box-shadow: 0 0 5px #ffd700; border-color: #b8860b; color: #ffffcc; } 
+    50% { box-shadow: 0 0 25px #ffd700, inset 0 0 10px #ffd700; border-color: #ffd700; color: white; background-color: rgba(255, 215, 0, 0.2); } 
+    100% { box-shadow: 0 0 5px #ffd700; border-color: #b8860b; color: #ffffcc; } 
+}
+
 .alert-glow-cyan { animation: pulse-cyan-intense 1.5s infinite !important; border-width: 2px !important; font-weight: bold !important; }
-@keyframes pulse-cyan-intense { 0% { box-shadow: 0 0 5px cyan; border-color: #008b8b; color: #e0ffff; } 50% { box-shadow: 0 0 25px cyan, inset 0 0 10px cyan; border-color: cyan; color: white; background-color: rgba(0, 255, 255, 0.2); } 100% { box-shadow: 0 0 5px cyan; border-color: #008b8b; color: #e0ffff; } }
+@keyframes pulse-cyan-intense { 
+    0% { box-shadow: 0 0 5px cyan; border-color: #008b8b; color: #e0ffff; } 
+    50% { box-shadow: 0 0 25px cyan, inset 0 0 10px cyan; border-color: cyan; color: white; background-color: rgba(0, 255, 255, 0.2); } 
+    100% { box-shadow: 0 0 5px cyan; border-color: #008b8b; color: #e0ffff; } 
+}
 
 .key-focus {
     outline: 2px solid var(--pip-green) !important;
@@ -70,6 +87,7 @@ canvas {
 }
 @keyframes pulse-focus { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
+/* --- MINIGAMES --- */
 .lock-container { position: relative; width: 250px; height: 250px; border-radius: 50%; border: 4px solid #333; background: radial-gradient(circle, #222, #000); box-shadow: inset 0 0 30px #000; margin: 0 auto; }
 .lock-inner { position: absolute; top: 10%; left: 10%; width: 80%; height: 80%; border-radius: 50%; border: 2px dashed #444; transition: transform 0.1s; }
 .lock-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; background: #111; border-radius: 50%; border: 1px solid #555; }
@@ -80,6 +98,7 @@ canvas {
 .hack-row:hover, .hack-row.selected { background-color: var(--pip-green); color: black; font-weight: bold; }
 .hack-hex { color: #0d47a1; margin-right: 10px; }
 
+/* --- SCROLLBAR --- */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: #001100; border-left: 1px solid var(--pip-dim); }
 ::-webkit-scrollbar-thumb { background: var(--pip-dim); border: 1px solid var(--pip-green); }
@@ -87,6 +106,7 @@ canvas {
 ::-webkit-scrollbar-corner { background: #000; }
 * { scrollbar-width: thin; scrollbar-color: var(--pip-dim) #001100; box-sizing: border-box; }
 
+/* --- LAYOUT --- */
 #pipboy-case { background: linear-gradient(145deg, #1a1a1a, #0d0d0d); padding: 10px; border-radius: 20px; box-shadow: inset 0 0 20px #000, 0 0 0 5px #2a2a2a, 0 0 30px rgba(0,0,0,0.8); width: 100%; max-width: 1200px; height: 100vh; display: flex; flex-direction: column; position: relative; }
 @media (min-width: 768px) { #pipboy-case { height: 95vh; padding: 15px; border-radius: 30px; } }
 
@@ -105,10 +125,40 @@ canvas {
 .blink-red { animation: blink-red-anim 1s infinite; }
 @keyframes blink-red-anim { 0%, 100% { opacity: 1; color: red; } 50% { opacity: 0.5; } }
 
-.char-slot { border: 1px solid var(--pip-dim); background: rgba(0,20,0,0.5); padding: 10px; margin-bottom: 5px; cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
-.char-slot:hover { border-color: var(--pip-green); background: rgba(0,40,0,0.8); }
-.char-slot.active-slot { border-color: var(--pip-green); background: var(--pip-green); color: black; font-weight: bold; }
-.char-slot.active-slot * { color: #000 !important; text-shadow: none !important; }
+/* --- [FIXED] CHARACTER SLOTS --- */
+.char-slot { 
+    border: 1px solid var(--pip-dim); 
+    background: rgba(0,20,0,0.5); 
+    padding: 10px; margin-bottom: 5px; 
+    cursor: pointer; 
+    transition: all 0.2s; 
+    display: flex; justify-content: space-between; align-items: center; 
+}
+
+/* Hover nur auf Geräten, die Hover unterstützen (kein Sticky-Hover auf Mobile) */
+@media (hover: hover) {
+    .char-slot:hover { 
+        border-color: var(--pip-green); 
+        background: rgba(0,40,0,0.8); 
+    }
+}
+
+/* AKTIVER SLOT: Gelber Rahmen statt schwarzer Schrift */
+.char-slot.active-slot { 
+    border-color: #ffd700; 
+    background: rgba(255, 215, 0, 0.08); /* Leichter gelber Tint, Text bleibt lesbar */
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+}
+
+/* Der Start-Button im aktiven Slot soll leuchten */
+.char-slot.active-slot button {
+    background-color: #39ff14;
+    color: black;
+    box-shadow: 0 0 10px #39ff14;
+    transform: scale(1.05);
+    border-color: #39ff14;
+}
+
 .char-slot.empty-slot { opacity: 0.5; font-style: italic; }
 
 #login-screen, #spawn-screen, #reset-overlay, #manual-overlay, #changelog-overlay, #char-select-screen, #delete-confirm-overlay { position: absolute; inset: 0; z-index: 999; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; height: 100%; }
@@ -137,7 +187,7 @@ input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
 
 #player-list-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 90; background: rgba(0, 0, 0, 0.95); border: 2px solid var(--pip-green); padding: 20px; min-width: 300px; display: none; flex-direction: column; box-shadow: 0 0 30px var(--pip-dim); }
 
-/* --- CHARACTER DASHBOARD (v0.7.0) --- */
+/* --- CHARACTER DASHBOARD --- */
 .char-grid-container {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -181,7 +231,7 @@ input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
 .char-tab-btn:hover { opacity: 1; background: rgba(0, 50, 0, 0.3); }
 .char-tab-btn.active { border-bottom: 2px solid #39ff14; color: #39ff14; opacity: 1; text-shadow: 0 0 5px #39ff14; background: rgba(0, 30, 0, 0.5); }
 
-/* --- [v0.8.0] RUSTY SPRINGS DASHBOARD --- */
+/* --- CITY DASHBOARD --- */
 .city-header {
     background: linear-gradient(to bottom, #051505, #000);
     border-bottom: 2px solid #39ff14;
@@ -214,12 +264,14 @@ input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
     text-align: center;
 }
 
-.city-card:hover {
-    border-color: #39ff14;
-    background: rgba(57, 255, 20, 0.1);
-    box-shadow: 0 0 15px #39ff14, inset 0 0 10px rgba(57, 255, 20, 0.2);
-    transform: translateY(-2px);
-    z-index: 10;
+@media (hover: hover) {
+    .city-card:hover {
+        border-color: #39ff14;
+        background: rgba(57, 255, 20, 0.1);
+        box-shadow: 0 0 15px #39ff14, inset 0 0 10px rgba(57, 255, 20, 0.2);
+        transform: translateY(-2px);
+        z-index: 10;
+    }
 }
 
 .city-card .icon { 
@@ -253,9 +305,11 @@ input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
     background: linear-gradient(45deg, rgba(20, 20, 0, 0.9), rgba(60, 50, 0, 0.3));
     border-color: #b8860b; 
 }
-.city-card.trader:hover {
-    border-color: #ffd700;
-    box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
+@media (hover: hover) {
+    .city-card.trader:hover {
+        border-color: #ffd700;
+        box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
+    }
 }
 .city-card.trader .icon {
     font-size: 6rem;
