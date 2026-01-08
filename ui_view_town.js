@@ -9,7 +9,6 @@ Object.assign(UI, {
         if(!view) return;
         view.innerHTML = '';
 
-        // WRAPPER
         const wrapper = document.createElement('div');
         wrapper.className = "w-full h-full flex flex-col bg-black/95 relative";
 
@@ -56,7 +55,6 @@ Object.assign(UI, {
         if(!view) return;
         view.innerHTML = '';
 
-        // WRAPPER
         const wrapper = document.createElement('div');
         wrapper.className = "w-full h-full flex flex-col bg-black/95 relative";
 
@@ -82,7 +80,6 @@ Object.assign(UI, {
         `;
         view.appendChild(wrapper);
 
-        // Content Logik
         const container = wrapper.querySelector('#crafting-list');
         
         if (tab === 'create') {
@@ -125,7 +122,6 @@ Object.assign(UI, {
             });
             if(knownCount === 0) container.innerHTML = '<div class="text-gray-500 italic mt-10 text-center">Keine bekannten Baupläne.</div>';
         } else {
-            // SCRAP
             let scrappables = [];
             Game.state.inventory.forEach((item, idx) => {
                 const def = Game.items[item.id];
@@ -156,7 +152,7 @@ Object.assign(UI, {
         }
     },
 
-    // --- SHOP REDESIGN ---
+    // --- SHOP REDESIGN (FIXED LOGIC) ---
     renderShop: function(mode = 'buy') {
         Game.state.view = 'shop';
         Game.checkShopRestock(); 
@@ -165,11 +161,9 @@ Object.assign(UI, {
         if(!view) return;
         view.innerHTML = '';
 
-        // WRAPPER
         const wrapper = document.createElement('div');
         wrapper.className = "w-full h-full flex flex-col bg-black relative";
 
-        // 1. HEADER
         const header = document.createElement('div');
         header.className = "flex-shrink-0 flex justify-between items-end p-4 border-b-4 border-yellow-600 bg-[#1a1500] shadow-md z-10";
         
@@ -198,7 +192,6 @@ Object.assign(UI, {
         `;
         wrapper.appendChild(header);
 
-        // 2. CONTROLS
         const controls = document.createElement('div');
         controls.className = "flex-shrink-0 bg-[#110d00] border-b-2 border-yellow-900 p-3 flex flex-col gap-3 shadow-inner";
         
@@ -219,13 +212,11 @@ Object.assign(UI, {
         controls.appendChild(qtyRow);
         wrapper.appendChild(controls);
 
-        // 3. LIST
         const content = document.createElement('div');
         content.id = "shop-list";
         content.className = "flex-grow overflow-y-auto p-3 custom-scrollbar bg-[#0a0800]";
         wrapper.appendChild(content);
 
-        // 4. FOOTER
         const footer = document.createElement('div');
         footer.className = "flex-shrink-0 p-3 border-t-4 border-yellow-900 bg-[#1a1500]";
         footer.innerHTML = `<button class="action-button w-full border-2 border-yellow-800 text-yellow-700 hover:border-yellow-500 hover:text-yellow-400 transition-colors py-3 font-bold tracking-widest uppercase" onclick="UI.renderCity()">ZURÜCK ZUM ZENTRUM</button>`;
@@ -274,8 +265,12 @@ Object.assign(UI, {
             return el;
         };
 
+        // [FIX] Ammo Buy Logic: Nutzt generisches Item kaufen, falls buyAmmo fehlt
         if(ammoStock > 0) {
-            container.appendChild(createSlot("🧨", "10x MUNITION", ammoStock, 10, () => Game.buyAmmo(UI.shopQty), true));
+            container.appendChild(createSlot("🧨", "10x MUNITION", ammoStock, 10, () => {
+                if(typeof Game.buyAmmo === 'function') Game.buyAmmo(UI.shopQty);
+                else Game.buyItem('ammo', UI.shopQty);
+            }, true));
             container.innerHTML += `<div class="h-px bg-yellow-900/50 my-4 mx-2"></div>`;
         }
 
@@ -287,6 +282,16 @@ Object.assign(UI, {
         };
 
         Object.keys(stock).forEach(key => {
+            // [FIX] Fäuste & Vault-Anzug nicht verkaufbar
+            if (key === 'fists' || key === 'vault_suit' || key === 'mele') return;
+
+            // [FIX] Zelt-Logik: Nur wenn man keins hat (weder Inv noch gebaut)
+            if (key === 'camp_kit') {
+                const hasKit = Game.state.inventory.some(i => i.id === 'camp_kit');
+                const hasBuilt = !!Game.state.camp;
+                if (hasKit || hasBuilt) return; 
+            }
+
             if(stock[key] <= 0) return;
             const item = Game.items[key];
             if(!item) return;
@@ -325,6 +330,9 @@ Object.assign(UI, {
             const def = Game.items[item.id];
             if(!def) return;
             
+            // [FIX] Verhindern, dass man seine Fäuste verkauft (Sicherheitshalber)
+            if (item.id === 'fists') return;
+
             let valMult = item.props && item.props.valMult ? item.props.valMult : 1;
             let sellPrice = Math.floor((def.cost * 0.25) * valMult);
             if(sellPrice < 1) sellPrice = 1;
@@ -350,7 +358,6 @@ Object.assign(UI, {
         });
     },
 
-    // [v0.9.3] CITY DASHBOARD - LAYOUT FIX
     renderCity: function(cityId = 'rusty_springs') {
         const view = document.getElementById('view-container');
         if(!view) return;
@@ -374,14 +381,13 @@ Object.assign(UI, {
         const data = cityData[cityId] || cityData['rusty_springs'];
         const flair = data.flairs[Math.floor(Math.random() * data.flairs.length)];
 
-        // --- WRAPPER (DAS LÖST DAS LAYOUT PROBLEM) ---
         const wrapper = document.createElement('div');
         wrapper.className = "w-full h-full flex flex-col bg-black relative overflow-hidden";
 
-        // 1. HEADER
         const header = document.createElement('div');
         header.className = "flex-shrink-0 flex flex-col border-b-4 border-green-900 bg-[#001100] p-4 relative shadow-lg z-10";
         
+        // [FIX] Währungssymbol auf KK vereinheitlicht
         header.innerHTML = `
             <div class="flex justify-between items-start z-10 relative">
                 <div>
@@ -402,7 +408,6 @@ Object.assign(UI, {
         `;
         wrapper.appendChild(header);
 
-        // 2. GRID DASHBOARD
         const grid = document.createElement('div');
         grid.className = "flex-grow overflow-y-auto custom-scrollbar p-4 grid grid-cols-1 md:grid-cols-2 gap-4 content-start bg-[#050a05]";
 
@@ -429,11 +434,9 @@ Object.assign(UI, {
 
             const iconSize = conf.type === 'trader' ? 'text-6xl' : 'text-5xl';
             
-            // Tailwind safe colors
             let titleClass = `text-${themeColor}-500 group-hover:text-${themeColor}-300`;
             let subClass = `text-${themeColor}-700 group-hover:text-${themeColor}-500`;
             
-            // Manuelle Korrektur für Trader Yellow, da Tailwind manchmal dynamische Klassen purgt
             if(conf.type === 'trader') { titleClass = "text-yellow-500 group-hover:text-yellow-300"; subClass = "text-yellow-700 group-hover:text-yellow-500"; }
 
             card.innerHTML = `
@@ -449,19 +452,16 @@ Object.assign(UI, {
             return card;
         };
 
-        // A. HÄNDLER
         grid.appendChild(createCard({
             type: 'trader', icon: "🛒", label: "HANDELSPOSTEN", sub: "Waffen • Munition • An- & Verkauf",
             onClick: () => { if(UI.renderShop) UI.renderShop(); }
         }));
 
-        // B. KLINIK
         grid.appendChild(createCard({
             type: 'clinic', icon: "⚕️", label: "KLINIK", sub: "Dr. Zimmermann",
             onClick: () => { if(UI.renderClinic) UI.renderClinic(); }
         }));
 
-        // C. WERKBANK
         grid.appendChild(createCard({
             type: 'craft', icon: "🛠️", label: "WERKBANK", sub: "Zerlegen & Bauen",
             onClick: () => { if(UI.renderCrafting) UI.renderCrafting(); }
@@ -469,7 +469,6 @@ Object.assign(UI, {
 
         wrapper.appendChild(grid);
 
-        // 3. FOOTER
         const footer = document.createElement('div');
         footer.className = "flex-shrink-0 p-3 border-t-4 border-green-900 bg-[#001100]";
         footer.innerHTML = `
