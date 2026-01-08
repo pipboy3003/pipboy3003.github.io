@@ -1,4 +1,5 @@
-// [TIMESTAMP] 2026-01-09 00:25:00 - ui_view_town.js - HARDCORE ONCLICK FIX
+// [TIMESTAMP] 2026-01-09 00:40:00 - ui_view_town.js - Strong Hover Effects & Unified
+
 Object.assign(UI, {
     
     shopQty: 1,
@@ -237,14 +238,18 @@ Object.assign(UI, {
         const ammoStock = (Game.state.shop.ammoStock !== undefined) ? Game.state.shop.ammoStock : 0;
         const myCaps = Game.state.caps;
 
-        // --- GENERISCHE ZEILEN-ERSTELLUNG (HARDCODED EVENTS) ---
+        // --- HELPER: UNIFIED ROW CREATOR ---
         const createRow = (icon, name, qty, price, key, isAmmo = false) => {
             const canBuy = myCaps >= price;
             
-            // Design Config
+            // Farben definieren
+            // [FIX] Stärkere Hover Farben für besseres Feedback
             let colorText = isAmmo ? 'text-blue-300' : 'text-yellow-200';
             let colorBorder = isAmmo ? 'border-blue-500' : 'border-yellow-700';
-            let colorBg = isAmmo ? 'bg-blue-900/20' : 'bg-yellow-900/10';
+            
+            // Hover: Intensiveres Leuchten
+            let colorBg = isAmmo ? 'bg-blue-900/20 hover:bg-blue-600/40' : 'bg-yellow-900/10 hover:bg-yellow-600/40';
+            
             let colorSub = isAmmo ? 'text-blue-600' : 'text-yellow-700';
             let colorBtn = isAmmo ? 'text-blue-400' : 'text-yellow-600';
 
@@ -257,9 +262,9 @@ Object.assign(UI, {
             }
 
             const row = document.createElement('div');
+            // Full Row Clickable Styling
             row.className = `shop-item-row flex justify-between items-center mb-2 border-2 ${colorBorder} ${colorBg} h-16 relative z-50 transition-all select-none`;
             
-            // WICHTIG: Das onclick Attribut direkt setzen!
             if (canBuy) {
                 row.style.cursor = 'pointer';
                 row.setAttribute('onclick', `Game.buyItem('${key}', UI.shopQty)`);
@@ -276,8 +281,8 @@ Object.assign(UI, {
                         <span class="text-xs ${colorSub} font-mono uppercase">Vorrat: ${qty} | Preis: ${price} KK</span>
                     </div>
                 </div>
-                <div class="h-full flex flex-col justify-center items-end border-l-2 ${colorBorder} bg-black/30 min-w-[100px] pointer-events-none">
-                    <button class="w-full h-full text-sm font-bold uppercase tracking-wider bg-transparent border-none ${colorBtn}">
+                <div class="h-full flex flex-col justify-center items-end border-l-2 ${colorBorder} bg-black/30 min-w-[100px]">
+                    <button class="w-full h-full text-sm font-bold uppercase tracking-wider bg-transparent border-none ${colorBtn}" style="pointer-events: none;">
                         KAUFEN
                     </button>
                 </div>
