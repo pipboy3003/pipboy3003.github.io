@@ -58,7 +58,7 @@ canvas {
     100% { box-shadow: 0 0 5px red; border-color: #800000; color: #ffcccc; } 
 }
 
-/* Kombinierter Gelber Glow (Menü & Level Up & Tabs) */
+/* Kombinierter Gelber Glow */
 .alert-glow-yellow, .lvl-ready-glow { 
     animation: pulse-yellow-intense 1.5s infinite !important; 
     border: 2px solid #ffd700 !important; 
@@ -135,7 +135,6 @@ canvas {
     display: flex; justify-content: space-between; align-items: center; 
 }
 
-/* Hover nur auf Geräten, die Hover unterstützen (kein Sticky-Hover auf Mobile) */
 @media (hover: hover) {
     .char-slot:hover { 
         border-color: var(--pip-green); 
@@ -143,14 +142,12 @@ canvas {
     }
 }
 
-/* AKTIVER SLOT: Gelber Rahmen statt schwarzer Schrift */
 .char-slot.active-slot { 
     border-color: #ffd700; 
-    background: rgba(255, 215, 0, 0.08); /* Leichter gelber Tint, Text bleibt lesbar */
+    background: rgba(255, 215, 0, 0.08); 
     box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
 }
 
-/* Der Start-Button im aktiven Slot soll leuchten */
 .char-slot.active-slot button {
     background-color: #39ff14;
     color: black;
@@ -231,7 +228,7 @@ input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
 .char-tab-btn:hover { opacity: 1; background: rgba(0, 50, 0, 0.3); }
 .char-tab-btn.active { border-bottom: 2px solid #39ff14; color: #39ff14; opacity: 1; text-shadow: 0 0 5px #39ff14; background: rgba(0, 30, 0, 0.5); }
 
-/* --- [UPDATED] CITY DASHBOARD (Mobile Fix) --- */
+/* --- [UPDATED] CITY DASHBOARD (Mobile Fix & Cut-off Fix) --- */
 .city-header {
     background: linear-gradient(to bottom, #051505, #000);
     border-bottom: 2px solid #39ff14;
@@ -239,28 +236,26 @@ input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
     text-align: center;
     position: relative;
     box-shadow: 0 5px 20px rgba(0,0,0,0.8);
-    flex-shrink: 0; /* Header darf nicht schrumpfen */
+    flex-shrink: 0;
 }
 
-/* BASE GRID (Mobile: 1 Spalte) */
 .city-grid {
     display: grid;
-    grid-template-columns: 1fr; /* 1 Spalte für Handy */
-    grid-auto-rows: minmax(100px, auto); /* Flexible Höhe */
+    /* [FIX] Mobile Standard: 1 Spalte, 160px Minimum Höhe pro Karte */
+    grid-template-columns: 1fr; 
+    grid-auto-rows: minmax(160px, auto); 
     gap: 15px;
     padding: 15px;
-    flex-grow: 1; /* Füllt den Platz zwischen Header und Footer */
-    overflow-y: auto; /* Scrollbar wenn nötig */
+    flex-grow: 1; 
+    overflow-y: auto;
 }
 
-/* DESKTOP/TABLET GRID (ab 768px: 2 Spalten) */
+/* Tablet & Desktop: 2 Spalten */
 @media (min-width: 768px) {
     .city-grid {
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 180px auto; 
     }
-    
-    /* Händler oben über volle Breite nur bei Desktop */
     .city-card.trader {
         grid-column: 1 / -1; 
     }
@@ -272,14 +267,15 @@ input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    /* [FIX] Space Evenly verteilt Inhalt besser als Center */
+    justify-content: space-evenly; 
     cursor: pointer;
     transition: all 0.2s;
     position: relative;
     overflow: hidden;
     padding: 15px;
     text-align: center;
-    min-height: 120px; /* Touch-freundliche Höhe */
+    min-height: 120px;
 }
 
 @media (hover: hover) {
@@ -294,9 +290,10 @@ input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
 
 .city-card .icon { 
     font-size: 3rem; 
-    margin-bottom: 10px; 
+    margin-bottom: 5px; /* [FIX] Weniger Margin */
     filter: drop-shadow(0 0 5px rgba(57,255,20,0.5));
     transition: transform 0.2s;
+    flex-shrink: 0;
 }
 .city-card:hover .icon { transform: scale(1.1); }
 
@@ -307,6 +304,9 @@ input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
     text-transform: uppercase; 
     letter-spacing: 2px; 
     text-shadow: 0 0 5px rgba(57,255,20,0.5);
+    /* [FIX] Verhindert Abschneiden und Umbruch */
+    line-height: 1.1;
+    z-index: 2;
 }
 
 .city-card .sub { 
@@ -315,6 +315,7 @@ input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
     font-style: italic; 
     margin-top: 5px; 
     font-family: monospace;
+    z-index: 2;
 }
 
 /* HÄNDLER SPECIAL STYLE */
@@ -329,11 +330,16 @@ input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
     }
 }
 .city-card.trader .icon {
-    font-size: 6rem;
+    font-size: 4rem; /* [FIX] Kleiner auf Mobile */
     color: #ffd700;
     animation: pulse-trader 4s infinite ease-in-out;
 }
-.city-card.trader .label { color: #ffd700; font-size: 2rem; }
+/* Ab Tablet wieder riesig */
+@media (min-width: 768px) {
+    .city-card.trader .icon { font-size: 6rem; }
+}
+
+.city-card.trader .label { color: #ffd700; font-size: 1.5rem; }
 .city-card.trader .sub { color: #eecfa1; font-size: 0.9rem; }
 
 @keyframes pulse-trader { 
