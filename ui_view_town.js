@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-08 23:58:00 - ui_view_town.js - Fixed Ammo Button Click
+// [TIMESTAMP] 2026-01-09 00:15:00 - ui_view_town.js - Full Row Click Event
 
 Object.assign(UI, {
     
@@ -238,31 +238,35 @@ Object.assign(UI, {
         const ammoStock = (Game.state.shop.ammoStock !== undefined) ? Game.state.shop.ammoStock : 0;
         const myCaps = Game.state.caps;
 
-        // [FIX] AMMO HARDCODED MIT Z-INDEX
+        // [FIX] AMMO SLOT - Klick auf GANZE Zeile
         const ammoPrice = 10;
         const canBuyAmmo = myCaps >= ammoPrice;
         const ammoColor = canBuyAmmo ? 'border-blue-500 text-blue-300' : 'border-red-900 text-gray-600';
         const ammoBg = canBuyAmmo ? 'bg-blue-900/20' : 'bg-red-900/10 opacity-50';
         
         const ammoDiv = document.createElement('div');
-        // RELATIVE & Z-INDEX 50 WICHTIG!
-        ammoDiv.className = `flex justify-between items-center mb-4 border-2 ${ammoColor} ${ammoBg} h-16 relative z-50`;
+        // Klick Event auf den Wrapper!
+        ammoDiv.className = `shop-item-row flex justify-between items-center mb-4 border-2 ${ammoColor} ${ammoBg} h-16`;
         
-        const debugInfo = canBuyAmmo ? "" : "";
-        
+        if (canBuyAmmo) {
+            ammoDiv.onclick = () => {
+                console.log("BUY AMMO FULL ROW");
+                Game.buyItem('ammo', UI.shopQty);
+            };
+        }
+
         ammoDiv.innerHTML = `
             <div class="flex items-center gap-3 p-2 flex-grow overflow-hidden pointer-events-none">
                 <div class="text-3xl w-12 h-12 flex items-center justify-center bg-black/40 border border-blue-900/50 rounded">🧨</div>
                 <div class="flex flex-col truncate">
-                    <span class="font-bold text-lg font-vt323 truncate leading-none pt-1">10x MUNITION ${debugInfo}</span>
+                    <span class="font-bold text-lg font-vt323 truncate leading-none pt-1">10x MUNITION</span>
                     <span class="text-xs text-blue-600 font-mono uppercase">Vorrat: ${ammoStock} | Preis: 10 KK</span>
                 </div>
             </div>
             <div class="h-full flex flex-col justify-center items-end border-l-2 ${canBuyAmmo ? 'border-blue-500' : 'border-red-900'} bg-black/30 min-w-[100px]">
                 <button 
-                    onclick="console.log('CLICK AMMO'); Game.buyItem('ammo', UI.shopQty);" 
-                    class="w-full h-full text-sm font-bold uppercase tracking-wider hover:bg-blue-500 hover:text-black transition-colors ${canBuyAmmo ? 'text-blue-400 cursor-pointer' : 'text-red-900 cursor-not-allowed pointer-events-none'}"
-                    style="pointer-events: auto !important; position: relative; z-index: 100;"
+                    class="w-full h-full text-sm font-bold uppercase tracking-wider bg-transparent border-none ${canBuyAmmo ? 'text-blue-400' : 'text-red-900'}"
+                    style="pointer-events: none;"
                     ${canBuyAmmo ? '' : 'disabled'}>
                     KAUFEN
                 </button>
@@ -282,8 +286,16 @@ Object.assign(UI, {
             const textClass = canBuy ? 'text-yellow-200' : 'text-gray-500';
             
             const el = document.createElement('div');
-            el.className = `flex justify-between items-center mb-2 border-2 ${borderColor} ${bgClass} h-16 transition-all relative z-10`;
+            // KLICK EVENT AUF WRAPPER
+            el.className = `shop-item-row flex justify-between items-center mb-2 border-2 ${borderColor} ${bgClass} h-16 transition-all`;
             
+            if (canBuy) {
+                el.onclick = () => {
+                    console.log("BUY ITEM FULL ROW: " + key);
+                    Game.buyItem(key, UI.shopQty);
+                };
+            }
+
             el.innerHTML = `
                 <div class="flex items-center gap-3 p-2 flex-grow overflow-hidden pointer-events-none">
                     <div class="text-3xl w-12 h-12 flex items-center justify-center bg-black/40 border border-yellow-900/50 rounded">${icon}</div>
@@ -295,9 +307,8 @@ Object.assign(UI, {
                 <div class="h-full flex flex-col justify-center items-end border-l-2 ${borderColor} bg-black/30 min-w-[80px]">
                     <div class="font-bold ${canBuy ? 'text-yellow-400' : 'text-red-500'} text-lg w-full text-center border-b border-white/10 font-vt323">${price}</div>
                     <button 
-                        onclick="Game.buyItem('${key}', UI.shopQty)"
-                        class="flex-grow w-full text-[10px] font-bold uppercase tracking-wider hover:bg-yellow-500 hover:text-black transition-colors ${canBuy ? 'text-yellow-600 cursor-pointer' : 'text-red-900 cursor-not-allowed pointer-events-none'}" 
-                        style="pointer-events: auto !important; position: relative; z-index: 100;"
+                        class="flex-grow w-full h-full text-[10px] font-bold uppercase tracking-wider bg-transparent border-none ${canBuy ? 'text-yellow-600' : 'text-red-900'}" 
+                        style="pointer-events: none;"
                         ${canBuy?'':'disabled'}>
                         KAUFEN
                     </button>
@@ -367,20 +378,24 @@ Object.assign(UI, {
             const name = item.props ? item.props.name : def.name;
 
             const div = document.createElement('div');
-            div.className = `flex justify-between items-center mb-2 border-2 ${canSell ? 'border-green-700 bg-green-900/10 hover:bg-green-900/20 cursor-pointer' : 'border-red-900 opacity-50'} h-14 transition-all`;
+            // Full Row Clickable
+            div.className = `shop-item-row flex justify-between items-center mb-2 border-2 ${canSell ? 'border-green-700 bg-green-900/10 hover:bg-green-900/20' : 'border-red-900 opacity-50'} h-14 transition-all`;
             
+            if(canSell) {
+                div.onclick = () => {
+                    Game.sellItem(idx, UI.shopQty);
+                };
+            }
+
             div.innerHTML = `
-                <div class="flex items-center gap-3 p-2 flex-grow overflow-hidden">
+                <div class="flex items-center gap-3 p-2 flex-grow overflow-hidden pointer-events-none">
                     <div class="text-green-500 font-bold text-lg font-vt323 truncate">${name} <span class="text-green-800 text-sm font-sans">x${item.count}</span></div>
                 </div>
                 <div class="h-full flex flex-col justify-center items-end border-l-2 border-green-800 bg-black/30 min-w-[80px]">
                     <div class="font-bold text-green-400 text-lg w-full text-center border-b border-green-900 font-vt323">${sellPrice}</div>
-                    <button class="flex-grow w-full text-[10px] font-bold uppercase tracking-wider hover:bg-green-600 hover:text-black transition-colors text-green-700">VERKAUFEN</button>
+                    <button class="flex-grow w-full h-full text-[10px] font-bold uppercase tracking-wider hover:bg-green-600 hover:text-black transition-colors text-green-700" style="pointer-events: none;">VERKAUFEN</button>
                 </div>
             `;
-            if(canSell) {
-                div.onclick = () => Game.sellItem(idx, UI.shopQty);
-            }
             container.appendChild(div);
         });
     },
