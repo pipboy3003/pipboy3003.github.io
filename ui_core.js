@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-09 19:25:00 - ui_core.js - Bug Report System
+// [TIMESTAMP] 2026-01-09 19:40:00 - ui_core.js - Bug Report NO LOCAL SAVE
 
 const UI = {
     els: {},
@@ -6,8 +6,7 @@ const UI = {
     lastInputTime: Date.now(),
     biomeColors: (typeof window.GameData !== 'undefined') ? window.GameData.colors : {},
 
-    // Bug Report Storage (Lokal Backup)
-    bugReports: JSON.parse(localStorage.getItem('Bug.report') || '[]'),
+    // Bug Report Storage entfernt (Daten dürfen nicht lokal liegen)
 
     // States
     loginBusy: false,
@@ -31,7 +30,6 @@ const UI = {
         this.els.log.prepend(line);
     },
 
-    // [MODIFIED] Error öffnet Modal
     error: function(msg) {
         const errText = `> ERROR: ${msg}`;
         console.error(errText);
@@ -41,15 +39,11 @@ const UI = {
             line.textContent = errText;
             this.els.log.prepend(line);
         }
-        // Automatisch Bug-Fenster öffnen
         this.openBugModal(msg);
     },
 
-    // [NEU] Bug Report Modal
     openBugModal: function(autoErrorMsg = null) {
         if(document.getElementById('bug-report-overlay')) return;
-
-        // Menü schließen
         if(this.els.navMenu) this.els.navMenu.classList.add('hidden');
 
         const title = autoErrorMsg ? "⚠️ SYSTEMFEHLER ERKANNT" : "🐞 BUG MELDEN";
@@ -68,8 +62,8 @@ const UI = {
                     ${subText}
                 </div>
                 
-                <label class="block text-green-500 text-sm mb-1 uppercase tracking-wider">Beschreibung (Was hast du gemacht?)</label>
-                <textarea id="bug-desc" class="w-full bg-black border border-green-700 text-green-400 p-2 font-mono text-sm h-24 focus:border-green-400 outline-none mb-4" placeholder="z.B. Button reagiert nicht..."></textarea>
+                <label class="block text-green-500 text-sm mb-1 uppercase tracking-wider">Beschreibung</label>
+                <textarea id="bug-desc" class="w-full bg-black border border-green-700 text-green-400 p-2 font-mono text-sm h-24 focus:border-green-400 outline-none mb-4" placeholder="Was ist passiert?"></textarea>
                 
                 <div class="flex gap-2">
                     <button id="btn-bug-send" class="flex-1 bg-red-900/30 border border-red-500 text-red-400 py-2 font-bold hover:bg-red-500 hover:text-black transition-all uppercase">
@@ -94,7 +88,7 @@ const UI = {
         };
     },
 
-    // [NEU] Speichern und Senden
+    // [FIX] Keine lokale Speicherung mehr!
     saveBugReport: async function(errorMsg, userDesc) {
         const playerName = (Game.state && Game.state.playerName) ? Game.state.playerName : "Unbekannt/Login";
         
@@ -114,7 +108,6 @@ const UI = {
 
         this.log("Sende Fehlerbericht an Vault-Tec...", "text-yellow-400 blink-red");
 
-        // 1. VERSUCH: An Firebase senden
         let sent = false;
         if (typeof Network !== 'undefined' && Network.sendBugReport) {
             sent = await Network.sendBugReport(report);
@@ -123,20 +116,9 @@ const UI = {
         if (sent) {
             this.log("✅ Bericht erfolgreich übertragen.", "text-green-400 font-bold");
         } else {
-            this.log("❌ Senden fehlgeschlagen. Speichere lokal...", "text-red-500");
-            
-            // 2. FALLBACK: Lokal speichern & Download
-            this.bugReports.push(report);
-            localStorage.setItem('Bug.report', JSON.stringify(this.bugReports));
-
-            const blob = new Blob([JSON.stringify(report, null, 2)], { type: "text/plain" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `BugReport_${playerName}_${Date.now()}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            // [ÄNDERUNG] Nur Fehlermeldung, KEIN Backup
+            this.log("❌ Bug report aktuell nicht möglich.", "text-red-500 font-bold");
+            console.warn("Bug Report konnte nicht gesendet werden (Permission Denied oder Offline).");
         }
     },
     
@@ -201,7 +183,6 @@ const UI = {
             btnChar: document.getElementById('btn-char'),
             btnQuests: document.getElementById('btn-quests'),
             
-            // [NEU] Button im DOM
             btnBugReport: document.getElementById('btn-bug-report'),
             
             btnMenuSave: document.getElementById('btn-menu-save'),
@@ -248,7 +229,6 @@ const UI = {
             gameOver: document.getElementById('game-over-screen')
         };
         
-        // [NEU] Listener
         if (this.els.btnBugReport) {
             this.els.btnBugReport.addEventListener('click', () => {
                 this.openBugModal();
