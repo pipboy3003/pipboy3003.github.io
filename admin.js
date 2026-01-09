@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-09 20:15:00 - admin.js - Visual Fix for Perks & Stats
+// [TIMESTAMP] 2026-01-09 20:30:00 - admin.js - Perk Sliders UI Update
 
 const Admin = {
     gatePass: "bimbo123",
@@ -251,12 +251,12 @@ const Admin = {
         document.getElementById('inp-caps').value = d.caps || 0;
     },
 
-    // [UPDATED] Perks visually matching Stats
     fillStats: function(d) {
         const container = document.getElementById('special-container');
         container.innerHTML = '';
         const stats = d.stats || { STR:1, PER:1, END:1, CHA:1, INT:1, AGI:1, LUC:1 };
         
+        // S.P.E.C.I.A.L. Sliders
         for(let key in stats) {
             const val = stats[key];
             const div = document.createElement('div');
@@ -264,7 +264,8 @@ const Admin = {
             div.innerHTML = `
                 <span class="font-bold text-xl w-12">${key}</span>
                 <input type="range" min="1" max="10" value="${val}" class="flex-grow mx-2 accent-[#39ff14]" 
-                    onchange="document.getElementById('val-${key}').textContent=this.value; Admin.saveStat('${key}', this.value)">
+                    oninput="document.getElementById('val-${key}').textContent=this.value"
+                    onchange="Admin.saveStat('${key}', this.value)">
                 <span id="val-${key}" class="font-bold text-xl w-6 text-right">${val}</span>
             `;
             container.appendChild(div);
@@ -272,6 +273,7 @@ const Admin = {
         document.getElementById('inp-statPoints').value = d.statPoints || 0;
         document.getElementById('inp-perkPoints').value = d.perkPoints || 0;
 
+        // PERKS Sliders (1:1 Design like Stats)
         const perkContainer = document.getElementById('perk-list-container');
         if(perkContainer) {
             perkContainer.innerHTML = '';
@@ -285,19 +287,19 @@ const Admin = {
                 allPerks.forEach(p => {
                     let lvl = userPerks[p.id] || 0;
                     if(Array.isArray(userPerks)) lvl = userPerks.includes(p.id) ? 1 : 0;
+                    
+                    const maxLvl = p.max || 1;
 
                     const div = document.createElement('div');
-                    // [UPDATED] Uses 'panel-box' class like stats
+                    // Gleiche Klasse 'panel-box' wie bei Stats für gleichen Look
                     div.className = "panel-box p-2 flex justify-between items-center";
                     
                     div.innerHTML = `
-                        <div class="flex flex-col overflow-hidden mr-2">
-                            <span class="font-bold text-sm w-32 truncate text-[#39ff14]" title="${p.name}">${p.name}</span>
-                        </div>
-                        <input type="number" min="0" max="${p.max || 5}" value="${lvl}" 
-                            class="w-12 text-center text-lg bg-transparent border-b border-[#39ff14] text-[#39ff14] focus:outline-none font-bold"
+                        <span class="font-bold text-sm w-32 truncate text-[#39ff14]" title="${p.name}">${p.name}</span>
+                        <input type="range" min="0" max="${maxLvl}" value="${lvl}" class="flex-grow mx-2 accent-[#39ff14]"
+                            oninput="document.getElementById('perk-val-${p.id}').textContent=this.value"
                             onchange="Admin.savePerk('${p.id}', this.value)">
-                        <span class="text-[10px] text-gray-500 w-8 text-right self-center pt-1">/${p.max}</span>
+                        <span id="perk-val-${p.id}" class="font-bold text-xl w-6 text-right">${lvl}</span>
                     `;
                     perkContainer.appendChild(div);
                 });
