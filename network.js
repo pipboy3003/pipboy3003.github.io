@@ -1,3 +1,5 @@
+// [TIMESTAMP] 2026-01-09 19:25:00 - network.js - Added sendBugReport to RTDB
+
 const Network = {
     db: null,
     auth: null,
@@ -219,5 +221,22 @@ const Network = {
     
     sendMove: function(x, y, level, sector) {
         this.sendHeartbeat();
+    },
+
+    // [NEU] Bug Report senden (für Realtime DB)
+    sendBugReport: async function(reportData) {
+        if (!this.db) {
+            console.error("Datenbank nicht verbunden.");
+            return false;
+        }
+        try {
+            // Push erstellt einen neuen Eintrag mit eindeutiger ID unter 'bug_reports'
+            await this.db.ref("bug_reports").push(reportData);
+            console.log("Bug Report erfolgreich an Firebase gesendet.");
+            return true;
+        } catch (e) {
+            console.error("Fehler beim Senden des Bug Reports:", e);
+            return false;
+        }
     }
 };
