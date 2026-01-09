@@ -29,6 +29,10 @@
         .btn-danger { border-color: #ff3333; color: #ff3333; }
         .btn-danger:hover { background: #ff3333; color: white; box-shadow: 0 0 15px #ff0000; }
         
+        /* Bug Button Pulsing */
+        .btn-bug-alert { border-color: red; color: red; animation: pulse-red-admin 1.5s infinite; font-weight: bold; }
+        @keyframes pulse-red-admin { 0% { box-shadow: 0 0 0 red; } 50% { box-shadow: 0 0 15px red; background: rgba(255,0,0,0.2); } 100% { box-shadow: 0 0 0 red; } }
+
         .custom-scroll { overflow-y: auto; scrollbar-width: thin; scrollbar-color: #1a551a #001100; }
         .custom-scroll::-webkit-scrollbar { width: 8px; }
         .custom-scroll::-webkit-scrollbar-track { background: #001100; }
@@ -46,7 +50,7 @@
     <div id="gate-screen" class="absolute inset-0 z-[100] flex items-center justify-center bg-black admin-font">
         <div class="panel-box p-8 w-full max-w-md text-center border-2 border-[#39ff14]">
             <h1 class="text-4xl font-bold mb-2 tracking-widest text-[#39ff14] drop-shadow-[0_0_10px_rgba(57,255,20,0.8)]">VAULT-TEC</h1>
-            <div class="text-xs mb-8 text-[#1a551a]">OVERSEER SYSTEM ACCESS V5.5</div>
+            <div class="text-xs mb-8 text-[#1a551a]">OVERSEER SYSTEM ACCESS V5.6</div>
             <form onsubmit="event.preventDefault(); Admin.unlock();">
                 <input type="password" id="gate-pass" class="w-full text-center text-xl py-3 tracking-widest mb-4 border-[#39ff14]" placeholder="ENTER PASSCODE" autofocus>
                 <button type="submit" class="btn w-full py-3 font-bold text-lg">INITIALIZE LINK</button>
@@ -69,9 +73,15 @@
                     <div class="text-[10px] md:text-xs text-[#1a551a] tracking-widest">CONNECTED</div>
                 </div>
             </div>
-            <div class="flex gap-2">
-                <button onclick="Admin.refresh()" class="btn text-xs md:text-sm">SYNC</button>
-                <button onclick="location.reload()" class="btn btn-danger text-xs md:text-sm">EXIT</button>
+            <div class="flex gap-4 items-center">
+                <button id="btn-bugs" onclick="Admin.showBugs()" class="hidden btn btn-danger text-xs md:text-sm">
+                    BUG REPORTS <span id="bug-count" class="ml-1 bg-white text-red-600 px-1 rounded-full text-[10px]">0</span>
+                </button>
+                
+                <div class="flex gap-2">
+                    <button onclick="Admin.refresh()" class="btn text-xs md:text-sm">SYNC</button>
+                    <button onclick="location.reload()" class="btn btn-danger text-xs md:text-sm">EXIT</button>
+                </div>
             </div>
         </header>
 
@@ -162,18 +172,23 @@
 
                         <div id="tab-stats" class="absolute inset-0 hidden custom-scroll p-4 md:p-6">
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="special-container"></div>
-                            <div class="mt-4 panel-box p-4">
-                                <label class="block text-xs text-green-600 mb-1">AVAILABLE POINTS</label>
-                                <div class="flex gap-4">
+                            
+                            <div class="mt-4 panel-box p-4 border-t border-[#1a551a]">
+                                <h3 class="text-yellow-400 font-bold mb-4 border-b border-[#1a551a] pb-1">PERKS & POINTS</h3>
+                                
+                                <div class="flex gap-4 mb-4">
                                     <div class="flex-1">
-                                        <span>STAT POINTS:</span>
+                                        <span class="text-xs text-green-600">STAT POINTS:</span>
                                         <input type="number" id="inp-statPoints" class="w-20 ml-2" onchange="Admin.saveVal('statPoints', this.value)">
                                     </div>
                                     <div class="flex-1">
-                                        <span>PERK POINTS:</span>
+                                        <span class="text-xs text-green-600">PERK POINTS:</span>
                                         <input type="number" id="inp-perkPoints" class="w-20 ml-2" onchange="Admin.saveVal('perkPoints', this.value)">
                                     </div>
                                 </div>
+
+                                <div id="perk-list-container" class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm max-h-60 overflow-y-auto custom-scroll border border-[#1a551a] p-2 bg-[#001100]">
+                                    </div>
                             </div>
                         </div>
 
@@ -254,6 +269,15 @@
                 </div>
             </div>
         </div>
+    </div>
+    
+    <div id="bug-overlay" class="hidden absolute inset-0 z-50 bg-black/95 flex flex-col p-4 md:p-10 admin-font">
+        <div class="flex justify-between items-center border-b-2 border-red-500 pb-4 mb-4 shrink-0">
+            <h2 class="text-3xl text-red-500 font-bold tracking-widest blink-red">INCOMING BUG REPORTS</h2>
+            <button onclick="document.getElementById('bug-overlay').classList.add('hidden')" class="btn">CLOSE</button>
+        </div>
+        <div id="bug-list" class="flex-1 custom-scroll space-y-4 pr-2">
+            </div>
     </div>
 </div>
 
