@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-09 20:00:00 - admin.js - Added Bug Logic & Perk Editor
+// [TIMESTAMP] 2026-01-09 20:55:00 - admin.js - Permanent Bug Button Logic
 
 const Admin = {
     gatePass: "bimbo123",
@@ -6,7 +6,7 @@ const Admin = {
     adminPass: "zintel1992",
 
     dbData: {}, 
-    bugData: {}, // New: Bug Data Storage
+    bugData: {}, 
     currentPath: null,
     currentUserData: null,
     itemsList: [], 
@@ -70,7 +70,7 @@ const Admin = {
             }
         });
 
-        // 2. [NEU] Bug Reports Listener
+        // 2. [UPDATE] Bug Reports Listener
         Network.db.ref('bug_reports').on('value', snap => {
             this.bugData = snap.val() || {};
             const count = Object.keys(this.bugData).length;
@@ -78,22 +78,25 @@ const Admin = {
             const btn = document.getElementById('btn-bugs');
             const counter = document.getElementById('bug-count');
             
+            // Button immer anzeigen
+            btn.classList.remove('hidden');
+            counter.textContent = count;
+
             if(count > 0) {
-                btn.classList.remove('hidden');
-                btn.classList.add('btn-bug-alert');
-                counter.textContent = count;
+                // Alarm Modus (Rot & Blinkend)
+                btn.className = "btn btn-danger text-xs md:text-sm btn-bug-alert"; 
             } else {
-                btn.classList.remove('hidden'); // Optional: always show
-                btn.classList.remove('btn-bug-alert');
-                btn.classList.add('border-green-500', 'text-green-500'); // Normal Style
-                btn.classList.remove('btn-danger');
-                counter.textContent = "0";
+                // Ruhiger Modus (Grün)
+                btn.className = "btn text-xs md:text-sm border-green-500 text-green-500";
             }
-            this.renderBugs(); // Re-Render if open
+            
+            // Falls Overlay offen, Liste aktualisieren
+            if(!document.getElementById('bug-overlay').classList.contains('hidden')) {
+                this.renderBugs();
+            }
         });
     },
 
-    // [NEU] Bug Report Functions
     showBugs: function() {
         document.getElementById('bug-overlay').classList.remove('hidden');
         this.renderBugs();
@@ -258,7 +261,6 @@ const Admin = {
         container.innerHTML = '';
         const stats = d.stats || { STR:1, PER:1, END:1, CHA:1, INT:1, AGI:1, LUC:1 };
         
-        // S.P.E.C.I.A.L.
         for(let key in stats) {
             const val = stats[key];
             const div = document.createElement('div');
@@ -274,12 +276,10 @@ const Admin = {
         document.getElementById('inp-statPoints').value = d.statPoints || 0;
         document.getElementById('inp-perkPoints').value = d.perkPoints || 0;
 
-        // [NEU] PERK EDITOR
         const perkContainer = document.getElementById('perk-list-container');
         if(perkContainer) {
             perkContainer.innerHTML = '';
             
-            // Perks aus GameData holen
             const allPerks = (window.GameData && window.GameData.perks) ? window.GameData.perks : [];
             const userPerks = d.perks || {};
 
@@ -287,7 +287,6 @@ const Admin = {
                 perkContainer.innerHTML = '<div class="col-span-2 text-gray-500">No Perk Definitions found via GameData.</div>';
             } else {
                 allPerks.forEach(p => {
-                    // Level holen (Objekt oder Array legacy support)
                     let lvl = userPerks[p.id] || 0;
                     if(Array.isArray(userPerks)) lvl = userPerks.includes(p.id) ? 1 : 0;
 
@@ -314,11 +313,9 @@ const Admin = {
         Network.db.ref(this.currentPath + '/stats/' + stat).set(Number(val));
     },
 
-    // [NEU] Perk speichern
     savePerk: function(perkId, val) {
         if(!this.currentPath) return;
         const valNum = Number(val);
-        // Wir speichern Perks jetzt sicher als Objekt-Map: { "medic": 2 }
         Network.db.ref(this.currentPath + '/perks/' + perkId).set(valNum);
     },
 
