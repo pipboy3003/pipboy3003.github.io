@@ -1,10 +1,12 @@
-// [TIMESTAMP] 2026-01-09 22:55:00 - ui_core.js - First Time Hint Logic
+// [TIMESTAMP] 2026-01-09 23:25:00 - ui_core.js - Fix Input Focus & Bug Report
 
 const UI = {
     els: {},
     timerInterval: null,
     lastInputTime: Date.now(),
     biomeColors: (typeof window.GameData !== 'undefined') ? window.GameData.colors : {},
+
+    // Bug Report Storage entfernt (Daten dürfen nicht lokal liegen)
 
     // States
     loginBusy: false,
@@ -78,6 +80,17 @@ const UI = {
 
         document.body.appendChild(overlay);
 
+        // [FIX] Event-Isolation für das Textfeld
+        // Verhindert, dass Shift/WASD/Leertaste an das Spiel weitergeleitet werden
+        const textArea = document.getElementById('bug-desc');
+        if(textArea) {
+            textArea.focus(); // Fokus sofort setzen
+            const stopPropagation = (e) => e.stopPropagation();
+            textArea.addEventListener('keydown', stopPropagation);
+            textArea.addEventListener('keyup', stopPropagation);
+            textArea.addEventListener('keypress', stopPropagation);
+        }
+
         document.getElementById('btn-bug-close').onclick = () => overlay.remove();
         
         document.getElementById('btn-bug-send').onclick = () => {
@@ -120,7 +133,7 @@ const UI = {
         }
     },
 
-    // [NEU/UPDATED] Zeigt Steuerungshinweise (nur Mobile)
+    // Zeigt Steuerungshinweise (nur Mobile & beim ersten Start)
     showMobileControlsHint: function() {
         if(document.getElementById('controls-overlay')) return;
 
@@ -128,7 +141,6 @@ const UI = {
         overlay.id = 'controls-overlay';
         overlay.className = "fixed inset-0 z-[9000] bg-black/95 flex flex-col items-center justify-center p-6 text-center";
         
-        // Permadeath Warnung direkt hier integriert (als zweiter Absatz), da es der erste Start ist
         overlay.innerHTML = `
             <div class="border-2 border-green-500 p-6 max-w-sm w-full shadow-[0_0_20px_#1aff1a] bg-[#001100]">
                 <div class="text-4xl mb-4">📱</div>
@@ -290,7 +302,16 @@ const UI = {
 
         if(this.els.headerCharInfo) {
             this.els.headerCharInfo.addEventListener('click', () => {
-                this.switchView('char'); 
+                const hasStats = Game.state.statPoints > 0;
+                const hasPerks = Game.state.perkPoints > 0; 
+                
+                if(hasStats) {
+                    this.switchView('char'); 
+                } else if (hasPerks) {
+                    this.switchView('char');
+                } else {
+                    this.switchView('char');
+                }
             });
         }
 
@@ -317,7 +338,7 @@ const UI = {
         return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
     },
 
-    // [UPDATED] Start Logik mit "Nur beim ersten Mal"-Check
+    // Startet das Spiel und prüft auf "Erstes Mal"
     startGame: function(saveData, slotIndex, newName=null) {
         this.charSelectMode = false;
         this.els.charSelectScreen.style.display = 'none';
@@ -329,7 +350,7 @@ const UI = {
 
         Game.init(saveData, null, slotIndex, newName);
         
-        // Nur wenn Mobile UND Neuer Charakter: Zeige Steuerung & Warnung
+        // Bei mobile + neuem spiel -> Overlay zeigen
         if(this.isMobile() && isNewGame) {
             this.showMobileControlsHint();
         }
