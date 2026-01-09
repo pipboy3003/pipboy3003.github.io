@@ -1,12 +1,10 @@
-// [TIMESTAMP] 2026-01-09 23:25:00 - ui_core.js - Fix Input Focus & Bug Report
+// [TIMESTAMP] 2026-01-09 23:55:00 - ui_core.js - Full Integration: Bug Report, Ammo FX, First Start
 
 const UI = {
     els: {},
     timerInterval: null,
     lastInputTime: Date.now(),
     biomeColors: (typeof window.GameData !== 'undefined') ? window.GameData.colors : {},
-
-    // Bug Report Storage entfernt (Daten dürfen nicht lokal liegen)
 
     // States
     loginBusy: false,
@@ -42,8 +40,27 @@ const UI = {
         this.openBugModal(msg);
     },
 
-    // --- MODALS ---
+    // [NEU] Visueller Effekt für leere Munition etc. (Der große rote Text)
+    showCombatEffect: function(mainText, subText, color="red") {
+        const view = document.getElementById('view-container');
+        if(!view) return;
 
+        const el = document.createElement('div');
+        el.className = "click-effect-overlay"; // Siehe style.css!
+        el.innerHTML = `
+            <div class="click-effect-text" style="color:${color}; text-shadow: 0 0 20px ${color}">${mainText}</div>
+            <div class="click-effect-sub" style="border-color:${color}">${subText}</div>
+        `;
+        
+        view.appendChild(el);
+        
+        // Aufräumen nach Animation
+        setTimeout(() => {
+            el.remove();
+        }, 650);
+    },
+
+    // --- BUG REPORT MODAL ---
     openBugModal: function(autoErrorMsg = null) {
         if(document.getElementById('bug-report-overlay')) return;
         if(this.els.navMenu) this.els.navMenu.classList.add('hidden');
@@ -80,11 +97,10 @@ const UI = {
 
         document.body.appendChild(overlay);
 
-        // [FIX] Event-Isolation für das Textfeld
-        // Verhindert, dass Shift/WASD/Leertaste an das Spiel weitergeleitet werden
+        // Fix Focus Loss
         const textArea = document.getElementById('bug-desc');
         if(textArea) {
-            textArea.focus(); // Fokus sofort setzen
+            textArea.focus();
             const stopPropagation = (e) => e.stopPropagation();
             textArea.addEventListener('keydown', stopPropagation);
             textArea.addEventListener('keyup', stopPropagation);
@@ -203,7 +219,7 @@ const UI = {
         const isCharSelect = this.charSelectMode;
 
         if (isIngame || isCharSelect) {
-            if(Date.now() - this.lastInputTime > 300000) { 
+            if(Date.now() - this.lastInputTime > 300000) { // 5 Minuten
                 this.logout("AFK: ZEITÜBERSCHREITUNG");
                 return;
             }
@@ -302,16 +318,7 @@ const UI = {
 
         if(this.els.headerCharInfo) {
             this.els.headerCharInfo.addEventListener('click', () => {
-                const hasStats = Game.state.statPoints > 0;
-                const hasPerks = Game.state.perkPoints > 0; 
-                
-                if(hasStats) {
-                    this.switchView('char'); 
-                } else if (hasPerks) {
-                    this.switchView('char');
-                } else {
-                    this.switchView('char');
-                }
+                this.switchView('char'); 
             });
         }
 
