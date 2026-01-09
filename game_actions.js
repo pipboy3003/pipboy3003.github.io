@@ -1,3 +1,5 @@
+// [TIMESTAMP] 2026-01-09 23:55:00 - game_actions.js - Auto Switch Added
+
 Object.assign(Game, {
 
     getCampUpgradeCost: function(currentLevel) {
@@ -15,6 +17,45 @@ Object.assign(Game, {
         }
     },
     
+    // [NEU] Automatischer Waffenwechsel bei leerer Munition
+    switchToBestMelee: function() {
+        if(!this.state.inventory || this.state.inventory.length === 0) {
+            this.state.equip.weapon = this.items.fists;
+            UI.log("Keine Waffen! Kämpfe mit Fäusten!", "text-red-500 font-bold");
+            return;
+        }
+
+        let bestWeapon = null;
+        let bestDmg = -1;
+        let bestIndex = -1;
+
+        // Suche beste Nahkampfwaffe (ohne Munitionsbedarf)
+        this.state.inventory.forEach((item, idx) => {
+            const def = this.items[item.id];
+            if (def && def.type === 'weapon') {
+                // Item hat keine 'ammo' Eigenschaft -> Nahkampf
+                if (!def.ammo) {
+                    let dmg = def.dmg;
+                    if (item.props && item.props.dmgMult) dmg *= item.props.dmgMult;
+                    if (dmg > bestDmg) {
+                        bestDmg = dmg;
+                        bestWeapon = item;
+                        bestIndex = idx;
+                    }
+                }
+            }
+        });
+
+        if (bestWeapon) {
+            this.useItem(bestIndex); 
+            UI.log(`Notfall-Wechsel: ${bestWeapon.props?.name || this.items[bestWeapon.id].name}`, "text-yellow-400 blink-red");
+        } else {
+            this.unequipItem('weapon'); 
+            UI.log("Keine Nahkampfwaffe! Fäuste!", "text-red-500");
+        }
+        if(typeof UI.renderChar === 'function') UI.renderChar();
+    },
+
     // [v0.6.6] Rads with Resistance Perk
     addRadiation: function(amount) {
         if(!this.state) return;
