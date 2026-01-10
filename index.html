@@ -5,15 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pip-Boy 3003</title>
     
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22 font-weight=%22bold%22 fill=%22%231aff1a%22 font-family=%22monospace%22>P</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23000%22/><text x=%2250%25%22 y=%2250%25%22 font-size=%2280%22 font-family=%22monospace%22 font-weight=%22bold%22 fill=%22%231aff1a%22 dy=%22.35em%22 text-anchor=%22middle%22>P</text></svg>">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    
     <script>document.write('<link rel="stylesheet" href="style.css?v=' + Date.now() + '">');</script>
-    <script>window.onerror=function(m,u,l){console.error("ERR:",m);if(typeof UI!=='undefined'&&UI.error)UI.error(m);return false;};</script>
+    
+    <script>window.onerror=function(m,u,l){console.error("GLOBAL ERR:",m);if(typeof UI!=='undefined'&&UI.error)UI.error(m);return false;};</script>
 </head>
 <body>
 <div id="pipboy-case">
@@ -65,14 +67,11 @@
         </div>
     </div>
 
-       <div id="char-select-screen" style="display: none;">
+    <div id="char-select-screen" style="display: none;">
         <div class="login-box crt-effect-container w-full max-w-lg">
             <h1 class="text-4xl font-bold text-yellow-400 mb-4 border-b border-yellow-400 pb-2">CHARAKTER WAHL</h1>
             <div class="text-xs mb-4 text-green-300">Tippe auf einen Slot zum Auswählen/Starten.</div>
-            
-            <div id="char-slots-list" class="flex flex-col gap-2 w-full mb-4">
-                </div>
-            
+            <div id="char-slots-list" class="flex flex-col gap-2 w-full mb-4"></div>
             <div class="flex flex-col gap-2 w-full mb-4">
                 <div class="flex gap-2 w-full">
                     <button id="btn-char-delete-action" class="action-button flex-1 font-bold border-red-500 text-red-500 py-2" disabled>LÖSCHEN</button>
@@ -97,7 +96,7 @@
     
     <div id="new-char-overlay" class="absolute inset-0 z-[1000] bg-black/95 flex flex-col justify-center items-center hidden">
         <div class="login-box crt-effect-container border-yellow-400">
-            <h2 class="text-3xl font-bold text-yellow-400 mb-2">NEUE IDERNTITÄT</h2>
+            <h2 class="text-3xl font-bold text-yellow-400 mb-2">NEUE IDENTITÄT</h2>
             <p class="text-green-300 mb-4">Wie soll dein neuer Charakter heißen?</p>
             <input type="text" id="new-char-name" class="login-input mb-4 text-yellow-400 border-yellow-400" placeholder="NAME" maxlength="15">
             <div class="flex gap-2 w-full">
@@ -115,29 +114,23 @@
     <div id="player-list-overlay"><div class="font-bold border-b border-green-500 mb-2 pb-1 text-center">SIGNALE</div><div id="player-list-content" class="text-sm space-y-1"></div><button class="action-button w-full mt-2 text-xs" onclick="UI.togglePlayerList()">SCHLIESSEN</button></div>
 
     <div id="game-screen" class="hidden opacity-0 transition-opacity duration-1000 bg-[#000]">
-        
         <header class="flex flex-col w-full z-30 shrink-0 relative bg-[#001100] border-b-2 border-[#39ff14]">
             <div class="flex items-center justify-between p-2 gap-2 h-16 w-full">
-                
                 <div id="header-char-info" class="flex flex-col justify-center cursor-pointer hover:bg-green-900/30 px-2 rounded transition-colors group">
                     <span id="val-name" class="text-xl font-bold text-cyan-400 uppercase tracking-wide truncate group-hover:text-yellow-400 transition-colors">PLAYER</span>
                     <span class="text-yellow-400 font-bold text-sm leading-none">LVL <span id="val-lvl">1</span></span>
                 </div>
-
                 <div class="flex flex-col items-end justify-center gap-0 leading-tight min-w-[60px]">
                     <span class="text-yellow-400 font-bold text-sm whitespace-nowrap"><span id="val-caps" class="text-lg">0</span> KK</span>
                     <span class="text-yellow-400 font-bold text-sm whitespace-nowrap"><span id="val-ammo" class="text-lg">0</span> MUN</span>
                 </div>
-
                 <div class="flex-grow h-8 bg-gray-900 border border-[#39ff14] relative overflow-hidden mx-2 max-w-lg">
                     <div id="bar-hp" class="absolute top-0 left-0 h-full bg-[#1aff1a] transition-all duration-300 z-0" style="background: transparent; width: 100%"></div>
                     <div id="bar-rads" class="absolute top-0 right-0 h-full bg-red-600/90 transition-all duration-300 border-l border-red-400 z-10" style="width: 0%"></div>
                     <div id="val-hp" class="absolute inset-0 text-3xl tracking-widest flex items-center justify-center font-bold leading-none z-20 text-black" style="color: black !important;">TP 100/100</div>
                 </div>
-
                 <button id="btn-menu-toggle" class="header-btn border-[#39ff14] text-3xl h-full aspect-square flex items-center justify-center p-0" title="Menü">☰</button>
             </div>
-
             <div class="w-full h-2 bg-gray-900 border-t border-yellow-500 relative">
                  <div id="bar-exp-top" class="absolute top-0 left-0 h-full bg-yellow-500 transition-all duration-300" style="width: 0%"></div>
                  <div class="absolute inset-0 text-[8px] flex items-center justify-center text-black font-bold leading-none opacity-50"><span id="val-xp-txt">0</span>% XP</div>
@@ -177,8 +170,17 @@
         </div>
     </div>
 </div>
+
 <script>
-    function loadScript(src) { return new Promise((resolve, reject) => { const s = document.createElement('script'); s.src = src; s.onload = resolve; s.onerror = reject; document.body.appendChild(s); }); }
+    function loadScript(src) { 
+        return new Promise((resolve, reject) => { 
+            const s = document.createElement('script'); 
+            s.src = src; 
+            s.onload = resolve; 
+            s.onerror = (e) => reject({src: src, evt: e}); // Better error info
+            document.body.appendChild(s); 
+        }); 
+    }
     
     // BOOT SEQUENCE LOGIC
     function runBootSequence(ver) {
@@ -213,18 +215,16 @@
         }, delay + 1000);
     }
 
-    // MAIN INIT - FORCE NO CACHE
+    // MAIN INIT
     window.onload = function() {
         const verDisplay = document.getElementById('version-display');
         const loginVerDisplay = document.getElementById('login-version-display'); 
         
-        // Use current timestamp as version to force re-fetch
         const devVer = Date.now();
         console.log("[PipBoy3003] Dev Mode Active. Force Loading ID:", devVer);
 
         fetch('Version?t=' + devVer).then(res => res.text()).then(v => {
             const displayVer = v.trim(); 
-            
             runBootSequence(displayVer);
 
             if(verDisplay) { verDisplay.textContent = displayVer; verDisplay.classList.remove('animate-pulse'); }
@@ -232,7 +232,7 @@
             
             // --- LOAD ORDER START ---
             
-            // 1. Static Data & Network
+            // 1. Data & Network
             loadScript('data_core.js?v=' + devVer)
                 .then(() => loadScript('data_items.js?v=' + devVer))
                 .then(() => loadScript('data_recipes.js?v=' + devVer))
@@ -243,15 +243,15 @@
                 .then(() => loadScript('game/game_core.js?v=' + devVer))
                 .then(() => loadScript('game/game_map.js?v=' + devVer))
                 .then(() => loadScript('game/game_render.js?v=' + devVer))
-                .then(() => loadScript('world_gen.js?v=' + devVer)) 
-                .then(() => loadScript('minigames.js?v=' + devVer)) 
+                .then(() => loadScript('world_gen.js?v=' + devVer))
+                .then(() => loadScript('minigames.js?v=' + devVer))
                 
-                // 3. Game Logic Modules (The new Split)
+                // 3. New Logic Splits (replacing game_actions.js)
                 .then(() => loadScript('game/game_inv_logic.js?v=' + devVer))
                 .then(() => loadScript('game/game_world_logic.js?v=' + devVer))
                 .then(() => loadScript('game/game_char_logic.js?v=' + devVer))
                 
-                // 4. Combat Logic (Renamed to game_combat.js and moved to game/)
+                // 4. Combat Logic (Renamed & Moved)
                 .then(() => loadScript('game/game_combat.js?v=' + devVer))
 
                 // 5. UI System
@@ -274,7 +274,10 @@
                 .then(() => { if(typeof UI !== 'undefined') UI.init(); console.log("System Ready."); })
                 .catch(err => {
                     console.error("Critical Load Error:", err);
-                    if(document.getElementById('login-status')) document.getElementById('login-status').innerHTML = '<span style="color:red">CRITICAL ERROR: FILE MISSING OR CORRUPT.<br>CHECK CONSOLE.</span>';
+                    if(document.getElementById('login-status')) {
+                        // Zeige an, welche Datei fehlt!
+                        document.getElementById('login-status').innerHTML = `<span style="color:red">ERROR LOADING: ${err.src ? err.src.split('?')[0] : 'UNKNOWN'}</span>`;
+                    }
                 });
         });
     };
