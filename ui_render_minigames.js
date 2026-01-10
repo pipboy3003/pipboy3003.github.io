@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-10 10:00:00 - ui_render_minigames.js - Visuals for Minigames
+// [TIMESTAMP] 2026-01-10 13:00:00 - ui_render_minigames.js - Cleaned (No Dice Garbage)
 
 Object.assign(UI, {
     
@@ -16,7 +16,12 @@ Object.assign(UI, {
         const dice = document.getElementById('dice-overlay');
         if(dice) dice.classList.add('hidden');
         
-        // Zurück zur Map
+        // Hacking/Lockpicking Views clearen
+        if(this.els && this.els.view) {
+            // Nur leeren wenn wir nicht auf der Map sind (verhindert Flackern)
+            if(!Game.state || Game.state.view !== 'map') this.els.view.innerHTML = '';
+        }
+
         if(Game.state) Game.state.view = 'map';
         if(typeof UI.renderWorld === 'function') UI.renderWorld();
     },
@@ -24,7 +29,6 @@ Object.assign(UI, {
     // --- HACKING RENDERER ---
     renderHacking: function() {
         const h = MiniGames.hacking;
-        // ... (Dein existierender Hacking Code, sieht gut aus) ...
         let html = `
             <div class="w-full h-full flex flex-col p-2 font-mono text-green-500 bg-black overflow-hidden relative">
                 <div class="flex justify-between border-b border-green-500 mb-2 pb-1">
@@ -104,57 +108,39 @@ Object.assign(UI, {
         if(lock) lock.style.transform = `rotate(${MiniGames.lockpicking.lockAngle}deg)`;
     },
 
-    // --- [NEU] DICE RENDERER ---
-    renderDice: function() {
-        const container = document.getElementById('dice-overlay');
-        if(!container) return;
-        
-        const game = MiniGames.dice;
-        container.classList.remove('hidden');
-        
-        container.innerHTML = `
-            <div class="fixed inset-0 z-[2000] bg-black/90 flex flex-col items-center justify-center p-6">
-                <div class="border-4 border-yellow-500 p-8 bg-[#1a1100] shadow-[0_0_50px_#ffd700] text-center w-full max-w-md relative">
-                    <h2 class="text-4xl font-bold text-yellow-400 mb-6 font-vt323 tracking-widest animate-pulse">WASTELAND GAMBLE</h2>
-                    
-                    <div class="flex justify-center gap-8 mb-8">
-                        <div class="w-24 h-24 bg-black border-2 border-yellow-600 flex items-center justify-center text-6xl text-yellow-500 font-bold shadow-inner">
-                            ${game.d1}
-                        </div>
-                        <div class="w-24 h-24 bg-black border-2 border-yellow-600 flex items-center justify-center text-6xl text-yellow-500 font-bold shadow-inner">
-                            ${game.d2}
-                        </div>
-                    </div>
-
-                    <div class="text-yellow-200 font-mono text-sm mb-6">
-                        Glück (LUC): <span class="text-white font-bold">${Game.getStat('LUC')}</span> 
-                        (Bonus: +${Math.floor(Game.getStat('LUC')/2)})
-                    </div>
-
-                    ${!game.rolling ? 
-                        `<button onclick="MiniGames.dice.roll()" class="w-full py-4 text-2xl font-bold bg-yellow-600 text-black hover:bg-yellow-400 transition-all border-2 border-yellow-400 uppercase tracking-widest shadow-lg">
-                            🎲 WÜRFELN
-                        </button>` : 
-                        `<div class="text-yellow-500 text-xl font-bold animate-bounce">ROLLING...</div>`
-                    }
-                </div>
-            </div>
-        `;
-    },
-
     showMiniGameHelp: function(type) {
         let title = "", text = "";
+        
         if(type === 'hacking') {
             title = "TERMINAL HACKING";
-            text = `Passwort suchen. Likeness = Korrekte Buchstaben an korrekter Position.`;
-        } else {
+            text = `
+                <ul class="text-left text-sm space-y-2 list-disc pl-4">
+                    <li>Finde das korrekte Passwort im Speicher.</li>
+                    <li>Wähle ein Wort. Das System zeigt die <b>LIKENESS</b> (Treffer) an.</li>
+                    <li><b>Likeness</b> = Anzahl korrekter Buchstaben an der <b>korrekten Position</b>.</li>
+                    <li>Beispiel: PW ist 'LOVE'. Du tippst 'LIVE'.<br>Ergebnis: 3/4 (L, V, E korrekt).</li>
+                    <li>4 Versuche. Fehler = Sperrung!</li>
+                </ul>
+            `;
+        } else if (type === 'lockpicking') {
             title = "SCHLOSS KNACKEN";
-            text = `Dietrich bewegen, Schloss drehen. Bei Wackeln sofort stoppen!`;
+            text = `
+                <ul class="text-left text-sm space-y-2 list-disc pl-4">
+                    <li><b>Dietrich bewegen</b>: Maus bewegen oder auf Touchscreen ziehen.</li>
+                    <li><b>Schloss drehen</b>: Leertaste oder Button drücken.</li>
+                    <li>Wenn es wackelt: <b>SOFORT STOPPEN!</b> Der Dietrich bricht sonst.</li>
+                    <li>Finde den 'Sweet Spot', wo sich das Schloss ganz drehen lässt.</li>
+                </ul>
+            `;
+        } else if (type === 'dice') {
+            title = "WASTELAND GAMBLE";
+            text = "Würfle eine hohe Summe um besseren Loot zu erhalten. Dein Glücks-Wert (LUC) gibt einen Bonus!";
         }
+
         if (typeof this.showInfoDialog === 'function') {
             this.showInfoDialog(title, text);
         } else {
-            alert(title + ": " + text);
+            alert(text.replace(/<[^>]*>?/gm, ''));
         }
     }
 });
