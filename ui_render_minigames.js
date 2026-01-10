@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-10 14:00:00 - ui_render_minigames.js - Added Defusal UI
+// [TIMESTAMP] 2026-01-10 14:30:00 - ui_render_minigames.js - Optimized Defusal Render
 
 Object.assign(UI, {
     
@@ -9,8 +9,10 @@ Object.assign(UI, {
     },
 
     stopMinigame: function() {
-        // Aufräumen Defusal
-        if(MiniGames.defusal.gameLoop) clearInterval(MiniGames.defusal.gameLoop);
+        // Aufräumen Defusal Loop
+        if(MiniGames.defusal && MiniGames.defusal.gameLoop) {
+            clearInterval(MiniGames.defusal.gameLoop);
+        }
         
         MiniGames.active = null;
         
@@ -20,6 +22,7 @@ Object.assign(UI, {
         
         // Views clearen
         if(this.els && this.els.view) {
+            // Nur leeren wenn wir nicht auf der Map sind, um Flackern beim Wechsel zu vermeiden
             if(!Game.state || Game.state.view !== 'map') this.els.view.innerHTML = '';
         }
 
@@ -36,6 +39,10 @@ Object.assign(UI, {
     // --- HACKING ---
     renderHacking: function() {
         const h = MiniGames.hacking;
+        // ... (Dein existierender Code war hier gut, ich kürze ihn für Übersicht) ...
+        // Falls du den vollständigen Code brauchst, nimm den von vorhin.
+        // Die Logik mit "if(!innerHTML.includes('ROBCO'))" war hier korrekt!
+        
         let html = `
             <div class="w-full h-full flex flex-col p-2 font-mono text-green-500 bg-black overflow-hidden relative">
                 <div class="flex justify-between border-b border-green-500 mb-2 pb-1">
@@ -54,6 +61,7 @@ Object.assign(UI, {
                 <button class="absolute bottom-2 right-2 border border-red-500 text-red-500 px-2 text-xs hover:bg-red-900" onclick="MiniGames.hacking.end()">ABORT</button>
             </div>
         `;
+
         if(!this.els.view.innerHTML.includes('ROBCO')) {
             this.els.view.innerHTML = html;
         } else {
@@ -62,6 +70,7 @@ Object.assign(UI, {
              const attempts = document.querySelector('.animate-pulse');
              if(attempts) attempts.textContent = `ATTEMPTS: ${'█ '.repeat(h.attempts)}`;
         }
+
         const wordContainer = document.getElementById('hack-words');
         if(wordContainer && wordContainer.innerHTML === '') {
             h.words.forEach(word => {
@@ -98,6 +107,7 @@ Object.assign(UI, {
             `;
             const btn = document.getElementById('btn-turn-lock');
             if(btn) {
+                // Event Listener wie gehabt
                 btn.addEventListener('touchstart', (e) => { e.preventDefault(); MiniGames.lockpicking.rotateLock(); });
                 btn.addEventListener('touchend', (e) => { e.preventDefault(); MiniGames.lockpicking.releaseLock(); });
                 btn.addEventListener('mousedown', () => MiniGames.lockpicking.rotateLock());
@@ -110,7 +120,7 @@ Object.assign(UI, {
         if(lock) lock.style.transform = `rotate(${MiniGames.lockpicking.lockAngle}deg)`;
     },
 
-    // --- DICE (Overlay) ---
+    // --- DICE ---
     renderDice: function(game, finalResult = null) {
         const container = document.getElementById('dice-overlay');
         if(!container) return;
@@ -124,6 +134,8 @@ Object.assign(UI, {
             resultHtml = `<div class="mt-4 text-3xl font-bold text-green-400 animate-pulse border-2 border-green-500 bg-black/80 p-2">ERGEBNIS: ${finalResult}</div>`;
         }
 
+        // Auch hier: Nur Updaten wenn nötig wäre besser, aber beim Dice ist es nicht so kritisch wie bei Defusal.
+        // Der Einfachheit halber lassen wir deinen Dice Code so, da er funktioniert.
         container.innerHTML = `
             <div class="fixed inset-0 z-[2000] bg-black/90 flex flex-col items-center justify-center p-6">
                 <div class="border-4 border-yellow-500 p-8 bg-[#1a1100] shadow-[0_0_50px_#ffd700] text-center w-full max-w-md relative">
@@ -150,48 +162,70 @@ Object.assign(UI, {
         `;
     },
 
-    // --- [NEU] DEFUSAL RENDERER ---
+    // --- [FIXED & OPTIMIZED] DEFUSAL RENDERER ---
     renderDefusal: function() {
         const game = MiniGames.defusal;
         
-        let html = `
-            <div class="w-full h-full flex flex-col items-center justify-center bg-black p-4 select-none relative font-mono text-green-500">
-                <div class="border-2 border-green-500 bg-[#001100] p-6 w-full max-w-lg shadow-[0_0_20px_#0f0] relative">
-                    <div class="flex justify-between items-center border-b border-green-700 pb-2 mb-4">
-                        <h2 class="text-2xl font-bold tracking-widest animate-pulse text-red-500">BOMB DEFUSAL</h2>
-                        <button class="border border-green-500 px-2 text-xs hover:bg-green-900" onclick="UI.showMiniGameHelp('defusal')">?</button>
-                    </div>
-
-                    <div class="flex justify-center gap-4 mb-6">
-                        ${[1, 2, 3].map(i => {
-                            let color = "bg-gray-800"; // Pending
-                            if (i < game.round) color = "bg-green-500 shadow-[0_0_10px_#0f0]"; // Done
-                            if (i === game.round) color = "bg-red-500 animate-ping"; // Active
-                            return `<div class="w-4 h-4 rounded-full ${color} border border-green-900"></div>`;
-                        }).join('')}
-                    </div>
-
-                    <div class="w-full h-12 border-2 border-green-500 relative bg-black overflow-hidden mb-6">
-                        <div class="absolute top-0 bottom-0 bg-green-500/30 border-x border-green-500" 
-                             style="left: ${game.zoneStart}%; width: ${game.zoneWidth}%;">
+        // 1. Check: Existiert das Spiel-Gerüst schon? (ID 'defusal-game-root')
+        // Wenn NICHT, dann bauen wir es einmalig auf.
+        if(!document.getElementById('defusal-game-root')) {
+             this.els.view.innerHTML = `
+                <div id="defusal-game-root" class="w-full h-full flex flex-col items-center justify-center bg-black p-4 select-none relative font-mono text-green-500">
+                    <div class="border-2 border-green-500 bg-[#001100] p-6 w-full max-w-lg shadow-[0_0_20px_#0f0] relative">
+                        <div class="flex justify-between items-center border-b border-green-700 pb-2 mb-4">
+                            <h2 class="text-2xl font-bold tracking-widest animate-pulse text-red-500">BOMB DEFUSAL</h2>
+                            <button class="border border-green-500 px-2 text-xs hover:bg-green-900" onclick="UI.showMiniGameHelp('defusal')">?</button>
                         </div>
-                        <div class="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_10px_white]" 
-                             style="left: ${game.cursor}%;">
-                        </div>
-                    </div>
 
-                    <button onmousedown="MiniGames.defusal.cutWire()" ontouchstart="event.preventDefault(); MiniGames.defusal.cutWire()"
-                        class="w-full py-4 text-xl font-bold bg-red-900/30 border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-black transition-all uppercase tracking-widest active:scale-95">
-                        ✂️ CUT WIRE
-                    </button>
+                        <div id="defusal-lights" class="flex justify-center gap-4 mb-6"></div>
+
+                        <div class="w-full h-12 border-2 border-green-500 relative bg-black overflow-hidden mb-6">
+                            <div id="defusal-zone" class="absolute top-0 bottom-0 bg-green-500/30 border-x border-green-500"></div>
+                            <div id="defusal-cursor" class="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_10px_white]"></div>
+                        </div>
+
+                        <button onmousedown="MiniGames.defusal.cutWire()" ontouchstart="event.preventDefault(); MiniGames.defusal.cutWire()"
+                            class="w-full py-4 text-xl font-bold bg-red-900/30 border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-black transition-all uppercase tracking-widest active:scale-95">
+                            ✂️ CUT WIRE
+                        </button>
+                    </div>
+                    
+                    <div class="absolute bottom-4 text-xs text-gray-500 text-center">
+                        PER erhöht Breite • AGI senkt Tempo
+                    </div>
                 </div>
-                
-                <div class="absolute bottom-4 text-xs text-gray-500 text-center">
-                    PER erhöht Breite • AGI senkt Tempo
-                </div>
-            </div>
-        `;
-        this.els.view.innerHTML = html;
+            `;
+        }
+
+        // 2. Update: Nur die beweglichen Teile ändern!
+        
+        // Update Cursor Position
+        const cursor = document.getElementById('defusal-cursor');
+        if(cursor) cursor.style.left = game.cursor + '%';
+
+        // Update Zone (nur falls sie sich ändert, z.B. bei Rundenstart)
+        const zone = document.getElementById('defusal-zone');
+        if(zone) {
+            zone.style.left = game.zoneStart + '%';
+            zone.style.width = game.zoneWidth + '%';
+        }
+
+        // Update Lichter (Rundenanzeige)
+        const lightsContainer = document.getElementById('defusal-lights');
+        if(lightsContainer) {
+            // Wir bauen nur den String für die Lichter neu, das ist performant genug
+            const lightsHtml = [1, 2, 3].map(i => {
+                let color = "bg-gray-800"; 
+                if (i < game.round) color = "bg-green-500 shadow-[0_0_10px_#0f0]"; // Erledigt
+                if (i === game.round) color = "bg-red-500 animate-ping"; // Aktiv
+                return `<div class="w-4 h-4 rounded-full ${color} border border-green-900"></div>`;
+            }).join('');
+            
+            // Nur zuweisen wenn sich was geändert hat (verhindert unnötige Reflows)
+            if(lightsContainer.innerHTML !== lightsHtml) {
+                lightsContainer.innerHTML = lightsHtml;
+            }
+        }
     },
 
     showMiniGameHelp: function(type) {
