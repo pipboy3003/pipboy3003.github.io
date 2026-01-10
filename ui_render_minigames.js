@@ -1,8 +1,7 @@
-// [TIMESTAMP] 2026-01-10 13:00:00 - ui_render_minigames.js - Cleaned (No Dice Garbage)
+// [TIMESTAMP] 2026-01-10 14:00:00 - ui_render_minigames.js - Added Defusal UI
 
 Object.assign(UI, {
     
-    // UI Bridge Funktionen
     startMinigame: function(type) {
         if (!MiniGames[type]) return;
         MiniGames.active = type;
@@ -10,15 +9,17 @@ Object.assign(UI, {
     },
 
     stopMinigame: function() {
+        // Aufräumen Defusal
+        if(MiniGames.defusal.gameLoop) clearInterval(MiniGames.defusal.gameLoop);
+        
         MiniGames.active = null;
         
-        // Overlay verstecken (für Dice)
+        // Overlays verstecken
         const dice = document.getElementById('dice-overlay');
         if(dice) dice.classList.add('hidden');
         
-        // Hacking/Lockpicking Views clearen
+        // Views clearen
         if(this.els && this.els.view) {
-            // Nur leeren wenn wir nicht auf der Map sind (verhindert Flackern)
             if(!Game.state || Game.state.view !== 'map') this.els.view.innerHTML = '';
         }
 
@@ -26,13 +27,19 @@ Object.assign(UI, {
         if(typeof UI.renderWorld === 'function') UI.renderWorld();
     },
 
-    // --- HACKING RENDERER ---
+    renderMinigame: function() {
+       if (MiniGames.active === 'hacking') UI.renderHacking();
+       if (MiniGames.active === 'lockpicking') UI.renderLockpicking();
+       if (MiniGames.active === 'defusal') UI.renderDefusal();
+    },
+
+    // --- HACKING ---
     renderHacking: function() {
         const h = MiniGames.hacking;
         let html = `
             <div class="w-full h-full flex flex-col p-2 font-mono text-green-500 bg-black overflow-hidden relative">
                 <div class="flex justify-between border-b border-green-500 mb-2 pb-1">
-                    <span class="font-bold">ROBCO INDUSTRIES (TM) TERM-LINK</span>
+                    <span class="font-bold">ROBCO TERM-LINK</span>
                     <div class="flex gap-2">
                         <button class="border border-green-500 px-2 text-xs hover:bg-green-900" onclick="UI.showMiniGameHelp('hacking')">?</button>
                         <span class="animate-pulse">ATTEMPTS: ${'█ '.repeat(h.attempts)}</span>
@@ -47,7 +54,6 @@ Object.assign(UI, {
                 <button class="absolute bottom-2 right-2 border border-red-500 text-red-500 px-2 text-xs hover:bg-red-900" onclick="MiniGames.hacking.end()">ABORT</button>
             </div>
         `;
-        
         if(!this.els.view.innerHTML.includes('ROBCO')) {
             this.els.view.innerHTML = html;
         } else {
@@ -56,7 +62,6 @@ Object.assign(UI, {
              const attempts = document.querySelector('.animate-pulse');
              if(attempts) attempts.textContent = `ATTEMPTS: ${'█ '.repeat(h.attempts)}`;
         }
-
         const wordContainer = document.getElementById('hack-words');
         if(wordContainer && wordContainer.innerHTML === '') {
             h.words.forEach(word => {
@@ -70,14 +75,13 @@ Object.assign(UI, {
         }
     },
 
-    // --- LOCKPICKING RENDERER ---
+    // --- LOCKPICKING ---
     renderLockpicking: function(init=false) {
         if(init) {
             this.els.view.innerHTML = `
                 <div class="w-full h-full flex flex-col items-center justify-center bg-black relative select-none">
                     <div class="absolute top-2 left-2 text-xs text-gray-500">LEVEL: ${MiniGames.lockpicking.difficulty.toUpperCase()}</div>
                     <button class="absolute top-2 right-2 border border-green-500 text-green-500 px-2 font-bold hover:bg-green-900 z-50" onclick="UI.showMiniGameHelp('lockpicking')">?</button>
-                    
                     <div class="lock-container">
                         <div class="lock-inner" id="lock-rotator"></div>
                         <div class="lock-center"></div>
@@ -100,12 +104,94 @@ Object.assign(UI, {
                 btn.addEventListener('mouseup', () => MiniGames.lockpicking.releaseLock());
             }
         }
-        
         const pin = document.getElementById('bobby-pin');
         const lock = document.getElementById('lock-rotator');
-        
         if(pin) pin.style.transform = `rotate(${MiniGames.lockpicking.currentAngle - 90}deg)`; 
         if(lock) lock.style.transform = `rotate(${MiniGames.lockpicking.lockAngle}deg)`;
+    },
+
+    // --- DICE (Overlay) ---
+    renderDice: function(game, finalResult = null) {
+        const container = document.getElementById('dice-overlay');
+        if(!container) return;
+        container.classList.remove('hidden');
+        
+        const luck = Game.getStat('LUC') || 1;
+        const bonus = Math.floor(luck / 2);
+        
+        let resultHtml = '';
+        if (finalResult !== null) {
+            resultHtml = `<div class="mt-4 text-3xl font-bold text-green-400 animate-pulse border-2 border-green-500 bg-black/80 p-2">ERGEBNIS: ${finalResult}</div>`;
+        }
+
+        container.innerHTML = `
+            <div class="fixed inset-0 z-[2000] bg-black/90 flex flex-col items-center justify-center p-6">
+                <div class="border-4 border-yellow-500 p-8 bg-[#1a1100] shadow-[0_0_50px_#ffd700] text-center w-full max-w-md relative">
+                    <h2 class="text-4xl font-bold text-yellow-400 mb-6 font-vt323 tracking-widest animate-pulse">WASTELAND GAMBLE</h2>
+                    <div class="flex justify-center gap-8 mb-8">
+                        <div class="w-24 h-24 bg-black border-2 border-yellow-600 flex items-center justify-center text-6xl text-yellow-500 font-bold shadow-inner">
+                            ${game.d1}
+                        </div>
+                        <div class="w-24 h-24 bg-black border-2 border-yellow-600 flex items-center justify-center text-6xl text-yellow-500 font-bold shadow-inner">
+                            ${game.d2}
+                        </div>
+                    </div>
+                    <div class="text-yellow-200 font-mono text-sm mb-6 bg-black/40 p-2 rounded">
+                        Glück (LUC): <span class="text-white font-bold">${luck}</span> 
+                        <span class="text-gray-400">|</span> Bonus: <span class="text-[#39ff14] font-bold">+${bonus}</span>
+                    </div>
+                    ${!game.rolling && finalResult === null ? 
+                        `<button onclick="MiniGames.dice.roll()" class="w-full py-4 text-2xl font-bold bg-yellow-600 text-black hover:bg-yellow-400 transition-all border-2 border-yellow-400 uppercase tracking-widest shadow-lg cursor-pointer">🎲 WÜRFELN</button>` : 
+                        `<div class="text-yellow-500 text-xl font-bold h-16 flex items-center justify-center">${finalResult !== null ? 'Loot wird berechnet...' : 'ROLLING...'}</div>`
+                    }
+                    ${resultHtml}
+                </div>
+            </div>
+        `;
+    },
+
+    // --- [NEU] DEFUSAL RENDERER ---
+    renderDefusal: function() {
+        const game = MiniGames.defusal;
+        
+        let html = `
+            <div class="w-full h-full flex flex-col items-center justify-center bg-black p-4 select-none relative font-mono text-green-500">
+                <div class="border-2 border-green-500 bg-[#001100] p-6 w-full max-w-lg shadow-[0_0_20px_#0f0] relative">
+                    <div class="flex justify-between items-center border-b border-green-700 pb-2 mb-4">
+                        <h2 class="text-2xl font-bold tracking-widest animate-pulse text-red-500">BOMB DEFUSAL</h2>
+                        <button class="border border-green-500 px-2 text-xs hover:bg-green-900" onclick="UI.showMiniGameHelp('defusal')">?</button>
+                    </div>
+
+                    <div class="flex justify-center gap-4 mb-6">
+                        ${[1, 2, 3].map(i => {
+                            let color = "bg-gray-800"; // Pending
+                            if (i < game.round) color = "bg-green-500 shadow-[0_0_10px_#0f0]"; // Done
+                            if (i === game.round) color = "bg-red-500 animate-ping"; // Active
+                            return `<div class="w-4 h-4 rounded-full ${color} border border-green-900"></div>`;
+                        }).join('')}
+                    </div>
+
+                    <div class="w-full h-12 border-2 border-green-500 relative bg-black overflow-hidden mb-6">
+                        <div class="absolute top-0 bottom-0 bg-green-500/30 border-x border-green-500" 
+                             style="left: ${game.zoneStart}%; width: ${game.zoneWidth}%;">
+                        </div>
+                        <div class="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_10px_white]" 
+                             style="left: ${game.cursor}%;">
+                        </div>
+                    </div>
+
+                    <button onmousedown="MiniGames.defusal.cutWire()" ontouchstart="event.preventDefault(); MiniGames.defusal.cutWire()"
+                        class="w-full py-4 text-xl font-bold bg-red-900/30 border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-black transition-all uppercase tracking-widest active:scale-95">
+                        ✂️ CUT WIRE
+                    </button>
+                </div>
+                
+                <div class="absolute bottom-4 text-xs text-gray-500 text-center">
+                    PER erhöht Breite • AGI senkt Tempo
+                </div>
+            </div>
+        `;
+        this.els.view.innerHTML = html;
     },
 
     showMiniGameHelp: function(type) {
@@ -113,34 +199,22 @@ Object.assign(UI, {
         
         if(type === 'hacking') {
             title = "TERMINAL HACKING";
-            text = `
-                <ul class="text-left text-sm space-y-2 list-disc pl-4">
-                    <li>Finde das korrekte Passwort im Speicher.</li>
-                    <li>Wähle ein Wort. Das System zeigt die <b>LIKENESS</b> (Treffer) an.</li>
-                    <li><b>Likeness</b> = Anzahl korrekter Buchstaben an der <b>korrekten Position</b>.</li>
-                    <li>Beispiel: PW ist 'LOVE'. Du tippst 'LIVE'.<br>Ergebnis: 3/4 (L, V, E korrekt).</li>
-                    <li>4 Versuche. Fehler = Sperrung!</li>
-                </ul>
-            `;
+            text = "Finde das korrekte Passwort. Likeness = Korrekte Buchstaben an richtiger Position.";
         } else if (type === 'lockpicking') {
             title = "SCHLOSS KNACKEN";
-            text = `
-                <ul class="text-left text-sm space-y-2 list-disc pl-4">
-                    <li><b>Dietrich bewegen</b>: Maus bewegen oder auf Touchscreen ziehen.</li>
-                    <li><b>Schloss drehen</b>: Leertaste oder Button drücken.</li>
-                    <li>Wenn es wackelt: <b>SOFORT STOPPEN!</b> Der Dietrich bricht sonst.</li>
-                    <li>Finde den 'Sweet Spot', wo sich das Schloss ganz drehen lässt.</li>
-                </ul>
-            `;
+            text = "Dietrich bewegen, Schloss drehen. Bei Wackeln sofort stoppen!";
         } else if (type === 'dice') {
             title = "WASTELAND GAMBLE";
-            text = "Würfle eine hohe Summe um besseren Loot zu erhalten. Dein Glücks-Wert (LUC) gibt einen Bonus!";
+            text = "Würfle hoch! Dein Glück (LUC) addiert sich zum Ergebnis.";
+        } else if (type === 'defusal') {
+            title = "BOMBE ENTSCHÄRFEN";
+            text = "Drücke 'CUT WIRE', wenn der weiße Balken im grünen Bereich ist.<br>3 Kabel müssen durchtrennt werden.";
         }
 
         if (typeof this.showInfoDialog === 'function') {
             this.showInfoDialog(title, text);
         } else {
-            alert(text.replace(/<[^>]*>?/gm, ''));
+            alert(title + ": " + text.replace(/<[^>]*>?/gm, ''));
         }
     }
 });
