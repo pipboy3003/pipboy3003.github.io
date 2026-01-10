@@ -156,7 +156,7 @@ const Network = {
             console.error("❌ Fehler beim Löschen von Slot " + slotIndex + ":", e);
             throw e;
         });
-    }
+    },
 
 
     startPresence: function() {
