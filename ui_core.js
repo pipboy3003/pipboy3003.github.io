@@ -1,4 +1,4 @@
-// [2026-01-10 01:15:00] ui_core.js - Variable Duration FX
+// [TIMESTAMP] 2026-01-10 03:45:00 - ui_core.js - Fix Typo causing crash on buy
 
 const UI = {
     els: {},
@@ -40,7 +40,7 @@ const UI = {
         this.openBugModal(msg);
     },
 
- // [FIX] Visueller Effekt synchronisiert jetzt Animation mit Duration
+    // [FIX] Visueller Effekt synchronisiert jetzt Animation mit Duration
     showCombatEffect: function(mainText, subText, color="red", duration=1000) {
         const view = document.getElementById('view-container');
         if(!view) return;
@@ -49,7 +49,6 @@ const UI = {
         el.className = "click-effect-overlay"; 
         
         // WICHTIG: Wir überschreiben die CSS-Animation Dauer hier dynamisch!
-        // Damit bleibt es so lange sichtbar, wie 'duration' angibt.
         el.style.animation = `clickEffectAnim ${duration/1000}s ease-out forwards`;
 
         el.innerHTML = `
@@ -334,8 +333,9 @@ const UI = {
         this.timerInterval = setInterval(() => this.updateTimer(), 1000);
     },
     
+    // [FIX] Hier war der Fehler (this.els.els.btnInv) -> korrigiert zu this.els.btnInv
     triggerInventoryAlert: function() {
-        if(this.els.btnInv) this.els.els.btnInv.classList.add('alert-glow-yellow');
+        if(this.els.btnInv) this.els.btnInv.classList.add('alert-glow-yellow');
         if(this.els.btnMenu) this.els.btnMenu.classList.add('alert-glow-yellow');
     },
 
