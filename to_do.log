@@ -1,11 +1,8 @@
 🐛 Aktuelle Bugs & Anpassungen:
-- Todesklauen zu oft
-- Bei Char löschen soll Enter auch funktionieren zum "löschen" nicht nur der Button zum drücken. Sofern der Name halt Korrekt ist. Dann bitte "Char wird gelöscht..." anzeigen bis der Charakter aus der Datenbank gelöscht wurde.
-- Öfters Probleme mit dem Laden der Dateien im Hintergrund das dies länger dauert als der Boot Screen. Sollte die "system ready" meldung noch nicht da sein bis die boot sequenz abgeschlosssen ist, soll es nicht weiter gehen. Sonst haben wir ab und an Probleme beim Login.
+- Todesklauen zu oft 
 - Buglog muss so ausführlich sein das ich ihn direkt weiterleiten kann zum beheben, an dich eben.
 - wenn man stirbt bleibt aktuell charaktee uns safegame bestehen. wenn TP 0 erreicht sollte der charakter ja gelöscht werden, liegt das an der speicher logik?
 - Doppellogin möglich, Handy und Laptop zur selben Zeit. Warum keine Abfrage mehr ob man schon verbunden ist?
-- Logik überabeiten welches Tier welches Fleisch abgibt: Wieso bekommt man vom wilden hund Rattenfleisch???!
 - Fäuste sollen die Standart "ausrüstung" als Waffe sein wenn man keine hat. Kein Item was so existiert, aktuell kann man sie in Schrott zerlegen. Was soll den der mist.
 - Wo sind die Rucksäcke hin?
 - Lock Picking auf Truhen in Dungeons legen
