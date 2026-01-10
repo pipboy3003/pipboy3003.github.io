@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-10 18:00:00 - minigames.js - Bugfixes (Duplicates & Safety)
+// [TIMESTAMP] 2026-01-10 22:00:00 - minigames.js - 3 Dice Logic
 
 window.MiniGames = {
     active: null,
@@ -8,12 +8,11 @@ window.MiniGames = {
         words: [], password: "", attempts: 4, logs: [],
         
         init: function() {
-            const int = Game.getStat('INT') || 1; // Fallback falls undefined
+            const int = Game.getStat('INT') || 1; 
             const diff = 12 - Math.min(8, int);
             const wordList = ["PASS", "FAIL", "DATA", "CODE", "HACK", "BIOS", "BOOT", "USER", "ROOT", "WIFI", "LINK", "NODE", "CORE", "DISK", "FILE", "SAVE", "LOAD", "EXIT"];
             
             this.words = [];
-            // [FIX] Verhindere doppelte Wörter
             while(this.words.length < diff) {
                 const w = wordList[Math.floor(Math.random() * wordList.length)];
                 if(!this.words.includes(w)) {
@@ -101,12 +100,12 @@ window.MiniGames = {
         }
     },
 
-    // --- DICE GAME ---
+    // --- DICE GAME (3 Dice) ---
     dice: {
-        d1: 1, d2: 1, rolling: false,
+        d1: 1, d2: 1, d3: 1, rolling: false,
         
         init: function() {
-            this.d1 = 1; this.d2 = 1;
+            this.d1 = 1; this.d2 = 1; this.d3 = 1;
             this.rolling = false;
             this.render();
         },
@@ -118,6 +117,7 @@ window.MiniGames = {
             const rollInterval = setInterval(() => {
                 this.d1 = Math.floor(Math.random() * 6) + 1;
                 this.d2 = Math.floor(Math.random() * 6) + 1;
+                this.d3 = Math.floor(Math.random() * 6) + 1; // 3. Würfel
                 this.render();
                 rolls++;
                 if(rolls >= 10) {
@@ -129,17 +129,16 @@ window.MiniGames = {
         },
 
         finish: function() {
-            const sum = this.d1 + this.d2;
+            const sum = this.d1 + this.d2 + this.d3; // Summe aus 3 Würfeln
             const luck = Game.getStat('LUC') || 1;
             const bonus = Math.floor(luck / 2);
             const total = sum + bonus;
             
-            this.render(total); // Ergebnis rendern
+            this.render(total); 
 
             if(typeof Game.gambleLegendaryLoot === 'function') {
                 Game.gambleLegendaryLoot(total);
             } else {
-                // Fallback falls Funktion fehlt
                 UI.log(`Ergebnis: ${total}`, "text-yellow-400");
                 Game.state.caps += total * 10; 
                 Game.saveGame();
@@ -163,7 +162,7 @@ window.MiniGames = {
             this.setupRound();
             
             if (this.gameLoop) clearInterval(this.gameLoop);
-            this.gameLoop = setInterval(() => this.update(), 20); // 50 FPS Loop
+            this.gameLoop = setInterval(() => this.update(), 20); 
             
             if (typeof UI.renderDefusal === 'function') UI.renderDefusal();
         },
@@ -223,11 +222,10 @@ window.MiniGames = {
             } else {
                 UI.log("BOOM! Explosion!", "text-red-500 font-bold blink-red");
                 
-                // [FIX] Sicherer Zugriff auf Radiation und HP
                 if (typeof Game.addRadiation === 'function') {
                     Game.addRadiation(20);
                 } else {
-                    Game.state.rads = (Game.state.rads || 0) + 20; // Fallback manuell
+                    Game.state.rads = (Game.state.rads || 0) + 20; 
                 }
 
                 Game.state.hp = Math.max(0, Game.state.hp - 30); 
