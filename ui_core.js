@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-11 12:00:00 - ui_core.js - Fixed Empty Slot Double Click
+// [TIMESTAMP] 2026-01-11 12:30:00 - ui_core.js - Added Duplicate Name Check
 
 const UI = {
     els: {},
@@ -318,7 +318,7 @@ const UI = {
         
         // --- BUTTON EVENT LISTENER FIXES ---
         
-        // 1. Charakter erstellen (Confirm Button)
+        // 1. Charakter erstellen (Confirm Button) - MIT NAMENS-CHECK
         if(this.els.btnCreateCharConfirm) {
             this.els.btnCreateCharConfirm.onclick = () => {
                 const name = this.els.inputNewCharName.value.trim();
@@ -326,12 +326,23 @@ const UI = {
                     alert("Name muss mindestens 3 Zeichen haben!");
                     return;
                 }
+                
+                // [NEU] Check auf doppelten Namen
+                const isDuplicate = Object.values(this.currentSaves).some(save => 
+                    save && save.playerName && save.playerName.toUpperCase() === name.toUpperCase()
+                );
+                
+                if(isDuplicate) {
+                    alert("Ein Charakter mit diesem Namen existiert bereits!");
+                    return;
+                }
+
                 if(this.selectedSlot === -1) return;
                 
                 // Overlay schließen
                 this.els.newCharOverlay.classList.add('hidden');
                 
-                // Spiel starten (Game initiiert neuen Slot)
+                // Spiel starten
                 this.startGame(null, this.selectedSlot, name);
             };
         }
@@ -572,7 +583,6 @@ const UI = {
         }
     },
     
-    // [FIX] Double click on EMPTY slot now triggers creation
     selectSlot: function(index) {
         if(this.selectedSlot === index) {
             this.triggerCharSlot(); // Doppelklick = Start / Erstellen
