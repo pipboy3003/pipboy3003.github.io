@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-11 12:30:00 - ui_core.js - Added Duplicate Name Check
+// [TIMESTAMP] 2026-01-11 13:00:00 - ui_core.js - Async Logout & Delete Feedback
 
 const UI = {
     els: {},
@@ -316,9 +316,9 @@ const UI = {
             gameOver: document.getElementById('game-over-screen')
         };
         
-        // --- BUTTON EVENT LISTENER FIXES ---
+        // --- BUTTON EVENT LISTENERS ---
         
-        // 1. Charakter erstellen (Confirm Button) - MIT NAMENS-CHECK
+        // 1. Charakter erstellen (Confirm Button) - MIT LOGGING & DUP CHECK
         if(this.els.btnCreateCharConfirm) {
             this.els.btnCreateCharConfirm.onclick = () => {
                 const name = this.els.inputNewCharName.value.trim();
@@ -327,22 +327,22 @@ const UI = {
                     return;
                 }
                 
-                // [NEU] Check auf doppelten Namen
+                // Debug Log für Duplicate Check
+                console.log("[UI] Prüfe auf Duplikate:", name);
+                console.log("[UI] Aktuelle Saves:", this.currentSaves);
+
                 const isDuplicate = Object.values(this.currentSaves).some(save => 
                     save && save.playerName && save.playerName.toUpperCase() === name.toUpperCase()
                 );
                 
                 if(isDuplicate) {
-                    alert("Ein Charakter mit diesem Namen existiert bereits!");
+                    alert(`Der Name "${name}" ist bereits vergeben!`);
                     return;
                 }
 
                 if(this.selectedSlot === -1) return;
                 
-                // Overlay schließen
                 this.els.newCharOverlay.classList.add('hidden');
-                
-                // Spiel starten
                 this.startGame(null, this.selectedSlot, name);
             };
         }
@@ -361,17 +361,34 @@ const UI = {
             };
         }
 
-        // 4. Löschen bestätigen
+        // 4. Löschen bestätigen - MIT FEEDBACK
         if(this.els.btnDeleteConfirm) {
             this.els.btnDeleteConfirm.onclick = async () => {
                 if(this.selectedSlot === -1) return;
                 
-                // Löschen im Netzwerk
+                // FEEDBACK STATUS ANZEIGEN
+                const btn = this.els.btnDeleteConfirm;
+                const originalText = btn.textContent;
+                
+                btn.textContent = "WIRD GELÖSCHT...";
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-wait');
+                
+                // Löschen im Netzwerk (AWAIT ist hier wichtig)
                 if(typeof Network !== 'undefined') {
-                    await Network.deleteSave(this.selectedSlot);
+                    try {
+                        await Network.deleteSave(this.selectedSlot);
+                    } catch(e) {
+                        console.error("Delete Error:", e);
+                        alert("Fehler beim Löschen!");
+                    }
                 }
 
                 // UI Reset
+                btn.textContent = originalText;
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-wait');
+
                 this.els.deleteOverlay.style.display = 'none';
                 this.currentSaves[this.selectedSlot] = null;
                 this.renderCharacterSelection(this.currentSaves);
@@ -447,15 +464,25 @@ const UI = {
         if(typeof Network !== 'undefined') Network.startPresence();
     },
 
-    logout: function(msg) {
+    // [NEU] Async Logout, um Speichern abzuwarten
+    logout: async function(msg) {
         this.loginBusy = false;
         this.selectedSlot = -1; 
         this.charSelectMode = false; 
         
         if(Game.state) {
-            Game.saveGame(true); 
+            console.log("[LOGOUT] Saving game data...");
+            // Wir warten auf das Speichern, falls Game.saveGame async ist/Promise zurückgibt
+            try {
+                if(Game.saveGame) await Game.saveGame(true);
+            } catch(e) {
+                console.error("Save failed during logout:", e);
+            }
             Game.state = null;
         }
+        
+        // Kurze Sicherheitspause für Netzwerk-Flush
+        await new Promise(r => setTimeout(r, 200));
 
         if(typeof Network !== 'undefined') Network.disconnect();
         
