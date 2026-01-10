@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-09 23:55:00 - ui_core.js - Full Integration: Bug Report, Ammo FX, First Start
+// [2026-01-10 01:15:00] ui_core.js - Variable Duration FX
 
 const UI = {
     els: {},
@@ -40,13 +40,14 @@ const UI = {
         this.openBugModal(msg);
     },
 
-    // [NEU] Visueller Effekt für leere Munition etc. (Der große rote Text)
-    showCombatEffect: function(mainText, subText, color="red") {
+    // [NEU] duration Parameter hinzugefügt (Standard 1000ms)
+    showCombatEffect: function(mainText, subText, color="red", duration=1000) {
         const view = document.getElementById('view-container');
         if(!view) return;
 
         const el = document.createElement('div');
-        el.className = "click-effect-overlay"; // Siehe style.css!
+        el.className = "click-effect-overlay"; 
+        // Wir nutzen animation-duration basierend auf dem Parameter (optional, hier einfach Timeout)
         el.innerHTML = `
             <div class="click-effect-text" style="color:${color}; text-shadow: 0 0 20px ${color}">${mainText}</div>
             <div class="click-effect-sub" style="border-color:${color}">${subText}</div>
@@ -54,10 +55,10 @@ const UI = {
         
         view.appendChild(el);
         
-        // Aufräumen nach Animation
+        // Aufräumen nach der gewünschten Zeit
         setTimeout(() => {
             el.remove();
-        }, 650);
+        }, duration);
     },
 
     // --- BUG REPORT MODAL ---
@@ -97,7 +98,6 @@ const UI = {
 
         document.body.appendChild(overlay);
 
-        // Fix Focus Loss
         const textArea = document.getElementById('bug-desc');
         if(textArea) {
             textArea.focus();
@@ -149,7 +149,6 @@ const UI = {
         }
     },
 
-    // Zeigt Steuerungshinweise (nur Mobile & beim ersten Start)
     showMobileControlsHint: function() {
         if(document.getElementById('controls-overlay')) return;
 
@@ -332,7 +331,7 @@ const UI = {
     },
     
     triggerInventoryAlert: function() {
-        if(this.els.btnInv) this.els.btnInv.classList.add('alert-glow-yellow');
+        if(this.els.btnInv) this.els.els.btnInv.classList.add('alert-glow-yellow');
         if(this.els.btnMenu) this.els.btnMenu.classList.add('alert-glow-yellow');
     },
 
@@ -345,19 +344,16 @@ const UI = {
         return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
     },
 
-    // Startet das Spiel und prüft auf "Erstes Mal"
     startGame: function(saveData, slotIndex, newName=null) {
         this.charSelectMode = false;
         this.els.charSelectScreen.style.display = 'none';
         this.els.gameScreen.classList.remove('hidden');
         this.els.gameScreen.classList.remove('opacity-0');
         
-        // Prüfen: Ist es ein neuer Spielstand? (saveData ist null)
         const isNewGame = !saveData;
 
         Game.init(saveData, null, slotIndex, newName);
         
-        // Bei mobile + neuem spiel -> Overlay zeigen
         if(this.isMobile() && isNewGame) {
             this.showMobileControlsHint();
         }
