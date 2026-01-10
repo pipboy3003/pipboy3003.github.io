@@ -1,10 +1,13 @@
-// [TIMESTAMP] 2026-01-09 00:40:00 - ui_view_town.js - Strong Hover Effects & Unified
+// [TIMESTAMP] 2026-01-10 04:30:00 - ui_view_town.js - All City Views (Hub, Shop, Clinic, Crafting)
 
 Object.assign(UI, {
     
+    // Default Shop Menge
     shopQty: 1,
 
-    // --- KLINIK & WERKBANK ---
+    // ==========================================
+    // === KLINIK (Dr. Zimmermann) ===
+    // ==========================================
     renderClinic: function() {
         Game.state.view = 'clinic';
         const view = document.getElementById('view-container');
@@ -51,6 +54,9 @@ Object.assign(UI, {
         view.appendChild(wrapper);
     },
 
+    // ==========================================
+    // === WERKBANK (Crafting & Scrap) ===
+    // ==========================================
     renderCrafting: function(tab = 'create') {
         Game.state.view = 'crafting';
         const view = document.getElementById('view-container');
@@ -154,235 +160,9 @@ Object.assign(UI, {
         }
     },
 
-    renderShop: function(mode = 'buy') {
-        Game.state.view = 'shop';
-        Game.checkShopRestock(); 
-
-        const view = document.getElementById('view-container');
-        if(!view) return;
-        view.innerHTML = '';
-
-        const wrapper = document.createElement('div');
-        wrapper.className = "w-full h-full flex flex-col bg-black relative";
-
-        const header = document.createElement('div');
-        header.className = "flex-shrink-0 flex justify-between items-end p-4 border-b-4 border-yellow-600 bg-[#1a1500] shadow-md z-10";
-        
-        const usedSlots = Game.getUsedSlots();
-        const maxSlots = Game.getMaxSlots();
-        const isFull = usedSlots >= maxSlots;
-        const invColor = isFull ? "text-red-500 animate-pulse" : "text-yellow-300";
-
-        header.innerHTML = `
-            <div>
-                <h2 class="text-3xl text-yellow-400 font-bold font-vt323 tracking-wider">HANDELSPOSTEN</h2>
-                <div class="text-xs text-yellow-700 font-mono mt-1">HÄNDLER: <span class="font-bold text-yellow-500">${Game.state.shop.merchantCaps} KK</span></div>
-            </div>
-            
-            <div class="flex gap-2">
-                <div class="bg-black/50 border-2 border-yellow-500 p-2 flex flex-col items-end shadow-inner">
-                     <span class="text-[10px] text-yellow-600 uppercase tracking-widest">GEWICHT</span>
-                     <span class="text-2xl ${invColor} font-bold font-vt323">${usedSlots} / ${maxSlots}</span>
-                </div>
-
-                <div class="bg-black/50 border-2 border-yellow-500 p-2 flex flex-col items-end shadow-inner">
-                    <span class="text-[10px] text-yellow-600 uppercase tracking-widest">DEIN VERMÖGEN</span>
-                    <span class="text-2xl text-yellow-300 font-bold font-vt323">${Game.state.caps} KK</span>
-                </div>
-            </div>
-        `;
-        wrapper.appendChild(header);
-
-        const controls = document.createElement('div');
-        controls.className = "flex-shrink-0 bg-[#110d00] border-b-2 border-yellow-900 p-3 flex flex-col gap-3 shadow-inner";
-        
-        controls.innerHTML = `
-            <div class="flex w-full gap-2">
-                <button class="flex-1 py-2 font-bold text-lg uppercase tracking-wider border-2 transition-all ${mode==='buy' ? 'bg-yellow-500 text-black border-yellow-500 shadow-inner' : 'bg-black text-yellow-700 border-yellow-900 hover:text-yellow-500'}" onclick="UI.renderShop('buy')">KAUFEN</button>
-                <button class="flex-1 py-2 font-bold text-lg uppercase tracking-wider border-2 transition-all ${mode==='sell' ? 'bg-green-600 text-black border-green-600 shadow-inner' : 'bg-black text-green-700 border-green-900 hover:text-green-500'}" onclick="UI.renderShop('sell')">VERKAUFEN</button>
-            </div>
-        `;
-        
-        const qtyRow = document.createElement('div');
-        qtyRow.className = "flex justify-center gap-2 px-2 pt-1";
-        const makeQtyBtn = (label, val) => {
-            const isActive = (this.shopQty === val);
-            return `<button class="px-4 py-1 text-xs font-bold border uppercase tracking-widest transition-all ${isActive ? 'bg-yellow-600 text-black border-yellow-600' : 'bg-[#1a1500] text-yellow-600 border-yellow-900 hover:border-yellow-600'}" onclick="UI.shopQty = '${val}'; UI.renderShop('${mode}')">${label}</button>`;
-        };
-        qtyRow.innerHTML = `<span class="text-xs text-yellow-900 self-center mr-2 font-bold">MENGE:</span>` + makeQtyBtn("1x", 1) + makeQtyBtn("5x", 5) + makeQtyBtn("MAX", 'max');
-        controls.appendChild(qtyRow);
-        wrapper.appendChild(controls);
-
-        const content = document.createElement('div');
-        content.id = "shop-list";
-        content.className = "flex-grow overflow-y-auto p-3 custom-scrollbar bg-[#0a0800]";
-        wrapper.appendChild(content);
-
-        const footer = document.createElement('div');
-        footer.className = "flex-shrink-0 p-3 border-t-4 border-yellow-900 bg-[#1a1500]";
-        footer.innerHTML = `<button class="action-button w-full border-2 border-yellow-800 text-yellow-700 hover:border-yellow-500 hover:text-yellow-400 transition-colors py-3 font-bold tracking-widest uppercase" onclick="UI.renderCity()">ZURÜCK ZUM ZENTRUM</button>`;
-        wrapper.appendChild(footer);
-
-        view.appendChild(wrapper);
-
-        if(mode === 'buy') this.renderShopBuy(content);
-        else this.renderShopSell(content);
-    },
-
-    renderShopBuy: function(container) {
-        if(!container) container = document.getElementById('shop-list');
-        if(!container) return;
-        container.innerHTML = '';
-
-        const stock = Game.state.shop.stock || {};
-        const ammoStock = (Game.state.shop.ammoStock !== undefined) ? Game.state.shop.ammoStock : 0;
-        const myCaps = Game.state.caps;
-
-        // --- HELPER: UNIFIED ROW CREATOR ---
-        const createRow = (icon, name, qty, price, key, isAmmo = false) => {
-            const canBuy = myCaps >= price;
-            
-            // Farben definieren
-            // [FIX] Stärkere Hover Farben für besseres Feedback
-            let colorText = isAmmo ? 'text-blue-300' : 'text-yellow-200';
-            let colorBorder = isAmmo ? 'border-blue-500' : 'border-yellow-700';
-            
-            // Hover: Intensiveres Leuchten
-            let colorBg = isAmmo ? 'bg-blue-900/20 hover:bg-blue-600/40' : 'bg-yellow-900/10 hover:bg-yellow-600/40';
-            
-            let colorSub = isAmmo ? 'text-blue-600' : 'text-yellow-700';
-            let colorBtn = isAmmo ? 'text-blue-400' : 'text-yellow-600';
-
-            if (!canBuy) {
-                colorText = 'text-gray-500';
-                colorBorder = 'border-red-900';
-                colorBg = 'bg-red-900/10 opacity-50';
-                colorSub = 'text-red-900';
-                colorBtn = 'text-red-900';
-            }
-
-            const row = document.createElement('div');
-            // Full Row Clickable Styling
-            row.className = `shop-item-row flex justify-between items-center mb-2 border-2 ${colorBorder} ${colorBg} h-16 relative z-50 transition-all select-none`;
-            
-            if (canBuy) {
-                row.style.cursor = 'pointer';
-                row.setAttribute('onclick', `Game.buyItem('${key}', UI.shopQty)`);
-                row.setAttribute('role', 'button');
-            } else {
-                row.style.cursor = 'not-allowed';
-            }
-
-            row.innerHTML = `
-                <div class="flex items-center gap-3 p-2 flex-grow overflow-hidden pointer-events-none">
-                    <div class="text-3xl w-12 h-12 flex items-center justify-center bg-black/40 border border-white/10 rounded">${icon}</div>
-                    <div class="flex flex-col truncate">
-                        <span class="font-bold text-lg font-vt323 truncate leading-none pt-1 ${colorText}">${name}</span>
-                        <span class="text-xs ${colorSub} font-mono uppercase">Vorrat: ${qty} | Preis: ${price} KK</span>
-                    </div>
-                </div>
-                <div class="h-full flex flex-col justify-center items-end border-l-2 ${colorBorder} bg-black/30 min-w-[100px]">
-                    <button class="w-full h-full text-sm font-bold uppercase tracking-wider bg-transparent border-none ${colorBtn}" style="pointer-events: none;">
-                        KAUFEN
-                    </button>
-                </div>
-            `;
-            return row;
-        };
-
-        // 1. MUNITION (Verschwindet wenn leer)
-        if(ammoStock > 0) {
-            container.appendChild(createRow("🧨", "10x MUNITION", ammoStock, 10, 'ammo', true));
-            container.innerHTML += `<div class="h-px bg-yellow-900/50 my-4 mx-2"></div>`;
-        }
-
-        // 2. ITEMS
-        const categories = {
-            'consumable': { title: '💊 MEDIZIN', items: [] },
-            'weapon': { title: '🔫 WAFFEN', items: [] },
-            'body': { title: '🛡️ RÜSTUNG', items: [] },
-            'misc': { title: '📦 SONSTIGES', items: [] } 
-        };
-
-        Object.keys(stock).forEach(key => {
-            if (key === 'fists' || key === 'vault_suit' || key === 'mele') return;
-            if (key === 'camp_kit') {
-                const hasKit = Game.state.inventory.some(i => i.id === 'camp_kit');
-                const hasBuilt = !!Game.state.camp;
-                if (hasKit || hasBuilt) return; 
-            }
-            if(stock[key] <= 0) return;
-            
-            const item = Game.items[key];
-            if(!item) return;
-            const cat = categories[item.type] || categories['misc'];
-            cat.items.push({key, ...item});
-        });
-
-        for(let catKey in categories) {
-            const cat = categories[catKey];
-            if(cat.items.length > 0) {
-                const header = document.createElement('h3');
-                header.className = "text-yellow-600 font-bold border-b border-yellow-800 mt-4 mb-2 pl-1 text-xs uppercase tracking-widest font-mono";
-                header.textContent = cat.title;
-                container.appendChild(header);
-
-                cat.items.forEach(data => {
-                    let icon = "📦";
-                    if(data.type==='weapon') icon="🔫"; if(data.type==='body') icon="🛡️"; if(data.type==='consumable') icon="💉";
-                    // Hier normale Items rendern (isAmmo = false)
-                    container.appendChild(createRow(icon, data.name, stock[data.key], data.cost, data.key, false));
-                });
-            }
-        }
-    },
-
-    renderShopSell: function(container) {
-        if(!container) container = document.getElementById('shop-list');
-        if(!container) return;
-        container.innerHTML = '';
-
-        if(Game.state.inventory.length === 0) {
-            container.innerHTML = '<div class="text-center text-green-800 mt-10 font-mono border-2 border-dashed border-green-900 p-6">INVENTAR LEER</div>';
-            return;
-        }
-
-        Game.state.inventory.forEach((item, idx) => {
-            const def = Game.items[item.id];
-            if(!def) return;
-            
-            if (item.id === 'fists') return;
-
-            let valMult = item.props && item.props.valMult ? item.props.valMult : 1;
-            let sellPrice = Math.floor((def.cost * 0.25) * valMult);
-            if(sellPrice < 1) sellPrice = 1;
-            const canSell = Game.state.shop.merchantCaps >= sellPrice;
-            const name = item.props ? item.props.name : def.name;
-
-            const div = document.createElement('div');
-            // Full Row Clickable for Sell too
-            div.className = `shop-item-row flex justify-between items-center mb-2 border-2 ${canSell ? 'border-green-700 bg-green-900/10 hover:bg-green-900/20' : 'border-red-900 opacity-50'} h-14 transition-all select-none relative z-50`;
-            
-            if(canSell) {
-                div.style.cursor = 'pointer';
-                div.setAttribute('onclick', `Game.sellItem(${idx}, UI.shopQty)`);
-            } else {
-                div.style.cursor = 'not-allowed';
-            }
-
-            div.innerHTML = `
-                <div class="flex items-center gap-3 p-2 flex-grow overflow-hidden pointer-events-none">
-                    <div class="text-green-500 font-bold text-lg font-vt323 truncate">${name} <span class="text-green-800 text-sm font-sans">x${item.count}</span></div>
-                </div>
-                <div class="h-full flex flex-col justify-center items-end border-l-2 border-green-800 bg-black/30 min-w-[100px] pointer-events-none">
-                    <div class="font-bold text-green-400 text-lg w-full text-center border-b border-green-900 font-vt323">${sellPrice}</div>
-                    <button class="flex-grow w-full h-full text-[10px] font-bold uppercase tracking-wider hover:bg-green-600 hover:text-black transition-colors text-green-700">VERKAUFEN</button>
-                </div>
-            `;
-            container.appendChild(div);
-        });
-    },
-
+    // ==========================================
+    // === CITY HUB (Startseite) ===
+    // ==========================================
     renderCity: function(cityId = 'rusty_springs') {
         const view = document.getElementById('view-container');
         if(!view) return;
@@ -503,5 +283,279 @@ Object.assign(UI, {
         wrapper.appendChild(footer);
 
         view.appendChild(wrapper);
+    },
+
+    // ==========================================
+    // === SHOP LOGIC (Integrated) ===
+    // ==========================================
+    renderShop: function(mode = 'buy') {
+        const view = document.getElementById('view-container');
+        if(!view) return;
+        view.innerHTML = ''; // Full Reset
+
+        // State update
+        Game.state.view = 'shop';
+        Game.checkShopRestock(); 
+
+        const wrapper = document.createElement('div');
+        wrapper.className = "w-full h-full flex flex-col bg-black relative";
+
+        // HEADER
+        const header = document.createElement('div');
+        header.className = "flex-shrink-0 flex justify-between items-end p-4 border-b-4 border-yellow-600 bg-[#1a1500] shadow-md z-10";
+        
+        const usedSlots = Game.getUsedSlots();
+        const maxSlots = Game.getMaxSlots();
+        const isFull = usedSlots >= maxSlots;
+        const invColor = isFull ? "text-red-500 animate-pulse" : "text-yellow-300";
+
+        header.innerHTML = `
+            <div>
+                <h2 class="text-3xl text-yellow-400 font-bold font-vt323 tracking-wider">HANDELSPOSTEN</h2>
+                <div class="text-xs text-yellow-700 font-mono mt-1">HÄNDLER: <span class="font-bold text-yellow-500">${Game.state.shop.merchantCaps} KK</span></div>
+            </div>
+            
+            <div class="flex gap-2">
+                <div class="bg-black/50 border-2 border-yellow-500 p-2 flex flex-col items-end shadow-inner">
+                     <span class="text-[10px] text-yellow-600 uppercase tracking-widest">GEWICHT</span>
+                     <span class="text-2xl ${invColor} font-bold font-vt323">${usedSlots} / ${maxSlots}</span>
+                </div>
+
+                <div class="bg-black/50 border-2 border-yellow-500 p-2 flex flex-col items-end shadow-inner">
+                    <span class="text-[10px] text-yellow-600 uppercase tracking-widest">DEIN VERMÖGEN</span>
+                    <span class="text-2xl text-yellow-300 font-bold font-vt323">${Game.state.caps} KK</span>
+                </div>
+            </div>
+        `;
+        wrapper.appendChild(header);
+
+        // CONTROLS HEADER (Menge & Modus)
+        const controlsDiv = document.createElement('div');
+        controlsDiv.className = "flex-shrink-0 bg-[#002200] border-b-2 border-green-500 p-3 z-20 shadow-lg";
+        
+        // Helper für Button Style
+        const getBtnClass = (val) => {
+            if (UI.shopQty === val) return "bg-yellow-400 text-black border-yellow-400 font-bold shadow-[0_0_10px_#ffd700]"; 
+            return "bg-black text-green-500 border-green-500 hover:border-yellow-400 hover:text-yellow-400"; 
+        };
+
+        let inputValue = (UI.shopQty === 'max') ? '' : UI.shopQty;
+
+        controlsDiv.innerHTML = `
+            <div class="flex flex-col gap-2">
+                <div class="flex justify-between items-center text-xs text-green-400 mb-1">
+                    <span class="uppercase tracking-widest font-bold">MENGENAUSWAHL</span>
+                </div>
+                <div class="flex gap-2 h-10">
+                    <input type="number" id="shop-qty-input" value="${inputValue}" placeholder="Menge"
+                        class="w-20 bg-black border-2 border-green-500 text-green-400 text-center font-bold text-xl focus:border-yellow-400 focus:text-yellow-400 outline-none"
+                        oninput="UI.setShopQty(this.value, 'input')">
+                    
+                    <button onclick="UI.setShopQty(1)" class="flex-1 border-2 ${getBtnClass(1)} transition-all uppercase tracking-wider">
+                        1x
+                    </button>
+                    <button onclick="UI.setShopQty(10)" class="flex-1 border-2 ${getBtnClass(10)} transition-all uppercase tracking-wider">
+                        10x
+                    </button>
+                    <button onclick="UI.setShopQty('max')" class="flex-1 border-2 ${getBtnClass('max')} transition-all uppercase tracking-wider">
+                        MAX
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex mt-3 border-b border-green-800">
+                <button onclick="UI.renderShop('buy')" class="flex-1 py-2 text-center font-bold ${mode==='buy' ? 'bg-green-500 text-black' : 'text-green-600 hover:text-green-300'}">KAUFEN</button>
+                <button onclick="UI.renderShop('sell')" class="flex-1 py-2 text-center font-bold ${mode==='sell' ? 'bg-red-500 text-black' : 'text-red-600 hover:text-red-300'}">VERKAUFEN</button>
+            </div>
+        `;
+        wrapper.appendChild(controlsDiv);
+
+        // ITEM LIST CONTAINER
+        const content = document.createElement('div');
+        content.id = "shop-list";
+        content.className = "flex-grow overflow-y-auto p-3 custom-scrollbar bg-[#0a0800]";
+        wrapper.appendChild(content);
+
+        // FOOTER
+        const footer = document.createElement('div');
+        footer.className = "flex-shrink-0 p-3 border-t-4 border-yellow-900 bg-[#1a1500]";
+        footer.innerHTML = `<button class="action-button w-full border-2 border-yellow-800 text-yellow-700 hover:border-yellow-500 hover:text-yellow-400 transition-colors py-3 font-bold tracking-widest uppercase" onclick="UI.renderCity()">ZURÜCK ZUM ZENTRUM</button>`;
+        wrapper.appendChild(footer);
+
+        view.appendChild(wrapper);
+
+        // Content rendern
+        if(mode === 'buy') this.renderShopBuy(content);
+        else this.renderShopSell(content);
+    },
+
+    renderShopBuy: function(container) {
+        if(!container) return;
+        container.innerHTML = '';
+
+        const stock = Game.state.shop.stock || {};
+        const ammoStock = (Game.state.shop.ammoStock !== undefined) ? Game.state.shop.ammoStock : 0;
+        const myCaps = Game.state.caps;
+
+        const createRow = (icon, name, qty, price, key, isAmmo = false) => {
+            const canBuy = myCaps >= price;
+            
+            let colorText = isAmmo ? 'text-blue-300' : 'text-yellow-200';
+            let colorBorder = isAmmo ? 'border-blue-500' : 'border-yellow-700';
+            let colorBg = isAmmo ? 'bg-blue-900/20 hover:bg-blue-600/40' : 'bg-yellow-900/10 hover:bg-yellow-600/40';
+            let colorSub = isAmmo ? 'text-blue-600' : 'text-yellow-700';
+            let colorBtn = isAmmo ? 'text-blue-400' : 'text-yellow-600';
+
+            if (!canBuy) {
+                colorText = 'text-gray-500';
+                colorBorder = 'border-red-900';
+                colorBg = 'bg-red-900/10 opacity-50';
+                colorSub = 'text-red-900';
+                colorBtn = 'text-red-900';
+            }
+
+            const row = document.createElement('div');
+            row.className = `shop-item-row flex justify-between items-center mb-2 border-2 ${colorBorder} ${colorBg} h-16 relative z-50 transition-all select-none`;
+            
+            if (canBuy) {
+                row.style.cursor = 'pointer';
+                row.setAttribute('onclick', `Game.buyItem('${key}', UI.shopQty)`);
+                row.setAttribute('role', 'button');
+            } else {
+                row.style.cursor = 'not-allowed';
+            }
+
+            row.innerHTML = `
+                <div class="flex items-center gap-3 p-2 flex-grow overflow-hidden pointer-events-none">
+                    <div class="text-3xl w-12 h-12 flex items-center justify-center bg-black/40 border border-white/10 rounded">${icon}</div>
+                    <div class="flex flex-col truncate">
+                        <span class="font-bold text-lg font-vt323 truncate leading-none pt-1 ${colorText}">${name}</span>
+                        <span class="text-xs ${colorSub} font-mono uppercase">Vorrat: ${qty} | Preis: ${price} KK</span>
+                    </div>
+                </div>
+                <div class="h-full flex flex-col justify-center items-end border-l-2 ${colorBorder} bg-black/30 min-w-[100px]">
+                    <button class="w-full h-full text-sm font-bold uppercase tracking-wider bg-transparent border-none ${colorBtn}" style="pointer-events: none;">
+                        KAUFEN
+                    </button>
+                </div>
+            `;
+            return row;
+        };
+
+        if(ammoStock > 0) {
+            container.appendChild(createRow("🧨", "10x MUNITION", ammoStock, 10, 'ammo', true));
+            container.innerHTML += `<div class="h-px bg-yellow-900/50 my-4 mx-2"></div>`;
+        }
+
+        const categories = {
+            'consumable': { title: '💊 MEDIZIN', items: [] },
+            'weapon': { title: '🔫 WAFFEN', items: [] },
+            'body': { title: '🛡️ RÜSTUNG', items: [] },
+            'misc': { title: '📦 SONSTIGES', items: [] } 
+        };
+
+        Object.keys(stock).forEach(key => {
+            if (key === 'fists' || key === 'vault_suit' || key === 'mele') return;
+            if (key === 'camp_kit') {
+                const hasKit = Game.state.inventory.some(i => i.id === 'camp_kit');
+                const hasBuilt = !!Game.state.camp;
+                if (hasKit || hasBuilt) return; 
+            }
+            if(stock[key] <= 0) return;
+            
+            const item = Game.items[key];
+            if(!item) return;
+            const cat = categories[item.type] || categories['misc'];
+            cat.items.push({key, ...item});
+        });
+
+        for(let catKey in categories) {
+            const cat = categories[catKey];
+            if(cat.items.length > 0) {
+                const header = document.createElement('h3');
+                header.className = "text-yellow-600 font-bold border-b border-yellow-800 mt-4 mb-2 pl-1 text-xs uppercase tracking-widest font-mono";
+                header.textContent = cat.title;
+                container.appendChild(header);
+
+                cat.items.forEach(data => {
+                    let icon = "📦";
+                    if(data.type==='weapon') icon="🔫"; if(data.type==='body') icon="🛡️"; if(data.type==='consumable') icon="💉";
+                    container.appendChild(createRow(icon, data.name, stock[data.key], data.cost, data.key, false));
+                });
+            }
+        }
+    },
+
+    renderShopSell: function(container) {
+        if(!container) return;
+        container.innerHTML = '';
+
+        if(Game.state.inventory.length === 0) {
+            container.innerHTML = '<div class="text-center text-green-800 mt-10 font-mono border-2 border-dashed border-green-900 p-6">INVENTAR LEER</div>';
+            return;
+        }
+
+        Game.state.inventory.forEach((item, idx) => {
+            const def = Game.items[item.id];
+            if(!def) return;
+            
+            if (item.id === 'fists') return;
+
+            let valMult = item.props && item.props.valMult ? item.props.valMult : 1;
+            let sellPrice = Math.floor((def.cost * 0.25) * valMult);
+            if(sellPrice < 1) sellPrice = 1;
+            const canSell = Game.state.shop.merchantCaps >= sellPrice;
+            const name = item.props ? item.props.name : def.name;
+
+            const div = document.createElement('div');
+            div.className = `shop-item-row flex justify-between items-center mb-2 border-2 ${canSell ? 'border-green-700 bg-green-900/10 hover:bg-green-900/20' : 'border-red-900 opacity-50'} h-14 transition-all select-none relative z-50`;
+            
+            if(canSell) {
+                div.style.cursor = 'pointer';
+                div.setAttribute('onclick', `Game.sellItem(${idx}, UI.shopQty)`);
+            } else {
+                div.style.cursor = 'not-allowed';
+            }
+
+            div.innerHTML = `
+                <div class="flex items-center gap-3 p-2 flex-grow overflow-hidden pointer-events-none">
+                    <div class="text-green-500 font-bold text-lg font-vt323 truncate">${name} <span class="text-green-800 text-sm font-sans">x${item.count}</span></div>
+                </div>
+                <div class="h-full flex flex-col justify-center items-end border-l-2 border-green-800 bg-black/30 min-w-[100px] pointer-events-none">
+                    <div class="font-bold text-green-400 text-lg w-full text-center border-b border-green-900 font-vt323">${sellPrice}</div>
+                    <button class="flex-grow w-full h-full text-[10px] font-bold uppercase tracking-wider hover:bg-green-600 hover:text-black transition-colors text-green-700">VERKAUFEN</button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    },
+
+    setShopQty: function(val, source) {
+        if (source === 'input') {
+            const parsed = parseInt(val);
+            if (!isNaN(parsed) && parsed > 0) {
+                this.shopQty = parsed;
+            } else {
+                this.shopQty = 1; 
+            }
+            this.updateShopQtyVisuals();
+        } else {
+            this.shopQty = val;
+            const inputEl = document.getElementById('shop-qty-input');
+            if (inputEl) {
+                inputEl.value = (val === 'max') ? '' : val;
+                inputEl.placeholder = (val === 'max') ? 'MAX' : 'Menge';
+            }
+            this.updateShopQtyVisuals();
+        }
+    },
+
+    updateShopQtyVisuals: function() {
+        // Um den Fokus nicht zu verlieren, rendern wir nur neu wenn NICHT im Input
+        if (document.activeElement.id !== 'shop-qty-input') {
+            const sellBtn = document.querySelector('button.bg-red-500'); 
+            const mode = sellBtn ? 'sell' : 'buy';
+            this.renderShop(mode);
+        }
     }
 });
