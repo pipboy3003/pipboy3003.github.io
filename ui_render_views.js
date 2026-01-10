@@ -1,3 +1,5 @@
+// [TIMESTAMP] 2026-01-10 23:45:00 - ui_render_views.js - Canvas Map Rendering Only
+
 Object.assign(Game, {
     // Initialisiert den Cache-Kontext, falls noch nicht geschehen
     initCache: function() {
@@ -88,7 +90,6 @@ Object.assign(Game, {
                     const t = this.state.currentMap[y][x]; 
                     
                     // Dynamische/Animierte Tiles neu zeichnen (über den statischen Hintergrund)
-                    // [v3.3] Added 'R' to special render list
                     if(['V', 'S', 'C', 'G', 'H', 'R', '^', 'v', '<', '>', '$', '&', 'P', 'E', 'F', 'X'].includes(t)) { 
                         this.drawTile(ctx, x, y, t, pulse); 
                     } 
@@ -166,10 +167,10 @@ Object.assign(Game, {
         let bg = this.colors['.']; 
         if(['_', ',', ';', '=', 'W', 'M', '~', '|', 'B'].includes(type)) bg = this.colors[type]; 
         
-        // Hintergrund zeichnen (außer bei speziellen Symbolen)
+        // Hintergrund zeichnen
         if (!['^','v','<','>'].includes(type) && type !== '#') { ctx.fillStyle = bg; ctx.fillRect(px, py, ts, ts); } 
         
-        // Rahmen zeichnen (außer bei speziellen Symbolen)
+        // Rahmen zeichnen
         if(!['^','v','<','>','M','W','~','X'].includes(type) && type !== '#') { ctx.strokeStyle = "rgba(40, 90, 40, 0.05)"; ctx.lineWidth = 1; ctx.strokeRect(px, py, ts, ts); } 
         
         // Pfeile (Ausgänge) zeichnen
@@ -222,20 +223,18 @@ Object.assign(Game, {
                 ctx.textBaseline = "alphabetic";
                 break; 
 
-            // [v3.3] SUPER-MART (Raider Fortress)
+            // SUPER-MART
             case 'R':
                 ctx.globalAlpha = 1;
                 ctx.shadowBlur = 8;
-                ctx.shadowColor = "#ff0000"; // Red danger glow
+                ctx.shadowColor = "#ff0000"; 
                 
-                // Icon: Shopping Cart
                 ctx.fillStyle = "#ff3333"; 
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
                 ctx.font = "30px monospace"; 
                 ctx.fillText("🛒", px + ts/2, py + ts/2);
                 
-                // Label
                 ctx.shadowBlur = 2;
                 ctx.shadowColor = "black";
                 ctx.font = "bold 9px monospace";
