@@ -1,4 +1,4 @@
-// [2026-01-10 01:54:00] combat.js - Adjusted FX Durations (2.3s Click / 1.5s Crit)
+// [TIMESTAMP] 2026-01-10 09:00:00 - game_combat.js - Combat Logic & Loot Trigger
 
 window.Combat = {
     enemy: null,
@@ -116,7 +116,6 @@ window.Combat = {
         setTimeout(() => { el.remove(); }, 1000);
     },
 
-    // --- SAFETY HELPER: REPAIR WEAPON ID ---
     getSafeWeapon: function() {
         let wpn = Game.state.equip.weapon;
         if (!wpn) return { id: 'fists', name: 'Fäuste', baseDmg: 2 };
@@ -142,7 +141,6 @@ window.Combat = {
         const wpn = this.getSafeWeapon();
         const wId = wpn.id.toLowerCase();
         
-        // Erweiterte Keywords für neue Waffen
         const rangedKeywords = ['pistol', 'rifle', 'gun', 'shotgun', 'smg', 'minigun', 'blaster', 'sniper', 'cannon', 'gewehr', 'flinte', 'revolver'];
         const isRanged = rangedKeywords.some(k => wId.includes(k));
 
@@ -158,24 +156,20 @@ window.Combat = {
         const part = this.bodyParts[partIndex];
         const hitChance = this.calculateHitChance(partIndex);
         
-        // --- AMMO CHECK & AUTO SWITCH ---
         let wpn = this.getSafeWeapon();
         const wId = wpn.id.toLowerCase();
 
         const rangedKeywords = ['pistol', 'rifle', 'gun', 'shotgun', 'smg', 'minigun', 'blaster', 'sniper', 'cannon', 'gewehr', 'flinte', 'revolver'];
         const isRanged = rangedKeywords.some(k => wId.includes(k));
         
-        // Nur Munition verbrauchen, wenn Fernkampf UND nicht Alien Blaster (oder andere Ausnahmen)
         if(isRanged && wId !== 'alien_blaster') { 
              const hasAmmo = Game.removeFromInventory('ammo', 1);
              if(!hasAmmo) {
-                 // [UPDATE] 2300ms Duration für KLICK (2,3 Sekunden)
                  if(typeof UI.showCombatEffect === 'function') {
                      UI.showCombatEffect("* KLICK *", "MUNITION LEER!", "red", 2300);
                  }
                  this.log("WAFFE LEER! *KLICK*", "text-red-500 font-bold text-xl");
                  
-                 // Automatischer Wechsel zur besten Nahkampfwaffe
                  setTimeout(() => {
                      if (typeof Game.switchToBestMelee === 'function') {
                          Game.switchToBestMelee();
@@ -218,7 +212,6 @@ window.Combat = {
                 dmg *= 2;
                 isCrit = true;
                 this.log(">> KRITISCHER TREFFER! <<", "text-yellow-400 font-bold animate-pulse");
-                // [UPDATE] 1500ms Duration für CRIT (1,5 Sekunden)
                 if(typeof UI.showCombatEffect === 'function') UI.showCombatEffect("CRITICAL!", "DOPPELTER SCHADEN", "yellow", 1500);
                 
                 if (Game.getPerkLevel('mysterious_stranger') > 0) {
@@ -331,6 +324,21 @@ window.Combat = {
         if(Game.state.kills === undefined) Game.state.kills = 0;
         Game.state.kills++;
         Game.saveGame();
+
+        // --- [NEU] WÜRFELSPIEL TRIGGER ---
+        // 33% Chance bei Legendären Gegnern
+        if (this.enemy.isLegendary && Math.random() < 0.33) {
+             setTimeout(() => {
+                 Game.state.enemy = null;
+                 if (typeof UI.startMinigame === 'function') {
+                     UI.startMinigame('dice');
+                 } else {
+                     UI.log("Minigame fehlt!", "text-red-500");
+                     UI.switchView('map');
+                 }
+             }, 1500);
+             return; 
+        }
 
         setTimeout(() => {
             Game.state.enemy = null;
