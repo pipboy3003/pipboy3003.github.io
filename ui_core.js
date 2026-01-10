@@ -532,18 +532,17 @@ const UI = {
         this.els.charSelectScreen.focus();
     },
 
-    // [TIMESTAMP] 2026-01-10 14:56:00 - ui_core.js - Ergänzung für Permadeath-Sicherheit
+    // [TIMESTAMP] 2026-01-10 15:42:00 - ui_core.js - showGameOver blockiert jetzt jeden Rettungsversuch
     showGameOver: function() {
         if (this.els.gameOver) {
             this.els.gameOver.classList.remove('hidden');
         }
-        // Wichtig: State leeren, damit kein Timer/Event mehr speichern kann
+        // WICHTIG: Wir setzen den Slot auf -1, damit KEINE Funktion mehr weiß, wohin sie speichern soll
+        Game.selectedSlot = -1; 
+        // Wir löschen den lokalen State komplett
         Game.state = null; 
-        this.selectedSlot = -1;
-    }
-
-
-    
+        console.log("GameOver: State vernichtet, Slot entkoppelt.");
+    },
 };
 
 window.UI = UI;
