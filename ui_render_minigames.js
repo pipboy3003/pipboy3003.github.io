@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-10 21:25:00 - ui_render_minigames.js - Auto-Create Overlays Fix
+// [TIMESTAMP] 2026-01-10 22:00:00 - ui_render_minigames.js - Fix Blackscreen & 3 Dice
 
 Object.assign(UI, {
     
@@ -20,13 +20,16 @@ Object.assign(UI, {
         const dice = document.getElementById('dice-overlay');
         if(dice) dice.classList.add('hidden');
         
-        // Views clearen
-        if(this.els && this.els.view) {
-            if(!Game.state || Game.state.view !== 'map') this.els.view.innerHTML = '';
+        // WICHTIGER FIX:
+        // Wir nutzen switchView('map'), damit der Canvas und der Game-Loop
+        // sauber neu initialisiert werden. Das verhindert den Blackscreen.
+        if(typeof UI.switchView === 'function') {
+            UI.switchView('map'); 
+        } else {
+            // Fallback (sollte nicht passieren)
+            if(Game.state) Game.state.view = 'map';
+            if(this.els && this.els.view) this.els.view.innerHTML = ''; 
         }
-
-        if(Game.state) Game.state.view = 'map';
-        if(typeof UI.renderWorld === 'function') UI.renderWorld();
     },
 
     renderMinigame: function() {
@@ -115,16 +118,13 @@ Object.assign(UI, {
         if(lock) lock.style.transform = `rotate(${MiniGames.lockpicking.lockAngle}deg)`;
     },
 
-    // --- DICE (FIX: Auto-Create Overlay) ---
+    // --- DICE (FIX: Auto-Create Overlay & 3 Würfel) ---
     renderDice: function(game, finalResult = null) {
-        // [FIX] Suche Overlay, wenn nicht da -> Erstellen!
         let container = document.getElementById('dice-overlay');
         
         if(!container) {
-            console.log("[UI] Dice overlay missing, creating new one.");
             container = document.createElement('div');
             container.id = 'dice-overlay';
-            // Wir hängen es an den BODY, damit es view-unabhängig ist (Z-Index hoch)
             container.className = 'hidden fixed inset-0 z-[2000] pointer-events-auto'; 
             document.body.appendChild(container);
         }
@@ -143,12 +143,15 @@ Object.assign(UI, {
             <div class="fixed inset-0 z-[2000] bg-black/90 flex flex-col items-center justify-center p-6">
                 <div class="border-4 border-yellow-500 p-8 bg-[#1a1100] shadow-[0_0_50px_#ffd700] text-center w-full max-w-md relative">
                     <h2 class="text-4xl font-bold text-yellow-400 mb-6 font-vt323 tracking-widest animate-pulse">WASTELAND GAMBLE</h2>
-                    <div class="flex justify-center gap-8 mb-8">
-                        <div class="w-24 h-24 bg-black border-2 border-yellow-600 flex items-center justify-center text-6xl text-yellow-500 font-bold shadow-inner">
+                    <div class="flex justify-center gap-4 mb-8">
+                        <div class="w-20 h-20 bg-black border-2 border-yellow-600 flex items-center justify-center text-5xl text-yellow-500 font-bold shadow-inner">
                             ${game.d1}
                         </div>
-                        <div class="w-24 h-24 bg-black border-2 border-yellow-600 flex items-center justify-center text-6xl text-yellow-500 font-bold shadow-inner">
+                        <div class="w-20 h-20 bg-black border-2 border-yellow-600 flex items-center justify-center text-5xl text-yellow-500 font-bold shadow-inner">
                             ${game.d2}
+                        </div>
+                        <div class="w-20 h-20 bg-black border-2 border-yellow-600 flex items-center justify-center text-5xl text-yellow-500 font-bold shadow-inner">
+                            ${game.d3 || 1}
                         </div>
                     </div>
                     <div class="text-yellow-200 font-mono text-sm mb-6 bg-black/40 p-2 rounded">
@@ -165,7 +168,7 @@ Object.assign(UI, {
         `;
     },
 
-    // --- DEFUSAL (Optimiert) ---
+    // --- DEFUSAL ---
     renderDefusal: function() {
         const game = MiniGames.defusal;
         
