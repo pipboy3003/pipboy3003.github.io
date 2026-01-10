@@ -40,14 +40,18 @@ const UI = {
         this.openBugModal(msg);
     },
 
-    // [NEU] duration Parameter hinzugefügt (Standard 1000ms)
+ // [FIX] Visueller Effekt synchronisiert jetzt Animation mit Duration
     showCombatEffect: function(mainText, subText, color="red", duration=1000) {
         const view = document.getElementById('view-container');
         if(!view) return;
 
         const el = document.createElement('div');
         el.className = "click-effect-overlay"; 
-        // Wir nutzen animation-duration basierend auf dem Parameter (optional, hier einfach Timeout)
+        
+        // WICHTIG: Wir überschreiben die CSS-Animation Dauer hier dynamisch!
+        // Damit bleibt es so lange sichtbar, wie 'duration' angibt.
+        el.style.animation = `clickEffectAnim ${duration/1000}s ease-out forwards`;
+
         el.innerHTML = `
             <div class="click-effect-text" style="color:${color}; text-shadow: 0 0 20px ${color}">${mainText}</div>
             <div class="click-effect-sub" style="border-color:${color}">${subText}</div>
@@ -55,9 +59,9 @@ const UI = {
         
         view.appendChild(el);
         
-        // Aufräumen nach der gewünschten Zeit
+        // Entfernen, wenn Animation fertig ist
         setTimeout(() => {
-            el.remove();
+            if(el) el.remove();
         }, duration);
     },
 
