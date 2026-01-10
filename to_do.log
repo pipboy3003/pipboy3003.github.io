@@ -5,7 +5,6 @@
 - Buglog muss so ausführlich sein das ich ihn direkt weiterleiten kann zum beheben, an dich eben.
 
 - Mengen auswahl : Hier soll anfangs 1x ausgefüllt sein, also das Feld, und wenn man ein anderes anklickt (so wie es bei Max der fall ist) soll es gehighlighted bleiben duch asugefülltes Gelb. Es soll schnell ersichtlich sein was aktuell gewählt ist.
-- Bei Munition leer während des Kampfes soll eing roßes rotes Klick overlay kommen inkl der Info das Munition leer ist. Danach soll auf die "stärkste" Nahkampfwaffe, sofern im inventar vorhanden" gewechselt werden
 - wenn man stirbt bleibt aktuell charaktee uns safegame bestehen. wenn TP 0 erreicht sollte der charakter ja gelöscht werden, liegt das an der speicher logik?
 - Doppellogin möglich, Handy und Laptop zur selben Zeit. Warum keine Abfrage mehr ob man schon verbunden ist?
 - Logik überabeiten welches Tier welches Fleisch abgibt: Wieso bekommt man vom wilden hund Rattenfleisch???!
