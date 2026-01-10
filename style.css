@@ -328,3 +328,61 @@ input.login-input::placeholder { color: rgba(26, 255, 26, 0.5); }
     80% { opacity: 1; }
     100% { opacity: 0; }
 }
+
+/* --- NEW ITEM GLOW --- */
+.new-item-glow {
+    border-color: #ffd700 !important; /* Goldener Rand */
+    box-shadow: inset 0 0 15px rgba(255, 215, 0, 0.3) !important;
+    animation: newItemPulse 2s infinite;
+}
+
+@keyframes newItemPulse {
+    0% { box-shadow: inset 0 0 5px rgba(255, 215, 0, 0.1); border-color: #b8860b; }
+    50% { box-shadow: inset 0 0 25px rgba(255, 215, 0, 0.5); border-color: #ffd700; }
+    100% { box-shadow: inset 0 0 5px rgba(255, 215, 0, 0.1); border-color: #b8860b; }
+}
+
+/* --- CLICK / COMBAT EFFECT OVERLAY (FINAL FIX) --- */
+.click-effect-overlay {
+    position: absolute;
+    inset: 0; 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0; 
+    /* Animation wird per JS gesetzt */
+}
+
+.click-effect-text {
+    display: block;
+    font-size: 4rem;
+    font-weight: bold;
+    font-family: 'Share Tech Mono', monospace;
+    transform: rotate(-5deg);
+    margin-bottom: 10px;
+    text-shadow: 0 0 20px currentColor, 2px 2px 0px black;
+    letter-spacing: 2px;
+}
+
+.click-effect-sub {
+    font-size: 1.5rem;
+    color: white;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 5px 20px;
+    border: 2px solid currentColor;
+    font-weight: bold;
+    font-family: monospace;
+}
+
+/* Animation: Pop In -> Stay -> Fade Out */
+@keyframes clickEffectAnim {
+    0% { opacity: 0; transform: scale(0.5); }
+    10% { opacity: 1; transform: scale(1.1); }
+    20% { transform: scale(1.0); }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
+}
