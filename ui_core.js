@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-10 03:45:00 - ui_core.js - Fix Typo causing crash on buy
+// [TIMESTAMP] 2026-01-10 05:30:00 - ui_core.js - Fixed Inventory Alert & FX
 
 const UI = {
     els: {},
@@ -40,7 +40,6 @@ const UI = {
         this.openBugModal(msg);
     },
 
-    // [FIX] Visueller Effekt synchronisiert jetzt Animation mit Duration
     showCombatEffect: function(mainText, subText, color="red", duration=1000) {
         const view = document.getElementById('view-container');
         if(!view) return;
@@ -48,7 +47,6 @@ const UI = {
         const el = document.createElement('div');
         el.className = "click-effect-overlay"; 
         
-        // WICHTIG: Wir überschreiben die CSS-Animation Dauer hier dynamisch!
         el.style.animation = `clickEffectAnim ${duration/1000}s ease-out forwards`;
 
         el.innerHTML = `
@@ -58,10 +56,20 @@ const UI = {
         
         view.appendChild(el);
         
-        // Entfernen, wenn Animation fertig ist
         setTimeout(() => {
             if(el) el.remove();
         }, duration);
+    },
+
+    // --- ALERT HANDLING ---
+    triggerInventoryAlert: function() {
+        if(this.els.btnInv) this.els.btnInv.classList.add('alert-glow-yellow');
+        if(this.els.btnMenu) this.els.btnMenu.classList.add('alert-glow-yellow');
+    },
+
+    resetInventoryAlert: function() {
+        if(this.els.btnInv) this.els.btnInv.classList.remove('alert-glow-yellow');
+        if(this.els.btnMenu) this.els.btnMenu.classList.remove('alert-glow-yellow');
     },
 
     // --- BUG REPORT MODAL ---
@@ -221,7 +229,7 @@ const UI = {
         const isCharSelect = this.charSelectMode;
 
         if (isIngame || isCharSelect) {
-            if(Date.now() - this.lastInputTime > 300000) { // 5 Minuten
+            if(Date.now() - this.lastInputTime > 300000) { 
                 this.logout("AFK: ZEITÜBERSCHREITUNG");
                 return;
             }
@@ -331,17 +339,6 @@ const UI = {
         
         if(this.timerInterval) clearInterval(this.timerInterval);
         this.timerInterval = setInterval(() => this.updateTimer(), 1000);
-    },
-    
-    // [FIX] Hier war der Fehler (this.els.els.btnInv) -> korrigiert zu this.els.btnInv
-    triggerInventoryAlert: function() {
-        if(this.els.btnInv) this.els.btnInv.classList.add('alert-glow-yellow');
-        if(this.els.btnMenu) this.els.btnMenu.classList.add('alert-glow-yellow');
-    },
-
-    resetInventoryAlert: function() {
-        if(this.els.btnInv) this.els.btnInv.classList.remove('alert-glow-yellow');
-        if(this.els.btnMenu) this.els.btnMenu.classList.remove('alert-glow-yellow');
     },
 
     isMobile: function() {
