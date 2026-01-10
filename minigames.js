@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-10 14:00:00 - minigames.js - Added Bomb Defusal
+// [TIMESTAMP] 2026-01-10 18:00:00 - minigames.js - Bugfixes (Duplicates & Safety)
 
 window.MiniGames = {
     active: null,
@@ -6,23 +6,39 @@ window.MiniGames = {
     // --- HACKING ---
     hacking: {
         words: [], password: "", attempts: 4, logs: [],
+        
         init: function() {
-            const int = Game.getStat('INT');
+            const int = Game.getStat('INT') || 1; // Fallback falls undefined
             const diff = 12 - Math.min(8, int);
-            const wordList = ["PASS", "FAIL", "DATA", "CODE", "HACK", "BIOS", "BOOT", "USER", "ROOT", "WIFI", "LINK", "NODE", "CORE", "DISK"];
+            const wordList = ["PASS", "FAIL", "DATA", "CODE", "HACK", "BIOS", "BOOT", "USER", "ROOT", "WIFI", "LINK", "NODE", "CORE", "DISK", "FILE", "SAVE", "LOAD", "EXIT"];
+            
             this.words = [];
-            for(let i=0; i<diff; i++) this.words.push(wordList[Math.floor(Math.random() * wordList.length)]);
+            // [FIX] Verhindere doppelte Wörter
+            while(this.words.length < diff) {
+                const w = wordList[Math.floor(Math.random() * wordList.length)];
+                if(!this.words.includes(w)) {
+                    this.words.push(w);
+                }
+            }
+            
             this.password = this.words[Math.floor(Math.random() * this.words.length)];
             this.attempts = 4;
             this.logs = ["> SYSTEM LOCKED", "> ENTER PASSWORD"];
+            
             if (typeof UI.renderHacking === 'function') UI.renderHacking();
         },
+
         checkWord: function(word) {
             if(this.attempts <= 0) return;
+            
             let likeness = 0;
-            for(let i=0; i<4; i++) if(word[i] === this.password[i]) likeness++;
+            for(let i=0; i<4; i++) {
+                if(word[i] === this.password[i]) likeness++;
+            }
+            
             this.logs.unshift(`> ${word}: ${likeness}/4 MATCH`);
             this.attempts--;
+
             if(word === this.password) {
                 this.logs.unshift("> ACCESS GRANTED");
                 setTimeout(() => this.end(true), 1000);
@@ -30,13 +46,17 @@ window.MiniGames = {
                 this.logs.unshift("> SYSTEM LOCKOUT");
                 setTimeout(() => this.end(false), 1000);
             }
+            
             if (typeof UI.renderHacking === 'function') UI.renderHacking();
         },
+
         end: function(success) {
             if(success) {
                 if(typeof Game.updateQuestProgress === 'function') Game.updateQuestProgress('hack', 'terminal', 1);
                 UI.log("Terminal gehackt!", "text-green-400");
-            } else UI.log("Zugriff verweigert.", "text-red-500");
+            } else {
+                UI.log("Zugriff verweigert.", "text-red-500");
+            }
             UI.stopMinigame();
         }
     },
@@ -44,15 +64,18 @@ window.MiniGames = {
     // --- LOCKPICKING ---
     lockpicking: {
         difficulty: 'easy', lockAngle: 0, currentAngle: 0, sweetSpot: 0, health: 100,
+        
         init: function(diff = 'easy') {
             this.difficulty = diff; this.lockAngle = 0; this.currentAngle = 0; this.health = 100;
             this.sweetSpot = Math.floor(Math.random() * 160) - 80;
             if (typeof UI.renderLockpicking === 'function') UI.renderLockpicking(true);
         },
+
         rotateLock: function() {
             const dist = Math.abs(this.currentAngle - this.sweetSpot);
             const maxRot = Math.max(0, 90 - dist);
             this.lockAngle = maxRot;
+            
             if(dist < 10) {
                 this.lockAngle = 90;
                 setTimeout(() => this.end(true), 500);
@@ -65,10 +88,12 @@ window.MiniGames = {
             }
             if (typeof UI.renderLockpicking === 'function') UI.renderLockpicking();
         },
+
         releaseLock: function() {
             this.lockAngle = 0;
             if (typeof UI.renderLockpicking === 'function') UI.renderLockpicking();
         },
+
         end: function(success) {
             if(success) UI.log("Schloss geknackt!", "text-green-400");
             else UI.log("Dietrich abgebrochen!", "text-red-500");
@@ -79,11 +104,13 @@ window.MiniGames = {
     // --- DICE GAME ---
     dice: {
         d1: 1, d2: 1, rolling: false,
+        
         init: function() {
             this.d1 = 1; this.d2 = 1;
             this.rolling = false;
             this.render();
         },
+
         roll: function() {
             if(this.rolling) return;
             this.rolling = true;
@@ -100,65 +127,61 @@ window.MiniGames = {
                 }
             }, 100);
         },
+
         finish: function() {
             const sum = this.d1 + this.d2;
             const luck = Game.getStat('LUC') || 1;
             const bonus = Math.floor(luck / 2);
             const total = sum + bonus;
             
-            // Ergebnis anzeigen
-            this.render(total);
+            this.render(total); // Ergebnis rendern
 
-            if(typeof Game.gambleLegendaryLoot === 'function') Game.gambleLegendaryLoot(total);
+            if(typeof Game.gambleLegendaryLoot === 'function') {
+                Game.gambleLegendaryLoot(total);
+            } else {
+                // Fallback falls Funktion fehlt
+                UI.log(`Ergebnis: ${total}`, "text-yellow-400");
+                Game.state.caps += total * 10; 
+                Game.saveGame();
+            }
+
             setTimeout(() => UI.stopMinigame(), 2500);
         },
+
         render: function(finalResult = null) {
             if (typeof UI.renderDice === 'function') UI.renderDice(this, finalResult);
         }
     },
 
-    // --- [NEU] BOMB DEFUSAL (TIMING) ---
+    // --- BOMB DEFUSAL (TIMING) ---
     defusal: {
-        round: 1,
-        maxRounds: 3,
-        cursor: 50,     // 0 bis 100
-        direction: 1,   // 1 (rechts) oder -1 (links)
-        speed: 1.5,
-        zoneStart: 40,
-        zoneWidth: 20,
-        gameLoop: null,
-        isRunning: false,
+        round: 1, maxRounds: 3, cursor: 50, direction: 1, speed: 1.5, zoneStart: 40, zoneWidth: 20,
+        gameLoop: null, isRunning: false,
 
         init: function() {
-            this.round = 1;
-            this.maxRounds = 3;
-            this.isRunning = true;
+            this.round = 1; this.maxRounds = 3; this.isRunning = true;
             this.setupRound();
             
             if (this.gameLoop) clearInterval(this.gameLoop);
-            this.gameLoop = setInterval(() => this.update(), 20); // 50 FPS
+            this.gameLoop = setInterval(() => this.update(), 20); // 50 FPS Loop
             
             if (typeof UI.renderDefusal === 'function') UI.renderDefusal();
         },
 
         setupRound: function() {
-            // Stats beeinflussen Schwierigkeit
-            const agi = Game.getStat('AGI');
-            const per = Game.getStat('PER');
+            const agi = Game.getStat('AGI') || 1;
+            const per = Game.getStat('PER') || 1;
 
-            // Geschwindigkeit: Basis + Runde - AGI Bonus
             let baseSpeed = 1.5 + (this.round * 0.5);
             this.speed = Math.max(0.5, baseSpeed - (agi * 0.15));
 
-            // Zone: Basis - Runde + PER Bonus
             let baseWidth = 25 - (this.round * 3); 
             this.zoneWidth = Math.max(5, baseWidth + (per * 2));
             
-            // Zufällige Position der Zone
             const maxStart = 100 - this.zoneWidth;
             this.zoneStart = Math.floor(Math.random() * maxStart);
             
-            this.cursor = Math.random() < 0.5 ? 0 : 100; // Startet links oder rechts
+            this.cursor = Math.random() < 0.5 ? 0 : 100; 
             this.direction = this.cursor === 0 ? 1 : -1;
         },
 
@@ -167,14 +190,8 @@ window.MiniGames = {
 
             this.cursor += this.speed * this.direction;
 
-            // Ping-Pong
-            if (this.cursor >= 100) {
-                this.cursor = 100;
-                this.direction = -1;
-            } else if (this.cursor <= 0) {
-                this.cursor = 0;
-                this.direction = 1;
-            }
+            if (this.cursor >= 100) { this.cursor = 100; this.direction = -1; }
+            else if (this.cursor <= 0) { this.cursor = 0; this.direction = 1; }
 
             if (typeof UI.renderDefusal === 'function') UI.renderDefusal();
         },
@@ -182,7 +199,6 @@ window.MiniGames = {
         cutWire: function() {
             if (!this.isRunning) return;
 
-            // Treffer prüfen
             const hit = this.cursor >= this.zoneStart && this.cursor <= (this.zoneStart + this.zoneWidth);
 
             if (hit) {
@@ -190,10 +206,10 @@ window.MiniGames = {
                     this.end(true);
                 } else {
                     this.round++;
-                    this.setupRound(); // Nächste Runde schwerer
+                    this.setupRound(); 
                 }
             } else {
-                this.end(false); // BOOM
+                this.end(false); 
             }
         },
 
@@ -203,13 +219,19 @@ window.MiniGames = {
             
             if(success) {
                 UI.log("Bombe entschärft!", "text-green-400 font-bold");
-                // Optional: Loot oder XP
                 Game.gainExp(50);
             } else {
                 UI.log("BOOM! Explosion!", "text-red-500 font-bold blink-red");
-                if (typeof Game.addRadiation === 'function') Game.addRadiation(20); // Strafe
-                Game.state.hp = Math.max(0, Game.state.hp - 30); // Schaden
-                UI.update(); // HP Update
+                
+                // [FIX] Sicherer Zugriff auf Radiation und HP
+                if (typeof Game.addRadiation === 'function') {
+                    Game.addRadiation(20);
+                } else {
+                    Game.state.rads = (Game.state.rads || 0) + 20; // Fallback manuell
+                }
+
+                Game.state.hp = Math.max(0, Game.state.hp - 30); 
+                if(typeof UI.update === 'function') UI.update(); 
             }
             
             setTimeout(() => {
