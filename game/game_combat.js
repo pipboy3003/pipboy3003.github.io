@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-10 09:00:00 - game_combat.js - Combat Logic & Loot Trigger
+// [TIMESTAMP] 2026-01-10 21:15:00 - game_combat.js - FORCED DICE GAME TEST
 
 window.Combat = {
     enemy: null,
@@ -308,34 +308,25 @@ window.Combat = {
             });
         }
 
-        let mobId = null;
-        if(Game.monsters) {
-            for(let k in Game.monsters) {
-                if(Game.monsters[k].name === this.enemy.name.replace('Legendäre ', '')) {
-                    mobId = k;
-                    break;
-                }
-            }
-        }
-        if(mobId && typeof Game.updateQuestProgress === 'function') {
-            Game.updateQuestProgress('kill', mobId, 1);
-        }
-
         if(Game.state.kills === undefined) Game.state.kills = 0;
         Game.state.kills++;
         Game.saveGame();
 
-        // --- [NEU] WÜRFELSPIEL TRIGGER ---
-        // 33% Chance bei Legendären Gegnern
-       // old -> if (this.enemy.isLegendary && Math.random() < 0.33) {
-            
-        if (this.enemy.isLegendary && Math.random() < 1.0) {
+        // --- [DEBUG FORCE DICE TRIGGER] ---
+        console.log("[COMBAT] Win Trigger. Enemy Legendary?", this.enemy.isLegendary);
+        
+        // Wir ignorieren jetzt "isLegendary" zum Testen!
+        // if (this.enemy.isLegendary && Math.random() < 1.0) {  <-- ORIGINAL
+        if (true) { // <-- FORCED ON (Jeder Sieg triggert Dice)
+             console.log("[COMBAT] Starting Dice Game...");
+             
              setTimeout(() => {
                  Game.state.enemy = null;
                  if (typeof UI.startMinigame === 'function') {
                      UI.startMinigame('dice');
                  } else {
-                     UI.log("Minigame fehlt!", "text-red-500");
+                     console.error("[COMBAT ERROR] UI.startMinigame is missing!");
+                     UI.log("Fehler: Minigame nicht gefunden.", "text-red-500");
                      UI.switchView('map');
                  }
              }, 1500);
