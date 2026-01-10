@@ -279,12 +279,17 @@ window.Combat = {
             Game.state.hp -= dmgTaken;
             this.log(`${this.enemy.name} trifft dich: -${dmgTaken} HP`, 'text-red-500 font-bold');
             this.triggerFeedback('damage', dmgTaken);
-            
-            if(Game.state.hp <= 0) {
-                Game.state.isGameOver = true;
-                if(UI && UI.showGameOver) UI.showGameOver();
-                return;
+
+            // [TIMESTAMP] 2026-01-10 14:10:00 - game_combat.js - Permadeath-Check hinzugefügt
+            if (Game.state.hp <= 0) {
+                Game.state.hp = 0;
+                // Trigger den Löschvorgang des aktuellen Slots
+                if (Game.selectedSlot !== -1) {
+                    Network.deleteSlot(Game.selectedSlot); // Löscht den Spielstand in der DB
+                }
+                UI.showGameOver(); // Zeigt den Game-Over-Screen an
             }
+            
         } else {
             this.log(`${this.enemy.name} verfehlt dich!`, 'text-blue-300');
             this.triggerFeedback('dodge');
