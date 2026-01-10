@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-09 00:40:00 - game_core.js - Ammo Stock Logic 30-110
+// [2026-01-10 01:45:00] game_core.js - CLEANED (Removed duplicate logic)
 
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
@@ -90,18 +90,7 @@ window.Game = {
         if(typeof UI !== 'undefined' && UI.update) UI.update();
     },
 
-    getMaxSlots: function() {
-        if(!this.state) return 10;
-        let slots = 10; 
-        slots += Math.max(0, this.getStat('STR') - 5); 
-        const perkLvl = this.getPerkLevel('strong_back');
-        slots += perkLvl; 
-        const backpack = this.state.equip.back; 
-        if(backpack && backpack.props && backpack.props.slots) {
-            slots += backpack.props.slots;
-        }
-        return slots;
-    },
+    // --- CLEANUP: getMaxSlots removed (is now in game_actions.js) ---
 
     getUsedSlots: function() {
         if(!this.state || !this.state.inventory) return 0;
@@ -252,9 +241,6 @@ window.Game = {
             stock['nuka_cola'] = 3 + Math.floor(Math.random() * 5);
             
             // [FIX] Ammo: 30 bis 110 in 10er Schritten
-            // Math.random() * 9 ergibt 0..8. 
-            // 0*10=0 + 30 = 30
-            // 8*10=80 + 30 = 110
             this.state.shop.ammoStock = 30 + (Math.floor(Math.random() * 9) * 10); 
 
             const weapons = Object.keys(this.items).filter(k => this.items[k].type === 'weapon' && !k.includes('legendary') && !k.startsWith('rusty'));
@@ -307,10 +293,9 @@ window.Game = {
             if(this.isDirty) this.saveGame(true);
         });
 
-        if(this.items) {
-            this.items.backpack_small = { name: "Leder-Ranzen", type: "back", cost: 150, slot: "back", props: { slots: 5 }, icon: "🎒" };
-            this.items.backpack_medium = { name: "Reiserucksack", type: "back", cost: 400, slot: "back", props: { slots: 10 }, icon: "🎒" };
-            this.items.backpack_large = { name: "Militär-Rucksack", type: "back", cost: 900, slot: "back", props: { slots: 20 }, icon: "🎒" };
+        // Alte Item-Init entfernen, da wir jetzt data_items.js haben
+        // (Behalten es nur als Fallback falls data_items.js fehlt)
+        if(this.items && Object.keys(this.items).length === 0) {
             this.items.ammo = { name: "Munition", type: "ammo", cost: 2, icon: "bullet" };
         }
 
