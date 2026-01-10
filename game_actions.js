@@ -1,4 +1,4 @@
-// [2026-01-10 01:15:00] game_actions.js - Smart Weapon Switch Logic
+// [2026-01-10 01:30:00] game_actions.js - Backpack Fix & Smart Switch
 
 Object.assign(Game, {
 
@@ -15,6 +15,39 @@ Object.assign(Game, {
             case 9: return { id: 'nuclear_mat', count: 3, name: 'Nukleares Material' };
             default: return null;
         }
+    },
+
+    // [NEU] Berechnet Inventarplätze (Basis + Stärke + Rucksack)
+    getMaxSlots: function() {
+        let base = 10;
+        
+        // Bonus durch Stärke
+        if (this.state.stats) {
+            base += (this.state.stats.STR || 1);
+        }
+        
+        // Bonus durch Perk "Strong Back"
+        const strongBack = this.getPerkLevel('strong_back');
+        if (strongBack > 0) base += (strongBack * 5);
+
+        // Bonus durch Rucksack (Back Slot)
+        if (this.state.equip && this.state.equip.back) {
+            const pack = this.state.equip.back;
+            let packBonus = 0;
+
+            // 1. Prüfen ob im Item-Objekt direkt gespeichert
+            if (pack.bonus && pack.bonus.slots) packBonus = pack.bonus.slots;
+            // 2. Prüfen ob in den Props gespeichert
+            else if (pack.props && pack.props.bonus && pack.props.bonus.slots) packBonus = pack.props.bonus.slots;
+            // 3. Fallback: Nachschlagen in der Datenbank
+            else if (this.items[pack.id] && this.items[pack.id].bonus && this.items[pack.id].bonus.slots) {
+                packBonus = this.items[pack.id].bonus.slots;
+            }
+
+            base += packBonus;
+        }
+
+        return base;
     },
     
     // [FIX] Automatischer Waffenwechsel - Verbesserte Erkennung
@@ -43,12 +76,10 @@ Object.assign(Game, {
             if (!def) return;
 
             // Kriterium 1: Es muss eine Waffe sein
-            // Wir prüfen auf diverse Typ-Schreibweisen, um sicherzugehen
             const type = def.type ? def.type.toLowerCase() : '';
             const isWeaponType = type === 'weapon' || type === 'melee' || type === 'weapon_melee' || type.includes('weapon');
 
             // Kriterium 2: Es darf KEINE Munition verbrauchen
-            // Wenn 'ammo' undefined, null oder 'none' ist -> Nahkampf
             const needsAmmo = def.ammo && def.ammo !== 'none';
 
             if (isWeaponType && !needsAmmo) {
@@ -70,12 +101,10 @@ Object.assign(Game, {
             UI.log(`${newName} wurde statt ${oldName} angelegt, deine Munition ist leer`, "text-yellow-400 blink-red");
         } else {
             // Keine Nahkampfwaffe gefunden -> Fäuste
-            // Wir prüfen, ob wir überhaupt etwas ausgerüstet hatten, das keine Faust war
             if (this.state.equip.weapon && this.state.equip.weapon.name !== "Fäuste") {
                 this.unequipItem('weapon'); 
                 UI.log("Keine Nahkampfwaffe gefunden! Fäuste!", "text-red-500");
             } else {
-                // War schon Faust
                 UI.log("Keine Munition mehr!", "text-red-500");
             }
         }
