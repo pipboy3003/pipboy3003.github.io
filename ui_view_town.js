@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-10 22:35:00 - ui_view_town.js - RESTORED CLASSIC VATS DESIGN
+// [TIMESTAMP] 2026-01-10 23:15:00 - ui_view_town.js - Cleaned (Combat moved to ui_combat.js)
 
 Object.assign(UI, {
     
@@ -79,145 +79,6 @@ Object.assign(UI, {
     },
 
     // ==========================================
-    // === COMBAT SCREEN (DESIGN RESTORED) ===
-    // ==========================================
-    renderCombat: function() {
-        Game.state.view = 'combat';
-        const view = document.getElementById('view-container');
-        if(!view) return;
-        
-        if(!Combat.enemy) {
-            UI.switchView('map');
-            return;
-        }
-
-        view.innerHTML = ''; 
-
-        const wrapper = document.createElement('div');
-        wrapper.className = "w-full h-full flex flex-col bg-black relative overflow-hidden select-none";
-
-        // Feedback Layer
-        const feedbackLayer = document.createElement('div');
-        feedbackLayer.id = "combat-feedback-layer";
-        feedbackLayer.className = "absolute inset-0 pointer-events-none z-50 overflow-hidden";
-        wrapper.appendChild(feedbackLayer);
-
-        // Flash Effect Layer
-        const flashLayer = document.createElement('div');
-        flashLayer.id = "damage-flash";
-        flashLayer.className = "absolute inset-0 bg-red-500 pointer-events-none z-40 hidden transition-opacity duration-300 opacity-0";
-        wrapper.appendChild(flashLayer);
-
-        // --- ENEMY CONTAINER (Upper Area) ---
-        const enemyContainer = document.createElement('div');
-        enemyContainer.className = "flex-grow flex flex-col items-center justify-center relative bg-gradient-to-b from-black to-[#051005]";
-        
-        // Gegner Infos (Oben Zentriert)
-        let hpPercent = (Combat.enemy.hp / Combat.enemy.maxHp) * 100;
-        let hpColor = "bg-red-600";
-        if (Combat.enemy.isLegendary) hpColor = "bg-yellow-500"; 
-
-        const infoBar = document.createElement('div');
-        infoBar.className = "absolute top-4 w-full max-w-md px-4 z-10 flex flex-col items-center";
-        infoBar.innerHTML = `
-            <div class="flex flex-col w-full items-center mb-1">
-                <span class="text-2xl font-bold ${Combat.enemy.isLegendary ? 'text-yellow-400 drop-shadow-[0_0_5px_gold]' : 'text-red-500'} font-vt323 tracking-wider uppercase">
-                    ${Combat.enemy.name} ${Combat.enemy.isLegendary ? '⭐' : ''}
-                </span>
-                <span class="text-xs text-red-300 font-mono">${Math.ceil(Combat.enemy.hp)} / ${Combat.enemy.maxHp} HP</span>
-            </div>
-            <div class="w-full h-6 bg-red-900/30 border-2 border-red-700 skew-x-[-10deg] shadow-[0_0_10px_rgba(255,0,0,0.2)]">
-                <div class="h-full ${hpColor} transition-all duration-300" style="width: ${hpPercent}%"></div>
-            </div>
-        `;
-        enemyContainer.appendChild(infoBar);
-
-        // Gegner Bild (Mitte Groß)
-        const visual = document.createElement('div');
-        visual.id = "enemy-img";
-        visual.className = "text-[9rem] filter drop-shadow-[0_0_20px_rgba(255,0,0,0.4)] transition-transform duration-100 flex items-center justify-center h-full pb-10";
-        visual.textContent = Combat.enemy.symbol || "💀";
-        enemyContainer.appendChild(visual);
-
-        // --- VATS OVERLAY (Unten im Bild) ---
-        if(Combat.turn === 'player') {
-            const vats = document.createElement('div');
-            vats.className = "absolute bottom-4 flex gap-2 w-full max-w-md justify-center px-2 z-20";
-            
-            Combat.bodyParts.forEach((part, idx) => {
-                const hitChance = Combat.calculateHitChance(idx);
-                const isSelected = (idx === Combat.selectedPart);
-                
-                let btnClass = "flex-1 border-2 py-3 px-1 flex flex-col items-center justify-center transition-all bg-black/90 cursor-pointer ";
-                
-                // Old School Styling Logic
-                if(isSelected) {
-                    btnClass += "border-yellow-400 text-yellow-400 bg-yellow-900/40 shadow-[0_0_15px_#ccaa00] scale-105 z-30";
-                } else {
-                    btnClass += "border-green-700 text-green-700 hover:border-green-500 hover:text-green-500 hover:bg-green-900/20";
-                }
-
-                const btn = document.createElement('button');
-                btn.id = `btn-vats-${idx}`;
-                btn.className = btnClass;
-                // Direktes Selektieren per Klick
-                btn.onclick = (e) => { 
-                    e.stopPropagation(); 
-                    Combat.selectPart(idx); 
-                    Combat.confirmSelection(); 
-                };
-                
-                // Anzeige: Name, Prozent, Schaden-Mod
-                btn.innerHTML = `
-                    <span class="text-[10px] font-bold tracking-[0.2em] uppercase mb-1">${part.name}</span>
-                    <span class="text-3xl font-bold font-vt323 leading-none">${hitChance}%</span>
-                    <span class="text-[9px] mt-1 font-mono opacity-80">${part.dmgMod}x DMG</span>
-                `;
-                vats.appendChild(btn);
-            });
-            enemyContainer.appendChild(vats);
-        } else {
-            // Enemy Turn Indicator
-            const wait = document.createElement('div');
-            wait.className = "absolute bottom-10 text-red-500 font-bold text-2xl animate-pulse tracking-widest border-y-2 border-red-500 px-8 py-2 bg-black/80";
-            wait.textContent = "⚠️ GEGNER AM ZUG ⚠️";
-            enemyContainer.appendChild(wait);
-        }
-
-        wrapper.appendChild(enemyContainer);
-
-        // --- LOG AREA & FOOTER ---
-        const footerArea = document.createElement('div');
-        footerArea.className = "flex-shrink-0 flex flex-col bg-black border-t-4 border-green-800";
-
-        const logArea = document.createElement('div');
-        logArea.id = "combat-log";
-        logArea.className = "h-32 p-3 font-mono text-xs overflow-hidden flex flex-col justify-end text-green-400 leading-relaxed opacity-90 shadow-inner bg-[#000500]";
-        footerArea.appendChild(logArea);
-
-        // Action Button (Attack / Flee)
-        const btnRow = document.createElement('div');
-        btnRow.className = "flex p-2 gap-2 bg-[#051005] border-t border-green-600";
-        
-        if(Combat.turn === 'player') {
-            btnRow.innerHTML = `
-                <button onclick="Combat.confirmSelection()" class="flex-grow action-button py-4 text-xl font-bold border-yellow-500 text-yellow-500 hover:bg-yellow-900/50 shadow-[0_0_10px_rgba(255,255,0,0.2)] tracking-widest">
-                    [ SPACE ] ANGRIFF
-                </button>
-                <button onclick="Combat.flee()" class="w-1/3 action-button py-4 text-gray-500 border-gray-600 hover:text-white hover:border-white">
-                    FLUCHT
-                </button>
-            `;
-        } else {
-            btnRow.innerHTML = `<button disabled class="w-full action-button py-4 text-gray-600 border-gray-800 cursor-wait bg-gray-900/20">WARTEN...</button>`;
-        }
-        footerArea.appendChild(btnRow);
-
-        wrapper.appendChild(footerArea);
-        view.appendChild(wrapper);
-    },
-
-    // ==========================================
     // === CITY HUB ===
     // ==========================================
     renderCity: function(cityId = 'rusty_springs') {
@@ -291,8 +152,8 @@ Object.assign(UI, {
         const footer = document.createElement('div');
         footer.className = "flex-shrink-0 p-3 border-t-4 border-green-900 bg-[#001100]";
         footer.innerHTML = `
-            <button class="action-button w-full border-2 border-green-600 text-green-500 py-3 font-bold text-xl hover:bg-green-900/50 hover:text-green-200 transition-all uppercase tracking-[0.15em]" onclick="Game.leaveCity()">
-                <span class="mr-2">🚪</span> ZURÜCK INS ÖDLAND (ESC)
+            <button class="action-button w-full border-2 border-green-600 text-green-500 py-3 font-bold text-xl hover:bg-green-900/50 hover:text-green-200 transition-all uppercase tracking-[0.15em]" onclick="UI.switchView('map')">
+                <span class="mr-2">🚪</span> ZURÜCK INS ÖDLAND
             </button>
         `;
         wrapper.appendChild(footer);
