@@ -532,14 +532,16 @@ const UI = {
         this.els.charSelectScreen.focus();
     },
 
-    // [TIMESTAMP] 2026-01-10 14:12:00 - ui_core.js - GameOver UI für Permadeath angepasst
+    // [TIMESTAMP] 2026-01-10 14:56:00 - ui_core.js - Ergänzung für Permadeath-Sicherheit
     showGameOver: function() {
         if (this.els.gameOver) {
-            this.els.gameOver.classList.remove('hidden'); // Blendet den Screen ein
+            this.els.gameOver.classList.remove('hidden');
         }
-        // Wichtig: Den lokalen State leeren, damit kein Autosave den toten Char rettet
+        // Wichtig: State leeren, damit kein Timer/Event mehr speichern kann
         Game.state = null; 
+        this.selectedSlot = -1;
     }
+
 
     
 };
