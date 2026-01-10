@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-09 23:55:00 - combat.js - Combat with Ammo Check
+// [2026-01-10 01:15:00] combat.js - Long Animations & FX Fixes
 
 window.Combat = {
     enemy: null,
@@ -142,7 +142,8 @@ window.Combat = {
         const wpn = this.getSafeWeapon();
         const wId = wpn.id.toLowerCase();
         
-        const rangedKeywords = ['pistol', 'rifle', 'gun', 'shotgun', 'smg', 'minigun', 'blaster', 'sniper', 'cannon', 'gewehr', 'flinte'];
+        // Erweiterte Keywords für neue Waffen
+        const rangedKeywords = ['pistol', 'rifle', 'gun', 'shotgun', 'smg', 'minigun', 'blaster', 'sniper', 'cannon', 'gewehr', 'flinte', 'revolver'];
         const isRanged = rangedKeywords.some(k => wId.includes(k));
 
         if (!isRanged) chance += 20; 
@@ -161,16 +162,16 @@ window.Combat = {
         let wpn = this.getSafeWeapon();
         const wId = wpn.id.toLowerCase();
 
-        const rangedKeywords = ['pistol', 'rifle', 'gun', 'shotgun', 'smg', 'minigun', 'blaster', 'sniper', 'cannon', 'gewehr', 'flinte'];
+        const rangedKeywords = ['pistol', 'rifle', 'gun', 'shotgun', 'smg', 'minigun', 'blaster', 'sniper', 'cannon', 'gewehr', 'flinte', 'revolver'];
         const isRanged = rangedKeywords.some(k => wId.includes(k));
         
         // Nur Munition verbrauchen, wenn Fernkampf UND nicht Alien Blaster (oder andere Ausnahmen)
         if(isRanged && wId !== 'alien_blaster') { 
              const hasAmmo = Game.removeFromInventory('ammo', 1);
              if(!hasAmmo) {
-                 // [NEU] Visueller Effekt
+                 // [NEU] 3000ms Duration für KLICK
                  if(typeof UI.showCombatEffect === 'function') {
-                     UI.showCombatEffect("* KLICK *", "MUNITION LEER!");
+                     UI.showCombatEffect("* KLICK *", "MUNITION LEER!", "red", 3000);
                  }
                  this.log("WAFFE LEER! *KLICK*", "text-red-500 font-bold text-xl");
                  
@@ -219,7 +220,8 @@ window.Combat = {
                 dmg *= 2;
                 isCrit = true;
                 this.log(">> KRITISCHER TREFFER! <<", "text-yellow-400 font-bold animate-pulse");
-                if(typeof UI.showCombatEffect === 'function') UI.showCombatEffect("CRITICAL!", "DOPPELTER SCHADEN", "yellow");
+                // [NEU] 2000ms Duration für CRIT
+                if(typeof UI.showCombatEffect === 'function') UI.showCombatEffect("CRITICAL!", "DOPPELTER SCHADEN", "yellow", 2000);
                 
                 if (Game.getPerkLevel('mysterious_stranger') > 0) {
                     this.log("Der Fremde hilft dir...", "text-gray-400 text-xs");
