@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-11 01:00:00 - ui_combat.js - Mobile Optimized VATS
+// [TIMESTAMP] 2026-01-11 02:00:00 - ui_combat.js - Holographic VATS Redesign
 
 (function() {
     function initCombatUI() {
@@ -19,168 +19,176 @@
 
                     view.innerHTML = ''; 
 
-                    // --- MAIN WRAPPER (Mobile-Friendly) ---
+                    // --- FULLSCREEN CONTAINER ---
                     const wrapper = document.createElement('div');
-                    // Flex column, zentriert, 100% Höhe/Breite
-                    wrapper.className = "w-full h-full flex flex-col bg-black relative overflow-hidden select-none touch-manipulation";
+                    wrapper.className = "w-full h-full flex flex-col relative overflow-hidden select-none bg-black";
 
-                    // Background FX
-                    const bgFX = document.createElement('div');
-                    bgFX.className = "absolute inset-0 pointer-events-none z-0 opacity-20";
-                    bgFX.style.backgroundImage = `radial-gradient(circle, transparent 20%, #001100 90%), repeating-linear-gradient(0deg, transparent 0px, transparent 2px, #00ff00 3px)`;
-                    bgFX.style.backgroundSize = "100% 4px";
-                    wrapper.appendChild(bgFX);
+                    // 1. CINEMATIC BACKGROUND (Vignette & Scanlines)
+                    wrapper.innerHTML += `
+                        <div class="absolute inset-0 bg-[radial-gradient(circle,rgba(0,50,0,0.2)_0%,rgba(0,0,0,1)_90%)] z-0 pointer-events-none"></div>
+                        <div class="absolute inset-0 z-0 opacity-10 pointer-events-none" style="background: repeating-linear-gradient(0deg, transparent, transparent 2px, #39ff14 3px);"></div>
+                    `;
 
+                    // Feedback Layer
                     const feedbackLayer = document.createElement('div');
                     feedbackLayer.id = "combat-feedback-layer";
                     feedbackLayer.className = "absolute inset-0 pointer-events-none z-50 overflow-hidden";
                     wrapper.appendChild(feedbackLayer);
 
-                    // --- HUD CONTAINER ---
-                    // "justify-between" verteilt den Platz besser auf kleinen Screens
-                    const hudContainer = document.createElement('div');
-                    hudContainer.className = "flex-grow relative flex flex-col items-center justify-between z-10 p-2 w-full h-full";
-
-                    // 1. TOP BAR (Kompakter)
+                    // --- HUD LAYER ---
+                    const hud = document.createElement('div');
+                    hud.className = "absolute inset-0 z-10 flex flex-col p-4";
+                    
+                    // --- HEADER: ENEMY INFO (Minimalistisch) ---
                     let eMax = Combat.enemy.maxHp || 100;
                     let eHp = Combat.enemy.hp !== undefined ? Combat.enemy.hp : eMax;
-                    let hpPercent = Math.max(0, Math.min(100, (eHp / eMax) * 100));
+                    let hpPercent = (eHp / eMax) * 100;
                     let isLegendary = Combat.enemy.isLegendary;
-                    let themeColor = isLegendary ? "yellow" : "red";
-                    
-                    const topBar = document.createElement('div');
-                    topBar.className = "w-full flex flex-col items-center mt-2 mb-2 flex-shrink-0";
-                    topBar.innerHTML = `
-                        <div class="flex justify-between w-full max-w-md items-end px-2">
-                            <span class="text-xl md:text-2xl font-bold text-${themeColor}-500 font-vt323 tracking-widest uppercase truncate max-w-[70%]">
-                                ${Combat.enemy.name} ${isLegendary ? '★' : ''}
+                    let colorClass = isLegendary ? "text-yellow-400 border-yellow-400" : "text-red-500 border-red-500";
+                    let barColor = isLegendary ? "bg-yellow-500" : "bg-red-600";
+
+                    const header = document.createElement('div');
+                    header.className = "w-full flex justify-between items-end border-b border-green-900/50 pb-2 mb-4";
+                    header.innerHTML = `
+                        <div class="flex flex-col">
+                            <span class="text-xs text-green-600 font-bold tracking-[0.2em] uppercase">TARGET_ID_90210</span>
+                            <span class="text-3xl font-vt323 ${colorClass} drop-shadow-[0_0_10px_rgba(255,0,0,0.5)]">
+                                ${Combat.enemy.name} ${isLegendary ? '★ LEGENDARY' : ''}
                             </span>
-                            <span class="text-sm md:text-lg font-mono text-${themeColor}-300">${Math.ceil(eHp)} HP</span>
                         </div>
-                        <div class="w-full max-w-md h-4 md:h-6 bg-black border border-${themeColor}-900 relative skew-x-[-10deg]">
-                            <div class="h-full bg-${themeColor}-600 transition-all duration-300 relative" style="width: ${hpPercent}%"></div>
-                        </div>
-                    `;
-                    hudContainer.appendChild(topBar);
-
-                    // 2. TARGETING SCOPE (Responsive Größe)
-                    // Nimmt den verfügbaren Platz ein, bleibt aber quadratisch bis max-Limit
-                    const scopeWrapper = document.createElement('div');
-                    scopeWrapper.className = "flex-grow w-full flex items-center justify-center relative min-h-0";
-                    
-                    const scopeBox = document.createElement('div');
-                    // "max-h-full" sorgt dafür, dass es nicht aus dem Screen ragt
-                    scopeBox.className = "relative aspect-square h-auto max-h-[50vh] md:max-h-[60vh] w-auto max-w-full border-2 border-green-500/30 rounded-lg flex items-center justify-center bg-green-900/5 shadow-[inset_0_0_30px_rgba(0,255,0,0.1)]";
-                    
-                    scopeBox.innerHTML = `
-                        <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-green-400"></div>
-                        <div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-green-400"></div>
-                        <div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-green-400"></div>
-                        <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-green-400"></div>
-                        
-                        <div id="enemy-img" class="text-[5rem] md:text-[8rem] filter drop-shadow-[0_0_20px_rgba(0,0,0,0.8)] transition-transform duration-100 select-none">
-                            ${Combat.enemy.symbol || "💀"}
+                        <div class="flex flex-col items-end w-1/3">
+                            <span class="text-xs text-green-600 font-bold mb-1">INTEGRITY ${Math.ceil(eHp)}/${eMax}</span>
+                            <div class="w-full h-2 bg-gray-900">
+                                <div class="h-full ${barColor} shadow-[0_0_10px_red]" style="width: ${hpPercent}%"></div>
+                            </div>
                         </div>
                     `;
+                    hud.appendChild(header);
 
+                    // --- CENTER: HOLOGRAPHIC ENEMY ---
+                    const centerStage = document.createElement('div');
+                    centerStage.className = "flex-grow relative flex items-center justify-center";
+                    
+                    // Der Gegner (Groß & Leuchtend)
+                    const enemyVis = document.createElement('div');
+                    enemyVis.className = "text-[12rem] filter drop-shadow-[0_0_30px_rgba(0,255,0,0.2)] transition-transform duration-300";
+                    enemyVis.innerHTML = Combat.enemy.symbol || "💀";
+                    
+                    // Animation bei Treffer
+                    if(Combat.lastHit) { enemyVis.classList.add('animate-pulse', 'text-red-500'); }
+                    
+                    centerStage.appendChild(enemyVis);
+
+                    // TREFFERZONEN (Floating Style)
                     if(Combat.turn === 'player') {
                         const zones = [
-                            { id: 0, top: 0, height: 35, label: "KOPF" },   // Etwas größer für Touch
-                            { id: 1, top: 35, height: 35, label: "TORSO" },
-                            { id: 2, top: 70, height: 30, label: "BEINE" }
+                            { id: 0, label: "HEAD", chance: 0, pos: "top-0 left-1/2 -translate-x-1/2 -mt-4" }, 
+                            { id: 1, label: "TORSO", chance: 0, pos: "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" },
+                            { id: 2, label: "LEGS", chance: 0, pos: "bottom-0 left-1/2 -translate-x-1/2 mb-8" }
                         ];
 
-                        zones.forEach(z => {
+                        // Container für Klick-Zonen über dem Gegner
+                        const zoneOverlay = document.createElement('div');
+                        zoneOverlay.className = "absolute inset-0 flex flex-col";
+                        
+                        // Unsichtbare Klickbereiche (Drittelung des Bildschirms vertikal für einfache Bedienung)
+                        [0, 1, 2].forEach(id => {
                             let hitChance = 0;
-                            try { hitChance = Combat.calculateHitChance(z.id); } catch(e) {}
-                            const isSelected = (Combat.selectedPart === z.id);
+                            try { hitChance = Combat.calculateHitChance(id); } catch(e) {}
                             
-                            const zoneEl = document.createElement('div');
-                            // Größere Touch-Ziele durch transparente Borders
-                            zoneEl.className = "absolute left-1 right-1 transition-all duration-150 cursor-pointer z-10 flex items-center justify-between px-2 md:px-4 border border-transparent active:bg-green-500/20";
-                            if(isSelected) zoneEl.className += " bg-yellow-500/10 border-yellow-400/50 shadow-[0_0_10px_rgba(255,215,0,0.2)]";
+                            const isSelected = (Combat.selectedPart === id);
+                            
+                            // Die Klick-Zone (füllt den Bereich)
+                            const clickArea = document.createElement('div');
+                            clickArea.className = "flex-1 flex items-center justify-between px-4 cursor-pointer group hover:bg-green-500/5 transition-colors border-l-2 border-r-2 border-transparent";
+                            
+                            if(isSelected) {
+                                clickArea.className += " border-green-400 bg-green-500/10 shadow-[inset_0_0_20px_rgba(0,255,0,0.2)]";
+                                enemyVis.style.opacity = id === 1 ? "1" : "0.5"; // Fokus Effekt
+                            }
 
-                            zoneEl.style.top = z.top + "%";
-                            zoneEl.style.height = z.height + "%";
-                            zoneEl.onclick = (e) => { e.stopPropagation(); Combat.selectPart(z.id); };
+                            clickArea.onclick = (e) => { e.stopPropagation(); Combat.selectPart(id); };
 
-                            // Mobile: Schrift größer und dicker
-                            zoneEl.innerHTML = `
-                                <div class="font-bold text-[10px] md:text-xs tracking-widest ${isSelected ? 'text-yellow-400' : 'text-green-600 opacity-60'}">
-                                    ${z.label}
+                            // Floating Stats links und rechts
+                            clickArea.innerHTML = `
+                                <div class="flex flex-col items-start ${isSelected ? 'opacity-100 scale-110' : 'opacity-40 group-hover:opacity-80'} transition-all duration-200">
+                                    <span class="text-[10px] text-green-400 tracking-widest border-b border-green-600 mb-1">${zones[id].label}</span>
+                                    <span class="text-3xl font-vt323 text-green-200">${hitChance}<span class="text-sm">%</span></span>
                                 </div>
-                                <div class="font-vt323 text-2xl md:text-3xl ${isSelected ? 'text-yellow-400' : 'text-green-700 opacity-40'}">
-                                    ${hitChance}%
+                                
+                                <div class="flex flex-col items-end ${isSelected ? 'opacity-100 scale-110' : 'opacity-40 group-hover:opacity-80'} transition-all duration-200">
+                                     ${isSelected ? '<span class="text-xs text-yellow-400 font-bold blink-red">TARGETING</span>' : ''}
+                                     <div class="h-1 w-12 bg-green-900 mt-2 overflow-hidden">
+                                        <div class="h-full bg-green-400" style="width: ${hitChance}%"></div>
+                                     </div>
                                 </div>
                             `;
-                            scopeBox.appendChild(zoneEl);
+                            zoneOverlay.appendChild(clickArea);
                         });
-
-                        // Stats Panel (Jetzt auch Mobil sichtbar, aber kompakter unten im Scope)
-                        const currentPart = Combat.bodyParts[Combat.selectedPart] || {name:"?", dmgMod:1};
-                        let currentChance = 0;
-                        try { currentChance = Combat.calculateHitChance(Combat.selectedPart); } catch(e) {}
-
-                        const stats = document.createElement('div');
-                        stats.className = "absolute bottom-1 right-2 text-right pointer-events-none";
-                        stats.innerHTML = `
-                            <div class="text-yellow-400 font-bold text-sm md:text-xl uppercase tracking-widest opacity-80">${currentPart.name}</div>
-                            <div class="text-green-300 font-mono text-[10px] md:text-xs leading-tight">
-                                ${currentChance}% HIT / ${currentPart.dmgMod}x DMG
-                            </div>
-                        `;
-                        scopeBox.appendChild(stats);
-
+                        
+                        centerStage.appendChild(zoneOverlay);
                     } else {
-                        // Enemy Turn Overlay
-                        scopeBox.innerHTML += `
-                            <div class="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-20">
-                                <div class="text-red-500 font-bold text-xl md:text-2xl animate-pulse border-2 border-red-500 px-4 py-1 bg-black">
-                                    FEINDLICHES FEUER
+                        // Gegner Zug Overlay
+                         centerStage.innerHTML += `
+                            <div class="absolute inset-0 flex items-center justify-center z-50">
+                                <div class="bg-red-500/10 border-t-2 border-b-2 border-red-500 w-full text-center py-4 backdrop-blur-sm">
+                                    <div class="text-red-500 font-bold text-2xl animate-pulse tracking-[0.5em]">WARNING</div>
+                                    <div class="text-red-300 text-xs mt-1">INCOMING ATTACK</div>
                                 </div>
                             </div>
                         `;
                     }
 
-                    scopeWrapper.appendChild(scopeBox);
-                    hudContainer.appendChild(scopeWrapper);
+                    hud.appendChild(centerStage);
 
-                    // 3. FOOTER & LOG (Unten fixiert)
-                    const footerArea = document.createElement('div');
-                    footerArea.className = "w-full flex-shrink-0 flex flex-col gap-2 mt-2";
+                    // --- FOOTER: CONTROLS ---
+                    const controls = document.createElement('div');
+                    controls.className = "mt-4 flex flex-col gap-2";
 
-                    // Combat Log (Kompakt, 2 Zeilen)
-                    const logArea = document.createElement('div');
-                    logArea.id = "combat-log";
-                    logArea.className = "h-12 md:h-16 p-1 font-mono text-[10px] md:text-xs overflow-hidden flex flex-col justify-end text-green-400 leading-tight border-t border-green-900 bg-black/50";
-                    footerArea.appendChild(logArea);
+                    // Log Line (Wie ein Ticker)
+                    const logLine = document.createElement('div');
+                    logLine.className = "w-full text-green-400 font-mono text-xs text-center border-t border-b border-green-900/50 py-1 opacity-80";
+                    const lastLog = Combat.logData.length > 0 ? Combat.logData[0].t : "SYSTEM READY...";
+                    logLine.innerHTML = `<span class="animate-pulse">></span> ${lastLog}`;
+                    controls.appendChild(logLine);
 
-                    // Buttons (Groß für Daumen)
-                    const btnRow = document.createElement('div');
-                    btnRow.className = "flex w-full h-16 md:h-20 gap-2 pb-2";
-                    
+                    // Action Bar
+                    const actionBar = document.createElement('div');
+                    actionBar.className = "flex w-full h-16 gap-4";
+
                     if(Combat.turn === 'player') {
-                        btnRow.innerHTML = `
-                            <button onclick="Combat.flee()" class="w-1/4 action-button border-gray-600 text-gray-400 text-xs md:text-sm font-bold active:bg-gray-800">
-                                FLUCHT
+                        actionBar.innerHTML = `
+                             <button onclick="Combat.flee()" class="w-1/4 bg-gray-900/50 border border-gray-600 text-gray-400 font-bold text-sm hover:bg-gray-800 hover:text-white transition-all clip-corner">
+                                ESCAPE
                             </button>
-                            <button onclick="Combat.confirmSelection()" class="flex-grow action-button border-yellow-500 text-yellow-500 bg-yellow-900/20 active:bg-yellow-500 active:text-black text-2xl md:text-3xl font-bold tracking-widest font-vt323 animate-pulse">
-                                FEUER
+                            <button onclick="Combat.confirmSelection()" class="flex-grow bg-[#1aff1a]/10 border-2 border-[#1aff1a] text-[#1aff1a] text-3xl font-vt323 font-bold tracking-[0.2em] hover:bg-[#1aff1a] hover:text-black hover:shadow-[0_0_30px_#1aff1a] transition-all active:scale-95">
+                                EXECUTE
                             </button>
                         `;
                     } else {
-                        btnRow.innerHTML = `<button disabled class="w-full h-full border border-gray-800 text-gray-500 bg-gray-900/20 italic text-sm">GEGNER ZUG...</button>`;
+                         actionBar.innerHTML = `
+                            <div class="w-full h-full flex items-center justify-center border border-red-900 bg-red-900/10 text-red-500 font-mono text-sm animate-pulse">
+                                CALCULATING ENEMY MOVEMENT...
+                            </div>
+                        `;
                     }
-                    footerArea.appendChild(btnRow);
+                    controls.appendChild(actionBar);
+                    hud.appendChild(controls);
 
-                    hudContainer.appendChild(footerArea);
-                    wrapper.appendChild(hudContainer);
+                    // --- CRITICAL METER (Optional Visual) ---
+                    const critChance = Game.state.critChance || 5;
+                    const critMeter = document.createElement('div');
+                    critMeter.className = "absolute top-1/2 right-2 transform -translate-y-1/2 w-2 h-32 bg-gray-900 border border-green-900 flex flex-col justify-end p-0.5 opacity-50";
+                    critMeter.innerHTML = `<div class="w-full bg-yellow-400 animate-pulse" style="height: ${Math.min(100, critChance * 2)}%"></div>`;
+                    hud.appendChild(critMeter);
+
+                    wrapper.appendChild(hud);
                     view.appendChild(wrapper);
 
                 } catch(err) {
-                    console.error("COMBAT UI ERROR:", err);
+                    console.error("HOLO-VATS ERROR:", err);
                     const view = document.getElementById('view-container');
-                    if(view) view.innerHTML = `<div class="text-red-500 p-4">UI ERROR: ${err.message}<br><button onclick="UI.switchView('map')" class="border border-red-500 p-2 mt-2">RESET</button></div>`;
+                    if(view) view.innerHTML = `<div class="text-red-500">CRITICAL UI FAILURE</div>`;
                 }
             }
         });
