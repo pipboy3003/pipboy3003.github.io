@@ -280,38 +280,42 @@ window.Combat = {
             this.log(`${this.enemy.name} trifft dich: -${dmgTaken} HP`, 'text-red-500 font-bold');
             this.triggerFeedback('damage', dmgTaken);
 
-        // [TIMESTAMP] 2026-01-10 15:15:00 - game_combat.js - Finaler Permadeath Fix mit Autosave-Blocker
-
-if(Game.state.hp <= 0) {
+        if(Game.state.hp <= 0) {
     Game.state.hp = 0;
     Game.state.isGameOver = true;
     
-    console.log("CRITICAL: Player died. Initiating permanent deletion...");
-
-    // 1. WICHTIG: Den Slot lokal sofort auf -1 setzen. 
-    // Das verhindert, dass irgendeine andere Funktion (wie Autosave) weiß, wohin sie speichern soll.
+    console.log("☠️ PERMADEATH: Player died. Initiating deletion...");
+    
+    // 1. Slot merken BEVOR wir ihn auf -1 setzen
     const slotToDelete = Game.selectedSlot;
+    
+    // 2. Sofort auf -1 setzen (verhindert Autosave)
     Game.selectedSlot = -1; 
-
-    // 2. Den Löschbefehl asynchron an Network senden
+    
+    // 3. Auch den Highscore-Eintrag auf 'dead' setzen
+    if(typeof Network !== 'undefined' && Network.active) {
+        Network.registerDeath(Game.state);
+    }
+    
+    // 4. Slot löschen
     if (typeof Network !== 'undefined' && slotToDelete !== undefined && slotToDelete !== -1) {
-        // Wir warten nicht auf die Antwort, sondern schicken ihn sofort ab
         Network.deleteSlot(slotToDelete).then(() => {
-            console.log("Network: Slot " + slotToDelete + " successfully wiped.");
+            console.log("✅ Savegame wurde permanent gelöscht (Slot " + slotToDelete + ")");
         }).catch(err => {
-            console.error("Network: Wipe failed", err);
+            console.error("❌ Fehler beim Löschen:", err);
         });
     }
-
-    // 3. UI anzeigen und den Spielzustand vernichten
+    
+    // 5. UI anzeigen
     if(typeof UI !== 'undefined' && UI.showGameOver) {
         UI.showGameOver();
     }
     
-    // 4. Den globalen State leeren, damit kein Timer mehr speichern kann
+    // 6. State vernichten
     Game.state = null;
     return;
 }
+
 
 
             
