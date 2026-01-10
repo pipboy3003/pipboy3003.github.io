@@ -1,7 +1,30 @@
+// [TIMESTAMP] 2026-01-10 10:00:00 - ui_render_minigames.js - Visuals for Minigames
+
 Object.assign(UI, {
     
+    // UI Bridge Funktionen
+    startMinigame: function(type) {
+        if (!MiniGames[type]) return;
+        MiniGames.active = type;
+        MiniGames[type].init();
+    },
+
+    stopMinigame: function() {
+        MiniGames.active = null;
+        
+        // Overlay verstecken (für Dice)
+        const dice = document.getElementById('dice-overlay');
+        if(dice) dice.classList.add('hidden');
+        
+        // Zurück zur Map
+        if(Game.state) Game.state.view = 'map';
+        if(typeof UI.renderWorld === 'function') UI.renderWorld();
+    },
+
+    // --- HACKING RENDERER ---
     renderHacking: function() {
         const h = MiniGames.hacking;
+        // ... (Dein existierender Hacking Code, sieht gut aus) ...
         let html = `
             <div class="w-full h-full flex flex-col p-2 font-mono text-green-500 bg-black overflow-hidden relative">
                 <div class="flex justify-between border-b border-green-500 mb-2 pb-1">
@@ -12,8 +35,7 @@ Object.assign(UI, {
                     </div>
                 </div>
                 <div class="flex-grow flex gap-4 overflow-hidden relative">
-                    <div id="hack-words" class="flex flex-col flex-wrap h-full content-start gap-x-8 text-sm">
-                        </div>
+                    <div id="hack-words" class="flex flex-col flex-wrap h-full content-start gap-x-8 text-sm"></div>
                     <div class="w-1/3 border-l border-green-900 pl-2 text-xs overflow-y-auto flex flex-col-reverse" id="hack-log">
                         ${h.logs.map(l => `<div>${l}</div>`).join('')}
                     </div>
@@ -22,17 +44,17 @@ Object.assign(UI, {
             </div>
         `;
         
-        if(this.els.view.innerHTML.indexOf('ROBCO') === -1) {
+        if(!this.els.view.innerHTML.includes('ROBCO')) {
             this.els.view.innerHTML = html;
         } else {
-             document.getElementById('hack-log').innerHTML = h.logs.map(l => `<div>${l}</div>`).join('');
-             document.querySelector('.animate-pulse').textContent = `ATTEMPTS: ${'█ '.repeat(h.attempts)}`;
+             const log = document.getElementById('hack-log');
+             if(log) log.innerHTML = h.logs.map(l => `<div>${l}</div>`).join('');
+             const attempts = document.querySelector('.animate-pulse');
+             if(attempts) attempts.textContent = `ATTEMPTS: ${'█ '.repeat(h.attempts)}`;
         }
 
         const wordContainer = document.getElementById('hack-words');
-        if(wordContainer) {
-            wordContainer.innerHTML = '';
-            let buffer = "";
+        if(wordContainer && wordContainer.innerHTML === '') {
             h.words.forEach(word => {
                 const hex = `0x${Math.floor(Math.random()*65535).toString(16).toUpperCase()}`;
                 const btn = document.createElement('div');
@@ -44,6 +66,7 @@ Object.assign(UI, {
         }
     },
 
+    // --- LOCKPICKING RENDERER ---
     renderLockpicking: function(init=false) {
         if(init) {
             this.els.view.innerHTML = `
@@ -81,34 +104,57 @@ Object.assign(UI, {
         if(lock) lock.style.transform = `rotate(${MiniGames.lockpicking.lockAngle}deg)`;
     },
 
-    // [v0.5.1 FIX] Nutzt jetzt zentrales Overlay via showInfoDialog
+    // --- [NEU] DICE RENDERER ---
+    renderDice: function() {
+        const container = document.getElementById('dice-overlay');
+        if(!container) return;
+        
+        const game = MiniGames.dice;
+        container.classList.remove('hidden');
+        
+        container.innerHTML = `
+            <div class="fixed inset-0 z-[2000] bg-black/90 flex flex-col items-center justify-center p-6">
+                <div class="border-4 border-yellow-500 p-8 bg-[#1a1100] shadow-[0_0_50px_#ffd700] text-center w-full max-w-md relative">
+                    <h2 class="text-4xl font-bold text-yellow-400 mb-6 font-vt323 tracking-widest animate-pulse">WASTELAND GAMBLE</h2>
+                    
+                    <div class="flex justify-center gap-8 mb-8">
+                        <div class="w-24 h-24 bg-black border-2 border-yellow-600 flex items-center justify-center text-6xl text-yellow-500 font-bold shadow-inner">
+                            ${game.d1}
+                        </div>
+                        <div class="w-24 h-24 bg-black border-2 border-yellow-600 flex items-center justify-center text-6xl text-yellow-500 font-bold shadow-inner">
+                            ${game.d2}
+                        </div>
+                    </div>
+
+                    <div class="text-yellow-200 font-mono text-sm mb-6">
+                        Glück (LUC): <span class="text-white font-bold">${Game.getStat('LUC')}</span> 
+                        (Bonus: +${Math.floor(Game.getStat('LUC')/2)})
+                    </div>
+
+                    ${!game.rolling ? 
+                        `<button onclick="MiniGames.dice.roll()" class="w-full py-4 text-2xl font-bold bg-yellow-600 text-black hover:bg-yellow-400 transition-all border-2 border-yellow-400 uppercase tracking-widest shadow-lg">
+                            🎲 WÜRFELN
+                        </button>` : 
+                        `<div class="text-yellow-500 text-xl font-bold animate-bounce">ROLLING...</div>`
+                    }
+                </div>
+            </div>
+        `;
+    },
+
     showMiniGameHelp: function(type) {
         let title = "", text = "";
-        
         if(type === 'hacking') {
             title = "TERMINAL HACKING";
-            text = `
-                <ul class="text-left text-sm space-y-2 list-disc pl-4">
-                    <li>Finde das korrekte Passwort im Speicher.</li>
-                    <li>Wähle ein Wort. Das System zeigt die <b>LIKENESS</b> (Treffer) an.</li>
-                    <li><b>Likeness</b> = Anzahl korrekter Buchstaben an der <b>korrekten Position</b>.</li>
-                    <li>Beispiel: PW ist 'LOVE'. Du tippst 'LIVE'.<br>Ergebnis: 3/4 (L, V, E korrekt).</li>
-                    <li>4 Versuche. Fehler = Sperrung!</li>
-                </ul>
-            `;
+            text = `Passwort suchen. Likeness = Korrekte Buchstaben an korrekter Position.`;
         } else {
             title = "SCHLOSS KNACKEN";
-            text = `
-                <ul class="text-left text-sm space-y-2 list-disc pl-4">
-                    <li><b>Dietrich bewegen</b>: Maus bewegen oder auf Touchscreen ziehen.</li>
-                    <li><b>Schloss drehen</b>: Leertaste oder Button drücken.</li>
-                    <li>Wenn es wackelt: <b>SOFORT STOPPEN!</b> Der Dietrich bricht sonst.</li>
-                    <li>Finde den 'Sweet Spot', wo sich das Schloss ganz drehen lässt.</li>
-                </ul>
-            `;
+            text = `Dietrich bewegen, Schloss drehen. Bei Wackeln sofort stoppen!`;
         }
-
-        // Zentraler Aufruf
-        this.showInfoDialog(title, text);
+        if (typeof this.showInfoDialog === 'function') {
+            this.showInfoDialog(title, text);
+        } else {
+            alert(title + ": " + text);
+        }
     }
 });
