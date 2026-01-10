@@ -280,15 +280,29 @@ window.Combat = {
             this.log(`${this.enemy.name} trifft dich: -${dmgTaken} HP`, 'text-red-500 font-bold');
             this.triggerFeedback('damage', dmgTaken);
 
-            // [TIMESTAMP] 2026-01-10 14:10:00 - game_combat.js - Permadeath-Check hinzugefügt
-            if (Game.state.hp <= 0) {
-                Game.state.hp = 0;
-                // Trigger den Löschvorgang des aktuellen Slots
-                if (Game.selectedSlot !== -1) {
-                    Network.deleteSlot(Game.selectedSlot); // Löscht den Spielstand in der DB
+        // [TIMESTAMP] 2026-01-10 14:35:00 - game_combat.js - Finaler Permadeath Fix
+        if (Game.state.hp <= 0) {
+            Game.state.hp = 0;
+            console.log("PERMADEATH: Spieler hat 0 HP erreicht.");
+        
+            // Wir nutzen hier direkt Network und den Slot aus dem Game-Objekt
+            const slotToKill = Game.selectedSlot;
+            
+            if (slotToKill !== undefined && slotToKill !== -1) {
+                console.log("Lösche Charakter-Slot:", slotToKill);
+                
+                // Löschen einleiten
+                if (typeof Network !== 'undefined' && Network.deleteSlot) {
+                    Network.deleteSlot(slotToKill);
                 }
-                UI.showGameOver(); // Zeigt den Game-Over-Screen an
             }
+        
+            // UI erst triggern, nachdem der Löschbefehl raus ist
+            if (typeof UI !== 'undefined' && UI.showGameOver) {
+                UI.showGameOver();
+            }
+        }
+
             
         } else {
             this.log(`${this.enemy.name} verfehlt dich!`, 'text-blue-300');
