@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-09 20:30:00 - admin.js - Perk Sliders UI Update
+// [TIMESTAMP] 2026-01-10 02:30:00 - admin.js - Inventory Overhaul (Search & Filter)
 
 const Admin = {
     gatePass: "bimbo123",
@@ -10,6 +10,12 @@ const Admin = {
     currentPath: null,
     currentUserData: null,
     itemsList: [], 
+
+    // Filter Status für das Inventar-Panel
+    invFilter: {
+        search: "",
+        category: "ALL"
+    },
 
     unlock: function() {
         const input = document.getElementById('gate-pass').value;
@@ -46,18 +52,10 @@ const Admin = {
     },
 
     initData: function() {
+        // Init Items List from Window Data
         const items = (typeof Game !== 'undefined' && Game.items) ? Game.items : (window.GameData ? window.GameData.items : {});
+        this.itemsList = Object.entries(items).map(([k, v]) => ({id: k, ...v}));
         
-        this.itemsList = Object.keys(items).sort().map(k => ({id: k, name: items[k].name}));
-        const sel = document.getElementById('inv-add-select');
-        sel.innerHTML = '';
-        this.itemsList.forEach(i => {
-            const opt = document.createElement('option');
-            opt.value = i.id;
-            opt.textContent = `${i.name} (${i.id})`;
-            sel.appendChild(opt);
-        });
-
         // 1. Players Listener
         Network.db.ref('saves').on('value', snap => {
             this.dbData = snap.val() || {};
@@ -256,7 +254,6 @@ const Admin = {
         container.innerHTML = '';
         const stats = d.stats || { STR:1, PER:1, END:1, CHA:1, INT:1, AGI:1, LUC:1 };
         
-        // S.P.E.C.I.A.L. Sliders
         for(let key in stats) {
             const val = stats[key];
             const div = document.createElement('div');
@@ -273,7 +270,7 @@ const Admin = {
         document.getElementById('inp-statPoints').value = d.statPoints || 0;
         document.getElementById('inp-perkPoints').value = d.perkPoints || 0;
 
-        // PERKS Sliders (1:1 Design like Stats)
+        // PERKS Sliders
         const perkContainer = document.getElementById('perk-list-container');
         if(perkContainer) {
             perkContainer.innerHTML = '';
@@ -291,7 +288,6 @@ const Admin = {
                     const maxLvl = p.max || 1;
 
                     const div = document.createElement('div');
-                    // Gleiche Klasse 'panel-box' wie bei Stats für gleichen Look
                     div.className = "panel-box p-2 flex justify-between items-center";
                     
                     div.innerHTML = `
@@ -318,47 +314,198 @@ const Admin = {
         Network.db.ref(this.currentPath + '/perks/' + perkId).set(valNum);
     },
 
+    // --- REBUILT INVENTORY PANEL (NEW FILTER SYSTEM) ---
     fillInv: function(d) {
+        const invTab = document.getElementById('tab-inv');
+        
+        // --- 1. Struktur aufbauen (falls noch leer oder alt) ---
+        // Wir bauen das UI jedes Mal neu auf, um sauber zu bleiben
+        invTab.innerHTML = `
+            <div class="flex flex-col h-full gap-4">
+                
+                <div class="panel-box p-4 shrink-0">
+                    <h3 class="text-yellow-400 font-bold border-b border-[#1a551a] mb-2 text-xs">CURRENTLY EQUIPPED</h3>
+                    <div id="equip-list" class="grid grid-cols-2 gap-2 text-xs"></div>
+                </div>
+
+                <div class="panel-box flex flex-col flex-1 min-h-0 overflow-hidden relative">
+                    <div class="bg-[#002200] p-2 border-b border-[#1a551a] shrink-0 z-10">
+                        <div class="flex gap-2 mb-2">
+                            <input type="text" id="admin-item-search" 
+                                class="w-full bg-black border border-green-500 text-green-300 text-xs p-2 uppercase"
+                                placeholder="🔍 SEARCH ITEM TO ADD..." 
+                                value="${this.invFilter.search}"
+                                onkeyup="Admin.updateItemFilter(this.value)">
+                        </div>
+                        <div class="flex flex-wrap gap-1 justify-center" id="filter-btns">
+                            </div>
+                    </div>
+                    
+                    <div id="admin-item-list" class="flex-1 custom-scroll p-2 space-y-1 bg-black/80">
+                        </div>
+                </div>
+
+                <div class="panel-box p-2 h-1/4 shrink-0 flex flex-col">
+                    <h3 class="text-gray-500 font-bold text-xs mb-1">PLAYER INVENTORY</h3>
+                    <div class="flex-1 custom-scroll bg-black border border-[#1a551a]">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="text-[10px] text-gray-400 bg-[#001100] sticky top-0">
+                                <tr><th class="p-1">ITEM</th><th class="p-1 text-center">QTY</th><th class="p-1 text-right">ACT</th></tr>
+                            </thead>
+                            <tbody id="inv-table-body" class="text-xs font-mono"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // --- 2. EQUIPPED LIST ---
         const equipList = document.getElementById('equip-list');
-        equipList.innerHTML = '';
         if(d.equip) {
             for(let slot in d.equip) {
                 const item = d.equip[slot];
                 if(item) {
                     const div = document.createElement('div');
-                    div.className = "border border-[#1a551a] p-1 bg-[#001100] flex justify-between items-center";
+                    div.className = "flex justify-between items-center bg-black/50 p-1 border border-[#1a551a]";
                     div.innerHTML = `
-                        <div><span class="text-xs text-gray-400 uppercase">${slot}:</span> <span class="text-green-300">${item.name}</span></div>
-                        <button onclick="Admin.forceUnequip('${slot}')" class="text-red-500 text-xs hover:text-white px-1">UNEQUIP</button>
+                        <div class="truncate"><span class="text-gray-500 mr-1">${slot.substr(0,1).toUpperCase()}:</span><span class="text-green-300">${item.name}</span></div>
+                        <button onclick="Admin.forceUnequip('${slot}')" class="text-red-500 hover:text-white ml-1">X</button>
                     `;
                     equipList.appendChild(div);
                 }
             }
         }
 
+        // --- 3. INVENTORY LIST ---
         const tbody = document.getElementById('inv-table-body');
-        tbody.innerHTML = '';
         const inv = d.inventory || [];
-        const items = (typeof Game !== 'undefined' && Game.items) ? Game.items : (window.GameData ? window.GameData.items : {});
+        const items = (window.GameData && window.GameData.items) ? window.GameData.items : {};
 
         inv.forEach((item, idx) => {
             const tr = document.createElement('tr');
-            tr.className = "border-b border-[#1a551a] hover:bg-[#002200]";
+            tr.className = "border-b border-[#1a331a] hover:bg-[#002200]";
             
             let name = item.id;
             if(items[item.id]) name = items[item.id].name;
             if(item.props && item.props.name) name = item.props.name + "*";
 
             tr.innerHTML = `
-                <td class="p-2 truncate max-w-[150px]" title="${name}">${name}</td>
-                <td class="p-2 font-mono text-xs opacity-50 text-center">${item.count}</td>
-                <td class="p-2 text-right">
-                    <button onclick="Admin.invDelete(${idx})" class="text-red-500 font-bold hover:text-white px-2">X</button>
+                <td class="p-1 truncate max-w-[120px]" title="${name}">${name}</td>
+                <td class="p-1 text-center text-yellow-500">${item.count}</td>
+                <td class="p-1 text-right">
+                    <button onclick="Admin.invDelete(${idx})" class="text-red-500 hover:text-white font-bold px-2">DEL</button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
+
+        // --- 4. RENDER FILTER BUTTONS ---
+        const cats = ['ALL', 'WEAPON', 'APPAREL', 'AID', 'JUNK'];
+        const btnContainer = document.getElementById('filter-btns');
+        cats.forEach(c => {
+            const btn = document.createElement('button');
+            const active = this.invFilter.category === c;
+            btn.className = `px-2 py-1 text-[10px] border ${active ? 'bg-green-500 text-black border-green-500' : 'bg-black text-green-500 border-green-800 hover:border-green-500'}`;
+            btn.textContent = c;
+            btn.onclick = () => { this.invFilter.category = c; this.refreshItemBrowser(); };
+            btnContainer.appendChild(btn);
+        });
+
+        // --- 5. INITIAL ITEM BROWSER RENDER ---
+        this.refreshItemBrowser();
     },
+
+    updateItemFilter: function(val) {
+        this.invFilter.search = val.toLowerCase();
+        this.refreshItemBrowser();
+    },
+
+    getItemCategory: function(type) {
+        if (!type) return 'MISC';
+        if (type === 'weapon' || type === 'ammo') return 'WEAPON';
+        if (['body', 'head', 'legs', 'feet', 'arms', 'back'].includes(type)) return 'APPAREL';
+        if (type === 'consumable') return 'AID';
+        if (type === 'blueprint') return 'NOTES';
+        if (['junk', 'component', 'rare', 'tool'].includes(type)) return 'JUNK';
+        return 'MISC';
+    },
+
+    refreshItemBrowser: function() {
+        const container = document.getElementById('admin-item-list');
+        if(!container) return;
+        container.innerHTML = '';
+
+        // Items holen
+        const allItems = this.itemsList; // Wurde in initData vorbereitet
+        
+        let count = 0;
+        allItems.forEach(item => {
+            // 1. Kategorie Filter
+            const cat = this.getItemCategory(item.type);
+            if(this.invFilter.category !== 'ALL' && cat !== this.invFilter.category) return;
+
+            // 2. Suche Filter
+            if(this.invFilter.search) {
+                const searchStr = (item.name + " " + item.id).toLowerCase();
+                if(!searchStr.includes(this.invFilter.search)) return;
+            }
+
+            // Render Row
+            const div = document.createElement('div');
+            div.className = "flex justify-between items-center bg-[#001100] border border-[#1a331a] p-1 hover:border-green-500 group";
+            
+            let icon = "📦";
+            if(item.type === 'weapon') icon = "🔫";
+            if(item.type === 'ammo') icon = "🧨";
+            if(item.type === 'consumable') icon = "💉";
+            if(item.type === 'back') icon = "🎒";
+
+            div.innerHTML = `
+                <div class="flex items-center gap-2 overflow-hidden w-2/3">
+                    <span class="text-lg opacity-70">${icon}</span>
+                    <div class="flex flex-col min-w-0">
+                        <span class="text-green-300 text-xs font-bold truncate group-hover:text-white">${item.name}</span>
+                        <span class="text-[9px] text-gray-500 font-mono truncate">${item.id}</span>
+                    </div>
+                </div>
+                <div class="flex gap-1">
+                    <button onclick="Admin.invAddDirect('${item.id}', 1)" class="bg-[#1a331a] text-green-400 text-[10px] px-2 hover:bg-green-500 hover:text-black transition">+1</button>
+                    <button onclick="Admin.invAddDirect('${item.id}', 10)" class="bg-[#1a331a] text-green-400 text-[10px] px-2 hover:bg-green-500 hover:text-black transition">+10</button>
+                </div>
+            `;
+            container.appendChild(div);
+            count++;
+        });
+
+        if(count === 0) {
+            container.innerHTML = `<div class="text-gray-500 text-xs text-center mt-4">- NO ITEMS FOUND -</div>`;
+        }
+    },
+
+    invAddDirect: function(id, count) {
+        if(!this.currentPath || !this.currentUserData) return;
+        const inv = [...(this.currentUserData.inventory || [])];
+        let found = false;
+        
+        // Versuch Stack zu finden
+        for(let item of inv) {
+            if(item.id === id && !item.props) {
+                item.count += count;
+                found = true;
+                break;
+            }
+        }
+        // Neu anlegen
+        if(!found) {
+            inv.push({id: id, count: count, isNew: true});
+        }
+        
+        Network.db.ref(this.currentPath + '/inventory').set(inv);
+        
+        // Kleines visuelles Feedback im Button (optional, aber nice)
+        // Da wir neu rendern, ist das schwer direkt zu zeigen, aber wir refreshen die Liste ja eh
+    },
+    // ---------------------------------------------
 
     fillCamp: function(d) {
         const container = document.getElementById('camp-data-content');
@@ -539,26 +686,8 @@ const Admin = {
         Network.db.ref(this.currentPath + '/inventory').set(inv);
     },
 
-    invAdd: function() {
-        const id = document.getElementById('inv-add-select').value;
-        const count = Number(document.getElementById('inv-add-qty').value);
-        if(!id || count < 1) return;
+    // Old invAdd removed, replaced by invAddDirect
 
-        const inv = [...(this.currentUserData.inventory || [])];
-        let found = false;
-        for(let item of inv) {
-            if(item.id === id && !item.props) {
-                item.count += count;
-                found = true;
-                break;
-            }
-        }
-        if(!found) {
-            inv.push({id: id, count: count, isNew: true});
-        }
-        Network.db.ref(this.currentPath + '/inventory').set(inv);
-    },
-    
     forceUnequip: function(slot) {
         if(!confirm(`Unequip ${slot}? This moves item to inventory.`)) return;
         const item = this.currentUserData.equip[slot];
