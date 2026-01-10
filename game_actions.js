@@ -1,4 +1,4 @@
-// [2026-01-10 01:30:00] game_actions.js - Backpack Fix & Smart Switch
+// [2026-01-10 05:30:00] game_actions.js - Smart Inventory Add & Alert
 
 Object.assign(Game, {
 
@@ -17,40 +17,27 @@ Object.assign(Game, {
         }
     },
 
-    // [NEU] Berechnet Inventarplätze (Basis + Stärke + Rucksack)
     getMaxSlots: function() {
         let base = 10;
-        
-        // Bonus durch Stärke
         if (this.state.stats) {
             base += (this.state.stats.STR || 1);
         }
-        
-        // Bonus durch Perk "Strong Back"
         const strongBack = this.getPerkLevel('strong_back');
         if (strongBack > 0) base += (strongBack * 5);
 
-        // Bonus durch Rucksack (Back Slot)
         if (this.state.equip && this.state.equip.back) {
             const pack = this.state.equip.back;
             let packBonus = 0;
-
-            // 1. Prüfen ob im Item-Objekt direkt gespeichert
             if (pack.bonus && pack.bonus.slots) packBonus = pack.bonus.slots;
-            // 2. Prüfen ob in den Props gespeichert
             else if (pack.props && pack.props.bonus && pack.props.bonus.slots) packBonus = pack.props.bonus.slots;
-            // 3. Fallback: Nachschlagen in der Datenbank
             else if (this.items[pack.id] && this.items[pack.id].bonus && this.items[pack.id].bonus.slots) {
                 packBonus = this.items[pack.id].bonus.slots;
             }
-
             base += packBonus;
         }
-
         return base;
     },
     
-    // [FIX] Automatischer Waffenwechsel - Verbesserte Erkennung
     switchToBestMelee: function() {
         const oldWeapon = this.state.equip.weapon;
         const oldName = (oldWeapon && oldWeapon.name && oldWeapon.name !== 'Fäuste') 
@@ -68,25 +55,18 @@ Object.assign(Game, {
         let bestDmg = -1;
         let bestIndex = -1;
 
-        // Suche beste Nahkampfwaffe (ohne Munitionsbedarf)
         this.state.inventory.forEach((item, idx) => {
             const def = this.items[item.id];
-            
-            // Sicherheitscheck: Item Definition muss existieren
             if (!def) return;
 
-            // Kriterium 1: Es muss eine Waffe sein
             const type = def.type ? def.type.toLowerCase() : '';
             const isWeaponType = type === 'weapon' || type === 'melee' || type === 'weapon_melee' || type.includes('weapon');
-
-            // Kriterium 2: Es darf KEINE Munition verbrauchen
             const needsAmmo = def.ammo && def.ammo !== 'none';
 
             if (isWeaponType && !needsAmmo) {
                 let dmg = def.dmg || 0;
                 if (item.props && item.props.dmgMult) dmg *= item.props.dmgMult;
                 
-                // Wir nehmen das Item mit dem höchsten Schaden
                 if (dmg > bestDmg) {
                     bestDmg = dmg;
                     bestWeapon = item;
@@ -100,7 +80,6 @@ Object.assign(Game, {
             const newName = bestWeapon.props?.name || this.items[bestWeapon.id].name;
             UI.log(`${newName} wurde statt ${oldName} angelegt, deine Munition ist leer`, "text-yellow-400 blink-red");
         } else {
-            // Keine Nahkampfwaffe gefunden -> Fäuste
             if (this.state.equip.weapon && this.state.equip.weapon.name !== "Fäuste") {
                 this.unequipItem('weapon'); 
                 UI.log("Keine Nahkampfwaffe gefunden! Fäuste!", "text-red-500");
@@ -112,7 +91,6 @@ Object.assign(Game, {
         if(typeof UI.renderChar === 'function') UI.renderChar();
     },
 
-    // [v0.6.6] Rads with Resistance Perk
     addRadiation: function(amount) {
         if(!this.state) return;
         if(typeof this.state.rads === 'undefined') this.state.rads = 0;
@@ -121,7 +99,7 @@ Object.assign(Game, {
         if (amount > 0) {
             const perkLvl = this.getPerkLevel('rad_resistant');
             if (perkLvl > 0) {
-                const reduction = perkLvl * 0.10; // -10% per level
+                const reduction = perkLvl * 0.10; 
                 finalAmount = Math.ceil(amount * (1 - reduction));
             }
         }
@@ -143,7 +121,6 @@ Object.assign(Game, {
 
     rest: function() { 
         if(!this.state) return;
-        
         const isSafe = (this.state.view === 'vault' || this.state.view === 'city' || this.state.view === 'clinic' ||
                         (this.state.zone && (this.state.zone.includes("Vault") || this.state.zone.includes("Stadt") || this.state.zone.includes("City"))));
 
@@ -199,12 +176,10 @@ Object.assign(Game, {
         } else { UI.log("Zu wenig Kronkorken.", "text-red-500"); }
     },
     
-    // Wrapper für Munition (ruft die Hauptfunktion auf)
     buyAmmo: function(qty) { 
         this.buyItem('ammo', qty);
     },
     
-    // [FIXED] GENERISCHE KAUF-FUNKTION (Mit Munitions-Pack-Logik)
     buyItem: function(id, qtyMode = 1) {
         const item = Game.items[id];
         if (!item) {
@@ -212,65 +187,48 @@ Object.assign(Game, {
             return;
         }
 
-        // --- 1. PREISE & MENGEN DEFINIEREN ---
         let stock = 0;
         let pricePerUnit = item.cost; 
-        let itemsPerUnit = 1; // Normalerweise kriegt man 1 Item pro Kauf
+        let itemsPerUnit = 1; 
 
-        // SPEZIALFALL: MUNITION
-        // Munition wird im UI als "10x Munition" für "10 KK" verkauft.
         if (id === 'ammo') {
-            stock = this.state.shop.ammoStock || 0; // Greift auf ammoStock zu!
-            itemsPerUnit = 10; // Ein "Kauf" gibt 10 Kugeln
-            pricePerUnit = 10; // Ein "Kauf" kostet 10 KK (Sonderpreis Paket)
+            stock = this.state.shop.ammoStock || 0; 
+            itemsPerUnit = 10; 
+            pricePerUnit = 10; 
         } else {
-            // Normales Item
             stock = (this.state.shop.stock && this.state.shop.stock[id] !== undefined) ? this.state.shop.stock[id] : 0;
         }
 
-        // --- 2. LAGER CHECK ---
-        // Wenn Händler weniger hat als ein Paket (z.B. weniger als 10 Kugeln), kann man das Paket nicht kaufen
         if (stock < itemsPerUnit) { 
              if(typeof UI !== 'undefined') UI.error("Händler hat das nicht mehr vorrätig.");
              return;
         }
 
-        // --- 3. MENGEN-BERECHNUNG (Wie viele PAKETE/STÜCK kaufe ich?) ---
-        let packsToBuy = 1; // Standard: 1 mal drücken = 1 Paket/Stück kaufen
-
+        let packsToBuy = 1; 
         if (typeof qtyMode === 'number') {
             packsToBuy = qtyMode;
         } else if (qtyMode === 'max') {
-            // Wie viele Pakete kann ich mir leisten?
             const maxAffordable = Math.floor(Game.state.caps / pricePerUnit);
-            
-            // Wie viele Pakete hat der Händler?
             const maxInStock = Math.floor(stock / itemsPerUnit);
-            
             packsToBuy = Math.min(maxAffordable, maxInStock);
             
-            // Begrenzen auf sinnvolle Menge (damit Inventar nicht explodiert, z.B. 100 Pakete max)
             if(packsToBuy > 100) packsToBuy = 100;
-            if(packsToBuy < 1) packsToBuy = 1; // Versucht zumindest 1 zu kaufen (schlägt dann bei Geld fehl)
+            if(packsToBuy < 1) packsToBuy = 1; 
         }
 
-        // --- 4. VALIDIERUNG ---
         const totalCost = packsToBuy * pricePerUnit;
         const totalItemsReceived = packsToBuy * itemsPerUnit;
 
-        // Hat der Händler genug für diese Menge?
         if (totalItemsReceived > stock) {
             if(typeof UI !== 'undefined') UI.error("Händler hat nicht genug auf Lager.");
             return;
         }
 
-        // Habe ich genug Geld?
         if (Game.state.caps < totalCost) {
             if(typeof UI !== 'undefined') UI.error("Nicht genug Kronkorken! (" + totalCost + " benötigt)");
             return;
         }
 
-        // Zelt-Logik: Nur eins erlaubt
         if (id === 'camp_kit') {
             const hasKit = Game.state.inventory.some(i => i.id === 'camp_kit');
             const hasBuilt = !!Game.state.camp;
@@ -280,31 +238,25 @@ Object.assign(Game, {
             }
         }
 
-        // --- 5. TRANSAKTION DURCHFÜHREN ---
         Game.state.caps -= totalCost;
         Game.state.shop.merchantCaps += totalCost; 
         
-        // Lager reduzieren
         if (id === 'ammo') {
             Game.state.shop.ammoStock -= totalItemsReceived;
         } else {
             Game.state.shop.stock[id] -= packsToBuy;
         }
 
-        // Item zum Inventar hinzufügen
-        // Wir nutzen addToInventory, da addItem oft nur ein Alias ist der fehlen könnte
         Game.addToInventory(id, totalItemsReceived); 
 
         if(typeof UI !== 'undefined') {
             UI.log(`Gekauft: ${packsToBuy}x ${itemsPerUnit > 1 ? 'Paket ' : ''}${item.name} (-${totalCost} KK).`);
-            // UI Update erzwingen
             if (Game.state.view === 'shop') UI.renderShop('buy'); 
         }
         
         Game.saveGame();
     },
 
-    // Generische Verkauf-Funktion
     sellItem: function(invIndex, qtyMode = 1) {
         const entry = Game.state.inventory[invIndex];
         if (!entry) return;
@@ -312,18 +264,15 @@ Object.assign(Game, {
         const item = Game.items[entry.id];
         if (!item) return;
 
-        // Preis berechnen (25% vom Wert)
         let valMult = entry.props && entry.props.valMult ? entry.props.valMult : 1;
         let unitPrice = Math.floor((item.cost * 0.25) * valMult);
         if (unitPrice < 1) unitPrice = 1;
 
-        // Menge berechnen
         let amount = 1;
         if (typeof qtyMode === 'number') {
             amount = qtyMode;
         } else if (qtyMode === 'max') {
             amount = entry.count;
-            // Begrenzen durch Händler-Geld
             const maxMerchantCanBuy = Math.floor(Game.state.shop.merchantCaps / unitPrice);
             if (amount > maxMerchantCanBuy) amount = maxMerchantCanBuy;
         }
@@ -341,16 +290,12 @@ Object.assign(Game, {
             return;
         }
 
-        // --- TRANSAKTION ---
         Game.state.caps += totalValue;
         Game.state.shop.merchantCaps -= totalValue;
 
         Game.removeFromInventory(entry.id, amount); 
         
-        // Item ins Händler-Lager
         if (entry.id === 'ammo') {
-             // Ammo landet nicht im normalen Stock, sondern verschwindet oder füllt ammoStock auf?
-             // Sagen wir, er verkauft es weiter:
              Game.state.shop.ammoStock = (Game.state.shop.ammoStock || 0) + amount;
         } else {
              if (!Game.state.shop.stock[entry.id]) Game.state.shop.stock[entry.id] = 0;
@@ -383,7 +328,9 @@ Object.assign(Game, {
         const limit = this.getStackLimit(itemId);
         let remaining = count;
         let added = false;
+        let isActuallyNew = false; 
 
+        // 1. Auf bestehende Stacks?
         if (!props) {
             for (let item of this.state.inventory) {
                 if (item.id === itemId && !item.props && item.count < limit) {
@@ -397,6 +344,7 @@ Object.assign(Game, {
             }
         }
 
+        // 2. Neue Slots
         if (remaining > 0) {
             const maxSlots = this.getMaxSlots();
             while (remaining > 0) {
@@ -411,6 +359,7 @@ Object.assign(Game, {
                 this.state.inventory.push(newItem);
                 remaining -= take;
                 added = true;
+                isActuallyNew = true; 
             }
         }
 
@@ -427,8 +376,9 @@ Object.assign(Game, {
             
             if (itemId === 'ammo') this.syncAmmo();
             
-            if(itemDef && (['weapon','body','head','legs','feet','arms','back'].includes(itemDef.type))) {
-                if(typeof UI !== 'undefined' && UI.triggerInventoryAlert) UI.triggerInventoryAlert();
+            // [UPDATE] Alert nur auslösen, wenn neuer Slot
+            if(isActuallyNew && typeof UI !== 'undefined' && UI.triggerInventoryAlert) {
+                UI.triggerInventoryAlert();
             }
             return true;
         }
@@ -922,3 +872,392 @@ Object.assign(Game, {
 });
 // Add helper just in case
 Game.addItem = Game.addToInventory;
+
+
+ui_view_inv.js:
+// [TIMESTAMP] 2026-01-10 05:30:00 - ui_view_inv.js - New Item Glow Logic
+
+Object.assign(UI, {
+
+    // [v0.7.0] VIEW STATE
+    charTab: 'status', 
+
+    // --- INVENTAR ---
+    renderInventory: function() {
+        const list = document.getElementById('inventory-list');
+        const countDisplay = document.getElementById('inv-count');
+        const capsDisplay = document.getElementById('inv-caps');
+        
+        if(!list) return;
+        
+        list.innerHTML = '';
+        if(capsDisplay) capsDisplay.textContent = Game.state.caps;
+        
+        const usedSlots = Game.getUsedSlots();
+        const maxSlots = Game.getMaxSlots();
+        
+        if(countDisplay) {
+            countDisplay.textContent = `${usedSlots} / ${maxSlots}`;
+            countDisplay.className = usedSlots >= maxSlots ? "text-red-500 font-bold animate-pulse" : "text-green-500 font-mono";
+        }
+        
+        const getIcon = (type) => {
+            switch(type) {
+                case 'weapon': return '🔫'; case 'body': return '🛡️'; case 'head': return '🪖';
+                case 'legs': return '👖'; case 'feet': return '🥾'; case 'arms': return '🦾';
+                case 'back': return '🎒'; case 'consumable': return '💉'; case 'junk': return '⚙️';
+                case 'component': return '🔩'; case 'ammo': return '🧨'; case 'blueprint': return '📜'; 
+                case 'tool': return '⛺'; default: return '📦';
+            }
+        };
+
+        // [UPDATE] createBtn erhält jetzt das ganze Entry-Objekt, um isNew zu manipulieren
+        const createBtn = (itemDef, entry, isEquipped, label, onClick) => {
+            const btn = document.createElement('div');
+            let cssClass = "relative border border-green-500 bg-green-900/30 w-full h-16 flex flex-col items-center justify-center transition-colors group";
+            
+            if(onClick) cssClass += " cursor-pointer hover:bg-green-500 hover:text-black";
+            else cssClass += " cursor-default opacity-80"; 
+            
+            // [NEU] Glow Effekt wenn neu
+            if (entry.isNew) {
+                cssClass += " new-item-glow";
+            }
+
+            btn.className = cssClass;
+            
+            let displayName = entry.props && entry.props.name ? entry.props.name : itemDef.name;
+            let extraClass = entry.props && entry.props.color ? entry.props.color : "";
+
+            btn.innerHTML = `
+                <div class="text-2xl">${getIcon(itemDef.type)}</div>
+                <div class="text-[10px] truncate max-w-full px-1 font-bold ${extraClass}">${displayName}</div>
+                <div class="absolute top-0 right-0 bg-green-900 text-white text-[10px] px-1 font-mono">${entry.count}</div>
+            `;
+
+            if(isEquipped) {
+                const overlay = document.createElement('div');
+                overlay.className = "absolute inset-0 bg-black/60 border-2 border-green-500 flex items-center justify-center text-green-500 font-bold tracking-widest text-[10px] pointer-events-none";
+                overlay.textContent = label || "AUSGERÜSTET";
+                btn.appendChild(overlay);
+                btn.style.borderColor = "#39ff14"; 
+            }
+            
+            // [NEU] Handler um den Glow zu entfernen
+            const markAsRead = () => {
+                if(entry.isNew) {
+                    entry.isNew = false;
+                    btn.classList.remove('new-item-glow');
+                    // Optional: Speichern triggern, damit es beim Reload nicht wieder leuchtet
+                    // Game.saveGame(); 
+                }
+            };
+
+            // Bei Mouseover oder Click entfernen
+            btn.onmouseenter = markAsRead;
+            btn.onclick = (e) => {
+                e.stopPropagation(); 
+                markAsRead();
+                if(onClick) onClick();
+            };
+
+            return btn;
+        };
+
+        const cats = {
+            equip: { label: "🛡️ AUSRÜSTUNG", items: [] },
+            aid:   { label: "💉 HILFSMITTEL", items: [] },
+            misc:  { label: "⚙️ MATERIAL", items: [] }
+        };
+
+        const equippedList = [];
+
+        Game.state.inventory.forEach((entry, index) => {
+            if(entry.count <= 0) return;
+            const item = Game.items[entry.id];
+            if(!item) return;
+
+            // Hier übergeben wir das 'entry' Objekt
+            if(entry.id === 'camp_kit' && Game.state.camp) {
+                 const btn = createBtn(item, entry, true, "AUFGESTELLT", null);
+                 equippedList.push(btn); 
+                 return;
+            }
+
+            const onClick = () => UI.showItemConfirm(index);
+            const btn = createBtn(item, entry, false, null, onClick);
+
+            if(['weapon', 'head', 'body', 'arms', 'legs', 'feet', 'back', 'tool'].includes(item.type)) {
+                cats.equip.items.push(btn);
+            } else if (item.type === 'consumable') {
+                cats.aid.items.push(btn);
+            } else {
+                cats.misc.items.push(btn);
+            }
+        });
+
+        let hasItems = false;
+        ['equip', 'aid', 'misc'].forEach(key => {
+            if(cats[key].items.length > 0) {
+                hasItems = true;
+                const header = document.createElement('div');
+                header.className = "col-span-4 bg-green-900/40 text-green-300 text-xs font-bold px-2 py-1 mt-2 border-b border-green-700 tracking-wider flex items-center gap-2";
+                header.innerHTML = cats[key].label;
+                list.appendChild(header);
+                cats[key].items.forEach(btn => list.appendChild(btn));
+            }
+        });
+
+        const slots = ['weapon', 'head', 'body', 'arms', 'legs', 'feet', 'back'];
+        slots.forEach(slot => {
+            const equippedItem = Game.state.equip[slot];
+            if(!equippedItem || equippedItem.name === 'Fäuste' || equippedItem.name === 'Vault-Anzug' || equippedItem.name === 'Kein Rucksack') return;
+
+            let baseDef = Game.items[equippedItem.id];
+            if(!baseDef) {
+                const key = Object.keys(Game.items).find(k => Game.items[k].name === equippedItem.name);
+                if(key) baseDef = Game.items[key];
+            }
+            if(!baseDef) return; 
+
+            const onClick = () => UI.showEquippedDialog(slot);
+
+            // Fake entry object für ausgerüstete Items (damit createBtn funktioniert)
+            const fakeEntry = { 
+                id: equippedItem.id, 
+                count: 1, 
+                props: equippedItem.props, 
+                isNew: false // Ausgerüstete sind nie neu
+            };
+
+            const btn = createBtn(baseDef, fakeEntry, true, "AUSGERÜSTET", onClick);
+            equippedList.push(btn);
+        });
+
+        if(equippedList.length > 0) {
+            const sep = document.createElement('div');
+            sep.className = "col-span-4 flex items-center justify-center text-[10px] text-green-900 font-bold tracking-widest my-2 opacity-80 mt-6";
+            sep.innerHTML = "<span class='bg-black px-2 border-b border-green-900 w-full text-center'>--- AKTIV AUSGERÜSTET ---</span>";
+            list.appendChild(sep);
+            equippedList.forEach(b => list.appendChild(b));
+        }
+
+        if(!hasItems && equippedList.length === 0) {
+            list.innerHTML = '<div class="col-span-4 text-center text-gray-500 italic mt-10">Leerer Rucksack...</div>';
+        }
+    },
+
+    // --- CHARAKTER ---
+    renderChar: function(mode) {
+        if(mode) this.charTab = mode;
+        const tab = this.charTab;
+
+        const elName = document.getElementById('char-sheet-name');
+        const elLvl = document.getElementById('char-sheet-lvl');
+        if(elName) elName.textContent = Game.state.playerName;
+        if(elLvl) elLvl.textContent = Game.state.lvl;
+
+        ['status', 'stats', 'perks'].forEach(t => {
+            const btn = document.getElementById(`tab-btn-${t}`);
+            const view = document.getElementById(`view-${t}`);
+            if(btn && view) {
+                if(t === tab) {
+                    btn.classList.add('active');
+                    view.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('active');
+                    view.classList.add('hidden');
+                }
+            }
+        });
+
+        // --- NEW: TAB GLOW LOGIC ---
+        const btnStats = document.getElementById('tab-btn-stats');
+        if(btnStats) {
+            if(Game.state.statPoints > 0) btnStats.classList.add('alert-glow-yellow');
+            else btnStats.classList.remove('alert-glow-yellow');
+        }
+
+        const btnPerks = document.getElementById('tab-btn-perks');
+        if(btnPerks) {
+            if(Game.state.perkPoints > 0) btnPerks.classList.add('alert-glow-yellow');
+            else btnPerks.classList.remove('alert-glow-yellow');
+        }
+        // ---------------------------
+
+        if(tab === 'status') this.renderCharStatus();
+        else if(tab === 'stats') this.renderCharStats();
+        else if(tab === 'perks') this.renderCharPerks();
+    },
+
+    renderCharStatus: function() {
+        // [FIX] Helper function to safely set text content without crashing
+        const safeSetText = (id, text) => {
+            const el = document.getElementById(id);
+            if(el) el.textContent = text;
+        };
+
+        safeSetText('sheet-hp', `${Math.floor(Game.state.hp)}/${Game.state.maxHp}`);
+        
+        const nextXp = Game.expToNextLevel(Game.state.lvl);
+        safeSetText('sheet-xp', `${Math.floor(Game.state.xp)}/${nextXp}`);
+        
+        const used = Game.getUsedSlots();
+        const max = Game.getMaxSlots();
+        const loadEl = document.getElementById('sheet-load');
+        if(loadEl) {
+            loadEl.textContent = `${used}/${max}`;
+            loadEl.className = used >= max ? "text-red-500 font-bold animate-pulse" : "text-white font-bold";
+        }
+
+        safeSetText('sheet-crit', `${Game.state.critChance}%`);
+
+        // Der Alert-Kasten kann drin bleiben, stört nicht
+        const alertBox = document.getElementById('status-points-alert');
+        if(alertBox) {
+            if(Game.state.statPoints > 0 || Game.state.perkPoints > 0) {
+                alertBox.classList.remove('hidden');
+                alertBox.onclick = () => {
+                    if(Game.state.statPoints > 0) UI.renderChar('stats');
+                    else UI.renderChar('perks');
+                };
+            } else {
+                alertBox.classList.add('hidden');
+            }
+        }
+
+        const slots = ['head', 'back', 'weapon', 'body', 'arms', 'legs', 'feet'];
+        
+        slots.forEach(slot => {
+            const el = document.getElementById(`slot-${slot}`);
+            if(!el) return; // Existiert Element nicht, abbrechen
+
+            const item = Game.state.equip[slot];
+            
+            const isEmpty = !item || 
+                           (slot === 'back' && !item.props) || 
+                           (!item.name || item.name === 'Fäuste' || item.name === 'Vault-Anzug' || item.name === 'Kein Rucksack');
+
+            const nameEl = el.querySelector('.item-name');
+            if(!nameEl) return; // Sicherstellen dass auch Kind-Element da ist
+
+            if(isEmpty) {
+                el.classList.remove('filled');
+                el.classList.add('empty');
+                nameEl.textContent = "---";
+                nameEl.className = "item-name text-gray-600";
+                el.onclick = null; 
+            } else {
+                el.classList.add('filled');
+                el.classList.remove('empty');
+                const name = item.props ? item.props.name : item.name;
+                const color = (item.props && item.props.color) ? item.props.color : "text-[#39ff14]";
+                
+                nameEl.textContent = name;
+                nameEl.className = `item-name ${color}`;
+                el.onclick = () => UI.showEquippedDialog(slot);
+            }
+        });
+    },
+
+    renderCharStats: function() {
+        const container = document.getElementById('special-list');
+        const pointsEl = document.getElementById('sheet-stat-points');
+        if(!container) return;
+
+        container.innerHTML = '';
+        if(pointsEl) pointsEl.textContent = Game.state.statPoints;
+
+        const statOrder = ['STR', 'PER', 'END', 'INT', 'AGI', 'LUC'];
+        const canUpgrade = Game.state.statPoints > 0;
+
+        statOrder.forEach(key => {
+            const val = Game.getStat(key);
+            const label = (window.GameData && window.GameData.statLabels && window.GameData.statLabels[key]) ? window.GameData.statLabels[key] : key;
+            
+            let bar = '';
+            for(let i=1; i<=10; i++) {
+                bar += (i <= val) ? '<div class="h-2 w-full bg-[#39ff14] mr-0.5"></div>' : '<div class="h-2 w-full bg-green-900/30 mr-0.5"></div>';
+            }
+
+            const div = document.createElement('div');
+            div.className = "flex items-center justify-between bg-green-900/10 border border-green-900 p-2";
+            
+            let btnHtml = '';
+            if(canUpgrade && val < 10) {
+                btnHtml = `<button class="w-8 h-8 bg-yellow-500 text-black font-bold flex items-center justify-center hover:bg-yellow-400" onclick="Game.upgradeStat('${key}', event)">+</button>`;
+            } else {
+                btnHtml = `<div class="w-8 h-8 flex items-center justify-center font-bold text-green-700 text-xl">${val}</div>`;
+            }
+
+            div.innerHTML = `
+                <div class="flex-1">
+                    <div class="flex justify-between mb-1">
+                        <span class="font-bold text-green-400 text-lg">${key}</span>
+                        <span class="text-xs text-green-600 uppercase tracking-widest mt-1">${label}</span>
+                    </div>
+                    <div class="flex w-32">${bar}</div>
+                </div>
+                <div class="ml-4">${btnHtml}</div>
+            `;
+            container.appendChild(div);
+        });
+    },
+
+    renderCharPerks: function() {
+        const container = document.getElementById('perks-list');
+        const pointsEl = document.getElementById('sheet-perk-points');
+        if(!container) return;
+
+        const scrollPos = container.parentElement.scrollTop || 0;
+
+        container.innerHTML = '';
+        if(pointsEl) pointsEl.textContent = Game.state.perkPoints;
+        const points = Game.state.perkPoints;
+
+        if(Game.perkDefs) {
+            Game.perkDefs.forEach(p => {
+                const currentLvl = Game.getPerkLevel(p.id);
+                const maxLvl = p.max || 1;
+                const isMaxed = currentLvl >= maxLvl;
+                const canAfford = points > 0 && !isMaxed;
+                
+                let levelBar = '';
+                for(let i=0; i<maxLvl; i++) {
+                    levelBar += (i < currentLvl) ? '<span class="text-yellow-400 text-sm">●</span>' : '<span class="text-gray-700 text-sm">○</span>';
+                }
+
+                const div = document.createElement('div');
+                div.className = `border ${isMaxed ? 'border-yellow-900 bg-yellow-900/5' : 'border-green-800 bg-black'} p-3 flex justify-between items-center transition-all hover:border-green-500`;
+                
+                let actionBtn = '';
+                if(canAfford) {
+                    actionBtn = `<button class="bg-yellow-500/20 text-yellow-400 border border-yellow-500 px-3 py-1 text-xs font-bold hover:bg-yellow-500 hover:text-black" onclick="event.stopPropagation(); Game.choosePerk('${p.id}')">LERNEN</button>`;
+                } else if (isMaxed) {
+                    actionBtn = `<span class="text-green-700 font-bold text-xs border border-green-900 px-2 py-1">MAX</span>`;
+                }
+
+                div.innerHTML = `
+                    <div class="flex items-center gap-3 flex-1">
+                        <div class="text-3xl bg-green-900/20 w-12 h-12 flex items-center justify-center rounded border border-green-900">${p.icon}</div>
+                        <div class="flex flex-col">
+                            <span class="font-bold ${isMaxed ? 'text-yellow-600' : 'text-green-300'} text-lg">${p.name}</span>
+                            <span class="text-xs text-gray-500">${p.desc}</span>
+                            <div class="mt-1 tracking-widest">${levelBar}</div>
+                        </div>
+                    </div>
+                    <div class="ml-2">
+                        ${actionBtn}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        if(scrollPos > 0) {
+            requestAnimationFrame(() => {
+                container.parentElement.scrollTop = scrollPos;
+            });
+        }
+    }
+});
