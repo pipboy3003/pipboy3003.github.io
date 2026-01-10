@@ -1,203 +1,263 @@
-// [TIMESTAMP] 2026-01-10 16:15:00 - ui_render_views.js - Vault, Combat & Simulation Buttons
-
-Object.assign(UI, {
-
-    // ==========================================
-    // === VAULT VIEW (mit TEST BUTTONS) ===
-    // ==========================================
-    renderVault: function() {
-        Game.state.view = 'vault';
-        const view = document.getElementById('view-container');
-        if(!view) return;
-        view.innerHTML = '';
-
-        const wrapper = document.createElement('div');
-        wrapper.className = "w-full h-full flex flex-col bg-black/95 relative overflow-hidden";
-
-        // Header
-        wrapper.innerHTML = `
-            <div class="flex-shrink-0 p-4 border-b-2 border-green-500 bg-green-900/20 text-center relative shadow-[0_0_20px_rgba(0,255,0,0.2)]">
-                <div class="absolute top-2 left-2 text-[10px] text-green-600 animate-pulse">SYS.STATUS: OK</div>
-                <h2 class="text-4xl text-green-400 font-bold tracking-widest font-vt323 drop-shadow-md">VAULT 3003</h2>
-                <div class="text-xs text-green-300 tracking-[0.2em] mt-1">HOME SWEET HOME</div>
-            </div>
-            
-            <div class="flex-grow flex flex-col items-center justify-start p-6 gap-6 text-center overflow-y-auto custom-scrollbar">
-                
-                <div class="relative w-32 h-32 flex items-center justify-center">
-                    <div class="absolute inset-0 border-4 border-green-900 rounded-full animate-spin-slow opacity-50"></div>
-                    <div class="text-6xl filter drop-shadow-[0_0_10px_rgba(0,255,0,0.5)]">☢️</div>
-                </div>
-
-                <div class="border-2 border-green-800 p-4 bg-black/80 w-full max-w-md shadow-inner shadow-green-900/30">
-                    <div class="text-green-500 mb-2 font-bold border-b border-green-900 pb-1 tracking-widest text-sm">STATUS BERICHT</div>
-                    <div class="flex justify-between text-lg font-mono mb-1">
-                        <span>GESUNDHEIT:</span> 
-                        <span class="${Game.state.hp < Game.state.maxHp ? 'text-yellow-400' : 'text-green-400'}">${Math.floor(Game.state.hp)} / ${Game.state.maxHp}</span>
-                    </div>
-                    <div class="flex justify-between text-lg font-mono mb-1">
-                        <span>STRAHLUNG:</span> 
-                        <span class="${Game.state.rads > 0 ? 'text-red-500 animate-pulse' : 'text-green-500'}">${Math.floor(Game.state.rads)} RADS</span>
-                    </div>
-                    <div class="flex justify-between text-lg font-mono">
-                        <span>KRONKORKEN:</span> 
-                        <span class="text-yellow-400">${Game.state.caps} KK</span>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3 w-full max-w-md">
-                    <button onclick="Game.rest()" class="py-3 border border-blue-500 text-blue-400 hover:bg-blue-900/30 font-bold transition-all uppercase tracking-wider flex items-center justify-center gap-2">
-                        <span>💤</span> SCHLAFEN
-                    </button>
-                    <button onclick="UI.renderCity('rusty_springs')" class="py-3 border border-yellow-500 text-yellow-400 hover:bg-yellow-900/30 font-bold transition-all uppercase tracking-wider flex items-center justify-center gap-2">
-                        <span>🏙️</span> STADT
-                    </button>
-                </div>
-
-                <div class="w-full max-w-md border-t-2 border-dashed border-green-900 pt-4 mt-2">
-                    <div class="text-[10px] text-green-600 uppercase tracking-widest mb-2 font-bold">--- SIMULATION MODE (TEST GAMES) ---</div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button class="border border-green-600 text-green-600 text-xs py-2 hover:bg-green-900 hover:text-white transition-colors" onclick="UI.startMinigame('hacking')">
-                            💻 HACKING
-                        </button>
-                        <button class="border border-green-600 text-green-600 text-xs py-2 hover:bg-green-900 hover:text-white transition-colors" onclick="UI.startMinigame('lockpicking')">
-                            🔒 LOCKPICK
-                        </button>
-                        <button class="border border-yellow-600 text-yellow-500 text-xs py-2 hover:bg-yellow-900 hover:text-white transition-colors" onclick="UI.startMinigame('dice')">
-                            🎲 DICE (LUCK)
-                        </button>
-                        <button class="border border-red-600 text-red-500 text-xs py-2 hover:bg-red-900 hover:text-white transition-colors" onclick="UI.startMinigame('defusal')">
-                            💣 DEFUSAL (AGI)
-                        </button>
-                    </div>
-                </div>
-
-            </div>
-
-            <div class="flex-shrink-0 p-3 border-t border-green-900 bg-[#001100]">
-                <button class="action-button w-full border-gray-600 text-gray-500 hover:text-white hover:border-white transition-colors uppercase tracking-[0.2em]" onclick="UI.switchView('map')">
-                    GEHE INS ÖDLAND
-                </button>
-            </div>
-        `;
-        view.appendChild(wrapper);
+Object.assign(Game, {
+    // Initialisiert den Cache-Kontext, falls noch nicht geschehen
+    initCache: function() {
+        this.cacheCanvas = document.createElement('canvas');
+        this.cacheCanvas.width = this.MAP_W * this.TILE;
+        this.cacheCanvas.height = this.MAP_H * this.TILE;
+        this.cacheCtx = this.cacheCanvas.getContext('2d');
     },
 
-    // ==========================================
-    // === COMBAT RENDER ===
-    // ==========================================
-    renderCombat: function() {
-        Game.state.view = 'combat';
-        const view = document.getElementById('view-container');
-        if(!view) return;
-        view.innerHTML = '';
-
-        if(!Combat.enemy) return;
-
-        const wrapper = document.createElement('div');
-        wrapper.className = "w-full h-full flex flex-col bg-black relative overflow-hidden select-none";
-
-        // Feedback Layer
-        const feedbackLayer = document.createElement('div');
-        feedbackLayer.id = "combat-feedback-layer";
-        feedbackLayer.className = "absolute inset-0 pointer-events-none z-50 overflow-hidden";
-        wrapper.appendChild(feedbackLayer);
-
-        // Flash Effect Layer
-        const flashLayer = document.createElement('div');
-        flashLayer.id = "damage-flash";
-        flashLayer.className = "absolute inset-0 bg-red-500 pointer-events-none z-40 hidden transition-opacity duration-300 opacity-0";
-        wrapper.appendChild(flashLayer);
-
-        // --- ENEMY VISUAL ---
-        const enemyContainer = document.createElement('div');
-        enemyContainer.className = "flex-grow flex flex-col items-center justify-center relative p-4 bg-gradient-to-b from-black to-[#051005]";
+    // Zeichnet die gesamte Karte einmalig auf die Offscreen-Canvas
+    renderStaticMap: function() { 
+        if(!this.cacheCtx) this.initCache();
+        const ctx = this.cacheCtx; 
         
-        // Gegner Infos
-        const infoBar = document.createElement('div');
-        infoBar.className = "absolute top-2 w-full px-4 flex justify-between items-start z-10";
+        // Hintergrund löschen (schwarz)
+        ctx.fillStyle = "#000"; 
+        ctx.fillRect(0, 0, this.cacheCanvas.width, this.cacheCanvas.height); 
         
-        let hpPercent = (Combat.enemy.hp / Combat.enemy.maxHp) * 100;
-        let hpColor = "bg-red-600";
-        if (Combat.enemy.isLegendary) hpColor = "bg-yellow-500"; 
+        if(!this.state.currentMap) return;
 
-        infoBar.innerHTML = `
-            <div class="w-full">
-                <div class="flex justify-between items-end mb-1">
-                    <span class="text-xl font-bold ${Combat.enemy.isLegendary ? 'text-yellow-400 drop-shadow-[0_0_5px_gold]' : 'text-red-500'} font-vt323 tracking-wider uppercase">
-                        ${Combat.enemy.name} ${Combat.enemy.isLegendary ? '⭐' : ''}
-                    </span>
-                    <span class="text-xs text-red-300 font-mono">${Math.ceil(Combat.enemy.hp)}/${Combat.enemy.maxHp} HP</span>
-                </div>
-                <div class="w-full h-4 bg-red-900/30 border border-red-700 relative skew-x-[-10deg]">
-                    <div class="h-full ${hpColor} transition-all duration-300" style="width: ${hpPercent}%"></div>
-                </div>
-            </div>
-        `;
-        enemyContainer.appendChild(infoBar);
+        // Alle Tiles der Karte durchgehen und zeichnen
+        for(let y=0; y<this.MAP_H; y++) {
+            for(let x=0; x<this.MAP_W; x++) {
+                if(this.state.currentMap[y]) {
+                    this.drawTile(ctx, x, y, this.state.currentMap[y][x]); 
+                }
+            }
+        }
+    },
 
-        // Gegner Bild
-        const visual = document.createElement('div');
-        visual.id = "enemy-img";
-        visual.className = "text-9xl filter drop-shadow-[0_0_15px_rgba(255,0,0,0.3)] transition-transform duration-100";
-        visual.textContent = Combat.enemy.symbol || "💀";
-        enemyContainer.appendChild(visual);
+    // Haupt-Zeichenfunktion, wird in jedem Frame aufgerufen
+    draw: function() { 
+        if(!this.ctx || !this.cacheCanvas) return; 
+        if(!this.state.currentMap) return;
 
-        // VATS OVERLAY
-        if(Combat.turn === 'player') {
-            const vats = document.createElement('div');
-            vats.className = "absolute bottom-4 flex gap-2 w-full justify-center px-2 z-20";
+        const ctx = this.ctx; 
+        const cvs = ctx.canvas; 
+        
+        // Kamera-Position berechnen (zentriert auf den Spieler)
+        let targetCamX = (this.state.player.x * this.TILE) - (cvs.width / 2); 
+        let targetCamY = (this.state.player.y * this.TILE) - (cvs.height / 2); 
+        
+        // Maximale Kamera-Grenzen berechnen
+        const maxCamX = (this.MAP_W * this.TILE) - cvs.width; 
+        const maxCamY = (this.MAP_H * this.TILE) - cvs.height; 
+        
+        // Kamera innerhalb der Grenzen halten
+        this.camera.x = Math.max(0, Math.min(targetCamX, maxCamX)); 
+        this.camera.y = Math.max(0, Math.min(targetCamY, maxCamY)); 
+        
+        // Sichtbaren Bereich löschen
+        ctx.fillStyle = "#000"; 
+        ctx.fillRect(0, 0, cvs.width, cvs.height); 
+        
+        // Den relevanten Ausschnitt aus dem Cache auf die sichtbare Canvas kopieren
+        ctx.drawImage(this.cacheCanvas, this.camera.x, this.camera.y, cvs.width, cvs.height, 0, 0, cvs.width, cvs.height); 
+        
+        // Kontext für dynamische Objekte vorbereiten (Kamera-Verschiebung)
+        ctx.save(); 
+        ctx.translate(-this.camera.x, -this.camera.y); 
+        
+        // Sichtbaren Bereich in Tile-Koordinaten berechnen
+        const startX = Math.floor(this.camera.x / this.TILE); 
+        const startY = Math.floor(this.camera.y / this.TILE); 
+        const endX = startX + Math.ceil(cvs.width / this.TILE) + 1; 
+        const endY = startY + Math.ceil(cvs.height / this.TILE) + 1; 
+        
+        const secKey = `${this.state.sector.x},${this.state.sector.y}`;
+        const pulse = Math.sin(Date.now() / 200) * 0.3 + 0.7; // Pulsierender Effekt
+
+        // Über den sichtbaren Bereich iterieren
+        for(let y=startY; y<endY; y++) { 
+            for(let x=startX; x<endX; x++) { 
+                if(y>=0 && y<this.MAP_H && x>=0 && x<this.MAP_W) { 
+                    
+                    const tileKey = `${secKey}_${x},${y}`;
+                    const isCity = (this.state.zone && this.state.zone.includes("Stadt")); 
+                    
+                    // Fog of War: Nicht erkundete Bereiche schwarz übermalen (außer in Städten)
+                    if(!isCity && !this.state.explored[tileKey]) {
+                        ctx.fillStyle = "#000";
+                        ctx.fillRect(x * this.TILE, y * this.TILE, this.TILE, this.TILE);
+                        continue; 
+                    }
+
+                    if(!this.state.currentMap[y]) continue; 
+
+                    const t = this.state.currentMap[y][x]; 
+                    
+                    // Dynamische/Animierte Tiles neu zeichnen (über den statischen Hintergrund)
+                    // [v3.3] Added 'R' to special render list
+                    if(['V', 'S', 'C', 'G', 'H', 'R', '^', 'v', '<', '>', '$', '&', 'P', 'E', 'F', 'X'].includes(t)) { 
+                        this.drawTile(ctx, x, y, t, pulse); 
+                    } 
+                    
+                    // Versteckte Items zeichnen (schimmernd)
+                    if(this.state.hiddenItems && this.state.hiddenItems[`${x},${y}`]) {
+                        const shimmer = (Math.sin(Date.now() / 200) + 1) / 2;
+                        ctx.globalAlpha = 0.3 + (shimmer * 0.5);
+                        ctx.fillStyle = "#ffffff";
+                        ctx.beginPath();
+                        ctx.arc(x * this.TILE + this.TILE/2, y * this.TILE + this.TILE/2, 4 + shimmer * 2, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.globalAlpha = 1.0;
+                    }
+                } 
+            } 
+        } 
+        
+        // Andere Spieler zeichnen
+        if(typeof Network !== 'undefined' && Network.otherPlayers) { 
+            for(let pid in Network.otherPlayers) { 
+                const p = Network.otherPlayers[pid]; 
+                // Nur Spieler im gleichen Sektor zeichnen
+                if(p.sector && (p.sector.x !== this.state.sector.x || p.sector.y !== this.state.sector.y)) continue; 
+                
+                const ox = p.x * this.TILE + this.TILE/2; 
+                const oy = p.y * this.TILE + this.TILE/2; 
+                
+                // Spieler-Punkt (Cyan)
+                ctx.fillStyle = "#00ffff"; 
+                ctx.shadowBlur = 5; 
+                ctx.shadowColor = "#00ffff"; 
+                ctx.beginPath(); 
+                ctx.arc(ox, oy, 5, 0, Math.PI*2); 
+                ctx.fill(); 
+                
+                // Spieler-Name
+                ctx.font = "10px monospace"; 
+                ctx.fillStyle = "white"; 
+                ctx.fillText(p.name ? p.name.substring(0,3) : "P", ox+6, oy); 
+                ctx.shadowBlur = 0; 
+            } 
+        } 
+        
+        // Eigenen Spieler zeichnen (Dreieck)
+        const px = this.state.player.x * this.TILE + this.TILE/2; 
+        const py = this.state.player.y * this.TILE + this.TILE/2; 
+        
+        ctx.save();
+        ctx.translate(px, py); 
+        ctx.rotate(this.state.player.rot); 
+        ctx.translate(-px, -py); 
+        
+        ctx.fillStyle = "#39ff14"; 
+        ctx.shadowBlur = 10; 
+        ctx.shadowColor = "#39ff14"; 
+        ctx.beginPath(); 
+        ctx.moveTo(px, py - 8); 
+        ctx.lineTo(px + 6, py + 8); 
+        ctx.lineTo(px, py + 5); 
+        ctx.lineTo(px - 6, py + 8); 
+        ctx.fill(); 
+        ctx.shadowBlur = 0; 
+        
+        ctx.restore(); // Rotation zurücksetzen
+        
+        ctx.restore(); // Kamera-Translation zurücksetzen
+    },
+
+    // Zeichnet ein einzelnes Tile
+    drawTile: function(ctx, x, y, type, pulse = 1) { 
+        const ts = this.TILE; const px = x * ts; const py = y * ts; 
+        
+        // Hintergrundfarbe bestimmen
+        let bg = this.colors['.']; 
+        if(['_', ',', ';', '=', 'W', 'M', '~', '|', 'B'].includes(type)) bg = this.colors[type]; 
+        
+        // Hintergrund zeichnen (außer bei speziellen Symbolen)
+        if (!['^','v','<','>'].includes(type) && type !== '#') { ctx.fillStyle = bg; ctx.fillRect(px, py, ts, ts); } 
+        
+        // Rahmen zeichnen (außer bei speziellen Symbolen)
+        if(!['^','v','<','>','M','W','~','X'].includes(type) && type !== '#') { ctx.strokeStyle = "rgba(40, 90, 40, 0.05)"; ctx.lineWidth = 1; ctx.strokeRect(px, py, ts, ts); } 
+        
+        // Pfeile (Ausgänge) zeichnen
+        if(['^', 'v', '<', '>'].includes(type)) { 
+            ctx.fillStyle = "#000"; ctx.fillRect(px, py, ts, ts); ctx.fillStyle = "#1aff1a"; ctx.strokeStyle = "#000"; ctx.beginPath(); 
+            if (type === '^') { ctx.moveTo(px + ts/2, py + 5); ctx.lineTo(px + ts - 5, py + ts - 5); ctx.lineTo(px + 5, py + ts - 5); } 
+            else if (type === 'v') { ctx.moveTo(px + ts/2, py + ts - 5); ctx.lineTo(px + ts - 5, py + 5); ctx.lineTo(px + 5, py + 5); } 
+            else if (type === '<') { ctx.moveTo(px + 5, py + ts/2); ctx.lineTo(px + ts - 5, py + 5); ctx.lineTo(px + ts - 5, py + ts - 5); } 
+            else if (type === '>') { ctx.moveTo(px + ts - 5, py + ts/2); ctx.lineTo(px + 5, py + 5); ctx.lineTo(px + 5, py + ts - 5); } 
+            ctx.fill(); ctx.stroke(); return; 
+        }
+        
+        ctx.beginPath(); 
+        
+        // Spezielle Symbole zeichnen
+        switch(type) { 
+            case '#': ctx.fillStyle = "#222"; ctx.fillRect(px, py, ts, ts); ctx.lineWidth=1; ctx.strokeStyle="#444"; ctx.strokeRect(px, py, ts, ts); break; 
+            case 't': ctx.fillStyle = this.colors['t']; ctx.moveTo(px + ts/2, py + 2); ctx.lineTo(px + ts - 4, py + ts - 2); ctx.lineTo(px + 4, py + ts - 2); ctx.fill(); break;
+            case 'T': ctx.fillStyle = this.colors['T']; ctx.moveTo(px + ts/2, py + 2); ctx.lineTo(px + ts - 2, py + ts - 2); ctx.lineTo(px + 2, py + ts - 2); ctx.fill(); break;
+            case 'x': ctx.strokeStyle = this.colors['x']; ctx.lineWidth = 2; ctx.moveTo(px+5, py+ts-5); ctx.lineTo(px+ts-5, py+5); ctx.moveTo(px+5, py+5); ctx.lineTo(px+ts-5, py+ts-5); ctx.stroke(); break;
+            case '"': ctx.strokeStyle = this.colors['"']; ctx.lineWidth = 1; ctx.moveTo(px+5, py+ts-5); ctx.lineTo(px+5, py+10); ctx.moveTo(px+15, py+ts-5); ctx.lineTo(px+15, py+5); ctx.moveTo(px+25, py+ts-5); ctx.lineTo(px+25, py+12); ctx.stroke(); break;
+            case 'Y': ctx.strokeStyle = this.colors['Y']; ctx.lineWidth = 3; ctx.moveTo(px+15, py+ts-5); ctx.lineTo(px+15, py+5); ctx.moveTo(px+15, py+15); ctx.lineTo(px+5, py+10); ctx.moveTo(px+15, py+10); ctx.lineTo(px+25, py+5); ctx.stroke(); break;
+            case 'o': ctx.fillStyle = this.colors['o']; ctx.arc(px+ts/2, py+ts/2, ts/3, 0, Math.PI*2); ctx.fill(); break;
+            case '+': ctx.fillStyle = this.colors['+']; ctx.fillRect(px+5, py+10, 5, 5); ctx.fillRect(px+15, py+20, 4, 4); ctx.fillRect(px+20, py+5, 6, 6); break;
+            case 'M': ctx.fillStyle = "#3e2723"; ctx.moveTo(px + ts/2, py + 2); ctx.lineTo(px + ts, py + ts); ctx.lineTo(px, py + ts); ctx.fill(); break;
+            case 'W': ctx.strokeStyle = "#4fc3f7"; ctx.lineWidth = 2; ctx.moveTo(px+5, py+15); ctx.lineTo(px+15, py+10); ctx.lineTo(px+25, py+15); ctx.stroke(); break;
+            case '~': ctx.strokeStyle = "#556b2f"; ctx.lineWidth = 2; ctx.moveTo(px+5, py+15); ctx.lineTo(px+15, py+10); ctx.lineTo(px+25, py+15); ctx.stroke(); break;
+            case '=': ctx.strokeStyle = "#5d4037"; ctx.lineWidth = 2; ctx.moveTo(px, py+5); ctx.lineTo(px+ts, py+5); ctx.moveTo(px, py+25); ctx.lineTo(px+ts, py+25); ctx.stroke(); break;
+            case 'U': ctx.fillStyle = "#000"; ctx.arc(px+ts/2, py+ts/2, ts/3, 0, Math.PI, true); ctx.fill(); break;
             
-            Combat.bodyParts.forEach((part, idx) => {
-                const hitChance = Combat.calculateHitChance(idx);
-                const isSelected = (idx === Combat.selectedPart);
+            // VAULT 101
+            case 'V': 
+                ctx.globalAlpha = 1; 
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = "#ffff00";
+                ctx.fillStyle = "#ffff00"; 
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.font = "35px monospace"; 
+                ctx.fillText("⚙️", px + ts/2, py + ts/2);
                 
-                let btnClass = "flex-1 border-2 py-2 px-1 flex flex-col items-center justify-center transition-all bg-black/80 ";
-                if(isSelected) btnClass += "border-yellow-400 text-yellow-400 bg-yellow-900/40 shadow-[0_0_10px_#ccaa00]";
-                else btnClass += "border-green-700 text-green-700 hover:border-green-500 hover:text-green-500";
+                ctx.font = "bold 10px monospace";
+                ctx.fillStyle = "#ffffff";
+                ctx.shadowColor = "#000";
+                ctx.shadowBlur = 4;
+                ctx.fillText("VAULT 101", px + ts/2, py + ts - 2); 
 
-                const btn = document.createElement('button');
-                btn.id = `btn-vats-${idx}`;
-                btn.className = btnClass;
-                btn.onclick = () => { Combat.selectPart(idx); Combat.confirmSelection(); };
+                ctx.shadowBlur = 0;
+                ctx.textAlign = "start";
+                ctx.textBaseline = "alphabetic";
+                break; 
+
+            // [v3.3] SUPER-MART (Raider Fortress)
+            case 'R':
+                ctx.globalAlpha = 1;
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = "#ff0000"; // Red danger glow
                 
-                btn.innerHTML = `
-                    <span class="text-[10px] font-bold tracking-widest uppercase mb-1">${part.name}</span>
-                    <span class="text-xl font-bold font-vt323">${hitChance}%</span>
-                `;
-                vats.appendChild(btn);
-            });
-            enemyContainer.appendChild(vats);
-        } else {
-            // Enemy Turn
-            const wait = document.createElement('div');
-            wait.className = "absolute bottom-10 text-red-500 font-bold text-xl animate-pulse tracking-widest border-2 border-red-500 px-4 py-2 bg-black";
-            wait.textContent = "GEGNER GREIFT AN...";
-            enemyContainer.appendChild(wait);
-        }
+                // Icon: Shopping Cart
+                ctx.fillStyle = "#ff3333"; 
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.font = "30px monospace"; 
+                ctx.fillText("🛒", px + ts/2, py + ts/2);
+                
+                // Label
+                ctx.shadowBlur = 2;
+                ctx.shadowColor = "black";
+                ctx.font = "bold 9px monospace";
+                ctx.fillStyle = "#ffffff";
+                ctx.fillText("SUPER-MART", px + ts/2, py + ts - 2); 
 
-        wrapper.appendChild(enemyContainer);
+                ctx.shadowBlur = 0;
+                ctx.textAlign = "start";
+                ctx.textBaseline = "alphabetic";
+                break;
 
-        // LOG AREA
-        const logArea = document.createElement('div');
-        logArea.id = "combat-log";
-        logArea.className = "h-32 bg-black border-t-4 border-green-900 p-2 font-mono text-xs overflow-hidden flex flex-col justify-end text-gray-400 leading-tight opacity-80";
-        wrapper.appendChild(logArea);
-
-        // CONTROLS
-        const footer = document.createElement('div');
-        footer.className = "flex p-2 gap-2 bg-[#051005] border-t border-green-500";
-        
-        if(Combat.turn === 'player') {
-            footer.innerHTML = `
-                <button onclick="Combat.confirmSelection()" class="flex-grow action-button py-4 text-xl font-bold border-yellow-500 text-yellow-500 hover:bg-yellow-900/50">ANGRIFF (SPACE)</button>
-                <button onclick="Combat.flee()" class="w-1/3 action-button py-4 text-gray-500 border-gray-600 hover:text-white">FLUCHT</button>
-            `;
-        } else {
-            footer.innerHTML = `<button disabled class="w-full action-button py-4 text-gray-600 border-gray-800 cursor-wait">WARTEN...</button>`;
-        }
-        wrapper.appendChild(footer);
-
-        view.appendChild(wrapper);
+            case 'C': ctx.globalAlpha = pulse; ctx.fillStyle = this.colors['C']; ctx.fillRect(px+6, py+14, 18, 12); ctx.beginPath(); ctx.moveTo(px+4, py+14); ctx.lineTo(px+15, py+4); ctx.lineTo(px+26, py+14); ctx.fill(); break; 
+            case 'S': ctx.globalAlpha = pulse; ctx.fillStyle = this.colors['S']; ctx.arc(px+ts/2, py+12, 6, 0, Math.PI*2); ctx.fill(); ctx.fillRect(px+10, py+18, 10, 6); break; 
+            case 'H': ctx.globalAlpha = pulse; ctx.fillStyle = this.colors['H']; ctx.arc(px+ts/2, py+ts/2, ts/2.5, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = "#000"; ctx.beginPath(); ctx.arc(px+ts/2, py+ts/2, ts/4, 0, Math.PI*2); ctx.fill(); break; 
+            case '$': ctx.fillStyle = this.colors['$']; ctx.fillText("$$", px+5, py+20); break;
+            case '&': ctx.fillStyle = this.colors['&']; ctx.fillText("🔧", px+5, py+20); break;
+            case 'P': ctx.fillStyle = this.colors['P']; ctx.fillText("✚", px+8, py+20); break;
+            case 'E': ctx.fillStyle = this.colors['E']; ctx.fillText("EXIT", px+2, py+20); break;
+            case 'F': ctx.fillStyle = this.colors['F']; ctx.arc(px+ts/2, py+ts/2, ts/3, 0, Math.PI*2); ctx.fill(); break;
+            case '|': ctx.fillStyle = this.colors['|']; ctx.fillRect(px, py, ts, ts); break;
+            case 'X': ctx.fillStyle = this.colors['X']; ctx.fillRect(px+5, py+10, 20, 15); ctx.fillStyle = "#ffd700"; ctx.fillRect(px+12, py+15, 6, 5); break;
+        } 
+        ctx.globalAlpha = 1; 
     }
 });
