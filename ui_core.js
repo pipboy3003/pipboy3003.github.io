@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-11 11:30:00 - ui_core.js - Fixed Char Creation Logic
+// [TIMESTAMP] 2026-01-11 12:00:00 - ui_core.js - Fixed Empty Slot Double Click
 
 const UI = {
     els: {},
@@ -572,9 +572,10 @@ const UI = {
         }
     },
     
+    // [FIX] Double click on EMPTY slot now triggers creation
     selectSlot: function(index) {
-        if(this.selectedSlot === index && this.currentSaves[index]) {
-            this.triggerCharSlot(); // Doppelklick = Start
+        if(this.selectedSlot === index) {
+            this.triggerCharSlot(); // Doppelklick = Start / Erstellen
             return;
         }
 
