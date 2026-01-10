@@ -1,4 +1,5 @@
 🐛 Aktuelle Bugs & Anpassungen:
+- Todesklauen zu oft
 - Bei Char löschen soll Enter auch funktionieren zum "löschen" nicht nur der Button zum drücken. Sofern der Name halt Korrekt ist. Dann bitte "Char wird gelöscht..." anzeigen bis der Charakter aus der Datenbank gelöscht wurde.
 - Öfters Probleme mit dem Laden der Dateien im Hintergrund das dies länger dauert als der Boot Screen. Sollte die "system ready" meldung noch nicht da sein bis die boot sequenz abgeschlosssen ist, soll es nicht weiter gehen. Sonst haben wir ab und an Probleme beim Login.
 - Buglog muss so ausführlich sein das ich ihn direkt weiterleiten kann zum beheben, an dich eben.
