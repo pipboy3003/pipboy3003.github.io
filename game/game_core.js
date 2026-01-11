@@ -1,4 +1,4 @@
-// [2026-01-11 15:30:00] game_core.js - Styled Popup (Monofonto), UI Reset & Clean Deletion
+// [2026-01-11 16:00:00] game_core.js - Pre-Check Logic with Styled Popups (Confirm/Error)
 
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
@@ -72,7 +72,6 @@ window.Game = {
         this.isDirty = false;
     },
 
-    // KORREKTUR: Manuelles Löschen (Hard Reset) entfernt Eintrag komplett
     hardReset: function() { 
         if(typeof Network !== 'undefined' && this.state) {
             if (this.state.playerName && typeof Network.removeLeaderboardEntry === 'function') {
@@ -142,8 +141,8 @@ window.Game = {
         return val;
     },
 
+    // ... (expToNextLevel, gainExp, checkNewQuests, updateQuestProgress, completeQuest, checkShopRestock, generateLoot bleiben unverändert) ...
     expToNextLevel: function(lvl) { return Math.floor(100 * Math.pow(lvl, 1.5)); },
-
     gainExp: function(amount) {
         const perkLvl = this.getPerkLevel('swift_learner');
         let finalAmount = amount;
@@ -152,30 +151,17 @@ window.Game = {
             finalAmount = Math.floor(amount * multi);
         }
         this.state.xp += finalAmount;
-        if(perkLvl > 0 && finalAmount > amount) {
-            UI.log(`+${finalAmount} XP (Bonus!)`, "text-yellow-400");
-        } else {
-            UI.log(`+${finalAmount} XP`, "text-yellow-400");
-        }
+        if(perkLvl > 0 && finalAmount > amount) { UI.log(`+${finalAmount} XP (Bonus!)`, "text-yellow-400"); } 
+        else { UI.log(`+${finalAmount} XP`, "text-yellow-400"); }
         let next = this.expToNextLevel(this.state.lvl);
         if(this.state.xp >= next) {
-            this.state.lvl++;
-            this.state.xp -= next;
-            this.state.statPoints++;
-            if(this.state.lvl % 3 === 0) {
-                this.state.perkPoints++;
-                UI.log("🌟 NEUER PERK PUNKT VERFÜGBAR! 🌟", "text-yellow-400 font-bold animate-pulse text-lg");
-            }
-            this.recalcStats(); 
-            this.state.hp = this.state.maxHp; 
-            UI.log(`LEVEL UP! Du bist jetzt Level ${this.state.lvl}`, "text-yellow-400 font-bold animate-pulse");
-            this.checkNewQuests(); 
-            this.saveGame(true);
-        } else {
-            this.saveGame();
-        }
+            this.state.lvl++; this.state.xp -= next; this.state.statPoints++;
+            if(this.state.lvl % 3 === 0) { this.state.perkPoints++; UI.log("🌟 NEUER PERK PUNKT! 🌟", "text-yellow-400 font-bold animate-pulse text-lg"); }
+            this.recalcStats(); this.state.hp = this.state.maxHp; 
+            UI.log(`LEVEL UP! Level ${this.state.lvl}`, "text-yellow-400 font-bold animate-pulse");
+            this.checkNewQuests(); this.saveGame(true);
+        } else { this.saveGame(); }
     },
-
     checkNewQuests: function() {
         if(!this.questDefs || !this.state) return;
         this.questDefs.forEach(def => {
@@ -183,15 +169,12 @@ window.Game = {
                 const active = this.state.activeQuests.find(q => q.id === def.id);
                 const completed = this.state.completedQuests.includes(def.id);
                 if(!active && !completed) {
-                    this.state.activeQuests.push({
-                        id: def.id, progress: 0, max: def.amount, type: def.type, target: def.target
-                    });
+                    this.state.activeQuests.push({ id: def.id, progress: 0, max: def.amount, type: def.type, target: def.target });
                     UI.log(`QUEST: "${def.title}" erhalten!`, "text-cyan-400 font-bold animate-pulse");
                 }
             }
         });
     },
-
     updateQuestProgress: function(type, target, value=1) {
         if(!this.state || !this.state.activeQuests) return;
         let updated = false;
@@ -200,18 +183,11 @@ window.Game = {
             if(q.type === type) {
                 let match = false;
                 if(type === 'collect' || type === 'kill' || type === 'visit') match = (q.target === target); 
-                if(match) {
-                    q.progress += value;
-                    updated = true;
-                    if(q.progress >= q.max) {
-                        this.completeQuest(i);
-                    }
-                }
+                if(match) { q.progress += value; updated = true; if(q.progress >= q.max) { this.completeQuest(i); } }
             }
         }
         if(updated) UI.update();
     },
-
     completeQuest: function(index) {
         const q = this.state.activeQuests[index];
         const def = this.questDefs.find(d => d.id === q.id);
@@ -220,43 +196,27 @@ window.Game = {
                 if(def.reward.xp) this.gainExp(def.reward.xp);
                 if(def.reward.caps) { this.state.caps += def.reward.caps; }
                 if(def.reward.items) {
-                    def.reward.items.forEach(item => {
-                        if(typeof Game.addItem === 'function') {
-                            Game.addItem(item.id, item.c || 1);
-                        }
-                    });
+                    def.reward.items.forEach(item => { if(typeof Game.addItem === 'function') { Game.addItem(item.id, item.c || 1); } });
                 }
             }
             this.state.completedQuests.push(q.id);
-            if(typeof UI !== 'undefined' && UI.showQuestComplete) {
-                UI.showQuestComplete(def);
-            }
+            if(typeof UI !== 'undefined' && UI.showQuestComplete) { UI.showQuestComplete(def); }
         }
         this.state.activeQuests.splice(index, 1);
         this.saveGame(true);
     },
-    
     checkShopRestock: function() {
         const now = Date.now();
         if(!this.state.shop) this.state.shop = { nextRestock: 0, stock: {}, merchantCaps: 1000 };
         if(now >= this.state.shop.nextRestock) {
             const stock = {};
-            stock['stimpack'] = 2 + Math.floor(Math.random() * 4);
-            stock['radaway'] = 1 + Math.floor(Math.random() * 3);
-            stock['nuka_cola'] = 3 + Math.floor(Math.random() * 5);
+            stock['stimpack'] = 2 + Math.floor(Math.random() * 4); stock['radaway'] = 1 + Math.floor(Math.random() * 3); stock['nuka_cola'] = 3 + Math.floor(Math.random() * 5);
             this.state.shop.ammoStock = 30 + (Math.floor(Math.random() * 9) * 10); 
             const weapons = Object.keys(this.items).filter(k => this.items[k].type === 'weapon' && !k.includes('legendary') && !k.startsWith('rusty'));
             const armor = Object.keys(this.items).filter(k => this.items[k].type === 'body');
-            for(let i=0; i<3; i++) {
-                const w = weapons[Math.floor(Math.random() * weapons.length)];
-                if(w) stock[w] = 1;
-            }
-            for(let i=0; i<3; i++) {
-                const a = armor[Math.floor(Math.random() * armor.length)];
-                if(a) stock[a] = 1;
-            }
-            if(Math.random() < 0.3) stock['backpack_small'] = 1;
-            if(Math.random() < 0.1) stock['backpack_medium'] = 1;
+            for(let i=0; i<3; i++) { const w = weapons[Math.floor(Math.random() * weapons.length)]; if(w) stock[w] = 1; }
+            for(let i=0; i<3; i++) { const a = armor[Math.floor(Math.random() * armor.length)]; if(a) stock[a] = 1; }
+            if(Math.random() < 0.3) stock['backpack_small'] = 1; if(Math.random() < 0.1) stock['backpack_medium'] = 1;
             stock['camp_kit'] = 1;
             this.state.shop.merchantCaps = 500 + Math.floor(Math.random() * 1000);
             this.state.shop.stock = stock;
@@ -264,7 +224,6 @@ window.Game = {
             if(typeof UI !== 'undefined') UI.log("INFO: Der Händler hat neue Ware & Kronkorken.", "text-green-500 italic");
         }
     },
-
     generateLoot: function(baseId) {
         const itemDef = this.items[baseId];
         if(!itemDef || itemDef.type !== 'weapon') return { id: baseId, count: 1 };
@@ -283,7 +242,7 @@ window.Game = {
         };
     },
 
-    // KORREKTUR: Async Init mit UI-Reset & Style-Popup
+    // KORREKTUR: Async Init mit UI-Reset & Bestätigungs-Workflow
     init: async function(saveData, spawnTarget=null, slotIndex=0, newName=null) {
         this.worldData = {};
         this.initCache();
@@ -296,13 +255,69 @@ window.Game = {
             this.items = window.GameData.items;
         }
 
-        try {
-            let isNewGame = false;
-            const defaultPOIs = [ {type: 'V', x: 4, y: 4}, {type: 'C', x: 3, y: 3}, {type: 'A', x: 8, y: 1}, {type: 'R', x: 1, y: 8}, {type: 'K', x: 9, y: 9} ];
+        // --- HELPER: UI RESETTEN (Hintergrund aufräumen) ---
+        const restoreUI = () => {
+            const loading = document.getElementById('loading-overlay');
+            if(loading) loading.style.display = 'none';
+            
+            const spawn = document.getElementById('spawn-screen');
+            if(spawn) {
+                spawn.style.display = 'flex';
+                spawn.classList.remove('hidden');
+            }
+        };
 
+        // --- HELPER: CHARAKTER ERSTELLEN ---
+        const createAndStartGame = () => {
+            const fistDef = this.items['fists'];
+            const standardFists = fistDef ? { ...fistDef, id: 'fists', count: 1 } : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon', count: 1 };
+            const suitDef = this.items['vault_suit'];
+            const standardSuit = suitDef ? { ...suitDef, id: 'vault_suit', count: 1 } : { id: 'vault_suit', name: 'Vault-Anzug', type: 'body', count: 1 };
+
+            this.state = {
+                saveSlot: slotIndex,
+                playerName: newName || "SURVIVOR", 
+                sector: {x: 4, y: 4}, startSector: {x: 4, y: 4},
+                worldPOIs: [ {type: 'V', x: 4, y: 4}, {type: 'C', x: 3, y: 3}, {type: 'A', x: 8, y: 1}, {type: 'R', x: 1, y: 8}, {type: 'K', x: 9, y: 9} ],
+                player: {x: 20, y: 20, rot: 0},
+                stats: { STR: 5, PER: 5, END: 5, INT: 5, AGI: 5, LUC: 5 }, 
+                equip: { weapon: standardFists, body: standardSuit, back: null, head: null, legs: null, feet: null, arms: null }, 
+                inventory: [], 
+                hp: 100, maxHp: 100, xp: 0, lvl: 1, caps: 50, ammo: 0, statPoints: 0, 
+                perkPoints: 0, perks: {}, camp: null, rads: 0, kills: 0, 
+                view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, 
+                explored: {}, visitedSectors: ["4,4"],
+                tutorialsShown: { hacking: false, lockpicking: false },
+                activeQuests: [], completedQuests: [], quests: [], 
+                knownRecipes: ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp'], 
+                hiddenItems: {},
+                shop: { nextRestock: 0, stock: {}, merchantCaps: 1000 },
+                startTime: Date.now()
+            };
+            
+            this.state.inventory.push({id: 'stimpack', count: 1, isNew: true});
+            this.state.inventory.push({id: 'ammo', count: 10, isNew: true});
+            this.syncAmmo();
+            this.recalcStats(); 
+            this.state.hp = this.state.maxHp;
+            this.checkNewQuests(); 
+            if(typeof UI !== 'undefined') UI.log(">> Neuer Charakter erstellt.", "text-green-400");
+            this.saveGame(true);
+
+            // Spiel starten
+            if(typeof this.loadSector === 'function') this.loadSector(this.state.sector.x, this.state.sector.y); 
+            if(typeof UI !== 'undefined') {
+                UI.switchView('map').then(() => { 
+                    if(UI.els.gameOver) UI.els.gameOver.classList.add('hidden'); 
+                    setTimeout(() => UI.showPermadeathWarning(), 500);
+                });
+            }
+        };
+
+        try {
             if (saveData) {
+                // LOAD EXISTING GAME (Direkt laden, keine Checks nötig)
                 this.state = saveData;
-                // ... Load Logic ...
                 if(!this.state.explored) this.state.explored = {};
                 if(!this.state.view) this.state.view = 'map';
                 if(typeof this.state.rads === 'undefined') this.state.rads = 0;
@@ -330,137 +345,78 @@ window.Game = {
                 this.recalcStats();
                 if(typeof UI !== 'undefined') UI.log(">> Spielstand geladen.", "text-cyan-400");
 
-            } else {
-                isNewGame = true;
-                let finalName = newName || "SURVIVOR";
-                
-                // 1. NAMENS CHECK
-                if(typeof Network !== 'undefined' && Network.active) {
-                    const isFree = await Network.checkNameAvailability(finalName);
-                    
-                    if (!isFree) {
-                        // === SCHRITT A: UI RESETTEN (Hintergrund aufräumen) ===
-                        // Verhindert, dass man im Hintergrund ein halb-geladenes Spiel sieht
-                        const loading = document.getElementById('loading-overlay');
-                        if(loading) loading.style.display = 'none';
-                        
-                        const spawn = document.getElementById('spawn-screen');
-                        if(spawn) {
-                            spawn.style.display = 'flex'; // Zurück zur Auswahl
-                            spawn.classList.remove('hidden');
-                        }
-
-                        // === SCHRITT B: POPUP ANZEIGEN (Pip-Boy Style) ===
-                        const errDiv = document.createElement('div');
-                        errDiv.id = "name-error-popup";
-                        // Styling: Monofonto, Pip-Boy Grün (#33ff33), Schwarz
-                        errDiv.style.cssText = `
-                            position: fixed; 
-                            top: 50%; left: 50%; 
-                            transform: translate(-50%, -50%);
-                            width: 380px; 
-                            padding: 20px; 
-                            background: #000; 
-                            border: 2px solid #33ff33; 
-                            box-shadow: 0 0 10px rgba(51, 255, 51, 0.4);
-                            color: #33ff33; 
-                            font-family: 'Monofonto', 'Courier New', monospace; 
-                            text-align: center; 
-                            z-index: 100000;
-                            border-radius: 2px;
-                            text-transform: uppercase;
-                        `;
-                        
-                        errDiv.innerHTML = `
-                            <h3 style="margin:0 0 15px 0; border-bottom:1px solid #33ff33; padding-bottom: 10px; font-size: 1.4em; letter-spacing: 1px; text-shadow: 0 0 5px #33ff33;">FEHLER: ID KONFLIKT</h3>
-                            <p style="margin: 20px 0; font-size: 1.1em; line-height: 1.4; text-shadow: 0 0 2px #33ff33;">Der Name<br><strong style="color:#ccffcc;">"${finalName}"</strong><br>ist bereits im System registriert.</p>
-                            <button id="btn-popup-back" style="
-                                margin-top: 15px; 
-                                background: #000; 
-                                color: #33ff33; 
-                                border: 1px solid #33ff33; 
-                                padding: 8px 25px; 
-                                cursor: pointer; 
-                                font-family: inherit; 
-                                font-size: 1.2em;
-                                text-transform: uppercase;
-                                box-shadow: 0 0 5px #33ff33;
-                                transition: all 0.2s;">
-                                ZURÜCK
-                            </button>
-                        `;
-                        
-                        document.body.appendChild(errDiv);
-                        
-                        const btn = document.getElementById('btn-popup-back');
-                        btn.onmouseover = () => { btn.style.background = "#33ff33"; btn.style.color = "#000"; };
-                        btn.onmouseout = () => { btn.style.background = "#000"; btn.style.color = "#33ff33"; };
-
-                        btn.addEventListener('click', () => {
-                            errDiv.remove();
-                        });
-
-                        return; // ABBRUCH: Game State wird nicht erstellt!
-                    }
-                }
-
-                // 2. STATE ERSTELLUNG (Nur wenn Name frei)
-                const fistDef = this.items['fists'];
-                const standardFists = fistDef ? { ...fistDef, id: 'fists', count: 1 } : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon', count: 1 };
-                const suitDef = this.items['vault_suit'];
-                const standardSuit = suitDef ? { ...suitDef, id: 'vault_suit', count: 1 } : { id: 'vault_suit', name: 'Vault-Anzug', type: 'body', count: 1 };
-
-                this.state = {
-                    saveSlot: slotIndex,
-                    playerName: finalName, 
-                    sector: {x: 4, y: 4}, startSector: {x: 4, y: 4},
-                    worldPOIs: defaultPOIs,
-                    player: {x: 20, y: 20, rot: 0},
-                    stats: { STR: 5, PER: 5, END: 5, INT: 5, AGI: 5, LUC: 5 }, 
-                    equip: { 
-                        weapon: standardFists, 
-                        body: standardSuit, 
-                        back: null, head: null, legs: null, feet: null, arms: null
-                    }, 
-                    inventory: [], 
-                    hp: 100, maxHp: 100, xp: 0, lvl: 1, caps: 50, ammo: 0, statPoints: 0, 
-                    perkPoints: 0, perks: {}, 
-                    camp: null, rads: 0, kills: 0, 
-                    view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, 
-                    explored: {}, visitedSectors: ["4,4"],
-                    tutorialsShown: { hacking: false, lockpicking: false },
-                    activeQuests: [], completedQuests: [], quests: [], 
-                    knownRecipes: ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp'], 
-                    hiddenItems: {},
-                    shop: { nextRestock: 0, stock: {}, merchantCaps: 1000 },
-                    startTime: Date.now()
-                };
-                
-                this.state.inventory.push({id: 'stimpack', count: 1, isNew: true});
-                this.state.inventory.push({id: 'ammo', count: 10, isNew: true});
-                this.syncAmmo();
-                this.recalcStats(); 
-                this.state.hp = this.state.maxHp;
-                this.checkNewQuests(); 
-                if(typeof UI !== 'undefined') UI.log(">> Neuer Charakter erstellt.", "text-green-400");
-                this.saveGame(true); 
-            }
-
-            // NUR STARTEN WENN STATE EXISTIERT
-            if (this.state) {
-                if (isNewGame) { 
-                    if(typeof this.loadSector === 'function') this.loadSector(this.state.sector.x, this.state.sector.y); 
-                } 
-                else { 
-                    if(this.renderStaticMap) this.renderStaticMap(); 
-                    if(this.reveal) this.reveal(this.state.player.x, this.state.player.y); 
-                }
-
+                // Start Existing Logic
+                if(this.renderStaticMap) this.renderStaticMap(); 
+                if(this.reveal) this.reveal(this.state.player.x, this.state.player.y); 
                 if(typeof UI !== 'undefined') {
                     UI.switchView('map').then(() => { 
                         if(UI.els.gameOver) UI.els.gameOver.classList.add('hidden'); 
-                        if(isNewGame) { setTimeout(() => UI.showPermadeathWarning(), 500); }
                     });
+                }
+
+            } else {
+                // === NEW GAME FLOW (Check -> Confirm -> Create) ===
+                let finalName = newName || "SURVIVOR";
+                
+                if(typeof Network !== 'undefined' && Network.active) {
+                    const isFree = await Network.checkNameAvailability(finalName);
+                    
+                    // UI wiederherstellen (Spawn Screen zeigen, Loading weg)
+                    restoreUI();
+
+                    if (!isFree) {
+                        // --- ERROR POPUP ---
+                        const errDiv = document.createElement('div');
+                        errDiv.style.cssText = `
+                            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                            width: 380px; padding: 20px; background: #000; border: 2px solid #33ff33; 
+                            box-shadow: 0 0 10px rgba(51, 255, 51, 0.4); color: #33ff33; 
+                            font-family: 'Monofonto', 'Courier New', monospace; text-align: center; 
+                            z-index: 100000; border-radius: 2px; text-transform: uppercase;
+                        `;
+                        errDiv.innerHTML = `
+                            <h3 style="margin:0 0 15px 0; border-bottom:1px solid #33ff33; padding-bottom: 10px; font-size: 1.4em; letter-spacing: 1px; text-shadow: 0 0 5px #33ff33;">FEHLER: ID KONFLIKT</h3>
+                            <p style="margin: 20px 0; font-size: 1.1em; line-height: 1.4; text-shadow: 0 0 2px #33ff33;">Der Name<br><strong style="color:#ccffcc;">"${finalName}"</strong><br>ist bereits vergeben.</p>
+                            <button id="btn-popup-back" style="margin-top: 15px; background: #000; color: #33ff33; border: 1px solid #33ff33; padding: 8px 25px; cursor: pointer; font-family: inherit; font-size: 1.2em; text-transform: uppercase; box-shadow: 0 0 5px #33ff33;">ZURÜCK</button>
+                        `;
+                        document.body.appendChild(errDiv);
+                        
+                        document.getElementById('btn-popup-back').addEventListener('click', () => errDiv.remove());
+                        return; // ABBRUCH
+                    } else {
+                        // --- CONFIRMATION POPUP ---
+                        const confDiv = document.createElement('div');
+                        confDiv.style.cssText = `
+                            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                            width: 380px; padding: 20px; background: #000; border: 2px solid #33ff33; 
+                            box-shadow: 0 0 10px rgba(51, 255, 51, 0.4); color: #33ff33; 
+                            font-family: 'Monofonto', 'Courier New', monospace; text-align: center; 
+                            z-index: 100000; border-radius: 2px; text-transform: uppercase;
+                        `;
+                        confDiv.innerHTML = `
+                            <h3 style="margin:0 0 15px 0; border-bottom:1px solid #33ff33; padding-bottom: 10px; font-size: 1.4em; letter-spacing: 1px; text-shadow: 0 0 5px #33ff33;">SYSTEM BESTÄTIGUNG</h3>
+                            <p style="margin: 20px 0; font-size: 1.1em; line-height: 1.4; text-shadow: 0 0 2px #33ff33;">Charakter erstellen:<br><strong style="color:#ccffcc;">"${finalName}"</strong>?</p>
+                            <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+                                <button id="btn-conf-yes" style="background: #000; color: #33ff33; border: 1px solid #33ff33; padding: 8px 25px; cursor: pointer; font-family: inherit; font-size: 1.2em; text-transform: uppercase; box-shadow: 0 0 5px #33ff33;">JA</button>
+                                <button id="btn-conf-no" style="background: #000; color: #33ff33; border: 1px solid #33ff33; padding: 8px 25px; cursor: pointer; font-family: inherit; font-size: 1.2em; text-transform: uppercase; box-shadow: 0 0 5px #33ff33;">NEIN</button>
+                            </div>
+                        `;
+                        document.body.appendChild(confDiv);
+
+                        document.getElementById('btn-conf-no').addEventListener('click', () => confDiv.remove());
+                        
+                        document.getElementById('btn-conf-yes').addEventListener('click', () => {
+                            confDiv.remove();
+                            // ERST JETZT wird geladen
+                            const loading = document.getElementById('loading-overlay');
+                            if(loading) loading.style.display = 'flex';
+                            createAndStartGame();
+                        });
+                        return; // ABBRUCH (Warten auf Klick)
+                    }
+                } else {
+                    // Kein Netzwerk? Direkt erstellen.
+                    createAndStartGame();
                 }
             }
         } catch(e) {
