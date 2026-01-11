@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-09 19:25:00 - network.js - Added sendBugReport to RTDB
+// [2026-01-11 10:07:00] network.js - FIXED: Integrated deleteSlot, removed duplicates, and fixed syntax errors
 
 const Network = {
     db: null,
@@ -120,17 +120,15 @@ const Network = {
         });
         return list;
     },
-    // -------------------------
 
+    // --- SAVE & DELETE LOGIC ---
     saveToSlot: function(slotIndex, gameState) {
         if(!this.active || !this.myId) return;
         const saveObj = JSON.parse(JSON.stringify(gameState));
         
-        // [v2.7] E-Mail für Admin-Zwecke mitspeichern
         if(this.auth && this.auth.currentUser && this.auth.currentUser.email) {
             saveObj._userEmail = this.auth.currentUser.email;
         }
-        // Timestamp für "Zuletzt online"
         saveObj._lastSeen = Date.now();
 
         const updates = {};
@@ -139,20 +137,40 @@ const Network = {
             .then(() => { if(typeof UI !== 'undefined') UI.log("SLOT " + (slotIndex+1) + " GESPEICHERT.", "text-cyan-400"); })
             .catch(e => console.error("Save Error:", e));
     },
-    
-// [2026-01-11 09:40] network.js - Adjusted deleteSave to use state.saveSlot
 
+    deleteSlot: function(slotIndex) {
+        if(!this.active || !this.myId) {
+            console.error("deleteSlot: Nicht eingeloggt oder DB nicht aktiv!");
+            return Promise.reject("Not authenticated");
+        }
+        
+        // KORREKTER Pfad: saves / [UID] / [SlotIndex]
+        return this.db.ref(`saves/${this.myId}/${slotIndex}`).remove()
+            .then(() => {
+                console.log(`✅ Slot ${slotIndex} erfolgreich gelöscht (Permadeath).`);
+            })
+            .catch(e => {
+                console.error("❌ Fehler beim Löschen von Slot " + slotIndex + ":", e);
+                throw e;
+            });
+    },
+
+    save: function(gameState) {
+        if (typeof Game !== 'undefined' && Game.state && Game.state.saveSlot !== undefined) {
+            this.saveToSlot(Game.state.saveSlot, gameState);
+        } else {
+            console.error("No Save Slot defined!");
+        }
+    },
+    
     deleteSave: function() {
         if(!this.active || !this.myId) return;
-        // Nutze saveSlot statt dem undefinierten selectedSlot
         if (typeof Game !== 'undefined' && Game.state && Game.state.saveSlot !== undefined) {
             this.deleteSlot(Game.state.saveSlot);
         }
     },
 
-
-
-
+    // --- PRESENCE & COMMUNICATION ---
     startPresence: function() {
         if(!this.myId) return;
         this.db.ref('players/' + this.myId).onDisconnect().remove();
@@ -191,21 +209,6 @@ const Network = {
         this.sendHeartbeat();
     },
 
-    save: function(gameState) {
-        if (typeof Game !== 'undefined' && Game.state && Game.state.saveSlot !== undefined) {
-            this.saveToSlot(Game.state.saveSlot, gameState);
-        } else {
-            console.error("No Save Slot defined!");
-        }
-    },
-    
-    deleteSave: function() {
-        if(!this.active || !this.myId) return;
-        if (typeof Game !== 'undefined' && Game.state && Game.state.saveSlot !== undefined) {
-            this.deleteSlot(Game.state.saveSlot);
-        }
-    },
-
     disconnect: function() {
         if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
         if (this.auth) this.auth.signOut();
@@ -231,14 +234,12 @@ const Network = {
         this.sendHeartbeat();
     },
 
-    // [NEU] Bug Report senden (für Realtime DB)
     sendBugReport: async function(reportData) {
         if (!this.db) {
             console.error("Datenbank nicht verbunden.");
             return false;
         }
         try {
-            // Push erstellt einen neuen Eintrag mit eindeutiger ID unter 'bug_reports'
             await this.db.ref("bug_reports").push(reportData);
             console.log("Bug Report erfolgreich an Firebase gesendet.");
             return true;
