@@ -55,14 +55,28 @@ window.Game = {
         this.saveTimer = setTimeout(() => { this.performSave(); }, 2000);
     },
 
+    // [2026-01-11 08:55] game_core.js - Added safety check to prevent saving dead characters
+
+// ... (In der performSave Funktion)
     performSave: function() {
         if(this.saveTimer) { clearTimeout(this.saveTimer); this.saveTimer = null; }
-        if(!this.isDirty) return;
-        if(!this.state) return;
-        if(typeof Network !== 'undefined') { Network.save(this.state); if(!this.state.isGameOver) Network.updateHighscore(this.state); }
+        if(!this.isDirty || !this.state) return;
+        
+        // KRITISCH: Wenn Game Over, darf NIEMALS gespeichert werden
+        if(this.state.isGameOver || this.state.saveSlot === -1) {
+            console.log("Save geblockt: Charakter ist verstorben.");
+            return;
+        }
+
+        if(typeof Network !== 'undefined') { 
+            Network.save(this.state); 
+            Network.updateHighscore(this.state); 
+        }
         try { localStorage.setItem('pipboy_save', JSON.stringify(this.state)); } catch(e){}
         this.isDirty = false;
     },
+// ...
+
 
     hardReset: function() { if(typeof Network !== 'undefined') Network.deleteSave(); this.state = null; location.reload(); },
 
