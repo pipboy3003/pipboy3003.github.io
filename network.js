@@ -1,4 +1,4 @@
-// [2026-01-11 10:07:00] network.js - FIXED: Integrated deleteSlot, removed duplicates, and fixed syntax errors
+// [2026-01-11 13:10:00] network.js - Added Abandonment & Unique Name Check
 
 const Network = {
     db: null,
@@ -37,6 +37,10 @@ const Network = {
     register: async function(email, password, name) {
         if(!this.active) throw new Error("Netzwerk nicht aktiv (Init Failed)");
         try {
+            // Check Name vor Registrierung
+            const isFree = await this.checkNameAvailability(name);
+            if (!isFree) throw new Error("Dieser Name ist bereits vergeben (Charakter lebt noch).");
+
             const userCredential = await this.auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
             await user.updateProfile({ displayName: name });
@@ -64,6 +68,24 @@ const Network = {
         }
     },
     
+    // --- NAMENS CHECK ---
+    checkNameAvailability: async function(charName) {
+        if (!this.db || !charName) return true;
+        const safeName = charName.replace(/[.#$/[\]]/g, "_");
+        const ref = this.db.ref(`leaderboard/${safeName}`);
+        
+        const snap = await ref.once('value');
+        if (snap.exists()) {
+            const val = snap.val();
+            // Wenn der Charakter existiert UND noch lebt ('alive'), ist der Name gesperrt.
+            // Wenn er tot ('dead') oder aufgegeben ('abandoned') ist, ist der Name frei.
+            if (val.status === 'alive') {
+                return false; 
+            }
+        }
+        return true;
+    },
+
     // --- HIGHSCORE SYSTEM ---
     updateHighscore: function(gameState) {
         if(!this.active || !this.myId || !gameState) return;
@@ -97,6 +119,24 @@ const Network = {
         this.db.ref(`leaderboard/${safeName}`).set(entry);
     },
 
+    // NEU: Für manuelles Löschen
+    registerAbandonment: function(gameState) {
+        if(!this.active || !gameState) return;
+        const safeName = (gameState.playerName || "Unknown").replace(/[.#$/[\]]/g, "_");
+        
+        const entry = {
+            name: gameState.playerName || "Unknown",
+            lvl: gameState.lvl,
+            kills: gameState.kills || 0,
+            xp: gameState.xp + (gameState.lvl * 1000),
+            status: 'abandoned', // Status X für "Aufgegeben"
+            owner: this.myId,
+            deathTime: Date.now()
+        };
+        this.db.ref(`leaderboard/${safeName}`).set(entry);
+        console.log("Charakter als 'aufgegeben' (X) markiert.");
+    },
+
     checkAndRemoveDeadChar: async function(charName) {
         if(!this.active) return;
         const safeName = charName.replace(/[.#$/[\]]/g, "_");
@@ -105,7 +145,9 @@ const Network = {
         const snap = await ref.once('value');
         if(snap.exists()) {
             const val = snap.val();
-            if(val.owner === this.myId && val.status === 'dead') {
+            // Lösche Eintrag nur, wenn er mir gehört und tot/aufgegeben ist
+            // (Damit man den Namen wiederverwenden kann, falls man aufräumen will)
+            if(val.owner === this.myId && (val.status === 'dead' || val.status === 'abandoned')) {
                 await ref.remove();
             }
         }
@@ -121,7 +163,6 @@ const Network = {
         return list;
     },
 
-    // --- SAVE & DELETE LOGIC ---
     saveToSlot: function(slotIndex, gameState) {
         if(!this.active || !this.myId) return;
         const saveObj = JSON.parse(JSON.stringify(gameState));
@@ -140,19 +181,12 @@ const Network = {
 
     deleteSlot: function(slotIndex) {
         if(!this.active || !this.myId) {
-            console.error("deleteSlot: Nicht eingeloggt oder DB nicht aktiv!");
+            console.error("deleteSlot: Nicht eingeloggt!");
             return Promise.reject("Not authenticated");
         }
-        
-        // KORREKTER Pfad: saves / [UID] / [SlotIndex]
         return this.db.ref(`saves/${this.myId}/${slotIndex}`).remove()
-            .then(() => {
-                console.log(`✅ Slot ${slotIndex} erfolgreich gelöscht (Permadeath).`);
-            })
-            .catch(e => {
-                console.error("❌ Fehler beim Löschen von Slot " + slotIndex + ":", e);
-                throw e;
-            });
+            .then(() => { console.log(`✅ Slot ${slotIndex} erfolgreich gelöscht.`); })
+            .catch(e => { console.error("❌ Löschfehler:", e); throw e; });
     },
 
     save: function(gameState) {
@@ -170,7 +204,6 @@ const Network = {
         }
     },
 
-    // --- PRESENCE & COMMUNICATION ---
     startPresence: function() {
         if(!this.myId) return;
         this.db.ref('players/' + this.myId).onDisconnect().remove();
