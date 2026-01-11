@@ -1,4 +1,4 @@
-// [2026-01-10 01:54:00] combat.js - Adjusted FX Durations (2.3s Click / 1.5s Crit)
+// [2026-01-11 09:30] game_combat.js - FIXED: Correct slot reference (saveSlot) and deletion order
 
 window.Combat = {
     enemy: null,
@@ -116,7 +116,6 @@ window.Combat = {
         setTimeout(() => { el.remove(); }, 1000);
     },
 
-    // --- SAFETY HELPER: REPAIR WEAPON ID ---
     getSafeWeapon: function() {
         let wpn = Game.state.equip.weapon;
         if (!wpn) return { id: 'fists', name: 'Fäuste', baseDmg: 2 };
@@ -142,7 +141,6 @@ window.Combat = {
         const wpn = this.getSafeWeapon();
         const wId = wpn.id.toLowerCase();
         
-        // Erweiterte Keywords für neue Waffen
         const rangedKeywords = ['pistol', 'rifle', 'gun', 'shotgun', 'smg', 'minigun', 'blaster', 'sniper', 'cannon', 'gewehr', 'flinte', 'revolver'];
         const isRanged = rangedKeywords.some(k => wId.includes(k));
 
@@ -158,24 +156,19 @@ window.Combat = {
         const part = this.bodyParts[partIndex];
         const hitChance = this.calculateHitChance(partIndex);
         
-        // --- AMMO CHECK & AUTO SWITCH ---
         let wpn = this.getSafeWeapon();
         const wId = wpn.id.toLowerCase();
 
         const rangedKeywords = ['pistol', 'rifle', 'gun', 'shotgun', 'smg', 'minigun', 'blaster', 'sniper', 'cannon', 'gewehr', 'flinte', 'revolver'];
         const isRanged = rangedKeywords.some(k => wId.includes(k));
         
-        // Nur Munition verbrauchen, wenn Fernkampf UND nicht Alien Blaster (oder andere Ausnahmen)
         if(isRanged && wId !== 'alien_blaster') { 
              const hasAmmo = Game.removeFromInventory('ammo', 1);
              if(!hasAmmo) {
-                 // [UPDATE] 2300ms Duration für KLICK (2,3 Sekunden)
                  if(typeof UI.showCombatEffect === 'function') {
                      UI.showCombatEffect("* KLICK *", "MUNITION LEER!", "red", 2300);
                  }
                  this.log("WAFFE LEER! *KLICK*", "text-red-500 font-bold text-xl");
-                 
-                 // Automatischer Wechsel zur besten Nahkampfwaffe
                  setTimeout(() => {
                      if (typeof Game.switchToBestMelee === 'function') {
                          Game.switchToBestMelee();
@@ -183,7 +176,6 @@ window.Combat = {
                          this.log("Manuell wechseln!", "text-yellow-400");
                      }
                  }, 800);
-                 
                  return; 
              }
         }
@@ -218,7 +210,6 @@ window.Combat = {
                 dmg *= 2;
                 isCrit = true;
                 this.log(">> KRITISCHER TREFFER! <<", "text-yellow-400 font-bold animate-pulse");
-                // [UPDATE] 1500ms Duration für CRIT (1,5 Sekunden)
                 if(typeof UI.showCombatEffect === 'function') UI.showCombatEffect("CRITICAL!", "DOPPELTER SCHADEN", "yellow", 1500);
                 
                 if (Game.getPerkLevel('mysterious_stranger') > 0) {
@@ -252,7 +243,6 @@ window.Combat = {
         setTimeout(() => this.enemyTurn(), 1000);
     },
 
-    
     enemyTurn: function() {
         if(!this.enemy || this.enemy.hp <= 0) return;
         
@@ -263,7 +253,6 @@ window.Combat = {
 
         if(roll <= enemyHitChance) {
             let dmg = this.enemy.dmg;
-            
             let armor = 0;
             const slots = ['body', 'head', 'legs', 'feet', 'arms'];
             slots.forEach(s => {
@@ -276,60 +265,44 @@ window.Combat = {
             });
             
             let dmgTaken = Math.max(1, dmg - Math.floor(armor / 2));
-            
             Game.state.hp -= dmgTaken;
             this.log(`${this.enemy.name} trifft dich: -${dmgTaken} HP`, 'text-red-500 font-bold');
             this.triggerFeedback('damage', dmgTaken);
 
-// [2026-01-11 09:30] game_combat.js - FIXED: Correct slot reference (saveSlot) and deletion order
-
-// ... (vorheriger Code bleibt gleich bis zum HP Check in enemyTurn)
-
-        if(Game.state.hp <= 0) {
-            Game.state.hp = 0;
-            Game.state.isGameOver = true;
-            
-            console.log("☠️ PERMADEATH: Player died. Initiating deletion...");
-            
-            // 1. Korrekten Slot-Index aus dem State sichern
-            const slotToDelete = Game.state.saveSlot;
-            
-            // 2. Tod im Highscore registrieren
-            if(typeof Network !== 'undefined' && Network.active) {
-                Network.registerDeath(Game.state);
+            if(Game.state.hp <= 0) {
+                Game.state.hp = 0;
+                Game.state.isGameOver = true;
+                
+                console.log("☠️ PERMADEATH: Player died. Initiating deletion...");
+                
+                const slotToDelete = Game.state.saveSlot;
+                
+                if(typeof Network !== 'undefined' && Network.active) {
+                    Network.registerDeath(Game.state);
+                }
+                
+                // Löschvorgang in Firebase triggern BEVOR der State genullt wird
+                if (typeof Network !== 'undefined' && slotToDelete !== undefined && slotToDelete !== null && slotToDelete !== -1) {
+                    Network.deleteSlot(slotToDelete)
+                        .then(() => console.log(`✅ Slot ${slotToDelete} permanent entfernt.`))
+                        .catch(err => console.error("❌ Firebase Delete Error:", err));
+                }
+                
+                if(typeof UI !== 'undefined' && UI.showGameOver) {
+                    UI.showGameOver();
+                }
+                
+                Game.state.saveSlot = -1; 
+                setTimeout(() => { 
+                    Game.state = null; 
+                    localStorage.removeItem('pipboy_save');
+                }, 1000);
+                return;
             }
-            
-            // 3. Slot in Firebase löschen, bevor der lokale State genullt wird
-            if (typeof Network !== 'undefined' && slotToDelete !== undefined && slotToDelete !== null && slotToDelete !== -1) {
-                Network.deleteSlot(slotToDelete)
-                    .then(() => console.log(`✅ Slot ${slotToDelete} permanent entfernt.`))
-                    .catch(err => console.error("❌ Firebase Delete Error:", err));
-            }
-            
-            // 4. UI anzeigen
-            if(typeof UI !== 'undefined' && UI.showGameOver) {
-                UI.showGameOver();
-            }
-            
-            // 5. Slot entwerten, um automatische Autosaves zu verhindern
-            Game.state.saveSlot = -1; 
-            
-            // 6. State verzögert aufräumen
-            setTimeout(() => { 
-                Game.state = null; 
-                localStorage.removeItem('pipboy_save'); // Fallback für LocalStorage
-            }, 1000);
-            return;
-        }
-
-// ... (Rest bleibt gleich)
-
-            
         } else {
             this.log(`${this.enemy.name} verfehlt dich!`, 'text-blue-300');
             this.triggerFeedback('dodge');
         }
-
         this.turn = 'player';
         UI.update(); 
         this.render();
