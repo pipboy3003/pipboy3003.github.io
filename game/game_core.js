@@ -1,4 +1,4 @@
-// [2026-01-11 14:00:00] game_core.js - Strict Name Check with Custom UI & Clean Deletion
+// [2026-01-11 14:30:00] game_core.js - Stylized Popup for Name Conflict & Clean Deletion
 
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
@@ -72,10 +72,10 @@ window.Game = {
         this.isDirty = false;
     },
 
-    // KORREKTUR: Sauberes Löschen aus dem Leaderboard (kein X, einfach weg)
+    // KORREKTUR: Manuelles Löschen entfernt Leaderboard-Eintrag restlos
     hardReset: function() { 
         if(typeof Network !== 'undefined' && this.state) {
-            // 1. Leaderboard Eintrag entfernen (Clean Delete)
+            // 1. Leaderboard Eintrag entfernen
             if (this.state.playerName) {
                 Network.removeLeaderboardEntry(this.state.playerName);
             }
@@ -285,7 +285,7 @@ window.Game = {
         };
     },
 
-    // KORREKTUR: Async Init mit UI-Overlay statt alert()
+    // KORREKTUR: Async Init mit Custom Popup
     init: async function(saveData, spawnTarget=null, slotIndex=0, newName=null) {
         this.worldData = {};
         this.initCache();
@@ -304,7 +304,7 @@ window.Game = {
 
             if (saveData) {
                 this.state = saveData;
-                // ... (Load Logic gekürzt, bleibt identisch)
+                // ... (Load Logic - hier gekürzt für Übersicht, bleibt identisch)
                 if(!this.state.explored) this.state.explored = {};
                 if(!this.state.view) this.state.view = 'map';
                 if(typeof this.state.rads === 'undefined') this.state.rads = 0;
@@ -334,22 +334,52 @@ window.Game = {
             } else {
                 isNewGame = true;
                 
-                // --- NAMENS CHECK & UI OVERLAY ---
+                // --- NAMENS CHECK & POPUP UI ---
                 let finalName = newName || "SURVIVOR";
                 if(typeof Network !== 'undefined' && Network.active) {
                     const isFree = await Network.checkNameAvailability(finalName);
                     if (!isFree) {
-                        // Custom UI Overlay erstellen (statt alert)
+                        // Kleines, zentriertes Popup erstellen
                         const errDiv = document.createElement('div');
-                        errDiv.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; font-family:'Monospace'; color:#00ff00; text-align:center; padding:20px;";
+                        errDiv.id = "name-error-popup";
+                        errDiv.style.cssText = `
+                            position: fixed; 
+                            top: 50%; left: 50%; 
+                            transform: translate(-50%, -50%);
+                            width: 400px; 
+                            padding: 20px; 
+                            background: #000; 
+                            border: 2px solid #00ff00; 
+                            box-shadow: 0 0 15px #00ff00;
+                            color: #00ff00; 
+                            font-family: 'Monospace'; 
+                            text-align: center; 
+                            z-index: 10000;
+                        `;
                         errDiv.innerHTML = `
-                            <h1 style="font-size:2rem; margin-bottom:20px; text-shadow:0 0 5px #00ff00;">ZUGRIFF VERWEIGERT</h1>
-                            <p style="font-size:1.2rem; margin-bottom:10px;">ID "${finalName}" ist bereits im System registriert und aktiv.</p>
-                            <p style="font-size:1rem; color:#888; margin-bottom:40px;">Protokollfehler 101: Doppelte Identität erkannt.</p>
-                            <button onclick="location.reload()" style="background:#003300; color:#00ff00; border:2px solid #00ff00; padding:15px 30px; font-size:1.2rem; cursor:pointer; font-family:inherit; text-transform:uppercase;">System Neustart</button>
+                            <h3 style="margin-top:0; border-bottom: 1px solid #004400; padding-bottom: 10px;">FEHLER: ID KONFLIKT</h3>
+                            <p style="margin: 20px 0;">Der Name <strong>"${finalName}"</strong> ist bereits vergeben.</p>
+                            <p style="font-size: 0.9em; color: #00aa00;">Bitte wählen Sie eine andere Identifikation.</p>
+                            <button id="btn-err-back" style="
+                                margin-top: 20px; 
+                                background: #003300; 
+                                color: #00ff00; 
+                                border: 1px solid #00ff00; 
+                                padding: 8px 20px; 
+                                cursor: pointer; 
+                                font-family: inherit; 
+                                font-weight: bold;">
+                                ZURÜCK
+                            </button>
                         `;
                         document.body.appendChild(errDiv);
-                        return; // ABBRUCH der Initialisierung
+                        
+                        // Button Event zum Schließen
+                        document.getElementById('btn-err-back').addEventListener('click', () => {
+                            errDiv.remove();
+                        });
+
+                        return; // Initialisierung abbrechen, User bleibt im Menü
                     }
                 }
                 // ----------------------------------------
