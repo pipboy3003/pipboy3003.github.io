@@ -1,4 +1,4 @@
-// [2026-01-11 13:30:00] game_core.js - Strict Name Check & Clean Manual Deletion
+// [2026-01-11 14:00:00] game_core.js - Strict Name Check with Custom UI & Clean Deletion
 
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
@@ -72,10 +72,10 @@ window.Game = {
         this.isDirty = false;
     },
 
-    // KORREKTUR: Manuelles Löschen entfernt Leaderboard-Eintrag komplett
+    // KORREKTUR: Sauberes Löschen aus dem Leaderboard (kein X, einfach weg)
     hardReset: function() { 
         if(typeof Network !== 'undefined' && this.state) {
-            // 1. Leaderboard Eintrag entfernen
+            // 1. Leaderboard Eintrag entfernen (Clean Delete)
             if (this.state.playerName) {
                 Network.removeLeaderboardEntry(this.state.playerName);
             }
@@ -285,7 +285,7 @@ window.Game = {
         };
     },
 
-    // KORREKTUR: Async Init, damit wir auf den Namens-Check warten können
+    // KORREKTUR: Async Init mit UI-Overlay statt alert()
     init: async function(saveData, spawnTarget=null, slotIndex=0, newName=null) {
         this.worldData = {};
         this.initCache();
@@ -304,7 +304,7 @@ window.Game = {
 
             if (saveData) {
                 this.state = saveData;
-                // ... (Load Logic - hier gekürzt für Übersicht, bleibt identisch)
+                // ... (Load Logic gekürzt, bleibt identisch)
                 if(!this.state.explored) this.state.explored = {};
                 if(!this.state.view) this.state.view = 'map';
                 if(typeof this.state.rads === 'undefined') this.state.rads = 0;
@@ -334,17 +334,22 @@ window.Game = {
             } else {
                 isNewGame = true;
                 
-                // --- KORREKTUR: STRIKTER NAMENS-CHECK ---
-                // Keine Zufallsnamen mehr! Wenn vergeben, dann Fehler.
+                // --- NAMENS CHECK & UI OVERLAY ---
                 let finalName = newName || "SURVIVOR";
                 if(typeof Network !== 'undefined' && Network.active) {
                     const isFree = await Network.checkNameAvailability(finalName);
                     if (!isFree) {
-                        alert(`FEHLER: Der Name "${finalName}" ist bereits vergeben und noch aktiv.\nBitte wähle einen anderen Namen oder lösche den alten Charakter.`);
-                        // Wir brechen die Initialisierung ab!
-                        // Um den Flow nicht komplett zu crashen, laden wir neu oder setzen keinen State.
-                        location.reload(); 
-                        return; 
+                        // Custom UI Overlay erstellen (statt alert)
+                        const errDiv = document.createElement('div');
+                        errDiv.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; font-family:'Monospace'; color:#00ff00; text-align:center; padding:20px;";
+                        errDiv.innerHTML = `
+                            <h1 style="font-size:2rem; margin-bottom:20px; text-shadow:0 0 5px #00ff00;">ZUGRIFF VERWEIGERT</h1>
+                            <p style="font-size:1.2rem; margin-bottom:10px;">ID "${finalName}" ist bereits im System registriert und aktiv.</p>
+                            <p style="font-size:1rem; color:#888; margin-bottom:40px;">Protokollfehler 101: Doppelte Identität erkannt.</p>
+                            <button onclick="location.reload()" style="background:#003300; color:#00ff00; border:2px solid #00ff00; padding:15px 30px; font-size:1.2rem; cursor:pointer; font-family:inherit; text-transform:uppercase;">System Neustart</button>
+                        `;
+                        document.body.appendChild(errDiv);
+                        return; // ABBRUCH der Initialisierung
                     }
                 }
                 // ----------------------------------------
