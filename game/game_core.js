@@ -1,4 +1,4 @@
-// [2026-01-11 14:30:00] game_core.js - Stylized Popup for Name Conflict & Clean Deletion
+// [2026-01-11 14:45:00] game_core.js - Styled Popup, No Reload & Clean Deletion
 
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
@@ -72,10 +72,10 @@ window.Game = {
         this.isDirty = false;
     },
 
-    // KORREKTUR: Manuelles Löschen entfernt Leaderboard-Eintrag restlos
+    // KORREKTUR: Sauberes Löschen ohne "X" im Leaderboard
     hardReset: function() { 
         if(typeof Network !== 'undefined' && this.state) {
-            // 1. Leaderboard Eintrag entfernen
+            // 1. Leaderboard Eintrag komplett entfernen
             if (this.state.playerName) {
                 Network.removeLeaderboardEntry(this.state.playerName);
             }
@@ -285,7 +285,7 @@ window.Game = {
         };
     },
 
-    // KORREKTUR: Async Init mit Custom Popup
+    // KORREKTUR: Async Init mit Custom Popup & Hintergrund-Schutz
     init: async function(saveData, spawnTarget=null, slotIndex=0, newName=null) {
         this.worldData = {};
         this.initCache();
@@ -304,7 +304,7 @@ window.Game = {
 
             if (saveData) {
                 this.state = saveData;
-                // ... (Load Logic - hier gekürzt für Übersicht, bleibt identisch)
+                // ... Load Logic (gekürzt) ...
                 if(!this.state.explored) this.state.explored = {};
                 if(!this.state.view) this.state.view = 'map';
                 if(typeof this.state.rads === 'undefined') this.state.rads = 0;
@@ -334,55 +334,62 @@ window.Game = {
             } else {
                 isNewGame = true;
                 
-                // --- NAMENS CHECK & POPUP UI ---
+                // --- KORREKTUR: STYLISCHES POPUP ---
                 let finalName = newName || "SURVIVOR";
                 if(typeof Network !== 'undefined' && Network.active) {
                     const isFree = await Network.checkNameAvailability(finalName);
                     if (!isFree) {
-                        // Kleines, zentriertes Popup erstellen
                         const errDiv = document.createElement('div');
                         errDiv.id = "name-error-popup";
+                        // Stil anpassen: Inherit Font, Grün auf Schwarz, Zentriert
                         errDiv.style.cssText = `
                             position: fixed; 
                             top: 50%; left: 50%; 
                             transform: translate(-50%, -50%);
-                            width: 400px; 
+                            width: 320px; 
                             padding: 20px; 
-                            background: #000; 
-                            border: 2px solid #00ff00; 
-                            box-shadow: 0 0 15px #00ff00;
-                            color: #00ff00; 
-                            font-family: 'Monospace'; 
+                            background: rgba(0, 0, 0, 0.95); 
+                            border: 2px solid #4ade80; 
+                            box-shadow: 0 0 15px rgba(74, 222, 128, 0.5);
+                            color: #4ade80; 
+                            font-family: inherit; 
                             text-align: center; 
-                            z-index: 10000;
+                            z-index: 99999;
+                            border-radius: 4px;
                         `;
                         errDiv.innerHTML = `
-                            <h3 style="margin-top:0; border-bottom: 1px solid #004400; padding-bottom: 10px;">FEHLER: ID KONFLIKT</h3>
-                            <p style="margin: 20px 0;">Der Name <strong>"${finalName}"</strong> ist bereits vergeben.</p>
-                            <p style="font-size: 0.9em; color: #00aa00;">Bitte wählen Sie eine andere Identifikation.</p>
+                            <h3 style="margin-top:0; border-bottom: 1px solid #225522; padding-bottom: 10px; font-size: 1.1em; letter-spacing: 1px;">FEHLER: ID KONFLIKT</h3>
+                            <p style="margin: 20px 0; font-size: 0.9em; line-height: 1.4;">Der Name <strong>"${finalName}"</strong> ist bereits registriert.</p>
                             <button id="btn-err-back" style="
-                                margin-top: 20px; 
-                                background: #003300; 
-                                color: #00ff00; 
-                                border: 1px solid #00ff00; 
-                                padding: 8px 20px; 
+                                margin-top: 10px; 
+                                background: transparent; 
+                                color: #4ade80; 
+                                border: 1px solid #4ade80; 
+                                padding: 5px 15px; 
                                 cursor: pointer; 
                                 font-family: inherit; 
-                                font-weight: bold;">
+                                font-size: 0.9em;
+                                text-transform: uppercase;
+                                transition: all 0.2s;">
                                 ZURÜCK
                             </button>
                         `;
                         document.body.appendChild(errDiv);
                         
-                        // Button Event zum Schließen
-                        document.getElementById('btn-err-back').addEventListener('click', () => {
+                        // Button Hover Effekt
+                        const btn = document.getElementById('btn-err-back');
+                        btn.onmouseover = () => { btn.style.background = "#4ade80"; btn.style.color = "#000"; };
+                        btn.onmouseout = () => { btn.style.background = "transparent"; btn.style.color = "#4ade80"; };
+
+                        // Schließen ohne Neustart
+                        btn.addEventListener('click', () => {
                             errDiv.remove();
                         });
 
-                        return; // Initialisierung abbrechen, User bleibt im Menü
+                        return; // ABBRUCH: Game State wird nicht erstellt, Map wird nicht geladen
                     }
                 }
-                // ----------------------------------------
+                // ------------------------------------
 
                 const fistDef = this.items['fists'];
                 const standardFists = fistDef ? { ...fistDef, id: 'fists', count: 1 } : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon', count: 1 };
