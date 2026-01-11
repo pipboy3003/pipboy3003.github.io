@@ -1,4 +1,4 @@
-// [2026-01-11 14:45:00] game_core.js - Styled Popup, No Reload & Clean Deletion
+// [2026-01-11 15:15:00] game_core.js - Styled Popup (Monofonto), UI Restore & Clean Deletion
 
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
@@ -72,14 +72,11 @@ window.Game = {
         this.isDirty = false;
     },
 
-    // KORREKTUR: Sauberes Löschen ohne "X" im Leaderboard
     hardReset: function() { 
         if(typeof Network !== 'undefined' && this.state) {
-            // 1. Leaderboard Eintrag komplett entfernen
-            if (this.state.playerName) {
+            if (this.state.playerName && typeof Network.removeLeaderboardEntry === 'function') {
                 Network.removeLeaderboardEntry(this.state.playerName);
             }
-            // 2. Spielstand löschen
             Network.deleteSave(); 
         }
         this.state = null; 
@@ -285,7 +282,6 @@ window.Game = {
         };
     },
 
-    // KORREKTUR: Async Init mit Custom Popup & Hintergrund-Schutz
     init: async function(saveData, spawnTarget=null, slotIndex=0, newName=null) {
         this.worldData = {};
         this.initCache();
@@ -304,7 +300,7 @@ window.Game = {
 
             if (saveData) {
                 this.state = saveData;
-                // ... Load Logic (gekürzt) ...
+                // ... Load Logic (Identisch) ...
                 if(!this.state.explored) this.state.explored = {};
                 if(!this.state.view) this.state.view = 'map';
                 if(typeof this.state.rads === 'undefined') this.state.rads = 0;
@@ -331,66 +327,75 @@ window.Game = {
                 this.syncAmmo();
                 this.recalcStats();
                 if(typeof UI !== 'undefined') UI.log(">> Spielstand geladen.", "text-cyan-400");
+
             } else {
+                // NEUES SPIEL
                 isNewGame = true;
-                
-                // --- KORREKTUR: STYLISCHES POPUP ---
                 let finalName = newName || "SURVIVOR";
+                
+                // 1. NAMENS CHECK
                 if(typeof Network !== 'undefined' && Network.active) {
                     const isFree = await Network.checkNameAvailability(finalName);
+                    
                     if (!isFree) {
+                        // === FEHLER UI ===
                         const errDiv = document.createElement('div');
                         errDiv.id = "name-error-popup";
-                        // Stil anpassen: Inherit Font, Grün auf Schwarz, Zentriert
+                        // Styling: Monofonto, Pip-Boy Grün (#33ff33), Schwarz
                         errDiv.style.cssText = `
                             position: fixed; 
                             top: 50%; left: 50%; 
                             transform: translate(-50%, -50%);
-                            width: 320px; 
+                            width: 380px; 
                             padding: 20px; 
-                            background: rgba(0, 0, 0, 0.95); 
-                            border: 2px solid #4ade80; 
-                            box-shadow: 0 0 15px rgba(74, 222, 128, 0.5);
-                            color: #4ade80; 
-                            font-family: inherit; 
+                            background: #000; 
+                            border: 2px solid #33ff33; 
+                            box-shadow: 0 0 10px rgba(51, 255, 51, 0.4);
+                            color: #33ff33; 
+                            font-family: 'Monofonto', 'Courier New', monospace; 
                             text-align: center; 
-                            z-index: 99999;
-                            border-radius: 4px;
+                            z-index: 100000;
+                            border-radius: 2px;
                         `;
+                        
                         errDiv.innerHTML = `
-                            <h3 style="margin-top:0; border-bottom: 1px solid #225522; padding-bottom: 10px; font-size: 1.1em; letter-spacing: 1px;">FEHLER: ID KONFLIKT</h3>
-                            <p style="margin: 20px 0; font-size: 0.9em; line-height: 1.4;">Der Name <strong>"${finalName}"</strong> ist bereits registriert.</p>
-                            <button id="btn-err-back" style="
-                                margin-top: 10px; 
-                                background: transparent; 
-                                color: #4ade80; 
-                                border: 1px solid #4ade80; 
-                                padding: 5px 15px; 
+                            <h3 style="margin:0 0 15px 0; border-bottom:1px solid #33ff33; padding-bottom: 10px; font-size: 1.4em; letter-spacing: 1px;">FEHLER: ID KONFLIKT</h3>
+                            <p style="margin: 20px 0; font-size: 1.1em; line-height: 1.4;">Der Name<br><strong style="color:#fff;">"${finalName}"</strong><br>ist bereits im System registriert.</p>
+                            <button id="btn-popup-back" style="
+                                margin-top: 15px; 
+                                background: #000; 
+                                color: #33ff33; 
+                                border: 1px solid #33ff33; 
+                                padding: 8px 25px; 
                                 cursor: pointer; 
                                 font-family: inherit; 
-                                font-size: 0.9em;
+                                font-size: 1.2em;
                                 text-transform: uppercase;
                                 transition: all 0.2s;">
                                 ZURÜCK
                             </button>
                         `;
+                        
                         document.body.appendChild(errDiv);
                         
-                        // Button Hover Effekt
-                        const btn = document.getElementById('btn-err-back');
-                        btn.onmouseover = () => { btn.style.background = "#4ade80"; btn.style.color = "#000"; };
-                        btn.onmouseout = () => { btn.style.background = "transparent"; btn.style.color = "#4ade80"; };
+                        const btn = document.getElementById('btn-popup-back');
+                        btn.onmouseover = () => { btn.style.background = "#33ff33"; btn.style.color = "#000"; };
+                        btn.onmouseout = () => { btn.style.background = "#000"; btn.style.color = "#33ff33"; };
 
-                        // Schließen ohne Neustart
                         btn.addEventListener('click', () => {
                             errDiv.remove();
+                            // VERSUCH: Menü wiederherstellen (falls es schon hidden war)
+                            const startScreen = document.getElementById('spawn-screen');
+                            if(startScreen) startScreen.style.display = 'flex';
+                            const loadingOverlay = document.getElementById('loading-overlay');
+                            if(loadingOverlay) loadingOverlay.style.display = 'none';
                         });
 
-                        return; // ABBRUCH: Game State wird nicht erstellt, Map wird nicht geladen
+                        return; // ABBRUCH: Wichtigstes Element, verhindert State-Erstellung
                     }
                 }
-                // ------------------------------------
 
+                // 2. STATE ERSTELLUNG (Nur wenn Name frei)
                 const fistDef = this.items['fists'];
                 const standardFists = fistDef ? { ...fistDef, id: 'fists', count: 1 } : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon', count: 1 };
                 const suitDef = this.items['vault_suit'];
@@ -431,16 +436,23 @@ window.Game = {
                 if(typeof UI !== 'undefined') UI.log(">> Neuer Charakter erstellt.", "text-green-400");
                 this.saveGame(true); 
             }
-            if (isNewGame) { if(typeof this.loadSector === 'function') this.loadSector(this.state.sector.x, this.state.sector.y); } 
-            else { 
-                if(this.renderStaticMap) this.renderStaticMap(); 
-                if(this.reveal) this.reveal(this.state.player.x, this.state.player.y); 
-            }
-            if(typeof UI !== 'undefined') {
-                UI.switchView('map').then(() => { 
-                    if(UI.els.gameOver) UI.els.gameOver.classList.add('hidden'); 
-                    if(isNewGame) { setTimeout(() => UI.showPermadeathWarning(), 500); }
-                });
+
+            // NUR STARTEN WENN STATE EXISTIERT
+            if (this.state) {
+                if (isNewGame) { 
+                    if(typeof this.loadSector === 'function') this.loadSector(this.state.sector.x, this.state.sector.y); 
+                } 
+                else { 
+                    if(this.renderStaticMap) this.renderStaticMap(); 
+                    if(this.reveal) this.reveal(this.state.player.x, this.state.player.y); 
+                }
+
+                if(typeof UI !== 'undefined') {
+                    UI.switchView('map').then(() => { 
+                        if(UI.els.gameOver) UI.els.gameOver.classList.add('hidden'); 
+                        if(isNewGame) { setTimeout(() => UI.showPermadeathWarning(), 500); }
+                    });
+                }
             }
         } catch(e) {
             console.error(e);
