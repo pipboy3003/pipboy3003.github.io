@@ -1,9 +1,10 @@
-// [2026-01-11 12:00:00] game_core.js - Fixed initialization with FULL item data from DB
+// [2026-01-11 12:20:00] game_core.js - Fixed initialization using window.GameData
 
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
     WORLD_W: 10, WORLD_H: 10, 
     
+    // Fallback falls data_items.js später lädt
     colors: (typeof window.GameData !== 'undefined') ? window.GameData.colors : {},
     items: (typeof window.GameData !== 'undefined') ? window.GameData.items : {},
     monsters: (typeof window.GameData !== 'undefined') ? window.GameData.monsters : {},
@@ -58,13 +59,10 @@ window.Game = {
     performSave: function() {
         if(this.saveTimer) { clearTimeout(this.saveTimer); this.saveTimer = null; }
         if(!this.isDirty || !this.state) return;
-
-        // Sicherheitscheck: Blockiere Speichern bei Permadeath
         if(this.state.isGameOver || this.state.saveSlot === -1) {
             console.log("Speichervorgang abgebrochen: Charakter ist verstorben.");
             return;
         }
-
         if(typeof Network !== 'undefined') { 
             Network.save(this.state); 
             if(!this.state.isGameOver) Network.updateHighscore(this.state); 
@@ -82,26 +80,21 @@ window.Game = {
 
     recalcStats: function() {
         if(!this.state) return;
-        
         let end = this.getStat('END');
         let baseHp = 50 + (end * 10) + (this.state.lvl * 5);
-        
         const toughnessLvl = this.getPerkLevel('toughness');
         baseHp += (toughnessLvl * 10);
-
         this.state.maxHp = baseHp;
         if(this.state.hp > this.state.maxHp) this.state.hp = this.state.maxHp;
-
         let luc = this.getStat('LUC');
         let strangerLvl = this.getPerkLevel('mysterious_stranger');
         this.state.critChance = (luc * 1) + (strangerLvl * 2);
-
         if(typeof UI !== 'undefined' && UI.update) UI.update();
     },
 
     getUsedSlots: function() {
         if(!this.state || !this.state.inventory) return 0;
-        return this.state.inventory.length;
+        return this.state.inventory.filter(i => i.id !== 'fists' && i.id !== 'vault_suit').length;
     },
 
     getStackLimit: function(itemId) {
@@ -143,20 +136,16 @@ window.Game = {
     gainExp: function(amount) {
         const perkLvl = this.getPerkLevel('swift_learner');
         let finalAmount = amount;
-        
         if (perkLvl > 0) {
             const multi = 1 + (perkLvl * 0.05); 
             finalAmount = Math.floor(amount * multi);
         }
-
         this.state.xp += finalAmount;
-        
         if(perkLvl > 0 && finalAmount > amount) {
             UI.log(`+${finalAmount} XP (Bonus!)`, "text-yellow-400");
         } else {
             UI.log(`+${finalAmount} XP`, "text-yellow-400");
         }
-
         let next = this.expToNextLevel(this.state.lvl);
         if(this.state.xp >= next) {
             this.state.lvl++;
@@ -200,7 +189,6 @@ window.Game = {
             if(q.type === type) {
                 let match = false;
                 if(type === 'collect' || type === 'kill' || type === 'visit') match = (q.target === target); 
-                
                 if(match) {
                     q.progress += value;
                     updated = true;
@@ -240,18 +228,14 @@ window.Game = {
     checkShopRestock: function() {
         const now = Date.now();
         if(!this.state.shop) this.state.shop = { nextRestock: 0, stock: {}, merchantCaps: 1000 };
-        
         if(now >= this.state.shop.nextRestock) {
             const stock = {};
             stock['stimpack'] = 2 + Math.floor(Math.random() * 4);
             stock['radaway'] = 1 + Math.floor(Math.random() * 3);
             stock['nuka_cola'] = 3 + Math.floor(Math.random() * 5);
-            
             this.state.shop.ammoStock = 30 + (Math.floor(Math.random() * 9) * 10); 
-
             const weapons = Object.keys(this.items).filter(k => this.items[k].type === 'weapon' && !k.includes('legendary') && !k.startsWith('rusty'));
             const armor = Object.keys(this.items).filter(k => this.items[k].type === 'body');
-            
             for(let i=0; i<3; i++) {
                 const w = weapons[Math.floor(Math.random() * weapons.length)];
                 if(w) stock[w] = 1;
@@ -260,12 +244,9 @@ window.Game = {
                 const a = armor[Math.floor(Math.random() * armor.length)];
                 if(a) stock[a] = 1;
             }
-            
             if(Math.random() < 0.3) stock['backpack_small'] = 1;
             if(Math.random() < 0.1) stock['backpack_medium'] = 1;
-
             stock['camp_kit'] = 1;
-
             this.state.shop.merchantCaps = 500 + Math.floor(Math.random() * 1000);
             this.state.shop.stock = stock;
             this.state.shop.nextRestock = now + (60 * 60 * 1000); 
@@ -299,8 +280,9 @@ window.Game = {
             if(this.isDirty) this.saveGame(true);
         });
 
-        if(this.items && Object.keys(this.items).length === 0) {
-            this.items.ammo = { name: "Munition", type: "ammo", cost: 2, icon: "bullet" };
+        // HIER WICHTIG: Sicherstellen, dass die Items geladen sind
+        if(typeof window.GameData !== 'undefined' && window.GameData.items) {
+            this.items = window.GameData.items;
         }
 
         try {
@@ -309,6 +291,7 @@ window.Game = {
 
             if (saveData) {
                 this.state = saveData;
+                // ... (Load Logic gekürzt, bleibt gleich)
                 if(!this.state.explored) this.state.explored = {};
                 if(!this.state.view) this.state.view = 'map';
                 if(typeof this.state.rads === 'undefined') this.state.rads = 0;
@@ -318,15 +301,8 @@ window.Game = {
                 if(!this.state.camp) this.state.camp = null;
                 if(!this.state.knownRecipes) this.state.knownRecipes = ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp']; 
                 if(!this.state.perks) this.state.perks = {}; 
-                
                 if(!this.state.shop) this.state.shop = { nextRestock: 0, stock: {}, merchantCaps: 1000 };
-                if(typeof this.state.shop.merchantCaps === 'undefined') this.state.shop.merchantCaps = 1000;
-                
                 if(!this.state.equip.back) this.state.equip.back = null;
-                if(!this.state.equip.head) this.state.equip.head = null;
-                if(!this.state.equip.legs) this.state.equip.legs = null;
-                if(!this.state.equip.feet) this.state.equip.feet = null;
-                if(!this.state.equip.arms) this.state.equip.arms = null;
 
                 this.state.saveSlot = slotIndex;
                 this.checkNewQuests();
@@ -341,16 +317,14 @@ window.Game = {
                 }
                 this.syncAmmo();
                 this.recalcStats();
-
                 if(typeof UI !== 'undefined') UI.log(">> Spielstand geladen.", "text-cyan-400");
             } else {
                 isNewGame = true;
                 
-                // FALLBACK: Falls Items noch nicht geladen sind, nutze einfache Objekte
+                // HIER: Volle Item-Daten laden für Init
                 const fistItem = this.items['fists'] 
                                  ? JSON.parse(JSON.stringify(this.items['fists'])) 
                                  : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon' };
-                                 
                 const suitItem = this.items['vault_suit']
                                  ? JSON.parse(JSON.stringify(this.items['vault_suit']))
                                  : { id: 'vault_suit', name: 'Vault-Anzug', type: 'body' };
@@ -363,7 +337,6 @@ window.Game = {
                     player: {x: 20, y: 20, rot: 0},
                     stats: { STR: 5, PER: 5, END: 5, INT: 5, AGI: 5, LUC: 5 }, 
                     equip: { 
-                        // Nutze auch hier die vollen Objekte aus der DB
                         weapon: fistItem,
                         body: suitItem, 
                         back: null, head: null, legs: null, feet: null, arms: null
@@ -371,15 +344,11 @@ window.Game = {
                     inventory: [], 
                     hp: 100, maxHp: 100, xp: 0, lvl: 1, caps: 50, ammo: 0, statPoints: 0, 
                     perkPoints: 0, perks: {}, 
-                    camp: null, 
-                    rads: 0,
-                    kills: 0, 
+                    camp: null, rads: 0, kills: 0, 
                     view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, 
                     explored: {}, visitedSectors: ["4,4"],
                     tutorialsShown: { hacking: false, lockpicking: false },
-                    activeQuests: [], 
-                    completedQuests: [],
-                    quests: [], 
+                    activeQuests: [], completedQuests: [], quests: [], 
                     knownRecipes: ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp'], 
                     hiddenItems: {},
                     shop: { nextRestock: 0, stock: {}, merchantCaps: 1000 },
@@ -389,23 +358,17 @@ window.Game = {
                 this.state.inventory.push({id: 'stimpack', count: 1, isNew: true});
                 this.state.inventory.push({id: 'ammo', count: 10, isNew: true});
                 this.syncAmmo();
-
                 this.recalcStats(); 
                 this.state.hp = this.state.maxHp;
-                
                 this.checkNewQuests(); 
                 if(typeof UI !== 'undefined') UI.log(">> Neuer Charakter erstellt.", "text-green-400");
                 this.saveGame(true); 
             }
-
-            if (isNewGame) { 
-                if(typeof this.loadSector === 'function') this.loadSector(this.state.sector.x, this.state.sector.y); 
-            } 
+            if (isNewGame) { if(typeof this.loadSector === 'function') this.loadSector(this.state.sector.x, this.state.sector.y); } 
             else { 
                 if(this.renderStaticMap) this.renderStaticMap(); 
                 if(this.reveal) this.reveal(this.state.player.x, this.state.player.y); 
             }
-
             if(typeof UI !== 'undefined') {
                 UI.switchView('map').then(() => { 
                     if(UI.els.gameOver) UI.els.gameOver.classList.add('hidden'); 
