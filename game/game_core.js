@@ -1,4 +1,4 @@
-// [2026-01-11 11:10:00] game_core.js - Fixed initialization for standard gear & dead character safety
+// [2026-01-11 11:30:00] game_core.js - Fixed initialization for standard gear & dead character safety
 
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
