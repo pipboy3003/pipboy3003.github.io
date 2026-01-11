@@ -140,21 +140,16 @@ const Network = {
             .catch(e => console.error("Save Error:", e));
     },
     
-// [2026-01-11 08:52] network.js - Adjusted deleteSave to use state.saveSlot
-
-// ... (Suche die deleteSave Funktion am Ende der Datei)
+// [2026-01-11 09:40] network.js - Adjusted deleteSave to use state.saveSlot
 
     deleteSave: function() {
         if(!this.active || !this.myId) return;
-        // Nutze saveSlot aus dem state
+        // Nutze saveSlot statt dem undefinierten selectedSlot
         if (typeof Game !== 'undefined' && Game.state && Game.state.saveSlot !== undefined) {
             this.deleteSlot(Game.state.saveSlot);
-        } else {
-            console.warn("deleteSave: Kein aktiver Slot im Game.state gefunden.");
         }
     },
 
-// ...
 
 
 
