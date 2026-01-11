@@ -1,4 +1,4 @@
-// [2026-01-11 11:30:00] game_core.js - Fixed initialization for standard gear & dead character safety
+// [2026-01-11 12:00:00] game_core.js - Fixed initialization with FULL item data from DB
 
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
@@ -345,6 +345,16 @@ window.Game = {
                 if(typeof UI !== 'undefined') UI.log(">> Spielstand geladen.", "text-cyan-400");
             } else {
                 isNewGame = true;
+                
+                // FALLBACK: Falls Items noch nicht geladen sind, nutze einfache Objekte
+                const fistItem = this.items['fists'] 
+                                 ? JSON.parse(JSON.stringify(this.items['fists'])) 
+                                 : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon' };
+                                 
+                const suitItem = this.items['vault_suit']
+                                 ? JSON.parse(JSON.stringify(this.items['vault_suit']))
+                                 : { id: 'vault_suit', name: 'Vault-Anzug', type: 'body' };
+
                 this.state = {
                     saveSlot: slotIndex,
                     playerName: newName || "SURVIVOR",
@@ -353,9 +363,9 @@ window.Game = {
                     player: {x: 20, y: 20, rot: 0},
                     stats: { STR: 5, PER: 5, END: 5, INT: 5, AGI: 5, LUC: 5 }, 
                     equip: { 
-                        // Standard-Ausrüstung ohne Inventarverbrauch
-                        weapon: { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon' }, 
-                        body: { id: 'vault_suit', name: 'Vault-Anzug', def: 1, type: 'body' }, 
+                        // Nutze auch hier die vollen Objekte aus der DB
+                        weapon: fistItem,
+                        body: suitItem, 
                         back: null, head: null, legs: null, feet: null, arms: null
                     }, 
                     inventory: [], 
