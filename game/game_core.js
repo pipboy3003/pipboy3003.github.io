@@ -1,4 +1,4 @@
-// [2026-01-11 13:15:00] game_core.js - Added Manual Deletion (Abandon) Logic and Name Check
+// [2026-01-11 13:30:00] game_core.js - Strict Name Check & Clean Manual Deletion
 
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
@@ -72,18 +72,17 @@ window.Game = {
         this.isDirty = false;
     },
 
-    // KORREKTUR: Manuelles Löschen setzt Status auf 'abandoned' (X)
+    // KORREKTUR: Manuelles Löschen entfernt Leaderboard-Eintrag komplett
     hardReset: function() { 
-        if(typeof Network !== 'undefined') {
-            if (this.state) {
-                // 1. Als "Aufgegeben" markieren
-                Network.registerAbandonment(this.state);
+        if(typeof Network !== 'undefined' && this.state) {
+            // 1. Leaderboard Eintrag entfernen
+            if (this.state.playerName) {
+                Network.removeLeaderboardEntry(this.state.playerName);
             }
-            // 2. Löschen
+            // 2. Spielstand löschen
             Network.deleteSave(); 
         }
         this.state = null; 
-        // Kurze Verzögerung für Netzwerk-Call
         setTimeout(() => location.reload(), 500);
     },
 
@@ -286,7 +285,7 @@ window.Game = {
         };
     },
 
-    // KORREKTUR: Async Init für Namens-Check
+    // KORREKTUR: Async Init, damit wir auf den Namens-Check warten können
     init: async function(saveData, spawnTarget=null, slotIndex=0, newName=null) {
         this.worldData = {};
         this.initCache();
@@ -335,31 +334,29 @@ window.Game = {
             } else {
                 isNewGame = true;
                 
-                // --- NAMENS CHECK BEI NEUEM SPIEL ---
+                // --- KORREKTUR: STRIKTER NAMENS-CHECK ---
+                // Keine Zufallsnamen mehr! Wenn vergeben, dann Fehler.
                 let finalName = newName || "SURVIVOR";
                 if(typeof Network !== 'undefined' && Network.active) {
                     const isFree = await Network.checkNameAvailability(finalName);
                     if (!isFree) {
-                        // Name belegt? Hänge Zufallszahl an, um Doppelung zu verhindern
-                        const randomSuffix = Math.floor(Math.random() * 1000);
-                        finalName = `${finalName}_${randomSuffix}`;
-                        if(typeof UI !== 'undefined') UI.log(`Name vergeben. Geändert zu: ${finalName}`, "text-orange-400 blink-red");
+                        alert(`FEHLER: Der Name "${finalName}" ist bereits vergeben und noch aktiv.\nBitte wähle einen anderen Namen oder lösche den alten Charakter.`);
+                        // Wir brechen die Initialisierung ab!
+                        // Um den Flow nicht komplett zu crashen, laden wir neu oder setzen keinen State.
+                        location.reload(); 
+                        return; 
                     }
                 }
-                // ------------------------------------
+                // ----------------------------------------
 
                 const fistDef = this.items['fists'];
-                const standardFists = fistDef 
-                                      ? { ...fistDef, id: 'fists', count: 1 } 
-                                      : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon', count: 1 };
+                const standardFists = fistDef ? { ...fistDef, id: 'fists', count: 1 } : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon', count: 1 };
                 const suitDef = this.items['vault_suit'];
-                const standardSuit = suitDef 
-                                     ? { ...suitDef, id: 'vault_suit', count: 1 } 
-                                     : { id: 'vault_suit', name: 'Vault-Anzug', type: 'body', count: 1 };
+                const standardSuit = suitDef ? { ...suitDef, id: 'vault_suit', count: 1 } : { id: 'vault_suit', name: 'Vault-Anzug', type: 'body', count: 1 };
 
                 this.state = {
                     saveSlot: slotIndex,
-                    playerName: finalName, // Nutzt den geprüften Namen
+                    playerName: finalName, 
                     sector: {x: 4, y: 4}, startSector: {x: 4, y: 4},
                     worldPOIs: defaultPOIs,
                     player: {x: 20, y: 20, rot: 0},
