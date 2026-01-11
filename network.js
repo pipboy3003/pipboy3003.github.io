@@ -1,4 +1,4 @@
-// [2026-01-11 13:30:00] network.js - Enforcing Unique Names & Clean Deletion
+// [2026-01-11 14:05:00] network.js - Enforcing Unique Names & Clean Deletion
 
 const Network = {
     db: null,
@@ -37,9 +37,9 @@ const Network = {
     register: async function(email, password, name) {
         if(!this.active) throw new Error("Netzwerk nicht aktiv (Init Failed)");
         try {
-            // Check: Name darf nicht existieren (egal ob User eingeloggt ist oder nicht)
+            // Check Name vor Registrierung
             const isFree = await this.checkNameAvailability(name);
-            if (!isFree) throw new Error("Name vergeben! Ein Charakter mit diesem Namen lebt bereits.");
+            if (!isFree) throw new Error("Dieser Name ist bereits vergeben (Charakter lebt noch).");
 
             const userCredential = await this.auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
@@ -68,7 +68,7 @@ const Network = {
         }
     },
     
-    // Prüft, ob ein Name im Leaderboard als 'alive' markiert ist
+    // Prüft, ob ein Name bereits von einem LEBENDEN Charakter genutzt wird
     checkNameAvailability: async function(charName) {
         if (!this.db || !charName) return true;
         const safeName = charName.replace(/[.#$/[\]]/g, "_");
@@ -77,8 +77,7 @@ const Network = {
         const snap = await ref.once('value');
         if (snap.exists()) {
             const val = snap.val();
-            // Wenn Status 'alive', ist der Name gesperrt.
-            // Tote oder gelöschte Charaktere geben den Namen frei (wenn Eintrag weg ist).
+            // Nur wenn der Charakter noch lebt, ist der Name blockiert
             if (val.status === 'alive') {
                 return false; 
             }
@@ -118,12 +117,11 @@ const Network = {
         this.db.ref(`leaderboard/${safeName}`).set(entry);
     },
 
-    // NEU: Entfernt den Eintrag komplett aus dem Leaderboard (für manuelles Löschen)
+    // NEU: Entfernt den Eintrag komplett aus dem Leaderboard
     removeLeaderboardEntry: function(charName) {
         if(!this.active || !this.myId || !charName) return;
         const safeName = charName.replace(/[.#$/[\]]/g, "_");
         
-        // Wir löschen den Eintrag unwiderruflich
         this.db.ref(`leaderboard/${safeName}`).remove()
             .then(() => console.log(`Leaderboard-Eintrag für ${charName} entfernt.`))
             .catch(e => console.error("Fehler beim Entfernen vom Leaderboard:", e));
@@ -137,6 +135,7 @@ const Network = {
         const snap = await ref.once('value');
         if(snap.exists()) {
             const val = snap.val();
+            // Wenn Eintrag mir gehört und tot ist, weg damit
             if(val.owner === this.myId && val.status === 'dead') {
                 await ref.remove();
             }
