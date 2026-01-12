@@ -1,4 +1,4 @@
-// [2026-01-11 11:10:00] game_core.js - Fixed initialization for standard gear & dead character safety
+// [2026-01-12 11:30:00] game_core.js - Added Standard Gear Initialization from GameData
 
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
@@ -59,7 +59,6 @@ window.Game = {
         if(this.saveTimer) { clearTimeout(this.saveTimer); this.saveTimer = null; }
         if(!this.isDirty || !this.state) return;
 
-        // Sicherheitscheck: Blockiere Speichern bei Permadeath
         if(this.state.isGameOver || this.state.saveSlot === -1) {
             console.log("Speichervorgang abgebrochen: Charakter ist verstorben.");
             return;
@@ -328,6 +327,10 @@ window.Game = {
                 if(!this.state.equip.feet) this.state.equip.feet = null;
                 if(!this.state.equip.arms) this.state.equip.arms = null;
 
+                // FIX: Stelle sicher, dass "weapon" und "body" niemals null sind (Retroactive Fix)
+                if(!this.state.equip.weapon) this.state.equip.weapon = { ...this.items['fists'] };
+                if(!this.state.equip.body) this.state.equip.body = { ...this.items['vault_suit'] };
+
                 this.state.saveSlot = slotIndex;
                 this.checkNewQuests();
                 
@@ -345,6 +348,12 @@ window.Game = {
                 if(typeof UI !== 'undefined') UI.log(">> Spielstand geladen.", "text-cyan-400");
             } else {
                 isNewGame = true;
+                
+                // STANDARD AUSRÜSTUNG HIER DEFINIEREN
+                // Holt die echten Daten aus data_items.js statt Hardcoding
+                const startWeapon = this.items['fists'] ? { ...this.items['fists'] } : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon' };
+                const startBody = this.items['vault_suit'] ? { ...this.items['vault_suit'] } : { id: 'vault_suit', name: 'Vault-Anzug', def: 1, type: 'body' };
+
                 this.state = {
                     saveSlot: slotIndex,
                     playerName: newName || "SURVIVOR",
@@ -353,9 +362,9 @@ window.Game = {
                     player: {x: 20, y: 20, rot: 0},
                     stats: { STR: 5, PER: 5, END: 5, INT: 5, AGI: 5, LUC: 5 }, 
                     equip: { 
-                        // Standard-Ausrüstung ohne Inventarverbrauch
-                        weapon: { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon' }, 
-                        body: { id: 'vault_suit', name: 'Vault-Anzug', def: 1, type: 'body' }, 
+                        // HIER: Nutzung der Standard-Items
+                        weapon: startWeapon, 
+                        body: startBody, 
                         back: null, head: null, legs: null, feet: null, arms: null
                     }, 
                     inventory: [], 
