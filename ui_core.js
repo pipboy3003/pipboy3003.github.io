@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-10 13:05:00 - ui_core.js - Boot-Sequenz Absicherung (isSystemReady) integriert
+// [TIMESTAMP] 2026-01-12 17:45:00 - ui_core.js - Toast System & Core Init
 
 const UI = {
     els: {},
@@ -13,31 +13,94 @@ const UI = {
     deleteMode: false,
     currentSaves: {},
     selectedSlot: -1,
-    isSystemReady: false, // [NEU] Verhindert Login vor Abschluss der Boot-Sequenz
+    isSystemReady: false, 
     
     // Focus System
     focusIndex: -1,
     focusableEls: [],
     inputMethod: 'touch', 
 
-    // Utils
-    log: function(msg, color="text-green-500") {
-        if(!this.els.log) return;
-        const line = document.createElement('div');
-        line.className = color;
-        line.textContent = `> ${msg}`;
-        this.els.log.prepend(line);
+    // --- NEW LOG SYSTEM (TOASTS) ---
+    log: function(message, colorClass = "text-green-500") {
+        // Fallback Container-Suche, falls Init noch nicht durch
+        const container = this.els.toastContainer || document.getElementById('game-toast-container');
+        if(!container) {
+            console.log(`[LOG BACKUP]: ${message}`); 
+            return;
+        }
+
+        // Style Definition basierend auf Textfarbe
+        let borderColor = "border-green-500"; 
+        let icon = "ℹ️"; 
+
+        if(colorClass.includes("red")) { 
+            borderColor = "border-red-600"; 
+            icon = "⚠️"; 
+        }
+        else if(colorClass.includes("yellow") || colorClass.includes("orange")) { 
+            borderColor = "border-yellow-500"; 
+            icon = "⚡"; 
+        }
+        else if(colorClass.includes("blue") || colorClass.includes("cyan")) { 
+            borderColor = "border-blue-500"; 
+            icon = "💾"; 
+        }
+        else if(colorClass.includes("gray")) {
+            borderColor = "border-gray-500";
+            icon = "📝";
+        }
+
+        const el = document.createElement('div');
+        
+        el.className = `
+            pointer-events-auto 
+            bg-black/95 
+            border-l-4 ${borderColor} 
+            p-3 
+            shadow-[0_0_15px_rgba(0,0,0,0.8)] 
+            animate-slide-in 
+            flex items-start justify-between
+            transition-all duration-500 ease-out
+            mb-1 backdrop-blur-sm
+        `;
+
+        el.innerHTML = `
+            <div class="flex items-center gap-3 pr-4">
+                <span class="text-lg opacity-80 select-none">${icon}</span>
+                <span class="font-mono text-sm md:text-base font-bold ${colorClass} tracking-wide drop-shadow-md">
+                    ${message}
+                </span>
+            </div>
+            <button class="text-gray-600 hover:text-white font-bold text-xs self-start mt-1 px-1">✕</button>
+        `;
+
+        el.querySelector('button').onclick = () => {
+            el.classList.add('opacity-0', 'translate-x-full');
+            setTimeout(() => el.remove(), 300);
+        };
+
+        // Oben einfügen
+        container.insertBefore(el, container.firstChild);
+
+        // Limitierung
+        if (container.children.length > 5) {
+            const last = container.lastElementChild;
+            if(last) last.remove();
+        }
+
+        // Auto-Close Timer
+        const duration = colorClass.includes("red") ? 6000 : 4000;
+        setTimeout(() => {
+            if(document.body.contains(el)) {
+                el.classList.add('opacity-0', 'translate-x-full'); 
+                setTimeout(() => { if(document.body.contains(el)) el.remove(); }, 500);
+            }
+        }, duration);
     },
 
     error: function(msg) {
-        const errText = `> ERROR: ${msg}`;
-        console.error(errText);
-        if(this.els.log) {
-            const line = document.createElement('div');
-            line.className = "text-red-500 font-bold blink-red";
-            line.textContent = errText;
-            this.els.log.prepend(line);
-        }
+        console.error(`ERROR: ${msg}`);
+        this.log(`ERROR: ${msg}`, "text-red-500 blink-red");
         this.openBugModal(msg);
     },
 
@@ -47,19 +110,14 @@ const UI = {
 
         const el = document.createElement('div');
         el.className = "click-effect-overlay"; 
-        
         el.style.animation = `clickEffectAnim ${duration/1000}s ease-out forwards`;
 
         el.innerHTML = `
             <div class="click-effect-text" style="color:${color}; text-shadow: 0 0 20px ${color}">${mainText}</div>
             <div class="click-effect-sub" style="border-color:${color}">${subText}</div>
         `;
-        
         view.appendChild(el);
-        
-        setTimeout(() => {
-            if(el) el.remove();
-        }, duration);
+        setTimeout(() => { if(el) el.remove(); }, duration);
     },
 
     // --- ALERT HANDLING ---
@@ -250,7 +308,7 @@ const UI = {
         this.els = {
             touchArea: document.getElementById('main-content'),
             view: document.getElementById('view-container'),
-            log: document.getElementById('log-area'),
+            toastContainer: document.getElementById('game-toast-container'), // NEW
             hp: document.getElementById('val-hp'),
             hpBar: document.getElementById('bar-hp'),
             expBarTop: document.getElementById('bar-exp-top'),
@@ -270,9 +328,7 @@ const UI = {
             btnMap: document.getElementById('btn-map'),
             btnChar: document.getElementById('btn-char'),
             btnQuests: document.getElementById('btn-quests'),
-            
             btnBugReport: document.getElementById('btn-bug-report'),
-            
             btnMenuSave: document.getElementById('btn-menu-save'),
             btnLogout: document.getElementById('btn-logout'),
             btnReset: document.getElementById('btn-reset'),
@@ -296,7 +352,6 @@ const UI = {
             newCharOverlay: document.getElementById('new-char-overlay'),
             inputNewCharName: document.getElementById('new-char-name'),
             btnCreateCharConfirm: document.getElementById('btn-create-char'),
-            
             btnCharDeleteAction: document.getElementById('btn-char-delete-action'),
             btnCharBack: document.getElementById('btn-char-back'),
             
@@ -318,9 +373,7 @@ const UI = {
         };
         
         if (this.els.btnBugReport) {
-            this.els.btnBugReport.addEventListener('click', () => {
-                this.openBugModal();
-            });
+            this.els.btnBugReport.addEventListener('click', () => this.openBugModal());
         }
 
         if(this.els.btnInv) {
@@ -328,9 +381,7 @@ const UI = {
         }
 
         if(this.els.headerCharInfo) {
-            this.els.headerCharInfo.addEventListener('click', () => {
-                this.switchView('char'); 
-            });
+            this.els.headerCharInfo.addEventListener('click', () => this.switchView('char'));
         }
 
         window.Game = Game;
@@ -386,7 +437,6 @@ const UI = {
     },
 
     attemptLogin: async function() {
-        // [TO-DO FIX] Sperre für Boot-Sequenz
         if(!this.isSystemReady) {
             this.els.loginStatus.textContent = "SYSTEM INITIALIZING... PLEASE WAIT";
             this.els.loginStatus.className = "mt-4 text-blue-400 animate-pulse";
@@ -440,7 +490,6 @@ const UI = {
             const originalClass = btn.className;
             btn.textContent = "SAVED!";
             btn.className = "header-btn bg-[#39ff14] text-black border-[#39ff14] w-full text-left";
-            if(btn === this.els.btnSave) btn.className = "header-btn bg-[#39ff14] text-black border-[#39ff14] hidden md:flex";
             setTimeout(() => {
                 btn.textContent = originalText;
                 btn.className = originalClass;
@@ -532,14 +581,11 @@ const UI = {
         this.els.charSelectScreen.focus();
     },
 
-    // [TIMESTAMP] 2026-01-10 15:42:00 - ui_core.js - showGameOver blockiert jetzt jeden Rettungsversuch
     showGameOver: function() {
         if (this.els.gameOver) {
             this.els.gameOver.classList.remove('hidden');
         }
-        // WICHTIG: Wir setzen den Slot auf -1, damit KEINE Funktion mehr weiß, wohin sie speichern soll
         Game.selectedSlot = -1; 
-        // Wir löschen den lokalen State komplett
         Game.state = null; 
         console.log("GameOver: State vernichtet, Slot entkoppelt.");
     },
