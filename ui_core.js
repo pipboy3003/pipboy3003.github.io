@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-12 17:45:00 - ui_core.js - Toast System & Core Init
+// [TIMESTAMP] 2026-01-12 18:00:00 - ui_core.js - Added Toast System
 
 const UI = {
     els: {},
@@ -22,7 +22,7 @@ const UI = {
 
     // --- NEW LOG SYSTEM (TOASTS) ---
     log: function(message, colorClass = "text-green-500") {
-        // Fallback Container-Suche, falls Init noch nicht durch
+        // Find Container (Fallback if init didn't run yet)
         const container = this.els.toastContainer || document.getElementById('game-toast-container');
         if(!container) {
             console.log(`[LOG BACKUP]: ${message}`); 
@@ -82,7 +82,7 @@ const UI = {
         // Oben einfügen
         container.insertBefore(el, container.firstChild);
 
-        // Limitierung
+        // Limitierung auf 5 Nachrichten
         if (container.children.length > 5) {
             const last = container.lastElementChild;
             if(last) last.remove();
@@ -308,7 +308,7 @@ const UI = {
         this.els = {
             touchArea: document.getElementById('main-content'),
             view: document.getElementById('view-container'),
-            toastContainer: document.getElementById('game-toast-container'), // NEW
+            toastContainer: document.getElementById('game-toast-container'), // NEU
             hp: document.getElementById('val-hp'),
             hpBar: document.getElementById('bar-hp'),
             expBarTop: document.getElementById('bar-exp-top'),
@@ -328,7 +328,9 @@ const UI = {
             btnMap: document.getElementById('btn-map'),
             btnChar: document.getElementById('btn-char'),
             btnQuests: document.getElementById('btn-quests'),
+            
             btnBugReport: document.getElementById('btn-bug-report'),
+            
             btnMenuSave: document.getElementById('btn-menu-save'),
             btnLogout: document.getElementById('btn-logout'),
             btnReset: document.getElementById('btn-reset'),
@@ -352,6 +354,7 @@ const UI = {
             newCharOverlay: document.getElementById('new-char-overlay'),
             inputNewCharName: document.getElementById('new-char-name'),
             btnCreateCharConfirm: document.getElementById('btn-create-char'),
+            
             btnCharDeleteAction: document.getElementById('btn-char-delete-action'),
             btnCharBack: document.getElementById('btn-char-back'),
             
@@ -373,7 +376,9 @@ const UI = {
         };
         
         if (this.els.btnBugReport) {
-            this.els.btnBugReport.addEventListener('click', () => this.openBugModal());
+            this.els.btnBugReport.addEventListener('click', () => {
+                this.openBugModal();
+            });
         }
 
         if(this.els.btnInv) {
@@ -381,7 +386,9 @@ const UI = {
         }
 
         if(this.els.headerCharInfo) {
-            this.els.headerCharInfo.addEventListener('click', () => this.switchView('char'));
+            this.els.headerCharInfo.addEventListener('click', () => {
+                this.switchView('char'); 
+            });
         }
 
         window.Game = Game;
