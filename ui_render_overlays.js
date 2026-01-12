@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-12 14:15:00 - ui_render_overlays.js - Update: Dead Icon X & Z-Index Fixes
+// [TIMESTAMP] 2026-01-12 15:00:00 - ui_render_overlays.js - Added Generic Confirm Dialog
 
 Object.assign(UI, {
     
@@ -8,7 +8,7 @@ Object.assign(UI, {
         if(!overlay) {
             overlay = document.createElement('div');
             overlay.id = 'ui-dialog-overlay';
-            // Z-Index 60 für Hauptdialoge (Inventar etc.)
+            // Z-Index 60 für Hauptdialoge
             overlay.className = "absolute inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm hidden pointer-events-auto";
             document.body.appendChild(overlay);
             this.els.dialog = overlay;
@@ -63,6 +63,40 @@ Object.assign(UI, {
             }
         };
         document.addEventListener('keydown', this._activeEscHandler);
+    },
+
+    // [NEU] GENERISCHER CONFIRM DIALOG (JA/NEIN)
+    showConfirm: function(title, htmlContent, onConfirm) {
+        if(Game.state) Game.state.inDialog = true;
+
+        const overlay = this.restoreOverlay();
+        overlay.style.display = 'flex';
+        overlay.innerHTML = '';
+        this._trapEscKey();
+
+        const box = document.createElement('div');
+        box.className = "bg-black border-2 border-yellow-400 p-4 shadow-[0_0_20px_#aa0] max-w-md w-full relative animate-float-in pointer-events-auto mx-4";
+        box.onclick = (e) => e.stopPropagation();
+
+        box.innerHTML = `
+            <h2 class="text-2xl font-bold text-yellow-400 mb-4 border-b border-yellow-500 pb-2 tracking-widest">${title}</h2>
+            <div class="text-green-300 mb-6 font-mono text-sm leading-relaxed">${htmlContent}</div>
+            <div class="flex gap-4">
+                <button id="btn-confirm-yes" class="action-button flex-1 border-green-500 text-green-500 hover:bg-green-900 font-bold py-2">BESTÄTIGEN</button>
+                <button id="btn-confirm-no" class="action-button flex-1 border-red-500 text-red-500 hover:bg-red-900 font-bold py-2">ABBRUCH</button>
+            </div>
+        `;
+
+        overlay.appendChild(box);
+
+        document.getElementById('btn-confirm-yes').onclick = () => {
+            UI.leaveDialog();
+            if (onConfirm) onConfirm();
+        };
+
+        document.getElementById('btn-confirm-no').onclick = () => {
+            UI.leaveDialog();
+        };
     },
 
     // [v0.5.5] GENERIC INFO DIALOG (Layer 2 - Info Popups)
