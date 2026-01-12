@@ -1,8 +1,7 @@
-// [TIMESTAMP] 2026-01-12 18:00:00 - ui_core.js - Added Toast System
+// [TIMESTAMP] 2026-01-12 19:00:00 - ui_core.js - Toast System Only, No Timer
 
 const UI = {
     els: {},
-    timerInterval: null,
     lastInputTime: Date.now(),
     biomeColors: (typeof window.GameData !== 'undefined') ? window.GameData.colors : {},
 
@@ -22,7 +21,6 @@ const UI = {
 
     // --- NEW LOG SYSTEM (TOASTS) ---
     log: function(message, colorClass = "text-green-500") {
-        // Find Container (Fallback if init didn't run yet)
         const container = this.els.toastContainer || document.getElementById('game-toast-container');
         if(!container) {
             console.log(`[LOG BACKUP]: ${message}`); 
@@ -82,7 +80,7 @@ const UI = {
         // Oben einfügen
         container.insertBefore(el, container.firstChild);
 
-        // Limitierung auf 5 Nachrichten
+        // Limitierung
         if (container.children.length > 5) {
             const last = container.lastElementChild;
             if(last) last.remove();
@@ -283,32 +281,25 @@ const UI = {
         }
     },
 
-    updateTimer: function() {
+    update: function() {
         const isIngame = (Game.state && this.els.gameScreen && !this.els.gameScreen.classList.contains('hidden'));
-        const isCharSelect = this.charSelectMode;
-
-        if (isIngame || isCharSelect) {
+        
+        // Auto Logout bei Inaktivität
+        if (isIngame) {
             if(Date.now() - this.lastInputTime > 300000) { 
                 this.logout("AFK: ZEITÜBERSCHREITUNG");
-                return;
             }
         }
-
-        if(!Game.state || !Game.state.startTime) return;
-        const diff = Math.floor((Date.now() - Game.state.startTime) / 1000);
-        const h = Math.floor(diff / 3600).toString().padStart(2,'0');
-        const m = Math.floor((diff % 3600) / 60).toString().padStart(2,'0');
-        const s = (diff % 60).toString().padStart(2,'0');
-        if(this.els.timer) this.els.timer.textContent = `${h}:${m}:${s}`;
         
-        if(this.update) this.update();
+        // Platzhalter für UI Updates
+        if(typeof this.renderChar === 'function' && this.charTab === 'status') this.renderChar();
     },
 
     init: function() {
         this.els = {
             touchArea: document.getElementById('main-content'),
             view: document.getElementById('view-container'),
-            toastContainer: document.getElementById('game-toast-container'), // NEU
+            toastContainer: document.getElementById('game-toast-container'), // NEW
             hp: document.getElementById('val-hp'),
             hpBar: document.getElementById('bar-hp'),
             expBarTop: document.getElementById('bar-exp-top'),
@@ -320,7 +311,6 @@ const UI = {
             version: document.getElementById('version-display'),
             joyBase: null, joyStick: null,
             dialog: document.getElementById('dialog-overlay'),
-            timer: document.getElementById('game-timer'),
             
             btnNew: document.getElementById('btn-new'),
             btnInv: document.getElementById('btn-inv'),
@@ -396,8 +386,10 @@ const UI = {
 
         if(this.initInput) this.initInput();
         
-        if(this.timerInterval) clearInterval(this.timerInterval);
-        this.timerInterval = setInterval(() => this.updateTimer(), 1000);
+        // Kein Timer-Intervall mehr starten
+        setInterval(() => {
+            if(this.update) this.update();
+        }, 1000);
     },
 
     isMobile: function() {
