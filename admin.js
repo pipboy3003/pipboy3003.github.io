@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-10 03:00:00 - admin.js - Compact Table Layout
+// [TIMESTAMP] 2026-01-12 14:30:00 - admin.js - Added Leaderboard Manager
 
 const Admin = {
     gatePass: "bimbo123",
@@ -7,11 +7,11 @@ const Admin = {
 
     dbData: {}, 
     bugData: {}, 
+    lbData: {}, // NEU: Leaderboard Daten
     currentPath: null,
     currentUserData: null,
     itemsList: [], 
 
-    // Filter Status für das Inventar-Panel
     invFilter: {
         search: "",
         category: "ALL"
@@ -52,7 +52,7 @@ const Admin = {
     },
 
     initData: function() {
-        // Init Items List from Window Data
+        // Init Items
         const items = (typeof Game !== 'undefined' && Game.items) ? Game.items : (window.GameData ? window.GameData.items : {});
         this.itemsList = Object.entries(items).map(([k, v]) => ({id: k, ...v}));
         
@@ -72,25 +72,128 @@ const Admin = {
         Network.db.ref('bug_reports').on('value', snap => {
             this.bugData = snap.val() || {};
             const count = Object.keys(this.bugData).length;
-            
             const btn = document.getElementById('btn-bugs');
             const counter = document.getElementById('bug-count');
             
             btn.classList.remove('hidden');
             counter.textContent = count;
-
-            if(count > 0) {
-                btn.className = "btn btn-danger text-xs md:text-sm btn-bug-alert"; 
-            } else {
-                btn.className = "btn text-xs md:text-sm border-green-500 text-green-500";
-            }
+            btn.className = count > 0 ? "btn btn-danger text-xs md:text-sm btn-bug-alert" : "btn text-xs md:text-sm border-green-500 text-green-500";
             
             if(!document.getElementById('bug-overlay').classList.contains('hidden')) {
                 this.renderBugs();
             }
         });
+
+        // 3. NEU: Leaderboard Listener
+        Network.db.ref('leaderboard').on('value', snap => {
+            this.lbData = snap.val() || {};
+            // Button für Leaderboard aktivieren/anzeigen (wir erzeugen ihn dynamisch falls nicht da, oder nutzen einen existierenden Container)
+            this.ensureLeaderboardButton();
+            if(document.getElementById('lb-overlay') && !document.getElementById('lb-overlay').classList.contains('hidden')) {
+                this.renderLeaderboard();
+            }
+        });
     },
 
+    ensureLeaderboardButton: function() {
+        // Fügt den Button neben dem Bug Button ein, falls noch nicht vorhanden
+        if(!document.getElementById('btn-lb')) {
+            const headerActions = document.getElementById('btn-bugs').parentElement;
+            const btn = document.createElement('button');
+            btn.id = 'btn-lb';
+            btn.className = "btn border-yellow-500 text-yellow-500 text-xs md:text-sm ml-2";
+            btn.innerHTML = '🏆 LEGENDS';
+            btn.onclick = () => Admin.showLeaderboard();
+            headerActions.appendChild(btn);
+        }
+    },
+
+    // --- LEADERBOARD MANAGER ---
+    showLeaderboard: function() {
+        let overlay = document.getElementById('lb-overlay');
+        if(!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'lb-overlay';
+            overlay.className = "fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4";
+            overlay.innerHTML = `
+                <div class="bg-black border-2 border-yellow-500 w-full max-w-4xl h-[80vh] flex flex-col shadow-[0_0_30px_#aa0]">
+                    <div class="p-4 border-b border-yellow-900 flex justify-between items-center bg-yellow-900/20">
+                        <h2 class="text-xl font-bold text-yellow-400 tracking-widest">VAULT LEGENDS MANAGER</h2>
+                        <button onclick="document.getElementById('lb-overlay').classList.add('hidden')" class="text-red-500 font-bold border border-red-500 px-3 py-1 hover:bg-red-900">CLOSE</button>
+                    </div>
+                    <div class="p-2 bg-black border-b border-gray-800 text-[10px] text-gray-400 font-mono">
+                        INFO: 'DEAD' Status means the name is free to take. 'ALIVE' locks the name. DELETE removes the entry entirely.
+                    </div>
+                    <div class="flex-1 overflow-auto custom-scroll p-4">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="text-yellow-600 border-b border-yellow-900 text-xs sticky top-0 bg-black">
+                                <tr>
+                                    <th class="p-2">NAME</th>
+                                    <th class="p-2">LVL</th>
+                                    <th class="p-2">XP</th>
+                                    <th class="p-2">STATUS</th>
+                                    <th class="p-2 text-right">ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lb-list" class="font-mono text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+        overlay.classList.remove('hidden');
+        this.renderLeaderboard();
+    },
+
+    renderLeaderboard: function() {
+        const tbody = document.getElementById('lb-list');
+        if(!tbody) return;
+        tbody.innerHTML = '';
+
+        const entries = Object.entries(this.lbData).map(([key, val]) => ({key, ...val}));
+        entries.sort((a,b) => b.lvl - a.lvl || b.xp - a.xp);
+
+        entries.forEach(entry => {
+            const isDead = entry.status === 'dead';
+            const tr = document.createElement('tr');
+            tr.className = "border-b border-gray-800 hover:bg-gray-900 transition-colors";
+            
+            const statusColor = isDead ? "text-red-500" : "text-green-500";
+            const statusIcon = isDead ? "❌ DEAD" : "💚 ALIVE";
+
+            tr.innerHTML = `
+                <td class="p-2 text-white font-bold">${entry.name}</td>
+                <td class="p-2 text-gray-300">${entry.lvl}</td>
+                <td class="p-2 text-gray-500 text-xs">${entry.xp}</td>
+                <td class="p-2 ${statusColor} font-bold text-xs">${statusIcon}</td>
+                <td class="p-2 text-right flex gap-2 justify-end">
+                    ${!isDead ? `<button onclick="Admin.lbAction('${entry.key}', 'kill')" class="bg-red-900/30 text-red-400 border border-red-900 px-2 py-1 text-xs hover:bg-red-500 hover:text-black">☠️ KILL</button>` : 
+                                `<button onclick="Admin.lbAction('${entry.key}', 'revive')" class="bg-green-900/30 text-green-400 border border-green-900 px-2 py-1 text-xs hover:bg-green-500 hover:text-black">❤️ REVIVE</button>`}
+                    
+                    <button onclick="Admin.lbAction('${entry.key}', 'delete')" class="bg-gray-800 text-gray-400 border border-gray-600 px-2 py-1 text-xs hover:bg-gray-200 hover:text-black">🗑️ DEL</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    },
+
+    lbAction: function(key, action) {
+        const ref = Network.db.ref('leaderboard/' + key);
+        if(action === 'kill') {
+            if(confirm(`Mark ${key} as DEAD? This frees the name.`)) {
+                ref.update({ status: 'dead', deathTime: Date.now() });
+            }
+        } else if(action === 'revive') {
+            ref.update({ status: 'alive' });
+        } else if(action === 'delete') {
+            if(confirm(`PERMANENTLY DELETE ${key} from highscores?`)) {
+                ref.remove();
+            }
+        }
+    },
+
+    // --- BUGS (Existing) ---
     showBugs: function() {
         document.getElementById('bug-overlay').classList.remove('hidden');
         this.renderBugs();
@@ -695,8 +798,6 @@ const Admin = {
         inv.splice(idx, 1);
         Network.db.ref(this.currentPath + '/inventory').set(inv);
     },
-
-    // Old invAdd removed, replaced by invAddDirect
 
     forceUnequip: function(slot) {
         if(!confirm(`Unequip ${slot}? This moves item to inventory.`)) return;
