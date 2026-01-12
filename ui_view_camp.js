@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-12 20:35:00 - ui_view_camp.js - Fixed Layout Overlap & State Switching
+// [TIMESTAMP] 2026-01-12 21:00:00 - ui_view_camp.js - Fixed Layout & Cooking Switch
 
 Object.assign(UI, {
 
@@ -7,6 +7,11 @@ Object.assign(UI, {
 
     // Helper für das Info-Popup
     showCampInfo: function() {
+        if(typeof Game.getCampUpgradeCost !== 'function') {
+            this.showInfoDialog("LAGER INFO", "Upgrade-Daten werden geladen...");
+            return;
+        }
+
         let rows = '';
         for(let l=1; l<=10; l++) {
             let healPct = 30 + ((l - 1) * 8); 
@@ -19,7 +24,7 @@ Object.assign(UI, {
             } else {
                 const cost = Game.getCampUpgradeCost(l - 1);
                 if(cost) {
-                    costStr = `${cost.count}x ${cost.name}`;
+                    costStr = `${cost.count} ${cost.name || 'KK'}`;
                 }
             }
 
@@ -56,7 +61,7 @@ Object.assign(UI, {
 
     // Haupt-Render Funktion
     renderCamp: function(resetToMain = false) {
-        const view = document.getElementById('view-camp');
+        const view = document.getElementById('view-container');
         if(!view) return;
 
         const camp = Game.state.camp;
@@ -71,7 +76,6 @@ Object.assign(UI, {
         }
 
         // 1. STRUKTUR PRÜFEN & ERSTELLEN (Nur einmalig)
-        // Wir prüfen ob unser Haupt-Container schon da ist. Wenn nicht, bauen wir das Gerüst.
         if(!document.getElementById('camp-root-container')) {
             view.innerHTML = `
                 <div id="camp-root-container" class="flex flex-col h-full w-full p-4">
@@ -139,25 +143,21 @@ Object.assign(UI, {
         const mainActions = document.getElementById('camp-main-actions');
         const cookingView = document.getElementById('camp-cooking-view');
 
-        // 3. SICHTBARKEIT STEUERN (Toggle)
+        // 3. SICHTBARKEIT STEUERN
         if(this.campMode === 'cooking') {
             mainActions.classList.add('hidden');
             cookingView.classList.remove('hidden');
-            // Liste füllen (ohne Mode-Switch, da wir schon im Modus sind)
             this.renderCampCooking(false);
         } else {
             mainActions.classList.remove('hidden');
             cookingView.classList.add('hidden');
         }
 
-        // 4. DATEN UPDATE (Level, Status, Upgrade Button)
+        // 4. DATEN UPDATE
         const lvl = camp.level || 1;
-        
-        // Header Level Update
         const lvlDisplay = document.getElementById('camp-level-display');
         if(lvlDisplay) lvlDisplay.textContent = `LEVEL ${lvl}`;
 
-        // Status Box Update
         let healPct = 30 + ((lvl - 1) * 8); 
         if(lvl >= 10) healPct = 100;
         
@@ -167,52 +167,48 @@ Object.assign(UI, {
             statusBox.textContent = `${comfort} (Lvl ${lvl}). Heilung ${Math.floor(healPct)}%.`;
         }
 
-        // Upgrade Button Logic
+        // Upgrade Button
         const upgradeCont = document.getElementById('camp-upgrade-container');
         if(upgradeCont) {
-            let upgradeText = "LAGER VERBESSERN";
-            let upgradeSub = "Lädt...";
-            let upgradeDisabled = false;
-            let btnClass = "border-yellow-500 text-yellow-400 hover:bg-yellow-900/30";
-            
-            if(lvl >= 10) {
-                upgradeText = "LAGER MAXIMIERT";
-                upgradeSub = "Maximum erreicht (Level 10)";
-                upgradeDisabled = true;
-                btnClass = "border-green-500 text-green-500 cursor-default bg-green-900/20";
-            } else {
-                const cost = Game.getCampUpgradeCost(lvl);
-                if(cost) {
-                    const hasItem = Game.state.inventory.find(i => i.id === cost.id);
-                    const count = hasItem ? hasItem.count : 0;
-                    
-                    if(count >= cost.count) {
-                        upgradeSub = `Kosten: ${cost.count}x ${cost.name}`;
-                    } else {
-                        upgradeSub = `Fehlt: ${cost.count}x ${cost.name} (Besitz: ${count})`;
-                        upgradeDisabled = true;
-                        btnClass = "border-red-500 text-red-500 cursor-not-allowed opacity-70";
-                    }
-                } else {
-                    upgradeSub = "Keine Daten";
+            // Check ob Upgrade-Funktion da ist, sonst Platzhalter
+            if (typeof Game.getCampUpgradeCost === 'function') {
+                let upgradeText = "LAGER VERBESSERN";
+                let upgradeSub = "Lädt...";
+                let upgradeDisabled = false;
+                let btnClass = "border-yellow-500 text-yellow-400 hover:bg-yellow-900/30";
+                
+                if(lvl >= 10) {
+                    upgradeText = "LAGER MAXIMIERT";
+                    upgradeSub = "Maximum erreicht";
                     upgradeDisabled = true;
+                    btnClass = "border-green-500 text-green-500 cursor-default bg-green-900/20";
+                } else {
+                    const cost = Game.getCampUpgradeCost(lvl);
+                    if(cost) {
+                        if(cost.id === 'caps') {
+                            const canAfford = Game.state.caps >= cost.count;
+                            upgradeSub = canAfford ? `${cost.count} Kronkorken` : `Fehlt: ${cost.count} KK`;
+                            if(!canAfford) { upgradeDisabled = true; btnClass = "border-red-500 text-red-500 cursor-not-allowed opacity-70"; }
+                        } else {
+                            upgradeSub = `${cost.count}x ${cost.name}`;
+                        }
+                    }
                 }
-            }
 
-            upgradeCont.innerHTML = `
-                <button class="flex flex-col items-center justify-center border ${btnClass} p-3 transition-all w-full bg-black"
-                    onclick="Game.upgradeCamp()" ${upgradeDisabled ? 'disabled' : ''}>
-                    <span class="font-bold text-lg">${upgradeText}</span>
-                    <span class="text-xs opacity-70">${upgradeSub}</span>
-                </button>
-            `;
+                upgradeCont.innerHTML = `
+                    <button class="flex flex-col items-center justify-center border ${btnClass} p-3 transition-all w-full bg-black"
+                        onclick="Game.upgradeCamp()" ${upgradeDisabled ? 'disabled' : ''}>
+                        <span class="font-bold text-lg">${upgradeText}</span>
+                        <span class="text-xs opacity-70">${upgradeSub}</span>
+                    </button>
+                `;
+            } else {
+                 upgradeCont.innerHTML = `<div class="text-gray-500 text-xs italic text-center">Upgrade-System lädt...</div>`;
+            }
         }
     },
 
     renderCampSleep: function() {
-        // Sleep ist ein einfaches Overlay oder Dialog, daher nutzen wir showInfoDialog oder bauen temporär um
-        // Da wir jetzt ein festes Layout haben, nutzen wir ein Overlay für den Schlaf-Dialog
-        
         const content = `
             <div class="flex flex-col gap-4">
                  <button onclick="Game.rest(1); UI.leaveDialog()" class="action-button border-green-500 text-green-400 py-4 w-full">
@@ -228,11 +224,9 @@ Object.assign(UI, {
         this.showInfoDialog("SCHLAFPLATZ", content);
     },
 
-    // Aufgerufen durch den "KOCHEN" Button oder Update-Events
     renderCampCooking: function(switchToCooking = true) {
         if(switchToCooking) {
             this.campMode = 'cooking';
-            // Layout aktualisieren (durch erneuten Aufruf von renderCamp, das jetzt den Status beachtet)
             this.renderCamp();
             return; 
         }
@@ -240,7 +234,6 @@ Object.assign(UI, {
         const list = document.getElementById('cooking-list');
         if(!list) return;
 
-        // SCROLL FIX: Position merken
         const scrollPos = list.scrollTop;
         list.innerHTML = '';
 
@@ -253,9 +246,8 @@ Object.assign(UI, {
         }
 
         cookingRecipes.forEach(recipe => {
-            // [FIX] Check ob Output-Item existiert
             const outItem = Game.items[recipe.out];
-            if (!outItem) return;
+            if (!outItem) return; // Skip broken recipes
 
             const div = document.createElement('div');
             div.className = "border border-yellow-900 bg-yellow-900/10 p-2 mb-2 flex justify-between items-center relative select-none";
