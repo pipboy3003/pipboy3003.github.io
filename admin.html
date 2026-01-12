@@ -1,39 +1,45 @@
 <!DOCTYPE html>
 <html lang="de">
-<header class="flex justify-between items-center bg-black border-b border-[#1a551a] p-2 md:p-3 md:px-6 shrink-0 z-40 relative">
-            <div class="flex items-center gap-2 md:gap-4">
-                <button onclick="Admin.toggleSidebar()" class="md:hidden text-[#39ff14] border border-[#1a551a] px-2 py-1 text-xl hover:bg-[#1a551a] transition">☰</button>
-                <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_red] hidden md:block" id="conn-dot"></div>
-                <div>
-                    <h1 class="text-xl md:text-2xl font-bold leading-none text-[#39ff14]">OVERSEER</h1>
-                    <div class="text-[10px] md:text-xs text-[#1a551a] tracking-widest">CONNECTED</div>
-                </div>
-            </div>
-            
-            <div class="relative">
-                <button onclick="Admin.toggleSystemMenu()" class="btn flex items-center gap-2 font-bold bg-[#001100] hover:bg-[#002200]">
-                    <span>SYSTEM</span>
-                    <span class="text-[10px]">▼</span>
-                    <span id="menu-bug-badge" class="hidden w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                </button>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ROBCO OVERSEER V13.37</title>    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22 font-weight=%22bold%22 fill=%22%231aff1a%22 font-family=%22monospace%22>A</text></svg>">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    
+    <script>document.write('<link rel="stylesheet" href="style.css?v=' + Date.now() + '">');</script>
 
-                <div id="system-menu" class="hidden absolute right-0 top-full mt-2 w-48 bg-black border-2 border-[#39ff14] shadow-[0_0_20px_rgba(57,255,20,0.3)] flex flex-col z-50">
-                    <button onclick="Admin.showLeaderboard()" class="text-left px-4 py-3 text-[#39ff14] hover:bg-[#39ff14] hover:text-black border-b border-[#1a551a] font-mono transition-colors">
-                        🏆 LEGENDS
-                    </button>
-                    <button onclick="Admin.showBugs()" class="text-left px-4 py-3 text-red-500 hover:bg-red-500 hover:text-black border-b border-[#1a551a] font-mono transition-colors flex justify-between items-center">
-                        <span>🐞 BUGS</span>
-                        <span id="bug-count" class="text-xs bg-red-900 text-white px-1.5 rounded ml-2">0</span>
-                    </button>
-                    <button onclick="Admin.refresh()" class="text-left px-4 py-3 text-cyan-400 hover:bg-cyan-400 hover:text-black border-b border-[#1a551a] font-mono transition-colors">
-                        🔄 SYNC / RELOAD
-                    </button>
-                    <button onclick="location.reload()" class="text-left px-4 py-3 text-gray-500 hover:bg-red-900 hover:text-white font-mono transition-colors">
-                        ❌ EXIT
-                    </button>
-                </div>
-            </div>
-        </header>
+    <style>
+        .admin-font { font-family: 'Share Tech Mono', monospace; }
+        .panel-box { border: 1px solid #333; background: rgba(0, 20, 0, 0.9); box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
+        .active-tab { background-color: #39ff14; color: black; font-weight: bold; box-shadow: 0 0 10px #39ff14; }
+        .inactive-tab { border: 1px solid #1a3300; color: #1a551a; }
+        .inactive-tab:hover { color: #39ff14; border-color: #39ff14; }
+        
+        input, select, textarea { background: #001100; border: 1px solid #1a551a; color: #39ff14; padding: 4px 8px; outline: none; transition: all 0.2s; font-family: 'Share Tech Mono', monospace; }
+        input:focus, select:focus, textarea:focus { border-color: #39ff14; box-shadow: 0 0 5px #1a551a; }
+        
+        .btn { border: 1px solid #39ff14; padding: 5px 15px; text-transform: uppercase; cursor: pointer; transition: all 0.1s; background: rgba(0,20,0,0.5); font-family: 'Share Tech Mono', monospace; }
+        .btn:hover { background: #39ff14; color: black; box-shadow: 0 0 15px #39ff14; }
+        .btn:active { transform: scale(0.98); }
+        .btn-danger { border-color: #ff3333; color: #ff3333; }
+        .btn-danger:hover { background: #ff3333; color: white; box-shadow: 0 0 15px #ff0000; }
+        
+        .btn-bug-alert { border-color: red; color: red; animation: pulse-red-admin 1.5s infinite; font-weight: bold; }
+        @keyframes pulse-red-admin { 0% { box-shadow: 0 0 0 red; } 50% { box-shadow: 0 0 15px red; background: rgba(255,0,0,0.2); } 100% { box-shadow: 0 0 0 red; } }
+
+        .custom-scroll { overflow-y: auto; scrollbar-width: thin; scrollbar-color: #1a551a #001100; }
+        .custom-scroll::-webkit-scrollbar { width: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #001100; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #1a551a; }
+        
+        #sidebar { transition: transform 0.3s ease-in-out; }
+    </style>
+</head>
 <body class="bg-black overflow-hidden select-none">
 
 <div id="pipboy-case">
@@ -74,18 +80,28 @@
                     <div class="text-[10px] md:text-xs text-[#1a551a] tracking-widest">CONNECTED</div>
                 </div>
             </div>
-            <div class="flex gap-4 items-center">
-                <button id="btn-bugs" onclick="Admin.showBugs()" class="hidden btn btn-danger text-xs md:text-sm">
-                    BUG REPORTS <span id="bug-count" class="ml-1 bg-white text-red-600 px-1 rounded-full text-[10px]">0</span>
-                </button>
-                
-                <button id="btn-lb" onclick="Admin.showLeaderboard()" class="hidden btn border-yellow-500 text-yellow-500 text-xs md:text-sm ml-2">
-                    🏆 LEGENDS
+            
+            <div class="relative">
+                <button onclick="Admin.toggleSystemMenu()" class="btn flex items-center gap-2 font-bold bg-[#001100] hover:bg-[#002200]">
+                    <span>SYSTEM</span>
+                    <span class="text-[10px]">▼</span>
+                    <span id="menu-bug-badge" class="hidden w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
                 </button>
 
-                <div class="flex gap-2">
-                    <button onclick="Admin.refresh()" class="btn text-xs md:text-sm">SYNC</button>
-                    <button onclick="location.reload()" class="btn btn-danger text-xs md:text-sm">EXIT</button>
+                <div id="system-menu" class="hidden absolute right-0 top-full mt-2 w-48 bg-black border-2 border-[#39ff14] shadow-[0_0_20px_rgba(57,255,20,0.3)] flex flex-col z-50">
+                    <button onclick="Admin.showLeaderboard()" class="text-left px-4 py-3 text-[#39ff14] hover:bg-[#39ff14] hover:text-black border-b border-[#1a551a] font-mono transition-colors">
+                        🏆 LEGENDS
+                    </button>
+                    <button onclick="Admin.showBugs()" class="text-left px-4 py-3 text-red-500 hover:bg-red-500 hover:text-black border-b border-[#1a551a] font-mono transition-colors flex justify-between items-center">
+                        <span>🐞 BUGS</span>
+                        <span id="bug-count" class="text-xs bg-red-900 text-white px-1.5 rounded ml-2">0</span>
+                    </button>
+                    <button onclick="Admin.refresh()" class="text-left px-4 py-3 text-cyan-400 hover:bg-cyan-400 hover:text-black border-b border-[#1a551a] font-mono transition-colors">
+                        🔄 SYNC / RELOAD
+                    </button>
+                    <button onclick="location.reload()" class="text-left px-4 py-3 text-gray-500 hover:bg-red-900 hover:text-white font-mono transition-colors">
+                        ❌ EXIT
+                    </button>
                 </div>
             </div>
         </header>
@@ -286,6 +302,8 @@
             </div>
         </div>
     </div>
+
+    <div id="toast-container" class="absolute top-20 right-4 z-[3000] flex flex-col gap-2 pointer-events-none"></div>
 
 </div>
 
