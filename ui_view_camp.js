@@ -1,11 +1,11 @@
-// [TIMESTAMP] 2026-01-12 17:00:00 - ui_view_camp.js - Fixed Cooking Crash & Added State Handling
+// [TIMESTAMP] 2026-01-12 17:15:00 - ui_view_camp.js - Fixed Cooking Crash on Missing Items
 
 Object.assign(UI, {
 
     // Status-Speicher: 'main' oder 'cooking'
     campMode: 'main', 
 
-    // Helper für das Info-Popup (Lager Upgrade Info)
+    // Helper für das Info-Popup
     showCampInfo: function() {
         let rows = '';
         for(let l=1; l<=10; l++) {
@@ -56,7 +56,6 @@ Object.assign(UI, {
 
     // Haupt-Render Funktion
     renderCamp: function(resetToMain = false) {
-        // Wenn reset angefordert wurde (z.B. durch "Zurück"-Button), Modus ändern
         if(resetToMain) {
             this.campMode = 'main';
         }
@@ -64,14 +63,11 @@ Object.assign(UI, {
         const cookingView = document.getElementById('camp-cooking-view');
         const mainActions = document.getElementById('camp-main-actions');
         
-        // --- STATE MANAGEMENT FIX ---
-        // Wir erzwingen den Status basierend auf this.campMode
         if(cookingView && mainActions) {
             if(this.campMode === 'cooking') {
                 cookingView.classList.remove('hidden');
                 mainActions.classList.add('hidden');
-                // Wenn wir im Koch-Modus sind, Liste rendern/updaten
-                this.renderCampCooking(false); // false = kein Modus-Wechsel, nur Update
+                this.renderCampCooking(false); 
             } else {
                 cookingView.classList.add('hidden');
                 mainActions.classList.remove('hidden');
@@ -81,17 +77,15 @@ Object.assign(UI, {
         const camp = Game.state.camp;
         if(!camp) { 
             console.warn("Kein Camp gefunden!"); 
-            UI.switchView('map'); 
+            if(typeof UI.switchView === 'function') UI.switchView('map'); 
             return; 
         }
 
         const lvl = camp.level || 1;
 
-        // 1. Level Anzeige
         const lvlDisplay = document.getElementById('camp-level-display');
         if(lvlDisplay) lvlDisplay.textContent = `LEVEL ${lvl}`;
 
-        // 2. Status Text
         let healPct = 30 + ((lvl - 1) * 8); 
         if(lvl >= 10) healPct = 100;
         if(healPct > 100) healPct = 100;
@@ -102,7 +96,6 @@ Object.assign(UI, {
             statusBox.textContent = `${comfort} (Lvl ${lvl}). Heilung ${Math.floor(healPct)}%.`;
         }
 
-        // 3. Upgrade Button Logic
         const upgradeCont = document.getElementById('camp-upgrade-container');
         if(upgradeCont) {
             let upgradeText = "LAGER VERBESSERN";
@@ -144,11 +137,9 @@ Object.assign(UI, {
         }
     },
 
-    // Aufgerufen durch den "KOCHEN" Button oder Update-Events
     renderCampCooking: function(switchToCooking = true) {
         if(switchToCooking) {
             this.campMode = 'cooking';
-            // UI Update anstoßen um Klassen zu setzen
             const cookingView = document.getElementById('camp-cooking-view');
             const mainActions = document.getElementById('camp-main-actions');
             if(cookingView) cookingView.classList.remove('hidden');
@@ -158,9 +149,7 @@ Object.assign(UI, {
         const list = document.getElementById('cooking-list');
         if(!list) return;
 
-        // SCROLL FIX: Position merken
         const scrollPos = list.scrollTop;
-
         list.innerHTML = '';
 
         const recipes = Game.recipes || [];
@@ -172,13 +161,12 @@ Object.assign(UI, {
         }
 
         cookingRecipes.forEach(recipe => {
-            // [FIX START] Check ob Output-Item existiert, sonst Crash vermeiden
+            // --- CRASH FIX: Prüfen ob das Output-Item existiert ---
             const outItem = Game.items[recipe.out];
             if (!outItem) {
-                console.warn(`Rezept '${recipe.id}' übersprungen: Output '${recipe.out}' fehlt in Items.`);
+                console.warn("Überspringe fehlerhaftes Rezept (Output fehlt):", recipe.out);
                 return;
             }
-            // [FIX END]
 
             const div = document.createElement('div');
             div.className = "border border-yellow-900 bg-yellow-900/10 p-3 mb-2 flex justify-between items-center relative";
@@ -198,21 +186,17 @@ Object.assign(UI, {
                     color = "text-red-500"; 
                 }
                 
-                // [FIX START] Auch hier sicherstellen, dass Zutat existiert
-                const ingredientDef = Game.items[reqId];
-                const ingredientName = ingredientDef ? ingredientDef.name : `??? (${reqId})`;
-                // [FIX END]
-
+                // --- CRASH FIX: Prüfen ob Zutat existiert ---
+                const ingItem = Game.items[reqId];
+                const ingredientName = ingItem ? ingItem.name : `UNKNOWN (${reqId})`;
+                
                 reqHtml += `<span class="${color} text-xs mr-2 block">• ${ingredientName}: ${countHave}/${countNeeded}</span>`;
             }
 
-            // BUTTON LOGIC FIX: 
-            // Wir verhindern Standard-Events und nutzen setTimeout für das Re-Render, 
-            // damit Game.craftItem durchlaufen kann.
             div.innerHTML = `
                 <div class="flex flex-col">
                     <span class="font-bold text-yellow-400 text-lg">${outItem.name}</span>
-                    <span class="text-xs text-yellow-600 italic">${outItem.desc}</span>
+                    <span class="text-xs text-yellow-600 italic">${outItem.desc || ''}</span>
                     <div class="mt-1 bg-black/50 p-1 rounded">${reqHtml}</div>
                 </div>
                 <button class="action-button border-yellow-500 text-yellow-500 px-4 py-2 font-bold hover:bg-yellow-500 hover:text-black transition-colors disabled:opacity-30 disabled:cursor-not-allowed h-full ml-2" 
@@ -223,7 +207,6 @@ Object.assign(UI, {
             list.appendChild(div);
         });
 
-        // SCROLL FIX: Position wiederherstellen
         if(scrollPos > 0) list.scrollTop = scrollPos;
     }
 });
