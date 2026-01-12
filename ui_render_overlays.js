@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-12 11:00:00 - ui_render_overlays.js - FIX: Info Dialog Z-Index (Layer Priority)
+// [TIMESTAMP] 2026-01-12 14:15:00 - ui_render_overlays.js - Update: Dead Icon X & Z-Index Fixes
 
 Object.assign(UI, {
     
@@ -379,7 +379,9 @@ Object.assign(UI, {
                     else if(isDead) rowClass += "text-gray-500 italic ";
                     else rowClass += "text-green-400 ";
 
-                    const icon = isDead ? '☠️' : (isTop3 ? '🏆' : '');
+                    // HIER GEÄNDERT: X statt Totenkopf für tote (gelöschte) Charaktere
+                    const icon = isDead ? '❌' : (isTop3 ? '🏆' : '');
+                    
                     const nameDisplay = `${icon} ${entry.name}`;
 
                     const row = document.createElement('div');
