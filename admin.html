@@ -77,6 +77,10 @@
                     BUG REPORTS <span id="bug-count" class="ml-1 bg-white text-red-600 px-1 rounded-full text-[10px]">0</span>
                 </button>
                 
+                <button id="btn-lb" onclick="Admin.showLeaderboard()" class="hidden btn border-yellow-500 text-yellow-500 text-xs md:text-sm ml-2">
+                    🏆 LEGENDS
+                </button>
+
                 <div class="flex gap-2">
                     <button onclick="Admin.refresh()" class="btn text-xs md:text-sm">SYNC</button>
                     <button onclick="location.reload()" class="btn btn-danger text-xs md:text-sm">EXIT</button>
@@ -85,7 +89,6 @@
         </header>
 
         <div class="flex flex-1 overflow-hidden relative">
-            
             <div id="sidebar-overlay" onclick="Admin.toggleSidebar()" class="absolute inset-0 bg-black/80 z-20 hidden md:hidden backdrop-blur-sm transition-opacity"></div>
 
             <div id="sidebar" class="absolute top-0 bottom-0 left-0 w-72 border-r border-[#1a551a] bg-black z-30 flex flex-col transform -translate-x-full md:translate-x-0 md:static shadow-[5px_0_20px_rgba(0,0,0,0.8)] md:shadow-none">
@@ -102,15 +105,11 @@
             </div>
 
             <div id="editor-panel" class="flex-1 flex flex-col relative bg-black/20 min-w-0">
-                
                 <div id="no-selection" class="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
                     <div class="text-2xl md:text-4xl text-[#1a331a] font-bold tracking-widest opacity-50 text-center px-4">SELECT A RESIDENT</div>
                 </div>
-
                 <div id="editor-error" class="hidden absolute top-4 right-4 bg-red-900/90 border border-red-500 p-4 text-white z-50 max-w-sm"></div>
-
                 <div id="editor-content" class="hidden absolute inset-0 z-10 bg-black/90 backdrop-blur-md flex flex-col">
-                    
                     <div class="flex justify-between items-end p-4 border-b border-[#39ff14] bg-[#001100] shrink-0">
                         <div class="overflow-hidden">
                             <h2 id="edit-name" class="text-2xl md:text-3xl font-bold text-white mb-1 leading-none truncate">PLAYER</h2>
@@ -122,7 +121,6 @@
                             <div class="text-[10px] md:text-xs text-gray-400">XP: <input type="number" id="quick-xp" class="w-16 md:w-20 bg-transparent border-b border-gray-600 text-right" onchange="Admin.saveVal('xp', this.value)"></div>
                         </div>
                     </div>
-
                     <div class="flex border-b border-[#1a551a] shrink-0 text-sm overflow-x-auto no-scrollbar">
                         <button onclick="Admin.tab('general')" id="tab-btn-general" class="flex-1 py-3 px-3 hover:bg-[#002200] active-tab whitespace-nowrap">MAIN</button>
                         <button onclick="Admin.tab('stats')" id="tab-btn-stats" class="flex-1 py-3 px-3 hover:bg-[#002200] inactive-tab whitespace-nowrap">S.P.E.C.I.A.L.</button>
@@ -131,9 +129,7 @@
                         <button onclick="Admin.tab('world')" id="tab-btn-world" class="flex-1 py-3 px-3 hover:bg-[#002200] inactive-tab whitespace-nowrap">WORLD</button>
                         <button onclick="Admin.tab('raw')" id="tab-btn-raw" class="flex-1 py-3 px-3 hover:bg-[#002200] inactive-tab whitespace-nowrap">RAW</button>
                     </div>
-
                     <div class="flex-1 relative overflow-hidden">
-                        
                         <div id="tab-general" class="absolute inset-0 custom-scroll p-4 md:p-6 space-y-6">
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div class="panel-box p-4">
@@ -168,9 +164,7 @@
                                 </div>
                             </div>
                         </div>
-
                         <div id="tab-stats" class="absolute inset-0 hidden custom-scroll p-4 md:p-6">
-                            
                             <div class="flex justify-between items-end border-b border-[#1a551a] mb-4 pb-2">
                                 <h3 class="text-2xl font-bold text-yellow-400 tracking-widest">S.P.E.C.I.A.L.</h3>
                                 <div class="flex items-center text-green-400 font-mono">
@@ -178,9 +172,7 @@
                                     <input type="number" id="inp-statPoints" class="w-16 text-center bg-[#001100] border border-[#1a551a] text-[#39ff14] font-bold text-lg" onchange="Admin.saveVal('statPoints', this.value)">
                                 </div>
                             </div>
-                            
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8" id="special-container"></div>
-                            
                             <div class="flex justify-between items-end border-b border-[#1a551a] mb-4 pb-2">
                                 <h3 class="text-2xl font-bold text-yellow-400 tracking-widest">PERKS</h3>
                                 <div class="flex items-center text-green-400 font-mono">
@@ -188,11 +180,8 @@
                                     <input type="number" id="inp-perkPoints" class="w-16 text-center bg-[#001100] border border-[#1a551a] text-[#39ff14] font-bold text-lg" onchange="Admin.saveVal('perkPoints', this.value)">
                                 </div>
                             </div>
-
-                            <div id="perk-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                </div>
+                            <div id="perk-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                         </div>
-
                         <div id="tab-inv" class="absolute inset-0 hidden custom-scroll p-4 md:p-6 space-y-4">
                             <div class="panel-box p-4">
                                 <h3 class="text-yellow-400 font-bold border-b border-[#1a551a] mb-2">EQUIPPED</h3>
@@ -213,7 +202,6 @@
                                     <button onclick="Admin.invAdd()" class="btn h-10 font-bold bg-[#39ff14] text-black hover:bg-white flex-1">ADD</button>
                                 </div>
                             </div>
-                            
                             <div class="w-full pb-4">
                                 <table class="w-full text-left border-collapse">
                                     <thead class="text-xs text-gray-400 border-b border-[#1a551a] bg-black">
@@ -227,14 +215,12 @@
                                 </table>
                             </div>
                         </div>
-
                         <div id="tab-camp" class="absolute inset-0 hidden custom-scroll p-4 md:p-6 space-y-6">
                             <div class="panel-box p-6 border-yellow-600">
                                 <h3 class="text-2xl font-bold text-yellow-400 mb-4">CAMP STATUS</h3>
                                 <div id="camp-data-content" class="text-gray-400 italic">No camp deployed.</div>
                             </div>
                         </div>
-
                         <div id="tab-world" class="absolute inset-0 hidden custom-scroll p-4 md:p-6 space-y-6">
                             <div class="panel-box p-6 border-yellow-600">
                                 <h3 class="text-2xl font-bold text-yellow-400 mb-4">TELEPORT</h3>
@@ -259,13 +245,11 @@
                                 <div id="quest-list" class="flex flex-col gap-1"></div>
                             </div>
                         </div>
-
                         <div id="tab-raw" class="absolute inset-0 hidden flex flex-col p-4 md:p-6">
                             <p class="text-xs text-red-500 mb-2 shrink-0">WARNING: DIRECT JSON EDITING.</p>
                             <textarea id="raw-json" class="flex-1 font-mono text-xs bg-black p-4 border border-[#1a551a] text-green-300 custom-scroll resize-none mb-2"></textarea>
                             <button onclick="Admin.saveRaw()" class="btn border-red-500 text-red-500 shrink-0">SAVE RAW JSON</button>
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -277,9 +261,20 @@
             <h2 class="text-3xl text-red-500 font-bold tracking-widest blink-red">INCOMING BUG REPORTS</h2>
             <button onclick="document.getElementById('bug-overlay').classList.add('hidden')" class="btn">CLOSE</button>
         </div>
-        <div id="bug-list" class="flex-1 custom-scroll space-y-4 pr-2">
-            </div>
+        <div id="bug-list" class="flex-1 custom-scroll space-y-4 pr-2"></div>
     </div>
+
+    <div id="admin-confirm-overlay" class="hidden absolute inset-0 z-[2000] bg-black/90 flex items-center justify-center p-4 admin-font">
+        <div class="panel-box p-6 w-full max-w-md border-2 border-yellow-500 shadow-[0_0_30px_#aa0] relative animate-float-in">
+            <h2 id="admin-confirm-title" class="text-2xl font-bold text-yellow-400 mb-4 border-b border-yellow-600 pb-2 tracking-widest">CONFIRM</h2>
+            <div id="admin-confirm-text" class="text-green-300 mb-8 font-mono text-sm leading-relaxed">Are you sure?</div>
+            <div class="flex gap-4">
+                <button id="admin-confirm-yes" class="btn flex-1 border-green-500 text-green-500 hover:bg-green-900 font-bold py-3">CONFIRM</button>
+                <button id="admin-confirm-no" class="btn flex-1 border-red-500 text-red-500 hover:bg-red-900 font-bold py-3">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
