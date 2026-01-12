@@ -1,8 +1,11 @@
 🐛 Aktuelle Bugs & Anpassungen:
+
+- Doppellogin möglich, Handy und Laptop zur selben Zeit. Warum keine Abfrage mehr ob man schon verbunden ist?
+
+
 - Todesklauen zu oft 
 - Buglog muss so ausführlich sein das ich ihn direkt weiterleiten kann zum beheben, an dich eben.
 - wenn man stirbt bleibt aktuell charaktee uns safegame bestehen. wenn TP 0 erreicht sollte der charakter ja gelöscht werden, liegt das an der speicher logik?
-- Doppellogin möglich, Handy und Laptop zur selben Zeit. Warum keine Abfrage mehr ob man schon verbunden ist?
 - Fäuste sollen die Standart "ausrüstung" als Waffe sein wenn man keine hat. Kein Item was so existiert, aktuell kann man sie in Schrott zerlegen. Was soll den der mist.
 - Wo sind die Rucksäcke hin?
 - Lock Picking auf Truhen in Dungeons legen
