@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-12 14:30:00 - admin.js - Added Leaderboard Manager
+// [TIMESTAMP] 2026-01-12 15:05:00 - admin.js - Removed Native Confirms & Added UI.showConfirm
 
 const Admin = {
     gatePass: "bimbo123",
@@ -7,7 +7,7 @@ const Admin = {
 
     dbData: {}, 
     bugData: {}, 
-    lbData: {}, // NEU: Leaderboard Daten
+    lbData: {}, 
     currentPath: null,
     currentUserData: null,
     itemsList: [], 
@@ -52,11 +52,9 @@ const Admin = {
     },
 
     initData: function() {
-        // Init Items
         const items = (typeof Game !== 'undefined' && Game.items) ? Game.items : (window.GameData ? window.GameData.items : {});
         this.itemsList = Object.entries(items).map(([k, v]) => ({id: k, ...v}));
         
-        // 1. Players Listener
         Network.db.ref('saves').on('value', snap => {
             this.dbData = snap.val() || {};
             this.renderUserList();
@@ -68,7 +66,6 @@ const Admin = {
             }
         });
 
-        // 2. Bug Reports Listener
         Network.db.ref('bug_reports').on('value', snap => {
             this.bugData = snap.val() || {};
             const count = Object.keys(this.bugData).length;
@@ -84,10 +81,8 @@ const Admin = {
             }
         });
 
-        // 3. NEU: Leaderboard Listener
         Network.db.ref('leaderboard').on('value', snap => {
             this.lbData = snap.val() || {};
-            // Button für Leaderboard aktivieren/anzeigen (wir erzeugen ihn dynamisch falls nicht da, oder nutzen einen existierenden Container)
             this.ensureLeaderboardButton();
             if(document.getElementById('lb-overlay') && !document.getElementById('lb-overlay').classList.contains('hidden')) {
                 this.renderLeaderboard();
@@ -96,7 +91,6 @@ const Admin = {
     },
 
     ensureLeaderboardButton: function() {
-        // Fügt den Button neben dem Bug Button ein, falls noch nicht vorhanden
         if(!document.getElementById('btn-lb')) {
             const headerActions = document.getElementById('btn-bugs').parentElement;
             const btn = document.createElement('button');
@@ -108,7 +102,6 @@ const Admin = {
         }
     },
 
-    // --- LEADERBOARD MANAGER ---
     showLeaderboard: function() {
         let overlay = document.getElementById('lb-overlay');
         if(!overlay) {
@@ -181,19 +174,33 @@ const Admin = {
     lbAction: function(key, action) {
         const ref = Network.db.ref('leaderboard/' + key);
         if(action === 'kill') {
-            if(confirm(`Mark ${key} as DEAD? This frees the name.`)) {
+            if(typeof UI !== 'undefined' && UI.showConfirm) {
+                UI.showConfirm("MARK AS DEAD", `Mark ${key} as DEAD?<br>This frees the name for new players.`, () => {
+                    ref.update({ status: 'dead', deathTime: Date.now() });
+                });
+            } else if(confirm(`Mark ${key} as DEAD?`)) { // Fallback
                 ref.update({ status: 'dead', deathTime: Date.now() });
             }
         } else if(action === 'revive') {
-            ref.update({ status: 'alive' });
+            // Revive usually safe, maybe no confirm needed, but let's add one to be consistent
+             if(typeof UI !== 'undefined' && UI.showConfirm) {
+                UI.showConfirm("REVIVE LEGEND", `Revive ${key}?<br>Status will be set to ALIVE.`, () => {
+                    ref.update({ status: 'alive' });
+                });
+            } else {
+                ref.update({ status: 'alive' });
+            }
         } else if(action === 'delete') {
-            if(confirm(`PERMANENTLY DELETE ${key} from highscores?`)) {
+            if(typeof UI !== 'undefined' && UI.showConfirm) {
+                UI.showConfirm("DELETE LEGEND", `PERMANENTLY DELETE ${key} from highscores?<br>This cannot be undone.`, () => {
+                    ref.remove();
+                });
+            } else if(confirm(`PERMANENTLY DELETE ${key}?`)) {
                 ref.remove();
             }
         }
     },
 
-    // --- BUGS (Existing) ---
     showBugs: function() {
         document.getElementById('bug-overlay').classList.remove('hidden');
         this.renderBugs();
@@ -238,8 +245,13 @@ const Admin = {
     },
 
     deleteBug: function(id) {
-        if(!confirm("Bug erledigt? Löschen?")) return;
-        Network.db.ref('bug_reports/' + id).remove();
+        if(typeof UI !== 'undefined' && UI.showConfirm) {
+            UI.showConfirm("DELETE BUG REPORT", "Bug entry löschen?", () => {
+                Network.db.ref('bug_reports/' + id).remove();
+            });
+        } else if(confirm("Bug erledigt? Löschen?")) {
+            Network.db.ref('bug_reports/' + id).remove();
+        }
     },
 
     refresh: function() { location.reload(); },
@@ -373,7 +385,6 @@ const Admin = {
         document.getElementById('inp-statPoints').value = d.statPoints || 0;
         document.getElementById('inp-perkPoints').value = d.perkPoints || 0;
 
-        // PERKS Sliders
         const perkContainer = document.getElementById('perk-list-container');
         if(perkContainer) {
             perkContainer.innerHTML = '';
@@ -387,12 +398,9 @@ const Admin = {
                 allPerks.forEach(p => {
                     let lvl = userPerks[p.id] || 0;
                     if(Array.isArray(userPerks)) lvl = userPerks.includes(p.id) ? 1 : 0;
-                    
                     const maxLvl = p.max || 1;
-
                     const div = document.createElement('div');
                     div.className = "panel-box p-2 flex justify-between items-center";
-                    
                     div.innerHTML = `
                         <span class="font-bold text-sm w-32 truncate text-[#39ff14]" title="${p.name}">${p.name}</span>
                         <input type="range" min="0" max="${maxLvl}" value="${lvl}" class="flex-grow mx-2 accent-[#39ff14]"
@@ -417,18 +425,15 @@ const Admin = {
         Network.db.ref(this.currentPath + '/perks/' + perkId).set(valNum);
     },
 
-    // --- REBUILT INVENTORY PANEL (COMPACT TABLE) ---
     fillInv: function(d) {
         const invTab = document.getElementById('tab-inv');
         
         invTab.innerHTML = `
             <div class="flex flex-col h-full gap-2">
-                
                 <div class="panel-box p-2 shrink-0">
                     <h3 class="text-yellow-400 font-bold border-b border-[#1a551a] mb-1 text-xs">EQUIPPED</h3>
                     <div id="equip-list" class="grid grid-cols-2 gap-1 text-[10px]"></div>
                 </div>
-
                 <div class="panel-box flex flex-col flex-1 min-h-0 overflow-hidden relative">
                     <div class="bg-[#002200] p-2 border-b border-[#1a551a] shrink-0 z-10">
                         <div class="flex gap-2 mb-1">
@@ -440,7 +445,6 @@ const Admin = {
                         </div>
                         <div class="flex flex-wrap gap-1 justify-center" id="filter-btns"></div>
                     </div>
-                    
                     <div class="flex-1 custom-scroll bg-black relative">
                         <table class="w-full text-left border-collapse">
                             <thead class="bg-[#001100] text-gray-500 text-[9px] sticky top-0 z-20 border-b border-[#1a551a]">
@@ -450,12 +454,10 @@ const Admin = {
                                     <th class="p-1 w-20 text-right pr-2">ADD</th>
                                 </tr>
                             </thead>
-                            <tbody id="admin-item-table-body" class="text-xs font-mono">
-                                </tbody>
+                            <tbody id="admin-item-table-body" class="text-xs font-mono"></tbody>
                         </table>
                     </div>
                 </div>
-
                 <div class="panel-box p-2 h-1/4 shrink-0 flex flex-col">
                     <h3 class="text-gray-500 font-bold text-[10px] mb-1">PLAYER INVENTORY</h3>
                     <div class="flex-1 custom-scroll bg-black border border-[#1a551a]">
@@ -470,7 +472,6 @@ const Admin = {
             </div>
         `;
 
-        // --- 2. EQUIPPED LIST ---
         const equipList = document.getElementById('equip-list');
         if(d.equip) {
             for(let slot in d.equip) {
@@ -487,7 +488,6 @@ const Admin = {
             }
         }
 
-        // --- 3. INVENTORY LIST ---
         const tbody = document.getElementById('inv-table-body');
         const inv = d.inventory || [];
         const items = (window.GameData && window.GameData.items) ? window.GameData.items : {};
@@ -495,7 +495,6 @@ const Admin = {
         inv.forEach((item, idx) => {
             const tr = document.createElement('tr');
             tr.className = "border-b border-[#1a331a] hover:bg-[#002200]";
-            
             let name = item.id;
             if(items[item.id]) name = items[item.id].name;
             if(item.props && item.props.name) name = item.props.name + "*";
@@ -510,7 +509,6 @@ const Admin = {
             tbody.appendChild(tr);
         });
 
-        // --- 4. RENDER FILTER BUTTONS ---
         const cats = ['ALL', 'WEAPON', 'APPAREL', 'AID', 'JUNK', 'NOTES'];
         const btnContainer = document.getElementById('filter-btns');
         cats.forEach(c => {
@@ -522,7 +520,6 @@ const Admin = {
             btnContainer.appendChild(btn);
         });
 
-        // --- 5. INITIAL ITEM BROWSER RENDER ---
         this.refreshItemBrowser();
     },
 
@@ -549,21 +546,17 @@ const Admin = {
         const allItems = this.itemsList; 
         
         let count = 0;
-        // Sortieren nach Name
         allItems.sort((a,b) => a.name.localeCompare(b.name));
 
         allItems.forEach(item => {
-            // 1. Kategorie Filter
             const cat = this.getItemCategory(item.type);
             if(this.invFilter.category !== 'ALL' && cat !== this.invFilter.category) return;
 
-            // 2. Suche Filter
             if(this.invFilter.search) {
                 const searchStr = (item.name + " " + item.id).toLowerCase();
                 if(!searchStr.includes(this.invFilter.search)) return;
             }
 
-            // Render Table Row
             const tr = document.createElement('tr');
             tr.className = "border-b border-[#1a331a] hover:bg-[#003300] transition-colors group";
             
@@ -602,7 +595,6 @@ const Admin = {
         const inv = [...(this.currentUserData.inventory || [])];
         let found = false;
         
-        // Versuch Stack zu finden (nur wenn keine Props, normale Items stacken)
         for(let item of inv) {
             if(item.id === id && !item.props) {
                 item.count += count;
@@ -610,15 +602,11 @@ const Admin = {
                 break;
             }
         }
-        // Neu anlegen
         if(!found) {
             inv.push({id: id, count: count, isNew: true});
         }
-        
         Network.db.ref(this.currentPath + '/inventory').set(inv);
-        // Kein visuelles Feedback nötig, Firebase Update triggert Render neu
     },
-    // ---------------------------------------------
 
     fillCamp: function(d) {
         const container = document.getElementById('camp-data-content');
@@ -726,41 +714,76 @@ const Admin = {
         const updates = {};
         const p = this.currentPath;
 
+        const performUpdate = () => {
+            Network.db.ref(p).update(updates);
+        };
+
         if (type === 'heal') {
             updates['hp'] = this.currentUserData.maxHp || 100;
             updates['rads'] = 0;
             updates['isGameOver'] = false;
+            performUpdate();
         }
         else if (type === 'de-rad') {
             updates['rads'] = 0;
+            performUpdate();
         }
         else if (type === 'kill') {
-            if(!confirm("KILL PLAYER?")) return;
-            updates['hp'] = 0;
-            updates['isGameOver'] = true;
+            if(typeof UI !== 'undefined' && UI.showConfirm) {
+                UI.showConfirm("KILL PLAYER", "Dies setzt HP auf 0 und beendet das Spiel des Spielers.", () => {
+                    updates['hp'] = 0;
+                    updates['isGameOver'] = true;
+                    performUpdate();
+                });
+            } else if(confirm("KILL PLAYER?")) {
+                updates['hp'] = 0;
+                updates['isGameOver'] = true;
+                performUpdate();
+            }
         }
         else if (type === 'revive') {
             updates['hp'] = 10;
             updates['isGameOver'] = false;
+            performUpdate();
         }
         else if (type === 'delete') {
-            if(!confirm("DELETE SAVEGAME PERMANENTLY?")) return;
-            Network.db.ref(p).remove();
-            this.currentPath = null;
-            document.getElementById('editor-content').classList.add('hidden');
-            document.getElementById('no-selection').classList.remove('hidden');
-            return;
+            if(typeof UI !== 'undefined' && UI.showConfirm) {
+                UI.showConfirm("DELETE SAVE", "Savegame permanent löschen?", () => {
+                    Network.db.ref(p).remove();
+                    this.currentPath = null;
+                    document.getElementById('editor-content').classList.add('hidden');
+                    document.getElementById('no-selection').classList.remove('hidden');
+                });
+            } else if(confirm("DELETE SAVEGAME PERMANENTLY?")) {
+                Network.db.ref(p).remove();
+                this.currentPath = null;
+                document.getElementById('editor-content').classList.add('hidden');
+                document.getElementById('no-selection').classList.remove('hidden');
+            }
         }
         else if (type === 'reset-vault') {
-            if(!confirm("RESET CHARACTER TO VAULT 101 (SECTOR 4,4)?")) return;
-            updates['sector'] = {x: 4, y: 4};
-            updates['player'] = {x: 100, y: 100}; 
-            updates['view'] = 'map';
+            if(typeof UI !== 'undefined' && UI.showConfirm) {
+                UI.showConfirm("RESET TO VAULT", "Charakter zurück zu Vault 101 porten?", () => {
+                    updates['sector'] = {x: 4, y: 4};
+                    updates['player'] = {x: 100, y: 100}; 
+                    updates['view'] = 'map';
+                    performUpdate();
+                });
+            } else if(confirm("RESET CHARACTER TO VAULT 101?")) {
+                updates['sector'] = {x: 4, y: 4};
+                updates['player'] = {x: 100, y: 100}; 
+                updates['view'] = 'map';
+                performUpdate();
+            }
         }
         else if (type === 'destroy-camp') {
-            if(!confirm("Destroy Camp?")) return;
-            Network.db.ref(p + '/camp').remove();
-            return;
+            if(typeof UI !== 'undefined' && UI.showConfirm) {
+                UI.showConfirm("DESTROY CAMP", "Camp löschen?", () => {
+                    Network.db.ref(p + '/camp').remove();
+                });
+            } else if(confirm("Destroy Camp?")) {
+                Network.db.ref(p + '/camp').remove();
+            }
         }
         else if (type === 'force-camp') {
             const sec = this.currentUserData.sector || {x:4, y:4};
@@ -771,9 +794,8 @@ const Admin = {
                 y: pos.y,
                 level: 1
             };
+            performUpdate();
         }
-
-        Network.db.ref(p).update(updates);
     },
 
     teleport: function() {
@@ -793,27 +815,47 @@ const Admin = {
     },
 
     invDelete: function(idx) {
-        if(!confirm("Remove Item?")) return;
-        const inv = [...(this.currentUserData.inventory || [])];
-        inv.splice(idx, 1);
-        Network.db.ref(this.currentPath + '/inventory').set(inv);
+        if(typeof UI !== 'undefined' && UI.showConfirm) {
+            UI.showConfirm("DELETE ITEM", "Item wirklich löschen?", () => {
+                const inv = [...(this.currentUserData.inventory || [])];
+                inv.splice(idx, 1);
+                Network.db.ref(this.currentPath + '/inventory').set(inv);
+            });
+        } else if(confirm("Remove Item?")) {
+            const inv = [...(this.currentUserData.inventory || [])];
+            inv.splice(idx, 1);
+            Network.db.ref(this.currentPath + '/inventory').set(inv);
+        }
     },
 
     forceUnequip: function(slot) {
-        if(!confirm(`Unequip ${slot}? This moves item to inventory.`)) return;
-        const item = this.currentUserData.equip[slot];
-        if(!item) return;
-        
-        const inv = [...(this.currentUserData.inventory || [])];
-        inv.push({id: item.id, count: 1, props: item.props});
-        Network.db.ref(this.currentPath + '/inventory').set(inv);
-        Network.db.ref(this.currentPath + '/equip/' + slot).remove();
+        if(typeof UI !== 'undefined' && UI.showConfirm) {
+            UI.showConfirm("UNEQUIP", `${slot} ablegen? (Wird ins Inventar verschoben)`, () => {
+                const item = this.currentUserData.equip[slot];
+                if(!item) return;
+                const inv = [...(this.currentUserData.inventory || [])];
+                inv.push({id: item.id, count: 1, props: item.props});
+                Network.db.ref(this.currentPath + '/inventory').set(inv);
+                Network.db.ref(this.currentPath + '/equip/' + slot).remove();
+            });
+        } else if(confirm(`Unequip ${slot}?`)) {
+            const item = this.currentUserData.equip[slot];
+            if(!item) return;
+            const inv = [...(this.currentUserData.inventory || [])];
+            inv.push({id: item.id, count: 1, props: item.props});
+            Network.db.ref(this.currentPath + '/inventory').set(inv);
+            Network.db.ref(this.currentPath + '/equip/' + slot).remove();
+        }
     },
 
     saveRaw: function() {
         try {
             const data = JSON.parse(document.getElementById('raw-json').value);
-            if(confirm("OVERWRITE DATABASE WITH RAW JSON? THIS IS DESTRUCTIVE.")) {
+            if(typeof UI !== 'undefined' && UI.showConfirm) {
+                UI.showConfirm("RAW OVERWRITE", "WARNUNG: Datenbank wird direkt überschrieben. Dies ist destruktiv!", () => {
+                    Network.db.ref(this.currentPath).set(data);
+                });
+            } else if(confirm("OVERWRITE DATABASE WITH RAW JSON?")) {
                 Network.db.ref(this.currentPath).set(data);
             }
         } catch(e) {
