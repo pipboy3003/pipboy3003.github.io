@@ -24,7 +24,6 @@
 
     <div id="login-screen" class="hex-bg">
         <div class="login-box crt-effect-container">
-            
             <div id="boot-sequence">
                 <div class="relative w-24 h-24 mb-4">
                     <svg class="w-full h-full text-green-500 gear-spin absolute inset-0 opacity-50" viewBox="0 0 100 100" fill="currentColor">
@@ -63,7 +62,6 @@
                 <div id="login-status" class="mt-4 text-yellow-400 min-h-[1.5em] text-sm font-mono break-words"></div>
                 <div class="mt-4 text-xs text-[#1aff1a] opacity-50 border-t border-[#1aff1a]/30 pt-2 w-full">VERSION <span id="login-version-display">LOADING...</span></div>
             </div>
-
         </div>
     </div>
 
@@ -154,7 +152,10 @@
             <div class="border-t border-green-900 my-1"></div>
             <button id="btn-menu-save" class="action-button w-full text-left border-yellow-400 text-yellow-400">SPEICHERN</button>
             <button id="btn-logout" class="action-button w-full text-left text-red-400 border-red-500">LOGOUT</button>
-            <div class="text-[10px] text-center text-white opacity-80 mt-1"><span id="val-players">?</span> USER | v<span id="version-display">...</span></div>
+            <div class="text-[10px] text-center text-white opacity-80 mt-1 flex justify-between px-2">
+                <span>TIME: <span id="game-timer">00:00:00</span></span>
+                <span>v<span id="version-display">...</span></span>
+            </div>
         </div>
         
         <div id="main-content">
