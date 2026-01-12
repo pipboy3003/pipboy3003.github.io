@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-10 06:00:00 - ui_view_inv.js - Inventory Glow Visuals
+// [TIMESTAMP] 2026-01-12 12:00:00 - ui_view_inv.js - Show Standard Gear & Inventory Visuals
 
 Object.assign(UI, {
 
@@ -42,8 +42,8 @@ Object.assign(UI, {
             if(onClick) cssClass += " cursor-pointer hover:bg-green-500 hover:text-black";
             else cssClass += " cursor-default opacity-80"; 
             
-            // [NEU] Glow Effekt hinzufügen, wenn Item neu ist
-            if (entry.isNew) {
+            // Glow Effekt hinzufügen, wenn Item neu ist (nur im Inventar, nicht ausgerüstet)
+            if (entry && entry.isNew && !isEquipped) {
                 cssClass += " new-item-glow";
             }
 
@@ -52,10 +52,14 @@ Object.assign(UI, {
             let displayName = entry.props && entry.props.name ? entry.props.name : itemDef.name;
             let extraClass = entry.props && entry.props.color ? entry.props.color : "";
 
+            // Anzahl nur anzeigen wenn > 1 oder Stapelbar (Munition)
+            const countDisplay = (entry.count > 1 || itemDef.type === 'ammo') ? 
+                `<div class="absolute top-0 right-0 bg-green-900 text-white text-[10px] px-1 font-mono">${entry.count}</div>` : '';
+
             btn.innerHTML = `
                 <div class="text-2xl">${getIcon(itemDef.type)}</div>
                 <div class="text-[10px] truncate max-w-full px-1 font-bold ${extraClass}">${displayName}</div>
-                <div class="absolute top-0 right-0 bg-green-900 text-white text-[10px] px-1 font-mono">${entry.count}</div>
+                ${countDisplay}
             `;
 
             if(isEquipped) {
@@ -66,16 +70,13 @@ Object.assign(UI, {
                 btn.style.borderColor = "#39ff14"; 
             }
             
-            // [NEU] Logik zum Entfernen des "Neu"-Status
             const markAsRead = () => {
-                if(entry.isNew) {
+                if(entry && entry.isNew) {
                     entry.isNew = false;
                     btn.classList.remove('new-item-glow');
-                    // Optional: Man könnte hier speichern, ist aber meist nicht nötig für reinen UI-Effekt
                 }
             };
 
-            // Glow entfernen bei Hover oder Klick
             btn.onmouseenter = markAsRead;
             btn.onclick = (e) => {
                 e.stopPropagation(); 
@@ -94,12 +95,12 @@ Object.assign(UI, {
 
         const equippedList = [];
 
+        // 1. INVENTAR ITEMS RENDERN
         Game.state.inventory.forEach((entry, index) => {
             if(entry.count <= 0) return;
             const item = Game.items[entry.id];
             if(!item) return;
 
-            // Wir übergeben jetzt das GANZE entry-Objekt an createBtn
             if(entry.id === 'camp_kit' && Game.state.camp) {
                  const btn = createBtn(item, entry, true, "AUFGESTELLT", null);
                  equippedList.push(btn); 
@@ -130,21 +131,26 @@ Object.assign(UI, {
             }
         });
 
+        // 2. AUSGERÜSTETE ITEMS RENDERN (Inklusive Standard)
         const slots = ['weapon', 'head', 'body', 'arms', 'legs', 'feet', 'back'];
         slots.forEach(slot => {
             const equippedItem = Game.state.equip[slot];
-            if(!equippedItem || equippedItem.name === 'Fäuste' || equippedItem.name === 'Vault-Anzug' || equippedItem.name === 'Kein Rucksack') return;
+            
+            // HIER WAR DIE ÄNDERUNG: Wir erlauben jetzt ALLES, solange es nicht null ist
+            if(!equippedItem) return;
 
             let baseDef = Game.items[equippedItem.id];
+            // Fallback falls ID fehlt aber Name da ist (Migration)
             if(!baseDef) {
                 const key = Object.keys(Game.items).find(k => Game.items[k].name === equippedItem.name);
                 if(key) baseDef = Game.items[key];
             }
-            if(!baseDef) return; 
+            // Fallback für Standard-Items, falls sie nicht in items.js wären (sind sie aber)
+            if(!baseDef) baseDef = equippedItem;
 
             const onClick = () => UI.showEquippedDialog(slot);
 
-            // Fake Entry für ausgerüstete Items (damit createBtn nicht crasht, haben aber nie isNew)
+            // Fake Entry für ausgerüstete Items
             const fakeEntry = { 
                 id: equippedItem.id, 
                 count: 1, 
@@ -253,9 +259,8 @@ Object.assign(UI, {
 
             const item = Game.state.equip[slot];
             
-            const isEmpty = !item || 
-                           (slot === 'back' && !item.props) || 
-                           (!item.name || item.name === 'Fäuste' || item.name === 'Vault-Anzug' || item.name === 'Kein Rucksack');
+            // HIER WAR DIE ÄNDERUNG: Einfachere Prüfung. Wenn Item da, zeigen wir es.
+            const isEmpty = !item;
 
             const nameEl = el.querySelector('.item-name');
             if(!nameEl) return;
