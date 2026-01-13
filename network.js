@@ -1,7 +1,3 @@
-{
-type: uploaded file
-fileName: pipboy3003/pipboy3003.github.io/pipboy3003.github.io-main/network.js
-fullContent:
 // [2026-01-13 14:15:00] network.js - Added Session Check (Prevent Double Login)
 
 const Network = {
@@ -278,4 +274,3 @@ const Network = {
         catch (e) { console.error(e); return false; }
     }
 };
-}
