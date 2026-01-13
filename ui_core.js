@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-12 20:00:00 - ui_core.js - Toast System Only, No Timer
+// [TIMESTAMP] 2026-01-13 12:00:00 - ui_core.js - Fixed AFK Logic to include CharSelect
 
 const UI = {
     els: {},
@@ -282,10 +282,12 @@ const UI = {
     },
 
     update: function() {
-        const isIngame = (Game.state && this.els.gameScreen && !this.els.gameScreen.classList.contains('hidden'));
+        // FIX: Prüfen ob wir NICHT im Login-Screen sind (gilt für Ingame + CharSelect)
+        // Login-Screen Display ist 'flex' wenn sichtbar, 'none' wenn weg.
+        const isLoggedIn = (this.els.loginScreen && this.els.loginScreen.style.display === 'none');
         
-        // Auto Logout bei Inaktivität
-        if (isIngame) {
+        // Auto Logout bei Inaktivität (300000ms = 5 Minuten)
+        if (isLoggedIn) {
             if(Date.now() - this.lastInputTime > 300000) { 
                 this.logout("AFK: ZEITÜBERSCHREITUNG");
             }
@@ -299,7 +301,7 @@ const UI = {
         this.els = {
             touchArea: document.getElementById('main-content'),
             view: document.getElementById('view-container'),
-            toastContainer: document.getElementById('game-toast-container'), // NEW
+            toastContainer: document.getElementById('game-toast-container'), 
             hp: document.getElementById('val-hp'),
             hpBar: document.getElementById('bar-hp'),
             expBarTop: document.getElementById('bar-exp-top'),
@@ -386,7 +388,7 @@ const UI = {
 
         if(this.initInput) this.initInput();
         
-        // Kein Timer-Intervall mehr starten
+        // Loop startet den Update-Zyklus
         setInterval(() => {
             if(this.update) this.update();
         }, 1000);
