@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-13 12:00:00 - ui_core.js - Fixed AFK Logic to include CharSelect
+// [2026-01-13 17:00:00] ui_core.js - Fixed AFK Logic (Robust Login Check)
 
 const UI = {
     els: {},
@@ -282,13 +282,18 @@ const UI = {
     },
 
     update: function() {
-        // FIX: Prüfen ob wir NICHT im Login-Screen sind (gilt für Ingame + CharSelect)
-        // Login-Screen Display ist 'flex' wenn sichtbar, 'none' wenn weg.
-        const isLoggedIn = (this.els.loginScreen && this.els.loginScreen.style.display === 'none');
+        // FIX: Bessere Prüfung ob wir eingeloggt sind.
+        // 1. Prüfen ob der Login Screen weg ist (Style OR Class 'hidden')
+        // 2. Prüfen ob wir technisch authentifiziert sind (Network.myId)
         
-        // Auto Logout bei Inaktivität (300000ms = 5 Minuten)
-        if (isLoggedIn) {
+        const loginScreen = this.els.loginScreen;
+        const isLoginHidden = loginScreen && (loginScreen.style.display === 'none' || loginScreen.classList.contains('hidden'));
+        const isAuth = (typeof Network !== 'undefined' && Network.myId);
+
+        if (isLoginHidden && isAuth) {
+            // Auto Logout bei Inaktivität (300000ms = 5 Minuten)
             if(Date.now() - this.lastInputTime > 300000) { 
+                console.log("AFK Trigger: Logout initiiert.");
                 this.logout("AFK: ZEITÜBERSCHREITUNG");
             }
         }
@@ -429,6 +434,9 @@ const UI = {
         
         this.els.gameScreen.classList.add('hidden');
         this.els.loginScreen.style.display = 'flex';
+        // Falls vorher hidden Klasse drauf war, entfernen:
+        this.els.loginScreen.classList.remove('hidden');
+        
         this.els.loginStatus.textContent = msg || "AUSGELOGGT";
         this.els.loginStatus.className = "mt-4 text-yellow-400";
         this.els.inputPass.value = "";
