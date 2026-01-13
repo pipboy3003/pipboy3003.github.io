@@ -1,50 +1,37 @@
-// [2026-01-13 18:00:00] ui_render_core.js - Added AFK Check (Fix for Char Select)
+// [TIMESTAMP] 2026-01-13 13:00:00 - ui_render_core.js - CLEANUP: Presentation Only
 
 Object.assign(UI, {
     
-    update: function() {
-        // --- AFK LOGIC (Muss VOR Game.state Check stehen!) ---
-        // Da diese Funktion die update() aus ui_core.js überschreibt, muss der Check hier rein.
-        
-        const loginScreen = document.getElementById('login-screen');
-        // Wir sind "eingeloggt", wenn der Login-Screen weg ist (hidden Klasse oder display none)
-        const isLoginHidden = loginScreen && (loginScreen.style.display === 'none' || loginScreen.classList.contains('hidden'));
-        // Und wenn wir eine Network ID haben
-        const isAuth = (typeof Network !== 'undefined' && Network.myId);
-
-        if (isLoginHidden && isAuth) {
-            // 300000 ms = 5 Minuten
-            if (Date.now() - (this.lastInputTime || Date.now()) > 300000) { 
-                console.log("AFK Trigger: Zeitüberschreitung im UI Render Loop");
-                if(typeof this.logout === 'function') {
-                    this.logout("AFK: ZEITÜBERSCHREITUNG");
-                }
-                return; // Nichts weiter rendern
-            }
-        }
-        // -----------------------------------------------------
-
+    // WICHTIG: Umbenannt von update() zu render(), damit es ui_core.js nicht überschreibt!
+    render: function() {
         if (!Game.state) return;
         
+        // Element Caching on-the-fly falls nötig (für dynamische Elemente)
         if(!this.els.ammo) this.els.ammo = document.getElementById('val-ammo');
         if(!this.els.caps) this.els.caps = document.getElementById('val-caps');
         if(!this.els.hp) this.els.hp = document.getElementById('bar-hp');
         if(!this.els.headerCharInfo) this.els.headerCharInfo = document.getElementById('header-char-info');
 
-        const sectorDisplay = document.getElementById('val-sector-display');
-        const hasPoints = (Game.state.statPoints > 0) || (Game.state.perkPoints > 0);
-
+        // 1. Header Info
         const displayName = Game.state.playerName || (typeof Network !== 'undefined' ? Network.myDisplayName : "SURVIVOR");
         if(this.els.name) this.els.name.textContent = displayName;
         
+        const hasPoints = (Game.state.statPoints > 0) || (Game.state.perkPoints > 0);
         if(this.els.headerCharInfo) {
             if(hasPoints) this.els.headerCharInfo.classList.add('lvl-ready-glow');
             else this.els.headerCharInfo.classList.remove('lvl-ready-glow');
         }
 
+        if(this.els.lvl) this.els.lvl.textContent = Game.state.lvl;
+        
+        // Desktop View Sync
         const dtName = document.querySelector('.desktop-name-target');
         if(dtName) dtName.textContent = displayName;
+        const dtLvl = document.querySelector('.desktop-lvl-target');
+        if(dtLvl) dtLvl.textContent = Game.state.lvl;
 
+        // 2. Sektor Display
+        const sectorDisplay = document.getElementById('val-sector-display');
         if(sectorDisplay) {
             const sx = Game.state.sector ? Game.state.sector.x : 0;
             const sy = Game.state.sector ? Game.state.sector.y : 0;
@@ -52,11 +39,7 @@ Object.assign(UI, {
             sectorDisplay.classList.remove('border-yellow-500');
         }
 
-        if(this.els.lvl) this.els.lvl.textContent = Game.state.lvl;
-        const dtLvl = document.querySelector('.desktop-lvl-target');
-        if(dtLvl) dtLvl.textContent = Game.state.lvl;
-
-        // HP Logic
+        // 3. HP & Rads Logic
         const maxHp = Game.state.maxHp;
         const hp = Game.state.hp;
         const rads = Game.state.rads || 0;
@@ -78,6 +61,7 @@ Object.assign(UI, {
              this.els.hp.className = `absolute top-0 left-0 h-full transition-all duration-300 ${barColor}`;
              this.els.hp.style.width = `${hpPct}%`;
              
+             // Dynamic Bar Styling
              if(this.els.hp.parentElement) {
                  const p = this.els.hp.parentElement;
                  p.classList.remove('bg-green-900', 'bg-green-800', 'bg-green-700', 'bg-opacity-50');
@@ -92,17 +76,18 @@ Object.assign(UI, {
             radBar.className = "absolute top-0 right-0 h-full bg-red-600 transition-all duration-300 opacity-90";
         }
 
-        // XP
+        // 4. XP
         const nextXp = Game.expToNextLevel(Game.state.lvl);
         const expPct = Math.min(100, Math.floor((Game.state.xp / nextXp) * 100));
         if(this.els.xpTxt) this.els.xpTxt.textContent = expPct;
         if(this.els.expBarTop) this.els.expBarTop.style.width = `${expPct}%`;
         
+        // 5. Caps & Ammo
         if(this.els.caps) this.els.caps.textContent = `${Game.state.caps}`;
         const ammoItem = Game.state.inventory ? Game.state.inventory.find(i => i.id === 'ammo') : null;
         if(this.els.ammo) this.els.ammo.textContent = ammoItem ? ammoItem.count : 0;
 
-        // Camp Button
+        // 6. Camp Button Logic
         const campBtn = document.getElementById('btn-camp-overlay');
         if(campBtn) {
             const hasKit = Game.state.inventory && Game.state.inventory.some(i => i.id === 'camp_kit');
@@ -132,6 +117,7 @@ Object.assign(UI, {
             }
         }
         
+        // 7. Menu Alerts
         let hasAlert = false;
         if(this.els.btnChar) {
             if(hasPoints) { this.els.btnChar.classList.add('alert-glow-yellow'); hasAlert = true; } 
@@ -148,14 +134,17 @@ Object.assign(UI, {
             else this.els.btnMenu.classList.remove('alert-glow-yellow');
         }
 
+        // 8. Buttons disable in Combat
         const inCombat = Game.state.view === 'combat';
         [this.els.btnWiki, this.els.btnMap, this.els.btnChar, this.els.btnQuests, this.els.btnLogout, this.els.btnInv].forEach(btn => { if(btn) btn.disabled = inCombat; });
         
+        // 9. Level Up Blink
         if(this.els.lvl) {
             if(Game.state.buffEndTime && Date.now() < Game.state.buffEndTime) this.els.lvl.classList.add('blink-red');
             else this.els.lvl.classList.remove('blink-red');
         }
         
+        // 10. Online Player Badge
         if(typeof Network !== 'undefined' && Network.active) {
             const count = Object.keys(Network.otherPlayers).length + 1;
             const onlineBadge = document.getElementById('online-badge');
@@ -205,6 +194,7 @@ Object.assign(UI, {
                         <span class="text-2xl">⛺</span>
                         <span class="text-xs font-bold">BAUEN</span>
                     </button>
+                    <div id="online-badge"></div>
                 </div>`;
             Game.state.view = name;
             if(Game.state) Game.state.inDialog = false;
@@ -213,7 +203,7 @@ Object.assign(UI, {
             this.restoreOverlay();
             this.toggleControls(true);
             this.updateButtonStates(name);
-            this.update();
+            this.update(); // Ruft update -> render auf
             return;
         }
 
@@ -253,7 +243,7 @@ Object.assign(UI, {
             }
             
             this.updateButtonStates(name);
-            this.update();
+            this.update(); // Update erzwingen
             
             setTimeout(() => this.refreshFocusables(), 100);
 
