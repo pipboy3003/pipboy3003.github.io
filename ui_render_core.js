@@ -1,6 +1,29 @@
+// [2026-01-13 18:00:00] ui_render_core.js - Added AFK Check (Fix for Char Select)
+
 Object.assign(UI, {
     
     update: function() {
+        // --- AFK LOGIC (Muss VOR Game.state Check stehen!) ---
+        // Da diese Funktion die update() aus ui_core.js überschreibt, muss der Check hier rein.
+        
+        const loginScreen = document.getElementById('login-screen');
+        // Wir sind "eingeloggt", wenn der Login-Screen weg ist (hidden Klasse oder display none)
+        const isLoginHidden = loginScreen && (loginScreen.style.display === 'none' || loginScreen.classList.contains('hidden'));
+        // Und wenn wir eine Network ID haben
+        const isAuth = (typeof Network !== 'undefined' && Network.myId);
+
+        if (isLoginHidden && isAuth) {
+            // 300000 ms = 5 Minuten
+            if (Date.now() - (this.lastInputTime || Date.now()) > 300000) { 
+                console.log("AFK Trigger: Zeitüberschreitung im UI Render Loop");
+                if(typeof this.logout === 'function') {
+                    this.logout("AFK: ZEITÜBERSCHREITUNG");
+                }
+                return; // Nichts weiter rendern
+            }
+        }
+        // -----------------------------------------------------
+
         if (!Game.state) return;
         
         if(!this.els.ammo) this.els.ammo = document.getElementById('val-ammo');
@@ -248,7 +271,6 @@ Object.assign(UI, {
     restoreOverlay: function() {
         if(document.getElementById('joystick-base')) return;
         
-        // [v1.5.1] UPDATE: stopPropagation im OnClick
         const joystickHTML = `
             <div id="joystick-base" style="position: absolute; width: 100px; height: 100px; border-radius: 50%; border: 2px solid rgba(57, 255, 20, 0.5); background: rgba(0, 0, 0, 0.2); display: none; pointer-events: none; z-index: 9999;"></div>
             <div id="joystick-stick" style="position: absolute; width: 50px; height: 50px; border-radius: 50%; background: rgba(57, 255, 20, 0.8); display: none; pointer-events: none; z-index: 10000; box-shadow: 0 0 10px #39ff14;"></div>
@@ -265,13 +287,11 @@ Object.assign(UI, {
         this.els.joyStick = document.getElementById('joystick-stick');
         this.els.dialog = document.getElementById('dialog-overlay');
 
-        // [v1.5.1] Global ESC Listener: Prioritize Overlay
         if(!window.escListenerAdded) {
             window.addEventListener('keydown', (e) => {
                 if(e.key === 'Escape') {
                     const d = document.getElementById('dialog-overlay');
                     if(d && d.style.display !== 'none') {
-                        // Close Overlay AND STOP PROPAGATION
                         d.style.display = 'none';
                         d.innerHTML = '';
                         e.stopPropagation(); 
@@ -279,7 +299,7 @@ Object.assign(UI, {
                         e.preventDefault();
                     }
                 }
-            }, true); // Use Capture phase to catch it first
+            }, true); 
             window.escListenerAdded = true;
         }
     },
