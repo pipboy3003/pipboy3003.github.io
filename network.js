@@ -1,7 +1,3 @@
-{
-type: uploaded file
-fileName: pipboy3003/pipboy3003.github.io/pipboy3003.github.io-main/network.js
-fullContent:
 // [2026-01-13 16:30:00] network.js - Fixed: Session Check no longer kicks active player
 
 const Network = {
@@ -73,8 +69,6 @@ const Network = {
         if (!this.active) throw new Error("Verbindung zu Vault-Tec unterbrochen.");
         try {
             // 1. Authentifizierung (Prüft Passwort)
-            // HINWEIS: Das setzt den Browser-Status auf "Eingeloggt". 
-            // Das ist okay, solange wir bei einem Fehler NICHT signout rufen.
             const userCredential = await this.auth.signInWithEmailAndPassword(email, password);
             const user = userCredential.user;
 
@@ -89,9 +83,7 @@ const Network = {
                 if (pData.lastSeen && (now - pData.lastSeen < 120000)) {
                     
                     // WICHTIG: KEIN this.auth.signOut() hier!
-                    // Wenn wir hier ausloggen, fliegt auch der andere Tab raus.
                     // Wir werfen nur den Fehler, damit DIESER Tab nicht ins Spiel kommt.
-                    
                     throw new Error("SESSION_ACTIVE");
                 }
             }
@@ -306,5 +298,3 @@ const Network = {
         catch (e) { console.error(e); return false; }
     }
 };
-
-}
