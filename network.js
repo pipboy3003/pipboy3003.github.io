@@ -1,4 +1,4 @@
-// [2026-01-14 10:00:00] network.js - Restored registerDeath (Fixes Crash on Permadeath)
+// [2026-01-14 10:15:00] network.js - Restored getHighscores & registerDeath, kept Instant Logout
 
 const Network = {
     db: null,
@@ -120,7 +120,7 @@ const Network = {
         this.db.ref(`leaderboard/${safeName}`).update(entry).catch(e => {}); 
     },
 
-    // WIEDER EINGEFÜGT: Wird von game_combat.js aufgerufen!
+    // WIEDER DA: Für Permadeath nötig
     registerDeath: function(gameState) {
         if(!this.active || !gameState || !this.auth.currentUser) return;
         const safeName = (gameState.playerName || "Unknown").replace(/[.#$/[\]]/g, "_");
@@ -135,6 +135,17 @@ const Network = {
             deathTime: Date.now()
         };
         this.db.ref(`leaderboard/${safeName}`).set(entry).catch(e => console.error(e));
+    },
+
+    // WIEDER DA: Für Vault Legends Button nötig
+    getHighscores: async function() {
+        if(!this.active) return [];
+        const snap = await this.db.ref('leaderboard').once('value');
+        const list = [];
+        snap.forEach(child => {
+            list.push(child.val());
+        });
+        return list;
     },
 
     saveToSlot: function(slotIndex, gameState) {
