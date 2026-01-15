@@ -41,7 +41,7 @@ Object.assign(UI, {
         const content = document.createElement('div');
         content.className = "flex-1 w-full overflow-y-auto custom-scroll p-4 pb-24 bg-[radial-gradient(circle_at_center,_#0a1a0a_0%,_#000000_100%)]";
         
-        // Inhalt basierend auf Tab
+// Routing zu den Inhalten
         if (tab === 'stats') {
             this.renderCharacterVisuals(content);
         } else if (tab === 'special') {
@@ -50,6 +50,7 @@ Object.assign(UI, {
             this.renderPerksList(content);
         }
 
+        
         wrapper.appendChild(content);
 
         // 4. Footer (Fixiert unten)
@@ -175,78 +176,63 @@ Object.assign(UI, {
         ctx.beginPath(); ctx.arc(cx, cy - 60, 15, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
     },
 
+ // --- SPECIAL TAB ---
     renderSpecialStats: function(container) {
         const stats = Game.state.stats;
         const points = Game.state.statPoints;
+        const labels = { STR: "STÄRKE", PER: "WAHRNEHMUNG", END: "AUSDAUER", INT: "INTELLIGENZ", AGI: "BEWEGLICHKEIT", LUC: "GLÜCK" };
+
         let html = `
             <div class="text-center mb-6">
-                <div class="text-xs text-green-600 uppercase tracking-widest mb-2">VERFÜGBARE PUNKTE</div>
+                <div class="text-xs text-green-600 uppercase mb-2">VERFÜGBARE PUNKTE</div>
                 <div class="text-4xl font-bold ${points > 0 ? 'text-yellow-400 animate-pulse' : 'text-gray-600'}">${points}</div>
             </div>
             <div class="space-y-3 max-w-md mx-auto">
         `;
-        const labels = {
-            STR: "STÄRKE (Nahkampf, Tragekraft)",
-            PER: "WAHRNEHMUNG (Trefferchance, Loot)",
-            END: "AUSDAUER (Lebenspunkte, Resistenz)",
-            INT: "INTELLIGENZ (Hacken, XP-Bonus)",
-            AGI: "BEWEGLICHKEIT (Ausweichen, AP)",
-            LUC: "GLÜCK (Kritische Treffer)"
-        };
+
         for (let key in stats) {
             const val = stats[key];
             const canAdd = points > 0 && val < 10;
             html += `
-                <div class="flex items-center justify-between bg-black/40 p-3 border border-green-900 hover:border-green-500 transition-colors">
-                    <div class="flex flex-col">
-                        <span class="text-2xl font-bold text-green-400 font-vt323 w-12">${key}</span>
-                        <span class="text-[10px] text-green-700 uppercase">${labels[key]}</span>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <span class="text-3xl font-bold text-white">${val}</span>
-                        ${canAdd ? `<button onclick="Game.addStat('${key}')" class="w-10 h-10 flex items-center justify-center bg-green-900 text-green-400 border border-green-500 hover:bg-green-400 hover:text-black font-bold text-xl rounded">+</button>` : ''}
+                <div class="flex items-center justify-between bg-black/40 p-3 border border-green-900">
+                    <div class="flex flex-col"><span class="text-2xl font-bold text-green-400 font-vt323">${key}</span><span class="text-[10px] text-green-700 uppercase">${labels[key]}</span></div>
+                    <div class="flex items-center gap-4"><span class="text-3xl font-bold text-white">${val}</span>
+                    ${canAdd ? `<button onclick="Game.addStat('${key}')" class="w-10 h-10 flex items-center justify-center bg-green-900 text-green-400 border border-green-500 hover:bg-green-400 hover:text-black font-bold text-xl rounded">+</button>` : ''}
                     </div>
                 </div>
             `;
         }
-        html += '</div>';
-        container.innerHTML = html;
+        container.innerHTML = html + '</div>';
     },
 
+    // --- PERKS TAB ---
     renderPerksList: function(container) {
         const perks = Game.perkDefs || [];
         const myPerks = Game.state.perks || {};
         const points = Game.state.perkPoints || 0;
+
         let html = `
-            <div class="text-center mb-6">
-                <div class="text-xs text-green-600 uppercase tracking-widest mb-2">VERFÜGBARE PERK-PUNKTE</div>
-                <div class="text-4xl font-bold ${points > 0 ? 'text-yellow-400 animate-pulse' : 'text-gray-600'}">${points}</div>
-            </div>
-            <div class="grid grid-cols-1 gap-3">
+            <div class="text-center mb-6"><div class="text-xs text-green-600 uppercase mb-2">PERK-PUNKTE</div><div class="text-4xl font-bold ${points > 0 ? 'text-yellow-400 animate-pulse' : 'text-gray-600'}">${points}</div></div>
+            <div class="grid grid-cols-1 gap-3 max-w-md mx-auto">
         `;
+
         perks.forEach(p => {
             const currentLvl = myPerks[p.id] || 0;
             const maxed = currentLvl >= p.maxLvl;
             const canBuy = points > 0 && !maxed && Game.state.lvl >= p.reqLvl;
-            let btnText = maxed ? "MAX" : (canBuy ? "LERNEN" : (Game.state.lvl < p.reqLvl ? `LVL ${p.reqLvl}` : "LOCKED"));
-            let btnClass = maxed ? "border-green-800 text-green-800 bg-green-900/20" : (canBuy ? "border-yellow-500 text-yellow-400 animate-pulse" : "border-gray-800 text-gray-600");
+            const btnText = maxed ? "MAX" : (canBuy ? "LERNEN" : "LOCKED");
+            const btnClass = canBuy ? "border-yellow-500 text-yellow-400 animate-pulse" : "border-gray-800 text-gray-600";
+
             html += `
-                <div class="flex flex-col p-3 border ${currentLvl > 0 ? 'border-green-600 bg-green-900/10' : 'border-green-900/30 bg-black'}">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <div class="font-bold text-lg ${currentLvl > 0 ? 'text-green-300' : 'text-gray-400'}">${p.name}</div>
-                            <div class="text-xs text-green-700">Rang: ${currentLvl} / ${p.maxLvl}</div>
-                        </div>
-                        <button class="px-3 py-1 border text-xs font-bold uppercase transition-colors ${btnClass}" ${canBuy ? `onclick="Game.learnPerk('${p.id}')"` : ''}>
-                            ${btnText}
-                        </button>
+                <div class="flex flex-col p-3 border ${currentLvl > 0 ? 'border-green-600 bg-green-900/10' : 'border-green-900/30'}">
+                    <div class="flex justify-between items-start">
+                        <div><div class="font-bold text-lg ${currentLvl > 0 ? 'text-green-300' : 'text-gray-400'}">${p.name}</div><div class="text-xs text-green-700">Rang: ${currentLvl} / ${p.maxLvl}</div></div>
+                        <button class="px-3 py-1 border text-xs font-bold ${btnClass}" ${canBuy ? `onclick="Game.learnPerk('${p.id}')"` : ''}>${btnText}</button>
                     </div>
-                    <div class="text-sm text-gray-500 leading-tight">${p.desc}</div>
                 </div>
             `;
         });
-        html += '</div>';
-        container.innerHTML = html;
+        container.innerHTML = html + '</div>';
     },
 
     renderCharacterSelection: function(saves) {
