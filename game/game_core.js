@@ -29,14 +29,31 @@ window.Game = {
         this.cacheCtx = this.cacheCanvas.getContext('2d'); 
     }, 
     
+    // [2026-01-14 20:30:00] game_core.js - Added HiDPI Support for sharp rendering
     initCanvas: function() { 
         const cvs = document.getElementById('game-canvas'); 
         if(!cvs) return; 
         const viewContainer = document.getElementById('view-container'); 
-        cvs.width = viewContainer.clientWidth; 
-        cvs.height = viewContainer.clientHeight; 
+        
+        // HiDPI Scaling
+        const dpr = window.devicePixelRatio || 1;
+        const rect = viewContainer.getBoundingClientRect();
+
+        // Setze die interne Auflösung höher (x DPR)
+        cvs.width = rect.width * dpr; 
+        cvs.height = rect.height * dpr; 
+
+        // Zwinge CSS, die Größe beizubehalten
+        cvs.style.width = `${rect.width}px`;
+        cvs.style.height = `${rect.height}px`;
+
         this.ctx = cvs.getContext('2d'); 
-        this.ctx.imageSmoothingEnabled = false;
+        
+        // Skaliere alles Zeichnen hoch, damit die Logik gleich bleibt
+        this.ctx.scale(dpr, dpr);
+        
+        this.ctx.imageSmoothingEnabled = false; // WICHTIG für Pixel-Look!
+        
         if(this.loopId) cancelAnimationFrame(this.loopId); 
         this.drawLoop(); 
     },
