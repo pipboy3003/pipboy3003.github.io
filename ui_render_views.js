@@ -1,3 +1,5 @@
+/* [TIMESTAMP] 2026-01-15 21:30:00 - ui_render_views.js - Full Recovery & Paper-Doll Layout Fix */
+
 Object.assign(UI, {
 
     // ==========================================
@@ -76,40 +78,38 @@ Object.assign(UI, {
             
             return `
                 <div class="flex flex-col items-center justify-center p-2 border-2 ${style} rounded min-h-[80px] transition-all relative group cursor-pointer" onclick="UI.openEquipMenu('${slotName}')">
-                    <div class="text-xs uppercase tracking-widest opacity-50 mb-1">${slotName}</div>
+                    <div class="text-[8px] uppercase tracking-widest opacity-50 mb-1">${slotName}</div>
                     <div class="text-2xl mb-1">${hasItem && item.icon ? item.icon : iconFallback}</div>
-                    <div class="text-[10px] text-center font-bold uppercase leading-tight max-w-full overflow-hidden text-ellipsis">${name}</div>
-                    ${hasItem ? '<div class="absolute top-1 right-1 text-[8px] text-red-500 opacity-0 group-hover:opacity-100">ABLEGEN</div>' : ''}
+                    <div class="text-[9px] text-center font-bold uppercase leading-tight max-w-full overflow-hidden text-ellipsis">${name}</div>
+                    ${hasItem ? '<div class="absolute top-1 right-1 text-[8px] text-red-500 opacity-0 group-hover:opacity-100">X</div>' : ''}
                 </div>
             `;
         };
 
         container.innerHTML = `
-            <div class="flex flex-col items-center gap-6">
+            <div class="flex flex-col items-center gap-6 max-w-md mx-auto">
                 
                 <div class="w-full text-center border-b border-green-900 pb-4">
-                    <div class="text-4xl font-bold text-green-400 mb-1">${p.playerName}</div>
+                    <div class="text-4xl font-bold text-green-400 mb-1 tracking-tighter">${p.playerName}</div>
                     <div class="flex justify-center gap-4 text-xs font-mono text-green-600">
                         <span>LEVEL ${p.lvl}</span>
                         <span>XP: ${p.xp} / ${Game.expToNextLevel(p.lvl)}</span>
-                        <span>HP: ${p.hp}/${p.maxHp}</span>
+                        <span>HP: ${Math.round(p.hp)}/${p.maxHp}</span>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-3 gap-4 w-full max-w-md mx-auto relative">
+                <div class="grid grid-cols-3 grid-rows-4 gap-3 w-full relative">
                     
-                    <div class="col-start-2">
+                    <div class="col-start-2 row-start-1">
                         ${renderSlot('head', eq.head, '🧢')}
                     </div>
 
                     <div class="col-start-1 row-start-2">
                         ${renderSlot('weapon', eq.weapon, '👊')}
                     </div>
-
                     <div class="col-start-2 row-start-2">
                         ${renderSlot('body', eq.body, '👕')}
                     </div>
-
                     <div class="col-start-3 row-start-2">
                         ${renderSlot('arms', eq.arms, '💪')}
                     </div>
@@ -117,32 +117,35 @@ Object.assign(UI, {
                     <div class="col-start-2 row-start-3">
                         ${renderSlot('legs', eq.legs, '👖')}
                     </div>
+                    <div class="col-start-3 row-start-3">
+                        ${renderSlot('back', eq.back, '🎒')}
+                    </div>
 
                     <div class="col-start-2 row-start-4">
                         ${renderSlot('feet', eq.feet, '🥾')}
                     </div>
-
-                    <div class="col-start-3 row-start-3">
-                        ${renderSlot('back', eq.back, '🎒')}
+                    
+                    <div class="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none z-0">
+                         <span class="text-[150px]">👤</span>
                     </div>
                 </div>
 
-                <div class="w-full mt-6 grid grid-cols-2 gap-4 text-sm bg-green-900/10 p-4 rounded border border-green-900">
+                <div class="w-full mt-4 grid grid-cols-2 gap-3 text-xs bg-green-900/10 p-4 rounded border border-green-900/50 font-mono">
                     <div class="flex justify-between border-b border-green-900/30 pb-1">
-                        <span>RÜSTUNG (DEF)</span>
+                        <span class="opacity-70">ABWEHR</span>
                         <span class="font-bold text-green-400">${Game.getStat('DEF') || 0}</span>
                     </div>
                     <div class="flex justify-between border-b border-green-900/30 pb-1">
-                        <span>SCHADEN (DMG)</span>
+                        <span class="opacity-70">SCHADEN</span>
                         <span class="font-bold text-green-400">${eq.weapon ? (eq.weapon.baseDmg || 2) : 2}</span>
                     </div>
                     <div class="flex justify-between border-b border-green-900/30 pb-1">
-                        <span>CRIT CHANCE</span>
+                        <span class="opacity-70">KRIT %</span>
                         <span class="font-bold text-green-400">${p.critChance || 5}%</span>
                     </div>
                     <div class="flex justify-between border-b border-green-900/30 pb-1">
-                        <span>TRAGEKRAFT</span>
-                        <span class="font-bold text-green-400">${Game.getMaxSlots()} Slots</span>
+                        <span class="opacity-70">TRAGLAST</span>
+                        <span class="font-bold text-green-400">${p.inventory ? p.inventory.length : 0}/${Game.getMaxSlots()}</span>
                     </div>
                 </div>
             </div>
@@ -244,21 +247,15 @@ Object.assign(UI, {
         container.innerHTML = html;
     },
 
-    // ==========================================
-    // === DEIN BESTEHENDER CODE ===
-    // ==========================================
     renderCharacterSelection: function(saves) {
         this.charSelectMode = true;
         this.currentSaves = saves;
         
-        // Screens umschalten
         if(this.els.loginScreen) this.els.loginScreen.style.display = 'none';
         if(this.els.charSelectScreen) this.els.charSelectScreen.style.display = 'flex';
         
-        // Slots leeren
         if(this.els.charSlotsList) this.els.charSlotsList.innerHTML = '';
 
-        // ZURÜCK-BUTTON LOGIK
         const btnBack = document.getElementById('btn-char-back');
         if (btnBack) {
             btnBack.onclick = () => {
@@ -270,10 +267,8 @@ Object.assign(UI, {
             };
         }
 
-        // Slots rendern
         for (let i = 0; i < 5; i++) {
             const slot = document.createElement('div');
-            // Basis-Style: 'group' ist wichtig für den Hover-Effekt auf den Button
             slot.className = "char-slot border-2 border-green-900 bg-black/80 p-4 mb-2 cursor-pointer hover:border-yellow-400 transition-all flex justify-between items-center group relative overflow-hidden";
             slot.dataset.index = i;
             
@@ -288,11 +283,6 @@ Object.assign(UI, {
                 const statusIcon = isDead ? "💀" : "👤";
                 const statusClass = isDead ? "text-red-500" : "text-yellow-400";
 
-                /* ÄNDERUNGEN HIER:
-                   1. Button hat jetzt 'group-hover:...' Klassen. Das bedeutet:
-                      Wenn man über den Slot (group) fährt, ändert sich der Button.
-                   2. Das Hintergrund-Div (overlay), das das Bild abgedunkelt hat, wurde entfernt.
-                */
                 slot.innerHTML = `
                     <div class="flex flex-col z-10">
                         <span class="text-xl ${statusClass} font-bold tracking-wider">${statusIcon} ${name}</span>
@@ -307,7 +297,6 @@ Object.assign(UI, {
                     </div>
                 `;
             } else {
-                // LEERER SLOT
                 slot.className = "char-slot border-2 border-dashed border-gray-700 bg-black/50 p-4 mb-2 cursor-pointer hover:border-yellow-400 hover:bg-yellow-900/10 transition-all flex justify-center items-center group min-h-[80px]";
                 slot.innerHTML = `
                     <div class="text-gray-500 group-hover:text-yellow-400 font-bold tracking-widest flex items-center gap-2 transition-colors">
