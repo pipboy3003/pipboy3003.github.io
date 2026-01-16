@@ -1,13 +1,12 @@
-// [2026-01-15 23:35:00] ui_render_views.js - Fixed SPECIAL/PERKS & High Precision Paper-Doll
+// [2026-01-16 07:42:00] ui_render_views.js - Fixed S.P.E.C.I.A.L. & Perks rendering and logic references
 
 Object.assign(UI, {
 
     renderStats: function(tab = 'stats') {
         
-        // new try start
+        // Tab-Status im Game-State speichern
         Game.state.view = 'char';
         Game.state.charTab = tab;
-        //new try end
         
         const view = document.getElementById('view-container');
         if(!view) return;
@@ -32,6 +31,7 @@ Object.assign(UI, {
         const content = document.createElement('div');
         content.className = "flex-1 w-full overflow-y-auto p-4 pb-24 bg-black";
         
+        // Weiche für die verschiedenen Ansichten
         if (tab === 'stats') this.renderCharacterVisuals(content);
         else if (tab === 'special') this.renderSpecialStats(content);
         else if (tab === 'perks') this.renderPerksList(content);
@@ -50,7 +50,7 @@ Object.assign(UI, {
 
     renderCharacterVisuals: function(container) {
         const p = Game.state;
-        const eq = p.equip;
+        const eq = p.equip || {};
 
         const renderSlot = (slotName, item, iconFallback) => {
             const hasItem = !!item;
@@ -84,42 +84,77 @@ Object.assign(UI, {
                 </div>
                 <div class="grid grid-cols-2 gap-2 w-full text-xs font-mono bg-green-900/10 p-3 rounded border border-green-900/50">
                     <div class="flex justify-between border-b border-green-900/20 pb-1"><span>TP</span><span class="text-green-400 font-bold">${Math.round(p.hp)}/${p.maxHp}</span></div>
-                    <div class="flex justify-between border-b border-green-900/20 pb-1"><span>DEF</span><span class="text-green-400 font-bold">${Game.getStat('DEF') || 0}</span></div>
+                    <div class="flex justify-between border-b border-green-900/20 pb-1"><span>DEF</span><span class="text-green-400 font-bold">${(typeof Game.getStat === 'function') ? Game.getStat('DEF') : 0}</span></div>
                     <div class="flex justify-between border-b border-green-900/20 pb-1"><span>KRIT</span><span class="text-green-400 font-bold">${p.critChance || 5}%</span></div>
-                    <div class="flex justify-between border-b border-green-900/20 pb-1"><span>LOAD</span><span class="text-green-400 font-bold">${p.inventory?.length || 0}/${Game.getMaxSlots()}</span></div>
+                    <div class="flex justify-between border-b border-green-900/20 pb-1"><span>LOAD</span><span class="text-green-400 font-bold">${p.inventory?.length || 0}/${(typeof Game.getMaxSlots === 'function') ? Game.getMaxSlots() : 20}</span></div>
                 </div>
             </div>
         `;
     },
 
     renderSpecialStats: function(container) {
-        const stats = Game.state.stats;
-        const points = Game.state.statPoints;
-        const labels = { STR: "STÄRKE", PER: "WAHRNEHMUNG", END: "AUSDAUER", INT: "INTELLIGENZ", AGI: "BEWEGLICHKEIT", LUC: "GLÜCK" };
-        let html = `<div class="text-center mb-6"><div class="text-xs text-green-600 mb-2">VERFÜGBARE PUNKTE</div><div class="text-5xl font-bold ${points > 0 ? 'text-yellow-400' : 'text-gray-600'}">${points}</div></div><div class="space-y-3">`;
-        for (let key in stats) {
-            html += `<div class="flex items-center justify-between bg-black/40 p-3 border border-green-900">
-                <div class="flex flex-col"><span class="text-2xl font-bold text-green-400 font-vt323">${key}</span><span class="text-[10px] text-green-700">${labels[key]}</span></div>
-                <div class="flex items-center gap-4"><span class="text-3xl font-bold text-white">${stats[key]}</span>
-                ${points > 0 && stats[key] < 10 ? `<button onclick="Game.addStat('${key}')" class="w-10 h-10 bg-green-900 text-green-400 border border-green-500 font-bold text-xl rounded">+</button>` : ''}</div>
+        const stats = Game.state.stats || {};
+        const points = Game.state.statPoints || 0;
+        // Nutze Labels aus GameData falls vorhanden
+        const labels = window.GameData.statLabels || { STR: "STÄRKE", PER: "WAHRNEHMUNG", END: "AUSDAUER", INT: "INTELLIGENZ", AGI: "BEWEGLICHKEIT", LUC: "GLÜCK" };
+        
+        let html = `
+            <div class="text-center mb-6">
+                <div class="text-xs text-green-600 mb-2">VERFÜGBARE PUNKTE</div>
+                <div class="text-5xl font-bold ${points > 0 ? 'text-yellow-400' : 'text-gray-600'}">${points}</div>
+            </div>
+            <div class="space-y-3">`;
+            
+        for (let key in labels) {
+            const currentVal = stats[key] || 0;
+            html += `
+            <div class="flex items-center justify-between bg-black/40 p-3 border border-green-900">
+                <div class="flex flex-col">
+                    <span class="text-2xl font-bold text-green-400 font-vt323">${key}</span>
+                    <span class="text-[10px] text-green-700">${labels[key]}</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-3xl font-bold text-white">${currentVal}</span>
+                    ${points > 0 && currentVal < 10 ? `<button onclick="Game.upgradeStat('${key}', event)" class="w-10 h-10 bg-green-900 text-green-400 border border-green-500 font-bold text-xl rounded hover:bg-green-700">+</button>` : ''}
+                </div>
             </div>`;
         }
         container.innerHTML = html + '</div>';
     },
 
     renderPerksList: function(container) {
-        const perks = Game.perkDefs || [];
+        // Nutze Definitionen aus window.GameData.perks
+        const perks = window.GameData.perks || [];
         const myPerks = Game.state.perks || {};
         const points = Game.state.perkPoints || 0;
-        let html = `<div class="text-center mb-6"><div class="text-xs text-green-600 mb-2">PERK-PUNKTE</div><div class="text-5xl font-bold ${points > 0 ? 'text-yellow-400' : 'text-gray-600'}">${points}</div></div><div class="space-y-3">`;
+        
+        let html = `
+            <div class="text-center mb-6">
+                <div class="text-xs text-green-600 mb-2">PERK-PUNKTE</div>
+                <div class="text-5xl font-bold ${points > 0 ? 'text-yellow-400' : 'text-gray-600'}">${points}</div>
+            </div>
+            <div class="space-y-3">`;
+
         perks.forEach(p => {
             const cur = myPerks[p.id] || 0;
-            const canBuy = points > 0 && cur < p.maxLvl && Game.state.lvl >= p.reqLvl;
-            html += `<div class="p-3 border ${cur > 0 ? 'border-green-600 bg-green-900/10' : 'border-green-900/30'}">
+            const maxLvl = p.max || 1;
+            const reqLvl = p.minLvl || 1;
+            const canBuy = points > 0 && cur < maxLvl && Game.state.lvl >= reqLvl;
+            
+            html += `
+            <div class="p-3 border ${cur > 0 ? 'border-green-600 bg-green-900/10' : 'border-green-900/30'}">
                 <div class="flex justify-between items-start">
-                    <div><div class="font-bold text-green-300 text-lg">${p.name}</div><div class="text-xs text-green-700">Rang: ${cur}/${p.maxLvl}</div></div>
-                    <button class="px-3 py-1 border text-xs font-bold ${canBuy ? 'border-yellow-500 text-yellow-400' : 'border-gray-800 text-gray-600'}" ${canBuy ? `onclick="Game.learnPerk('${p.id}')"` : ''}>${cur >= p.maxLvl ? 'MAX' : 'LERNEN'}</button>
-                </div><div class="text-xs text-gray-500 mt-1">${p.desc}</div>
+                    <div>
+                        <div class="font-bold text-green-300 text-lg">${p.icon || ''} ${p.name}</div>
+                        <div class="text-xs text-green-700">Rang: ${cur}/${maxLvl}</div>
+                    </div>
+                    <button class="px-3 py-1 border text-xs font-bold ${canBuy ? 'border-yellow-500 text-yellow-400 hover:bg-yellow-600 hover:text-black' : 'border-gray-800 text-gray-600 cursor-not-allowed'}" 
+                        ${canBuy ? `onclick="Game.choosePerk('${p.id}')"` : ''}>
+                        ${cur >= maxLvl ? 'MAX' : 'LERNEN'}
+                    </button>
+                </div>
+                <div class="text-xs text-gray-500 mt-1">${p.desc}</div>
+                ${Game.state.lvl < reqLvl ? `<div class="text-[10px] text-red-500 mt-1">Benötigt Level ${reqLvl}</div>` : ''}
             </div>`;
         });
         container.innerHTML = html + '</div>';
@@ -137,18 +172,17 @@ Object.assign(UI, {
         ctx.beginPath(); ctx.arc(cx - 10, cy - 85, 12, Math.PI, 0); ctx.stroke();
         // Körper (Trapez)
         ctx.beginPath(); ctx.moveTo(cx-18, cy-30); ctx.lineTo(cx+18, cy-30); ctx.lineTo(cx+22, cy+30); ctx.lineTo(cx-22, cy+30); ctx.closePath(); ctx.stroke();
-        // Arme & Beine (Pfade)
-        ctx.beginPath(); ctx.moveTo(cx+18, cy-20); ctx.lineTo(cx+50, cy-40); ctx.stroke(); // R-Arm
-        ctx.beginPath(); ctx.moveTo(cx-18, cy-20); ctx.lineTo(cx-40, cy); ctx.stroke(); // L-Arm
-        ctx.beginPath(); ctx.moveTo(cx-12, cy+30); ctx.lineTo(cx-18, cy+85); ctx.stroke(); // L-Bein
-        ctx.beginPath(); ctx.moveTo(cx+12, cy+30); ctx.lineTo(cx+18, cy+85); ctx.stroke(); // R-Bein
+        // Arme & Beine
+        ctx.beginPath(); ctx.moveTo(cx+18, cy-20); ctx.lineTo(cx+50, cy-40); ctx.stroke(); 
+        ctx.beginPath(); ctx.moveTo(cx-18, cy-20); ctx.lineTo(cx-40, cy); ctx.stroke(); 
+        ctx.beginPath(); ctx.moveTo(cx-12, cy+30); ctx.lineTo(cx-18, cy+85); ctx.stroke(); 
+        ctx.beginPath(); ctx.moveTo(cx+12, cy+30); ctx.lineTo(cx+18, cy+85); ctx.stroke(); 
         // Gesicht
         ctx.beginPath(); ctx.arc(cx - 10, cy - 65, 2, 0, Math.PI * 2); ctx.fill();
         ctx.beginPath(); ctx.arc(cx + 10, cy - 65, 2, 0, Math.PI * 2); ctx.fill();
         ctx.beginPath(); ctx.arc(cx, cy - 60, 15, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
     },
 
-    // --- System Logik Erhalt ---
     renderCharacterSelection: function(saves) {
         this.charSelectMode = true; this.currentSaves = saves;
         if(this.els.loginScreen) this.els.loginScreen.style.display = 'none';
