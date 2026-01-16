@@ -1,10 +1,9 @@
-// [2026-01-16 07:42:00] ui_render_views.js - Fixed S.P.E.C.I.A.L. & Perks rendering and logic references
+// [2026-01-16 07:45:00] ui_render_views.js - Fixed SPECIAL/PERKS tab closing & reference errors
 
 Object.assign(UI, {
 
     renderStats: function(tab = 'stats') {
-        
-        // Tab-Status im Game-State speichern
+        // Status im Game-State setzen
         Game.state.view = 'char';
         Game.state.charTab = tab;
         
@@ -31,10 +30,10 @@ Object.assign(UI, {
         const content = document.createElement('div');
         content.className = "flex-1 w-full overflow-y-auto p-4 pb-24 bg-black";
         
-        // Weiche für die verschiedenen Ansichten
-        if (tab === 'stats') this.renderCharacterVisuals(content);
-        else if (tab === 'special') this.renderSpecialStats(content);
-        else if (tab === 'perks') this.renderPerksList(content);
+        // FIX: Nutze UI. statt this. um sicherzugehen, dass die Funktionen gefunden werden
+        if (tab === 'stats') UI.renderCharacterVisuals(content);
+        else if (tab === 'special') UI.renderSpecialStats(content);
+        else if (tab === 'perks') UI.renderPerksList(content);
 
         wrapper.appendChild(content);
 
@@ -45,7 +44,7 @@ Object.assign(UI, {
 
         view.appendChild(wrapper);
 
-        if (tab === 'stats') setTimeout(() => this.drawVaultBoy('char-silhouette-canvas'), 100);
+        if (tab === 'stats') setTimeout(() => UI.drawVaultBoy('char-silhouette-canvas'), 100);
     },
 
     renderCharacterVisuals: function(container) {
@@ -93,68 +92,49 @@ Object.assign(UI, {
     },
 
     renderSpecialStats: function(container) {
-        const stats = Game.state.stats || {};
+        // FIX: Sicherstellen, dass stats und points existieren
+        const stats = Game.state.stats || { STR:5, PER:5, END:5, INT:5, AGI:5, LUC:5 };
         const points = Game.state.statPoints || 0;
-        // Nutze Labels aus GameData falls vorhanden
         const labels = window.GameData.statLabels || { STR: "STÄRKE", PER: "WAHRNEHMUNG", END: "AUSDAUER", INT: "INTELLIGENZ", AGI: "BEWEGLICHKEIT", LUC: "GLÜCK" };
         
-        let html = `
-            <div class="text-center mb-6">
-                <div class="text-xs text-green-600 mb-2">VERFÜGBARE PUNKTE</div>
-                <div class="text-5xl font-bold ${points > 0 ? 'text-yellow-400' : 'text-gray-600'}">${points}</div>
-            </div>
-            <div class="space-y-3">`;
-            
+        let html = `<div class="text-center mb-6"><div class="text-xs text-green-600 mb-2">VERFÜGBARE PUNKTE</div><div class="text-5xl font-bold ${points > 0 ? 'text-yellow-400' : 'text-gray-600'}">${points}</div></div><div class="space-y-3">`;
+        
         for (let key in labels) {
-            const currentVal = stats[key] || 0;
-            html += `
-            <div class="flex items-center justify-between bg-black/40 p-3 border border-green-900">
-                <div class="flex flex-col">
-                    <span class="text-2xl font-bold text-green-400 font-vt323">${key}</span>
-                    <span class="text-[10px] text-green-700">${labels[key]}</span>
-                </div>
-                <div class="flex items-center gap-4">
-                    <span class="text-3xl font-bold text-white">${currentVal}</span>
-                    ${points > 0 && currentVal < 10 ? `<button onclick="Game.upgradeStat('${key}', event)" class="w-10 h-10 bg-green-900 text-green-400 border border-green-500 font-bold text-xl rounded hover:bg-green-700">+</button>` : ''}
-                </div>
+            const val = stats[key] || 1;
+            html += `<div class="flex items-center justify-between bg-black/40 p-3 border border-green-900">
+                <div class="flex flex-col"><span class="text-2xl font-bold text-green-400 font-vt323">${key}</span><span class="text-[10px] text-green-700">${labels[key]}</span></div>
+                <div class="flex items-center gap-4"><span class="text-3xl font-bold text-white">${val}</span>
+                ${points > 0 && val < 10 ? `<button onclick="Game.upgradeStat('${key}', event)" class="w-10 h-10 bg-green-900 text-green-400 border border-green-500 font-bold text-xl rounded">+</button>` : ''}</div>
             </div>`;
         }
         container.innerHTML = html + '</div>';
     },
 
     renderPerksList: function(container) {
-        // Nutze Definitionen aus window.GameData.perks
+        // FIX: Nutze window.GameData.perks und korrigiere Funktionsnamen für Kauf
         const perks = window.GameData.perks || [];
         const myPerks = Game.state.perks || {};
         const points = Game.state.perkPoints || 0;
         
-        let html = `
-            <div class="text-center mb-6">
-                <div class="text-xs text-green-600 mb-2">PERK-PUNKTE</div>
-                <div class="text-5xl font-bold ${points > 0 ? 'text-yellow-400' : 'text-gray-600'}">${points}</div>
-            </div>
-            <div class="space-y-3">`;
-
+        let html = `<div class="text-center mb-6"><div class="text-xs text-green-600 mb-2">PERK-PUNKTE</div><div class="text-5xl font-bold ${points > 0 ? 'text-yellow-400' : 'text-gray-600'}">${points}</div></div><div class="space-y-3">`;
+        
         perks.forEach(p => {
             const cur = myPerks[p.id] || 0;
-            const maxLvl = p.max || 1;
-            const reqLvl = p.minLvl || 1;
-            const canBuy = points > 0 && cur < maxLvl && Game.state.lvl >= reqLvl;
+            const maxLvl = p.max || 5;
+            const canBuy = points > 0 && cur < maxLvl && Game.state.lvl >= (p.minLvl || 1);
             
-            html += `
-            <div class="p-3 border ${cur > 0 ? 'border-green-600 bg-green-900/10' : 'border-green-900/30'}">
+            html += `<div class="p-3 border ${cur > 0 ? 'border-green-600 bg-green-900/10' : 'border-green-900/30'}">
                 <div class="flex justify-between items-start">
                     <div>
                         <div class="font-bold text-green-300 text-lg">${p.icon || ''} ${p.name}</div>
                         <div class="text-xs text-green-700">Rang: ${cur}/${maxLvl}</div>
                     </div>
-                    <button class="px-3 py-1 border text-xs font-bold ${canBuy ? 'border-yellow-500 text-yellow-400 hover:bg-yellow-600 hover:text-black' : 'border-gray-800 text-gray-600 cursor-not-allowed'}" 
+                    <button class="px-3 py-1 border text-xs font-bold ${canBuy ? 'border-yellow-500 text-yellow-400' : 'border-gray-800 text-gray-600'}" 
                         ${canBuy ? `onclick="Game.choosePerk('${p.id}')"` : ''}>
                         ${cur >= maxLvl ? 'MAX' : 'LERNEN'}
                     </button>
                 </div>
                 <div class="text-xs text-gray-500 mt-1">${p.desc}</div>
-                ${Game.state.lvl < reqLvl ? `<div class="text-[10px] text-red-500 mt-1">Benötigt Level ${reqLvl}</div>` : ''}
             </div>`;
         });
         container.innerHTML = html + '</div>';
@@ -170,9 +150,9 @@ Object.assign(UI, {
         // Kopf & Haare
         ctx.beginPath(); ctx.arc(cx, cy - 60, 30, 0, Math.PI * 2); ctx.stroke();
         ctx.beginPath(); ctx.arc(cx - 10, cy - 85, 12, Math.PI, 0); ctx.stroke();
-        // Körper (Trapez)
+        // Körper
         ctx.beginPath(); ctx.moveTo(cx-18, cy-30); ctx.lineTo(cx+18, cy-30); ctx.lineTo(cx+22, cy+30); ctx.lineTo(cx-22, cy+30); ctx.closePath(); ctx.stroke();
-        // Arme & Beine
+        // Gliedmaßen
         ctx.beginPath(); ctx.moveTo(cx+18, cy-20); ctx.lineTo(cx+50, cy-40); ctx.stroke(); 
         ctx.beginPath(); ctx.moveTo(cx-18, cy-20); ctx.lineTo(cx-40, cy); ctx.stroke(); 
         ctx.beginPath(); ctx.moveTo(cx-12, cy+30); ctx.lineTo(cx-18, cy+85); ctx.stroke(); 
