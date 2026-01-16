@@ -1,18 +1,26 @@
-// [2026-01-16 07:45:00] ui_render_views.js - Fixed SPECIAL/PERKS tab closing & reference errors
+// [2026-01-16 07:55:00] ui_render_views.js - Fixed Tab-Closing Issue & Event Propagation
 
 Object.assign(UI, {
 
-    renderStats: function(tab = 'stats') {
+    renderStats: function(tab = 'stats', event = null) {
+        // Verhindert, dass der Klick das Menü schließt, falls ein Parent-Element darauf reagiert
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+
         // Status im Game-State setzen
         Game.state.view = 'char';
         Game.state.charTab = tab;
         
         const view = document.getElementById('view-container');
         if(!view) return;
-        view.innerHTML = ''; // Container säubern
+        view.innerHTML = ''; 
 
         const wrapper = document.createElement('div');
         wrapper.className = "absolute inset-0 w-full h-full flex flex-col bg-black z-20 overflow-hidden";
+        // Verhindert Schließen beim Klicken innerhalb des Menüs
+        wrapper.onclick = (e) => e.stopPropagation();
 
         const getTabClass = (t) => (tab === t) 
             ? "bg-green-500 text-black border-b-4 border-green-700 font-bold" 
@@ -21,16 +29,16 @@ Object.assign(UI, {
         const header = document.createElement('div');
         header.className = "flex-shrink-0 flex w-full border-b-2 border-green-900 bg-black z-30";
         header.innerHTML = `
-            <button onclick="UI.renderStats('stats')" class="flex-1 py-3 uppercase font-vt323 text-xl ${getTabClass('stats')}">STATUS</button>
-            <button onclick="UI.renderStats('special')" class="flex-1 py-3 uppercase font-vt323 text-xl ${getTabClass('special')}">S.P.E.C.I.A.L.</button>
-            <button onclick="UI.renderStats('perks')" class="flex-1 py-3 uppercase font-vt323 text-xl ${getTabClass('perks')}">PERKS</button>
+            <button onclick="UI.renderStats('stats', event)" class="flex-1 py-3 uppercase font-vt323 text-xl ${getTabClass('stats')}">STATUS</button>
+            <button onclick="UI.renderStats('special', event)" class="flex-1 py-3 uppercase font-vt323 text-xl ${getTabClass('special')}">S.P.E.C.I.A.L.</button>
+            <button onclick="UI.renderStats('perks', event)" class="flex-1 py-3 uppercase font-vt323 text-xl ${getTabClass('perks')}">PERKS</button>
         `;
         wrapper.appendChild(header);
 
         const content = document.createElement('div');
         content.className = "flex-1 w-full overflow-y-auto p-4 pb-24 bg-black";
         
-        // FIX: Nutze UI. statt this. um sicherzugehen, dass die Funktionen gefunden werden
+        // Expliziter Aufruf über UI-Objekt
         if (tab === 'stats') UI.renderCharacterVisuals(content);
         else if (tab === 'special') UI.renderSpecialStats(content);
         else if (tab === 'perks') UI.renderPerksList(content);
@@ -92,7 +100,6 @@ Object.assign(UI, {
     },
 
     renderSpecialStats: function(container) {
-        // FIX: Sicherstellen, dass stats und points existieren
         const stats = Game.state.stats || { STR:5, PER:5, END:5, INT:5, AGI:5, LUC:5 };
         const points = Game.state.statPoints || 0;
         const labels = window.GameData.statLabels || { STR: "STÄRKE", PER: "WAHRNEHMUNG", END: "AUSDAUER", INT: "INTELLIGENZ", AGI: "BEWEGLICHKEIT", LUC: "GLÜCK" };
@@ -111,7 +118,6 @@ Object.assign(UI, {
     },
 
     renderPerksList: function(container) {
-        // FIX: Nutze window.GameData.perks und korrigiere Funktionsnamen für Kauf
         const perks = window.GameData.perks || [];
         const myPerks = Game.state.perks || {};
         const points = Game.state.perkPoints || 0;
@@ -129,7 +135,7 @@ Object.assign(UI, {
                         <div class="font-bold text-green-300 text-lg">${p.icon || ''} ${p.name}</div>
                         <div class="text-xs text-green-700">Rang: ${cur}/${maxLvl}</div>
                     </div>
-                    <button class="px-3 py-1 border text-xs font-bold ${canBuy ? 'border-yellow-500 text-yellow-400' : 'border-gray-800 text-gray-600'}" 
+                    <button class="px-3 py-1 border text-xs font-bold ${canBuy ? 'border-yellow-500 text-yellow-400 hover:bg-yellow-600 hover:text-black' : 'border-gray-800 text-gray-600'}" 
                         ${canBuy ? `onclick="Game.choosePerk('${p.id}')"` : ''}>
                         ${cur >= maxLvl ? 'MAX' : 'LERNEN'}
                     </button>
@@ -147,17 +153,14 @@ Object.assign(UI, {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.strokeStyle = "#1aff1a"; ctx.fillStyle = "#1aff1a"; ctx.lineWidth = 2.5;
         const cx = canvas.width / 2; const cy = canvas.height / 2;
-        // Kopf & Haare
+        // Zeichnungscode bleibt identisch...
         ctx.beginPath(); ctx.arc(cx, cy - 60, 30, 0, Math.PI * 2); ctx.stroke();
         ctx.beginPath(); ctx.arc(cx - 10, cy - 85, 12, Math.PI, 0); ctx.stroke();
-        // Körper
         ctx.beginPath(); ctx.moveTo(cx-18, cy-30); ctx.lineTo(cx+18, cy-30); ctx.lineTo(cx+22, cy+30); ctx.lineTo(cx-22, cy+30); ctx.closePath(); ctx.stroke();
-        // Gliedmaßen
         ctx.beginPath(); ctx.moveTo(cx+18, cy-20); ctx.lineTo(cx+50, cy-40); ctx.stroke(); 
         ctx.beginPath(); ctx.moveTo(cx-18, cy-20); ctx.lineTo(cx-40, cy); ctx.stroke(); 
         ctx.beginPath(); ctx.moveTo(cx-12, cy+30); ctx.lineTo(cx-18, cy+85); ctx.stroke(); 
         ctx.beginPath(); ctx.moveTo(cx+12, cy+30); ctx.lineTo(cx+18, cy+85); ctx.stroke(); 
-        // Gesicht
         ctx.beginPath(); ctx.arc(cx - 10, cy - 65, 2, 0, Math.PI * 2); ctx.fill();
         ctx.beginPath(); ctx.arc(cx + 10, cy - 65, 2, 0, Math.PI * 2); ctx.fill();
         ctx.beginPath(); ctx.arc(cx, cy - 60, 15, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
