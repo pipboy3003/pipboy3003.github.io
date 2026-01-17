@@ -1,4 +1,4 @@
-// [2026-01-17 16:30:00] ui_core.js - Added Atmospheric Loading Sequence
+// [2026-01-17 17:45:00] ui_core.js - Auto-Generate Account Name from Email
 
 const UI = {
     els: {},
@@ -88,37 +88,26 @@ const UI = {
         this.openBugModal(msg);
     },
 
-    // [NEU] Coole Ladeanimation
     showLoadingSequence: function() {
         return new Promise(resolve => {
-            // Overlay erzeugen
             const overlay = document.createElement('div');
             overlay.className = "fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center font-vt323 text-green-500 cursor-wait select-none";
             overlay.innerHTML = `
                 <div class="w-72 max-w-[90%] relative">
                     <div class="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,3px_100%] z-20 opacity-20"></div>
-                    
-                    <div class="text-center text-3xl mb-6 font-bold text-green-400 tracking-widest animate-pulse">
-                        PLEASE STAND BY
-                    </div>
-                    
+                    <div class="text-center text-3xl mb-6 font-bold text-green-400 tracking-widest animate-pulse">PLEASE STAND BY</div>
                     <div class="h-6 border-2 border-green-700 p-1 rounded relative bg-[#001100] shadow-[0_0_15px_#003300]">
                         <div id="load-bar-fill" class="h-full bg-green-500 w-0 shadow-[0_0_10px_#0f0] transition-all duration-300 ease-out"></div>
                     </div>
-                    
                     <div class="flex justify-between items-end mt-2 px-1">
                         <div id="load-text" class="text-xs text-green-600 font-mono animate-pulse">INITIALIZING...</div>
                         <div id="load-percent" class="text-xl font-bold text-green-400">0%</div>
                     </div>
-
-                    <div class="mt-8 flex justify-center opacity-50">
-                        <span class="animate-spin text-4xl">⚙️</span>
-                    </div>
+                    <div class="mt-8 flex justify-center opacity-50"><span class="animate-spin text-4xl">⚙️</span></div>
                 </div>
             `;
             document.body.appendChild(overlay);
 
-            // Sequenz Schritte
             const steps = [
                 { t: "LOADING ASSETS...", p: 15 },
                 { t: "DECRYPTING SAVE DATA...", p: 30 },
@@ -133,42 +122,34 @@ const UI = {
             const txt = overlay.querySelector('#load-text');
             const pct = overlay.querySelector('#load-percent');
 
-            // Interval für den Fortschritt
             const interval = setInterval(() => {
                 if(step >= steps.length) {
                     clearInterval(interval);
                     setTimeout(() => {
-                        overlay.classList.add('opacity-0', 'duration-500'); // Fade out
+                        overlay.classList.add('opacity-0', 'duration-500'); 
                         setTimeout(() => {
                             overlay.remove();
-                            resolve(); // Fertig -> StartGame geht weiter
+                            resolve(); 
                         }, 500);
                     }, 400);
                     return;
                 }
-                
                 const s = steps[step];
                 bar.style.width = s.p + "%";
                 txt.textContent = s.t;
                 pct.textContent = s.p + "%";
                 step++;
-
-            }, 250); // Geschwindigkeit der Animation
+            }, 250); 
         });
     },
 
     showCombatEffect: function(mainText, subText, color="red", duration=1000) {
         const view = document.getElementById('view-container');
         if(!view) return;
-
         const el = document.createElement('div');
         el.className = "click-effect-overlay"; 
         el.style.animation = `clickEffectAnim ${duration/1000}s ease-out forwards`;
-
-        el.innerHTML = `
-            <div class="click-effect-text" style="color:${color}; text-shadow: 0 0 20px ${color}">${mainText}</div>
-            <div class="click-effect-sub" style="border-color:${color}">${subText}</div>
-        `;
+        el.innerHTML = `<div class="click-effect-text" style="color:${color}; text-shadow: 0 0 20px ${color}">${mainText}</div><div class="click-effect-sub" style="border-color:${color}">${subText}</div>`;
         view.appendChild(el);
         setTimeout(() => { if(el) el.remove(); }, duration);
     },
@@ -186,14 +167,11 @@ const UI = {
     openBugModal: function(autoErrorMsg = null) {
         if(document.getElementById('bug-report-overlay')) return;
         if(this.els.navMenu) this.els.navMenu.classList.add('hidden');
-
         const title = autoErrorMsg ? "⚠️ SYSTEMFEHLER ERKANNT" : "🐞 BUG MELDEN";
         const subText = autoErrorMsg ? `CODE: "${autoErrorMsg}"` : "Fehler gefunden? Beschreibe ihn kurz:";
-        
         const overlay = document.createElement('div');
         overlay.id = 'bug-report-overlay';
         overlay.className = "fixed inset-0 z-[9999] bg-black/90 flex flex-col items-center justify-center p-4";
-        
         overlay.innerHTML = `
             <div class="bg-[#051105] border-2 border-red-600 p-6 rounded shadow-[0_0_30px_red] max-w-md w-full relative">
                 <h2 class="text-2xl text-red-500 font-bold mb-2 font-vt323 tracking-widest">${title}</h2>
@@ -231,22 +209,14 @@ const UI = {
             playerName: playerName,
             error: errorMsg,
             description: userDesc || "Keine Beschreibung",
-            gameState: {
-                view: Game.state ? Game.state.view : 'null',
-                sector: Game.state ? `${Game.state.sector.x},${Game.state.sector.y}` : 'null',
-                caps: Game.state ? Game.state.caps : 0,
-                lvl: Game.state ? Game.state.lvl : 0
-            },
+            gameState: { view: Game.state ? Game.state.view : 'null', sector: Game.state ? `${Game.state.sector.x},${Game.state.sector.y}` : 'null', caps: Game.state ? Game.state.caps : 0, lvl: Game.state ? Game.state.lvl : 0 },
             userAgent: navigator.userAgent
         };
         this.log("Sende Fehlerbericht an Vault-Tec...", "text-yellow-400 blink-red");
         let sent = false;
         if (typeof Network !== 'undefined' && Network.sendBugReport) sent = await Network.sendBugReport(report);
         if (sent) this.log("✅ Bericht erfolgreich übertragen.", "text-green-400 font-bold");
-        else {
-            this.log("❌ Bug report aktuell nicht möglich.", "text-red-500 font-bold");
-            console.warn("Bug Report Senden fehlgeschlagen.");
-        }
+        else { this.log("❌ Bug report aktuell nicht möglich.", "text-red-500 font-bold"); console.warn("Bug Report Senden fehlgeschlagen."); }
     },
 
     showMobileControlsHint: function() {
@@ -335,7 +305,7 @@ const UI = {
             loginStatus: document.getElementById('login-status'),
             inputEmail: document.getElementById('login-email'),
             inputPass: document.getElementById('login-pass'),
-            inputName: document.getElementById('login-name'),
+            inputName: document.getElementById('login-name'), // Ist null, da entfernt
             btnLogin: document.getElementById('btn-login'),
             btnToggleRegister: document.getElementById('btn-toggle-register'),
             loginTitle: document.getElementById('login-title'),
@@ -366,6 +336,16 @@ const UI = {
         if(this.els.btnInv) this.els.btnInv.addEventListener('click', () => this.resetInventoryAlert());
         if(this.els.headerCharInfo) this.els.headerCharInfo.addEventListener('click', () => { this.switchView('char'); });
 
+        // [FIX] Button Listener für Register Toggle (ohne Name Input)
+        if(this.els.btnToggleRegister) {
+             this.els.btnToggleRegister.onclick = () => {
+                 this.isRegistering = !this.isRegistering;
+                 this.els.loginTitle.textContent = this.isRegistering ? "NEUEN ACCOUNT REGISTRIEREN" : "AUTHENTICATION REQUIRED";
+                 this.els.btnLogin.textContent = this.isRegistering ? "REGISTRIEREN" : "LOGIN";
+                 this.els.btnToggleRegister.textContent = this.isRegistering ? "Zurück zum Login" : "Noch kein Account? Hier registrieren";
+             }
+        }
+
         window.Game = Game;
         window.UI = this;
 
@@ -377,12 +357,10 @@ const UI = {
         return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
     },
 
-    // [MODIFIED] Async Start with Loading Screen
     startGame: async function(saveData, slotIndex, newName=null) {
         this.charSelectMode = false;
         this.els.charSelectScreen.style.display = 'none';
         
-        // HIER: Warten auf die Animation
         await this.showLoadingSequence(); 
 
         this.els.gameScreen.classList.remove('hidden');
@@ -429,7 +407,7 @@ const UI = {
         this.loginBusy = true;
         const email = this.els.inputEmail.value.trim();
         const pass = this.els.inputPass.value.trim();
-        const name = this.els.inputName ? this.els.inputName.value.trim().toUpperCase() : "";
+        
         this.els.loginStatus.textContent = "VERBINDE MIT VAULT-TEC...";
         this.els.loginStatus.className = "mt-4 text-yellow-400 animate-pulse";
         try {
@@ -437,8 +415,12 @@ const UI = {
             Network.init();
             let saves = null;
             if (this.isRegistering) {
-                if (email.length < 5 || pass.length < 6 || name.length < 3) throw new Error("Daten unvollständig (PW min 6, Name min 3)");
-                saves = await Network.register(email, pass, name);
+                if (email.length < 5 || pass.length < 6) throw new Error("Daten unvollständig (PW min 6)");
+                
+                // [FIX] Auto-Generierter Name aus Email
+                const generatedName = email.split('@')[0].toUpperCase();
+                
+                saves = await Network.register(email, pass, generatedName);
             } else {
                 if (email.length < 5 || pass.length < 1) throw new Error("Bitte E-Mail und Passwort eingeben");
                 saves = await Network.login(email, pass);
