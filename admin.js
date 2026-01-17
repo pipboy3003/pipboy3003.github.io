@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-12 16:30:00 - admin.js - System Menu & Toast Notifications
+// [2026-01-17 21:30:00] admin.js - Enhanced Bug Reporting & Copy Feature
 
 const Admin = {
     gatePass: "bimbo123",
@@ -66,6 +66,7 @@ const Admin = {
     },
 
     initData: function() {
+        // Sicherstellen, dass Items geladen sind (auch wenn Game noch nicht init ist)
         const items = (typeof Game !== 'undefined' && Game.items) ? Game.items : (window.GameData ? window.GameData.items : {});
         this.itemsList = Object.entries(items).map(([k, v]) => ({id: k, ...v}));
         
@@ -94,12 +95,10 @@ const Admin = {
             }
         });
 
-        // Bug Listener updated for Menu Badge
         Network.db.ref('bug_reports').on('value', snap => {
             this.bugData = snap.val() || {};
             const count = Object.keys(this.bugData).length;
             
-            // Update Menu Badge
             const counter = document.getElementById('bug-count');
             const badge = document.getElementById('menu-bug-badge');
             
@@ -122,7 +121,6 @@ const Admin = {
         });
     },
 
-    // --- SYSTEM MENU ---
     toggleSystemMenu: function() {
         const menu = document.getElementById('system-menu');
         if(menu) menu.classList.toggle('hidden');
@@ -138,7 +136,6 @@ const Admin = {
         });
     },
 
-    // --- TOAST NOTIFICATIONS ---
     showToast: function(msg, type='info') {
         const container = document.getElementById('toast-container');
         if(!container) return;
@@ -167,7 +164,6 @@ const Admin = {
         }, 4000);
     },
 
-    // --- MODALS ---
     confirm: function(title, text, callback) {
         const overlay = document.getElementById('admin-confirm-overlay');
         const elTitle = document.getElementById('admin-confirm-title');
@@ -197,7 +193,6 @@ const Admin = {
         overlay.classList.remove('hidden');
     },
 
-    // --- LEADERBOARD ---
     showLeaderboard: function() {
         let overlay = document.getElementById('lb-overlay');
         if(!overlay) {
@@ -231,7 +226,6 @@ const Admin = {
         }
         overlay.classList.remove('hidden');
         this.renderLeaderboard();
-        // Menü schließen falls offen
         document.getElementById('system-menu')?.classList.add('hidden');
     },
 
@@ -285,10 +279,9 @@ const Admin = {
         }
     },
 
-    // --- BUGS ---
+    // --- BUGS (UPDATED) ---
     showBugs: function() {
         document.getElementById('bug-overlay').classList.remove('hidden');
-        // Menü schließen
         document.getElementById('system-menu')?.classList.add('hidden');
         this.renderBugs();
     },
@@ -308,23 +301,40 @@ const Admin = {
         reports.forEach(bug => {
             const date = new Date(bug.timestamp).toLocaleString();
             const div = document.createElement('div');
-            div.className = "border border-red-500 bg-red-900/20 p-4 relative";
+            div.className = "border border-red-500 bg-red-900/20 p-4 relative mb-4 shadow-[0_0_15px_rgba(255,0,0,0.2)]";
+            
+            // Format für die Zwischenablage
+            const copyData = JSON.stringify(bug, null, 2);
+
             div.innerHTML = `
                 <div class="flex justify-between items-start mb-2 border-b border-red-800 pb-2">
                     <div>
-                        <span class="text-red-400 font-bold">${bug.error || "UNKNOWN ERROR"}</span>
-                        <div class="text-xs text-gray-400">${date} | Player: <span class="text-white">${bug.playerName}</span></div>
+                        <span class="text-red-400 font-bold text-lg block">${bug.error || "UNKNOWN ERROR"}</span>
+                        <div class="text-xs text-gray-400">${date} | Player: <span class="text-white font-bold">${bug.playerName}</span></div>
                     </div>
-                    <button onclick="Admin.deleteBug('${bug.id}')" class="btn btn-danger text-xs px-2 py-1">DELETE</button>
+                    <div class="flex gap-2">
+                        <button onclick="Admin.copyBugReport(this)" data-bug='${copyData}' class="btn border-cyan-500 text-cyan-500 text-xs px-2 py-1 hover:bg-cyan-900">COPY JSON</button>
+                        <button onclick="Admin.deleteBug('${bug.id}')" class="btn btn-danger text-xs px-2 py-1">DELETE</button>
+                    </div>
                 </div>
-                <div class="text-sm text-gray-300 font-mono mb-2">
+                <div class="text-sm text-gray-300 font-mono mb-2 bg-black/50 p-2 border border-red-900/50">
                     <span class="text-red-600 font-bold">DESC:</span> ${bug.description}
                 </div>
                 <div class="text-[10px] text-gray-500 font-mono bg-black p-2 border border-gray-800">
-                    LOC: ${bug.gameState?.sector || 'Unknown'} | VIEW: ${bug.gameState?.view} | USER-AGENT: ${bug.userAgent}
+                    LOC: ${bug.gameState?.sector || 'Unknown'} | VIEW: ${bug.gameState?.view} | CAPS: ${bug.gameState?.caps || 0} | AGENT: ${bug.userAgent}
                 </div>
             `;
             list.appendChild(div);
+        });
+    },
+
+    copyBugReport: function(btn) {
+        const data = btn.getAttribute('data-bug');
+        navigator.clipboard.writeText(data).then(() => {
+            this.showToast("REPORT COPIED TO CLIPBOARD", "info");
+        }).catch(err => {
+            this.showToast("COPY FAILED", "error");
+            console.error(err);
         });
     },
 
@@ -337,7 +347,6 @@ const Admin = {
 
     refresh: function() { location.reload(); },
 
-    // --- SIDEBAR & LISTS ---
     toggleSidebar: function() {
         const sb = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebar-overlay');
@@ -489,7 +498,6 @@ const Admin = {
         }
     },
 
-    // Save with Reminder
     saveStat: function(stat, val) {
         if(!this.currentPath) return;
         Network.db.ref(this.currentPath + '/stats/' + stat).set(Number(val));
@@ -505,7 +513,6 @@ const Admin = {
 
     fillInv: function(d) {
         const invTab = document.getElementById('tab-inv');
-        // COMPACT INVENTORY LAYOUT
         invTab.innerHTML = `
             <div class="flex flex-col h-full gap-2">
                 <div class="panel-box p-2 shrink-0">
@@ -813,5 +820,4 @@ const Admin = {
     }
 };
 
-// Auto Init
 setTimeout(() => Admin.setupMenuClose(), 1000);
