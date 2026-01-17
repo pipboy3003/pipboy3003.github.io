@@ -1,4 +1,4 @@
-// [2026-01-16 10:15:00] ui_core.js - Fix Menu Logout State & Interaction Logic
+// [2026-01-17 15:30:00] ui_core.js - Dynamic Toast Width & Layout Fixes
 
 const UI = {
     els: {},
@@ -50,6 +50,7 @@ const UI = {
 
         const el = document.createElement('div');
         
+        // [FIX] Layout angepasst: w-fit, max-w, self-end für dynamische Breite
         el.className = `
             pointer-events-auto 
             bg-black/95 
@@ -57,19 +58,20 @@ const UI = {
             p-3 
             shadow-[0_0_15px_rgba(0,0,0,0.8)] 
             animate-slide-in 
-            flex items-start justify-between
+            flex items-start justify-between gap-4
             transition-all duration-500 ease-out
             mb-1 backdrop-blur-sm
+            w-fit max-w-[90vw] md:max-w-md self-end rounded-l
         `;
 
         el.innerHTML = `
-            <div class="flex items-center gap-3 pr-4">
+            <div class="flex items-center gap-3">
                 <span class="text-lg opacity-80 select-none">${icon}</span>
-                <span class="font-mono text-sm md:text-base font-bold ${colorClass} tracking-wide drop-shadow-md">
+                <span class="font-mono text-sm md:text-base font-bold ${colorClass} tracking-wide drop-shadow-md whitespace-nowrap md:whitespace-normal">
                     ${message}
                 </span>
             </div>
-            <button class="text-gray-600 hover:text-white font-bold text-xs self-start mt-1 px-1">✕</button>
+            <button class="text-gray-600 hover:text-white font-bold text-xs self-start mt-0.5 px-1 ml-2">✕</button>
         `;
 
         el.querySelector('button').onclick = () => {
@@ -282,28 +284,32 @@ const UI = {
     },
 
     update: function() {
-        // Robust Check for Active Session
         const loginScreen = this.els.loginScreen;
         const isLoginHidden = loginScreen && (loginScreen.style.display === 'none' || loginScreen.classList.contains('hidden'));
         const isAuth = (typeof Network !== 'undefined' && Network.myId);
 
         if (isLoginHidden && isAuth) {
-            // Auto Logout bei Inaktivität (300000ms = 5 Minuten)
             if(Date.now() - this.lastInputTime > 300000) { 
                 console.log("AFK Trigger: Logout initiiert.");
                 this.logout("AFK: ZEITÜBERSCHREITUNG");
             }
         }
         
-        // Platzhalter für UI Updates
         if(typeof this.renderChar === 'function' && this.charTab === 'status') this.renderChar();
     },
 
     init: function() {
+        // [FIX] Container-Klassen zur Laufzeit reparieren (Fixed Width -> Dynamic Right Aligned)
+        const toastCont = document.getElementById('game-toast-container');
+        if(toastCont) {
+            toastCont.classList.remove('w-72', 'md:w-96'); // Alte feste Breiten weg
+            toastCont.classList.add('w-auto', 'items-end', 'max-w-full', 'md:max-w-[400px]'); // Neue flexible Ausrichtung
+        }
+
         this.els = {
             touchArea: document.getElementById('main-content'),
             view: document.getElementById('view-container'),
-            toastContainer: document.getElementById('game-toast-container'), 
+            toastContainer: toastCont, 
             hp: document.getElementById('val-hp'),
             hpBar: document.getElementById('bar-hp'),
             expBarTop: document.getElementById('bar-exp-top'),
@@ -390,7 +396,6 @@ const UI = {
 
         if(this.initInput) this.initInput();
         
-        // Loop startet den Update-Zyklus
         setInterval(() => {
             if(this.update) this.update();
         }, 1000);
@@ -427,7 +432,6 @@ const UI = {
             Game.state = null;
         }
 
-        // FIX: Warten auf sauberen Disconnect (DB Bereinigung)
         if(typeof Network !== 'undefined') {
             await Network.disconnect();
         }
@@ -446,12 +450,10 @@ const UI = {
         this.els.loginStatus.className = "mt-4 text-yellow-400";
         this.els.inputPass.value = "";
         
-        // [FIX: MENU LOGIC] Erzwinge das Schließen des Menüs beim Logout
         if(this.els.navMenu) {
             this.els.navMenu.classList.add('hidden');
-            this.els.navMenu.style.display = 'none'; // WICHTIG: Überschreibt etwaige Inline-Styles!
+            this.els.navMenu.style.display = 'none';
         }
-        
         if(this.els.playerList) this.els.playerList.style.display = 'none';
     },
 
