@@ -16,24 +16,11 @@
     <script>document.write('<link rel="stylesheet" href="style.css?v=' + Date.now() + '">');</script>
     
     <style>
-        @keyframes spin-reverse {
-            from { transform: rotate(360deg); }
-            to { transform: rotate(0deg); }
-        }
-        @keyframes scan-line {
-            0% { top: 0%; opacity: 0; }
-            50% { opacity: 1; }
-            100% { top: 100%; opacity: 0; }
-        }
-        .animate-spin-reverse {
-            animation: spin-reverse 3s linear infinite;
-        }
-        .animate-scan-vertical {
-            animation: scan-line 2s linear infinite;
-        }
-        .reactor-glow {
-            box-shadow: 0 0 15px #39ff14, inset 0 0 10px #39ff14;
-        }
+        @keyframes spin-reverse { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+        @keyframes scan-line { 0% { top: 0%; opacity: 0; } 50% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        .animate-spin-reverse { animation: spin-reverse 3s linear infinite; }
+        .animate-scan-vertical { animation: scan-line 2s linear infinite; }
+        .reactor-glow { box-shadow: 0 0 15px #39ff14, inset 0 0 10px #39ff14; }
     </style>
     
     <script>window.onerror=function(m,u,l){console.error("GLOBAL ERR:",m);if(typeof UI!=='undefined'&&UI.error)UI.error(m);return false;};</script>
@@ -46,26 +33,18 @@
     <div id="login-screen" class="hex-bg">
         <div class="login-box crt-effect-container">
             <div id="boot-sequence">
-                
                 <div class="relative w-32 h-32 mb-6 mx-auto flex items-center justify-center">
                     <div class="absolute inset-0 border-2 border-green-900 rounded-full"></div>
-                    
                     <div class="absolute inset-0 w-full h-full rounded-full border-[6px] border-transparent border-t-[#39ff14] border-b-[#39ff14] opacity-60 animate-spin"></div>
-                    
                     <div class="absolute inset-4 rounded-full border-2 border-dashed border-yellow-500/50 animate-spin-reverse"></div>
-                    
                     <div class="relative w-16 h-16 rounded-full bg-[#001100] border border-[#39ff14] reactor-glow flex items-center justify-center overflow-hidden z-10">
                         <div class="w-8 h-8 bg-[#39ff14] rounded-full animate-pulse shadow-[0_0_20px_#39ff14]"></div>
-                        
                         <div class="absolute left-0 w-full h-[2px] bg-[#ccffcc] shadow-[0_0_5px_white] animate-scan-vertical"></div>
                     </div>
-                    
                     <div class="absolute -left-4 top-1/2 w-4 h-[1px] bg-green-700"></div>
                     <div class="absolute -right-4 top-1/2 w-4 h-[1px] bg-green-700"></div>
                 </div>
-                
                 <div class="text-xl font-bold text-yellow-400 mb-2 animate-pulse tracking-widest text-center">SYSTEM BOOT</div>
-                
                 <div id="boot-log" class="w-full text-left pl-4 border-l-2 border-green-800 mt-2 h-32 overflow-hidden flex flex-col justify-end bg-black/40 p-2 font-mono text-xs md:text-sm transition-all duration-300"></div>
             </div>
 
@@ -75,8 +54,7 @@
                 <form id="login-form" onsubmit="event.preventDefault();" autocomplete="off" class="w-full">
                     <input type="email" id="login-email" class="login-input" placeholder="E-MAIL" autofocus autocomplete="username">
                     <input type="password" id="login-pass" class="login-input mt-2" placeholder="PASSWORT" autocomplete="current-password">
-                    <input type="text" id="login-name" class="login-input hidden mt-2" placeholder="ACCOUNT NAME" maxlength="15" autocomplete="off" style="display: none;">
-                </form>
+                    </form>
                 <button id="btn-login" class="action-button w-full py-3 font-bold text-xl mb-2 mt-4">LOGIN</button>
                 <button id="btn-toggle-register" class="text-sm text-yellow-400 hover:text-yellow-200 cursor-pointer mb-4 underline bg-transparent border-none">Noch kein Account? Hier registrieren</button>
                 <div class="flex gap-2 w-full">
@@ -96,19 +74,13 @@
 
     <div id="char-select-screen" style="display: none;">
         <div class="login-box crt-effect-container w-full max-w-lg flex flex-col" style="overflow: hidden !important; padding: 0 !important; max-height: 90vh; min-height: 500px;">
-            
             <div class="flex-1 w-full overflow-y-auto custom-scroll bg-[#050505] p-6">
                 <div class="mb-6">
                     <h1 class="text-4xl font-bold text-yellow-400 mb-2 border-b border-yellow-400 pb-2 uppercase">Charakter Wahl</h1>
-                    <div class="text-sm text-green-300 font-mono leading-tight opacity-80">
-                        Tippe auf einen Slot zum Starten / Erstellen.
-                    </div>
+                    <div class="text-sm text-green-300 font-mono leading-tight opacity-80">Tippe auf einen Slot zum Starten / Erstellen.</div>
                 </div>
-
-                <div id="char-slots-list" class="flex flex-col gap-2 w-full">
-                    </div>
+                <div id="char-slots-list" class="flex flex-col gap-2 w-full"></div>
             </div>
-
             <div class="flex-shrink-0 p-6 pt-4 bg-black/95 border-t border-green-900 z-20 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]">
                 <div class="flex flex-col gap-2 w-full">
                     <div class="flex gap-2 w-full">
@@ -117,7 +89,6 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -265,11 +236,9 @@
         }, 500);
 
         function finishBoot() {
-            // [NEU] Log leeren für dramatischen Effekt
             const log = document.getElementById('boot-log');
             log.innerHTML = '';
             
-            // Kurze Pause vor dem finalen Status
             setTimeout(() => {
                 addBootLine("SYSTEM READY.", "text-green-400 font-bold animate-pulse text-lg");
                 
@@ -282,7 +251,7 @@
                         UI.isSystemReady = true; 
                         console.log("Boot finished. System is now ready for interaction.");
                     }
-                }, 1500); // Länger zeigen für den Effekt
+                }, 1500); 
             }, 300);
         }
     }
