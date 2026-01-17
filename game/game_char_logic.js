@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-10 07:00:00 - game_char_logic.js - Stats, Perks & Combat
+// [TIMESTAMP] 2026-01-17 12:05:00 - game_char_logic.js - Stats, Perks & Immediate UI Refresh
 
 Object.assign(Game, {
 
@@ -8,7 +8,12 @@ Object.assign(Game, {
             this.state.stats[key]++; 
             this.state.statPoints--; 
             this.recalcStats();
-            UI.renderChar(); 
+            
+            // FIX: Refresh current tab immediately
+            if(typeof UI.renderStats === 'function') {
+                UI.renderStats(Game.state.charTab || 'special');
+            }
+            
             UI.update(); 
             this.saveGame(); 
         } 
@@ -45,7 +50,10 @@ Object.assign(Game, {
         this.recalcStats();
         this.saveGame();
         
-        if(typeof UI.renderChar === 'function') UI.renderChar('perks');
+        // FIX: Refresh Perks UI immediately
+        if(typeof UI.renderStats === 'function') {
+            UI.renderStats('perks');
+        }
     },
 
     startCombat: function() { 
