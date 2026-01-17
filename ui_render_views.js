@@ -1,18 +1,23 @@
-// [2026-01-17 14:00:00] ui_render_views.js - Smart Header Navigation & Dynamic Level-Up Hint
+// [2026-01-17 14:15:00] ui_render_views.js - Full Header Click Logic & Giant VATS
 
 Object.assign(UI, {
 
-    // [NEU] Intelligente Navigation beim Klick auf den Header
+    // [NEU] Zentrale Logik für den Klick auf Name/Level/Header
     handleHeaderClick: function() {
         if(!Game.state) return;
         const s = Game.state;
         
+        // Prio 1: Wenn Stat-Punkte da sind -> Ab zu SPECIAL
         if (s.statPoints > 0) {
-            this.renderStats('special'); // Prio 1: Stats verteilen
-        } else if (s.perkPoints > 0) {
-            this.renderStats('perks');   // Prio 2: Perks wählen
-        } else {
-            this.renderStats('special'); // Fallback: Einfach Stats ansehen
+            this.renderStats('special'); 
+        } 
+        // Prio 2: Wenn Perk-Punkte da sind -> Ab zu PERKS
+        else if (s.perkPoints > 0) {
+            this.renderStats('perks');   
+        } 
+        // Fallback: Keine Punkte? -> Trotzdem zu SPECIAL (als "Details")
+        else {
+            this.renderStats('special'); 
         }
     },
 
@@ -42,7 +47,7 @@ Object.assign(UI, {
             ? "bg-green-500 text-black border-b-4 border-green-700 font-bold" 
             : "bg-[#001100] text-green-600 border-b border-green-900";
 
-        // Sticky Header
+        // Sticky Header (Tabs)
         const header = document.createElement('div');
         header.className = "flex w-full border-b-2 border-green-900 bg-black sticky top-0 z-30"; 
         header.innerHTML = `
@@ -52,7 +57,7 @@ Object.assign(UI, {
         `;
         scrollContainer.appendChild(header);
 
-        // Content
+        // Content Area
         const content = document.createElement('div');
         content.className = "w-full p-4";
         
@@ -63,7 +68,7 @@ Object.assign(UI, {
         scrollContainer.appendChild(content);
         wrapper.appendChild(scrollContainer);
 
-        // Footer
+        // Footer (Zurück)
         const footer = document.createElement('div');
         footer.className = "absolute bottom-0 left-0 w-full p-3 bg-black border-t-2 border-green-900 z-50 shadow-[0_-5px_15px_rgba(0,0,0,0.9)]";
         footer.innerHTML = `<button class="action-button w-full border-2 border-green-600 text-green-500 py-3 font-bold text-xl uppercase" onclick="UI.switchView('map')">ZURÜCK</button>`;
@@ -90,23 +95,26 @@ Object.assign(UI, {
             `;
         };
         
-        // Dynamischer Text-Hinweis
+        // Dynamischer Hinweis-Text
         let actionText = '<span class="ml-2 text-xs uppercase border border-green-700 px-1 rounded text-green-500 opacity-50">Details ▶</span>';
+        let highlightClass = "";
+        
         if (p.statPoints > 0 || p.perkPoints > 0) {
             actionText = '<span class="ml-2 text-xs uppercase border border-yellow-500 bg-yellow-900/40 px-1 rounded text-yellow-400 font-bold animate-pulse">LEVEL UP! ▶</span>';
+            highlightClass = "border-yellow-500/50 bg-yellow-900/10"; // Rahmen leuchtet leicht gelb
         }
 
         container.innerHTML = `
             <div class="flex flex-col items-center gap-4 max-w-md mx-auto">
-                <div class="text-center w-full border-b border-green-900 pb-2 cursor-pointer hover:bg-green-900/10 transition-colors group" onclick="UI.handleHeaderClick()">
-                    <div class="text-4xl font-bold text-green-400 group-hover:text-yellow-400 transition-colors">${p.playerName}</div>
-                    <div class="text-xs font-mono text-green-600 group-hover:text-green-300">
+                <div class="text-center w-full border-b border-green-900 pb-2 cursor-pointer hover:bg-green-900/20 transition-all group rounded p-2 ${highlightClass}" onclick="UI.handleHeaderClick()">
+                    <div class="text-4xl font-bold text-green-400 group-hover:text-yellow-400 transition-colors text-shadow-md">${p.playerName}</div>
+                    <div class="text-xs font-mono text-green-600 group-hover:text-green-300 mt-1">
                         LVL ${p.lvl} | XP: ${p.xp} / ${Game.expToNextLevel(p.lvl)}
                         ${actionText}
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-3 grid-rows-4 gap-2 w-full relative">
+                <div class="grid grid-cols-3 grid-rows-4 gap-2 w-full relative mt-2">
                     <div class="col-start-2 row-start-1">${renderSlot('head', eq.head, '🧢')}</div>
                     <div class="col-start-1 row-start-2">${renderSlot('weapon', eq.weapon, '👊')}</div>
                     <div class="col-start-2 row-start-2">${renderSlot('body', eq.body, '👕')}</div>
@@ -118,7 +126,7 @@ Object.assign(UI, {
                         <canvas id="char-silhouette-canvas" width="240" height="300"></canvas>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-2 w-full text-xs font-mono bg-green-900/10 p-3 rounded border border-green-900/50">
+                <div class="grid grid-cols-2 gap-2 w-full text-xs font-mono bg-green-900/10 p-3 rounded border border-green-900/50 mt-2">
                     <div class="flex justify-between border-b border-green-900/20 pb-1"><span>TP</span><span class="text-green-400 font-bold">${Math.round(p.hp)}/${p.maxHp}</span></div>
                     <div class="flex justify-between border-b border-green-900/20 pb-1"><span>DEF</span><span class="text-green-400 font-bold">${(typeof Game.getStat === 'function') ? Game.getStat('DEF') : 0}</span></div>
                     <div class="flex justify-between border-b border-green-900/20 pb-1"><span>KRIT</span><span class="text-green-400 font-bold">${p.critChance || 5}%</span></div>
