@@ -1,4 +1,4 @@
-// [2026-01-15 09:00:00] game_core.js - Added Global drawText helper for HiDPI Font Rendering
+// [2026-01-17 18:30:00] game_core.js - Fixed Backpack availability in Shop & HiDPI
 
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
@@ -286,8 +286,13 @@ window.Game = {
                 const a = armor[Math.floor(Math.random() * armor.length)];
                 if(a) stock[a] = 1;
             }
-            if(Math.random() < 0.3) stock['backpack_small'] = 1;
-            if(Math.random() < 0.1) stock['backpack_medium'] = 1;
+            
+            // [FIX] Hier waren alte IDs. Jetzt: Richtige Rucksack-IDs aus data_items.js
+            if(Math.random() < 0.4) stock['bag_small'] = 1;       // Kleine Tasche
+            if(Math.random() < 0.2) stock['backpack_school'] = 1; // Schulrucksack
+            if(Math.random() < 0.1) stock['backpack_leather'] = 1;// Lederrucksack
+            if(Math.random() < 0.05) stock['backpack_military'] = 1;// Militärrucksack
+
             stock['camp_kit'] = 1;
             this.state.shop.merchantCaps = 500 + Math.floor(Math.random() * 1000);
             this.state.shop.stock = stock;
