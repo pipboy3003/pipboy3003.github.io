@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-12 09:45:00 - ui_input.js - Added Name Availability Check & Design-Conform Error Handling
+// [2026-01-17 22:00:00] ui_input.js - Fix: Removed Access to Deleted Name Input
 
 Object.assign(UI, {
     
@@ -6,7 +6,7 @@ Object.assign(UI, {
         active: false, id: null, startX: 0, startY: 0, currentX: 0, currentY: 0, moveDir: { x: 0, y: 0 }, timer: null
     },
 
-initInput: function() {
+    initInput: function() {
         // --- AUTHENTIFIZIERUNG ---
         if(this.els.btnLogin) this.els.btnLogin.onclick = () => this.attemptLogin();
         
@@ -15,17 +15,22 @@ initInput: function() {
                 this.isRegistering = !this.isRegistering;
                 const isReg = this.isRegistering;
                 this.els.loginTitle.textContent = isReg ? "NEUEN ACCOUNT ERSTELLEN" : "AUTHENTICATION REQUIRED";
-                this.els.inputName.style.display = isReg ? 'block' : 'none';
+                
+                // [FIX] Diese Zeile verursachte den Crash, da das Feld in index.html gelöscht wurde:
+                // this.els.inputName.style.display = isReg ? 'block' : 'none'; 
+                
                 this.els.btnLogin.textContent = isReg ? "REGISTRIEREN" : "LOGIN";
                 this.els.btnToggleRegister.textContent = isReg ? "Zurück zum Login" : "Noch kein Account? Hier registrieren";
             };
         }
 
+        // Event Listener für Enter-Taste (Login)
+        // inputName ist hier null, aber die if(el) Prüfung fängt das sicher ab.
         [this.els.inputEmail, this.els.inputPass, this.els.inputName].forEach(el => {
             if(el) {
                 el.addEventListener("keydown", (e) => {
                     if (e.key === "Enter") {
-                        e.stopPropagation(); // WICHTIG: Verhindert Seiteneffekte
+                        e.stopPropagation(); 
                         e.preventDefault();
                         this.attemptLogin();
                     }
@@ -33,12 +38,10 @@ initInput: function() {
             }
         });
         
-        // --- CHARAKTER ERSTELLUNG (HIER WAR DER FEHLER) ---
+        // --- CHARAKTER ERSTELLUNG ---
         if(this.els.inputNewCharName) {
             this.els.inputNewCharName.addEventListener("keydown", (e) => {
-                // Stoppt das Event, damit es nicht zum Window-Handler hochwandert (der das Feld löscht)
                 e.stopPropagation(); 
-                
                 if (e.key === "Enter") {
                     e.preventDefault();
                     if(this.els.btnCreateCharConfirm) {
