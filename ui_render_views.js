@@ -1,5 +1,4 @@
-// [2026-01-16 08:15:00] ui_render_views.js - Header scrolls with content, Footer remains fixed
-//
+// [2026-01-17 12:10:00] ui_render_views.js - Fix VATS Display & Stat Rendering
 
 Object.assign(UI, {
 
@@ -21,18 +20,17 @@ Object.assign(UI, {
         wrapper.className = "absolute inset-0 w-full h-full flex flex-col bg-black z-20 overflow-hidden";
         wrapper.onclick = (e) => e.stopPropagation();
 
-        // Scrollbarer Bereich: Hier liegen Header UND Inhalt drin
+        // Scrollbarer Bereich
         const scrollContainer = document.createElement('div');
-        scrollContainer.className = "flex-1 w-full overflow-y-auto pb-24 bg-black"; // pb-24 für Platz vor dem Footer
+        scrollContainer.className = "flex-1 w-full overflow-y-auto pb-24 bg-black";
 
         const getTabClass = (t) => (tab === t) 
             ? "bg-green-500 text-black border-b-4 border-green-700 font-bold" 
             : "bg-[#001100] text-green-600 border-b border-green-900";
 
-        // Der Header wird nun INSIDE den scrollContainer gepackt
+        // Sticky Header
         const header = document.createElement('div');
         header.className = "flex w-full border-b-2 border-green-900 bg-black sticky top-0 z-30"; 
-        // "sticky top-0" sorgt dafür, dass er beim Scrollen erst oben bleibt, wenn man ihn erreicht
         header.innerHTML = `
             <button onclick="UI.renderStats('stats', event)" class="flex-1 py-3 uppercase font-vt323 text-xl ${getTabClass('stats')}">STATUS</button>
             <button onclick="UI.renderStats('special', event)" class="flex-1 py-3 uppercase font-vt323 text-xl ${getTabClass('special')}">S.P.E.C.I.A.L.</button>
@@ -40,7 +38,7 @@ Object.assign(UI, {
         `;
         scrollContainer.appendChild(header);
 
-        // Der eigentliche Content-Bereich
+        // Content
         const content = document.createElement('div');
         content.className = "w-full p-4";
         
@@ -51,7 +49,7 @@ Object.assign(UI, {
         scrollContainer.appendChild(content);
         wrapper.appendChild(scrollContainer);
 
-        // Footer: Bleibt fest am unteren Rand des Wrappers (außerhalb des scrollContainers)
+        // Footer
         const footer = document.createElement('div');
         footer.className = "absolute bottom-0 left-0 w-full p-3 bg-black border-t-2 border-green-900 z-50 shadow-[0_-5px_15px_rgba(0,0,0,0.9)]";
         footer.innerHTML = `<button class="action-button w-full border-2 border-green-600 text-green-500 py-3 font-bold text-xl uppercase" onclick="UI.switchView('map')">ZURÜCK</button>`;
@@ -172,7 +170,6 @@ Object.assign(UI, {
         ctx.beginPath(); ctx.arc(cx, cy - 60, 15, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
     },
 
-    // System-Logik bleibt unverändert...
     renderCharacterSelection: function(saves) {
         this.charSelectMode = true; this.currentSaves = saves;
         if(this.els.loginScreen) this.els.loginScreen.style.display = 'none';
@@ -207,10 +204,30 @@ Object.assign(UI, {
         }
     },
 
+    // [NEU/FIX] Render Combat mit VATS Berechnung
     renderCombat: function() {
         const enemy = Game.state.enemy; if(!enemy) return;
         const nameEl = document.getElementById('enemy-name'); if(nameEl) nameEl.textContent = enemy.name;
         const hpText = document.getElementById('enemy-hp-text'); if(hpText) hpText.textContent = `${Math.max(0, enemy.hp)}/${enemy.maxHp} TP`;
         const hpBar = document.getElementById('enemy-hp-bar'); if(hpBar) hpBar.style.width = `${Math.max(0, (enemy.hp/enemy.maxHp)*100)}%`;
+
+        // VATS Prozent-Update in den Buttons
+        if(typeof Combat !== 'undefined' && Combat.bodyParts) {
+             Combat.bodyParts.forEach((part, index) => {
+                 const btn = document.getElementById(`btn-vats-${index}`);
+                 if(btn) {
+                     const chance = (typeof Combat.calculateHitChance === 'function') 
+                        ? Combat.calculateHitChance(index) 
+                        : 0;
+                     
+                     btn.innerHTML = `
+                        <div class="pointer-events-none flex flex-col items-center leading-none">
+                            <span class="text-sm font-bold">${part.name}</span>
+                            <span class="text-xs ${chance > 50 ? 'text-green-400' : 'text-red-400'}">${chance}%</span>
+                        </div>
+                     `;
+                 }
+             });
+        }
     }
 });
