@@ -1,4 +1,4 @@
-// [2026-01-17 12:10:00] ui_render_views.js - Fix VATS Display & Stat Rendering
+// [2026-01-17 12:45:00] ui_render_views.js - VATS Layout Update: Huge Body Part Names
 
 Object.assign(UI, {
 
@@ -15,7 +15,7 @@ Object.assign(UI, {
         if(!view) return;
         view.innerHTML = ''; 
 
-        // Haupt-Wrapper: Nimmt den vollen Platz ein
+        // Haupt-Wrapper
         const wrapper = document.createElement('div');
         wrapper.className = "absolute inset-0 w-full h-full flex flex-col bg-black z-20 overflow-hidden";
         wrapper.onclick = (e) => e.stopPropagation();
@@ -204,14 +204,13 @@ Object.assign(UI, {
         }
     },
 
-    // [NEU/FIX] Render Combat mit VATS Berechnung
     renderCombat: function() {
         const enemy = Game.state.enemy; if(!enemy) return;
         const nameEl = document.getElementById('enemy-name'); if(nameEl) nameEl.textContent = enemy.name;
         const hpText = document.getElementById('enemy-hp-text'); if(hpText) hpText.textContent = `${Math.max(0, enemy.hp)}/${enemy.maxHp} TP`;
         const hpBar = document.getElementById('enemy-hp-bar'); if(hpBar) hpBar.style.width = `${Math.max(0, (enemy.hp/enemy.maxHp)*100)}%`;
 
-        // VATS Prozent-Update in den Buttons
+        // [NEU] Layout: Links Name (RIESIG), Rechts Prozent (RIESIG)
         if(typeof Combat !== 'undefined' && Combat.bodyParts) {
              Combat.bodyParts.forEach((part, index) => {
                  const btn = document.getElementById(`btn-vats-${index}`);
@@ -221,9 +220,9 @@ Object.assign(UI, {
                         : 0;
                      
                      btn.innerHTML = `
-                        <div class="pointer-events-none flex flex-col items-center leading-none">
-                            <span class="text-sm font-bold">${part.name}</span>
-                            <span class="text-xs ${chance > 50 ? 'text-green-400' : 'text-red-400'}">${chance}%</span>
+                        <div class="pointer-events-none w-full h-full flex items-center justify-between px-4">
+                            <span class="text-5xl font-bold text-gray-400 uppercase tracking-tighter drop-shadow-md">${part.name}</span>
+                            <span class="font-bold ${chance > 50 ? 'text-green-400' : 'text-red-400'} text-6xl shadow-black drop-shadow-md">${chance}<span class="text-3xl align-top">%</span></span>
                         </div>
                      `;
                  }
