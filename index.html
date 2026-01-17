@@ -21,18 +21,99 @@
         .animate-spin-reverse { animation: spin-reverse 3s linear infinite; }
         .animate-scan-vertical { animation: scan-line 2s linear infinite; }
         .reactor-glow { box-shadow: 0 0 15px #39ff14, inset 0 0 10px #39ff14; }
+        
+        /* Debug Styles */
+        .debug-overlay { user-select: text !important; -webkit-user-select: text !important; }
+        .selectable { user-select: text; -webkit-user-select: text; cursor: text; }
     </style>
     
-    <script>window.onerror=function(m,u,l){console.error("GLOBAL ERR:",m);if(typeof UI!=='undefined'&&UI.error)UI.error(m);return false;};</script>
+    <script>
+        // --- GLOBAL ERROR CAPTURE ---
+        window.logBuffer = [];
+        
+        function captureLog(type, msg) {
+            const line = `[${new Date().toLocaleTimeString()}] [${type}] ${msg}`;
+            window.logBuffer.push(line);
+            console.log(line);
+        }
+
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            const errorDetails = {
+                msg: msg,
+                url: url,
+                line: lineNo,
+                col: columnNo,
+                stack: error ? error.stack : 'N/A'
+            };
+            showCrashReport("RUNTIME_ERROR", errorDetails);
+            return false;
+        };
+
+        window.onunhandledrejection = function(event) {
+            showCrashReport("PROMISE_ERROR", {
+                msg: event.reason ? (event.reason.message || event.reason) : "Unknown Promise Error",
+                stack: event.reason ? event.reason.stack : 'N/A'
+            });
+        };
+
+        function showCrashReport(type, details) {
+            const overlay = document.getElementById('crash-overlay');
+            const reportBox = document.getElementById('crash-report-text');
+            const bootScreen = document.getElementById('boot-sequence');
+            
+            if(bootScreen) bootScreen.style.display = 'none';
+            if(overlay) overlay.style.display = 'flex';
+
+            const fullReport = `
+=== PIP-BOY 3003 CRASH REPORT ===
+TIMESTAMP: ${new Date().toISOString()}
+TYPE: ${type}
+USER_AGENT: ${navigator.userAgent}
+SCREEN: ${window.innerWidth}x${window.innerHeight}
+
+ERROR MESSAGE:
+${details.msg}
+
+LOCATION:
+${details.url || 'Internal'} : ${details.line || '?'}:${details.col || '?'}
+
+STACK TRACE:
+${details.stack}
+
+=== LOG BUFFER (LAST 10) ===
+${window.logBuffer.slice(-10).join('\n')}
+            `.trim();
+
+            if(reportBox) reportBox.value = fullReport;
+        }
+
+        function copyCrashReport() {
+            const text = document.getElementById('crash-report-text');
+            text.select();
+            document.execCommand('copy');
+            alert("Bericht in Zwischenablage kopiert!");
+        }
+    </script>
 </head>
 <body>
 <div id="pipboy-case">
     <div class="scanline"></div>
     <div class="absolute inset-0 pointer-events-none crt-flicker z-[1001]" style="background: rgba(0,255,0,0.02);"></div>
 
+    <div id="crash-overlay" class="absolute inset-0 z-[9999] bg-black/95 flex-col items-center justify-center p-4 hidden debug-overlay">
+        <h1 class="text-4xl text-red-600 font-bold mb-2 blink-red border-b-2 border-red-600 pb-2">FATAL SYSTEM ERROR</h1>
+        <p class="text-red-400 mb-4 text-center">Das System ist abgestürzt. Bitte kopiere diesen Bericht:</p>
+        <textarea id="crash-report-text" class="w-full h-64 bg-[#110000] border-2 border-red-600 text-red-300 font-mono text-xs p-2 mb-4 selectable" readonly></textarea>
+        <div class="flex gap-4 w-full max-w-md">
+            <button onclick="copyCrashReport()" class="flex-1 bg-red-900/50 border border-red-500 text-white py-3 font-bold hover:bg-red-600">BERICHT KOPIEREN</button>
+            <button onclick="location.reload()" class="flex-1 border border-gray-500 text-gray-400 py-3 hover:text-white">NEUSTART</button>
+        </div>
+    </div>
+
     <div id="login-screen" class="hex-bg">
         <div class="login-box crt-effect-container">
             <div id="boot-sequence">
+                
                 <div class="relative w-32 h-32 mb-6 mx-auto flex items-center justify-center">
                     <div class="absolute inset-0 border-2 border-green-900 rounded-full"></div>
                     <div class="absolute inset-0 w-full h-full rounded-full border-[6px] border-transparent border-t-[#39ff14] border-b-[#39ff14] opacity-60 animate-spin"></div>
@@ -44,6 +125,7 @@
                     <div class="absolute -left-4 top-1/2 w-4 h-[1px] bg-green-700"></div>
                     <div class="absolute -right-4 top-1/2 w-4 h-[1px] bg-green-700"></div>
                 </div>
+                
                 <div class="text-xl font-bold text-yellow-400 mb-2 animate-pulse tracking-widest text-center">SYSTEM BOOT</div>
                 <div id="boot-log" class="w-full text-left pl-4 border-l-2 border-green-800 mt-2 h-32 overflow-hidden flex flex-col justify-end bg-black/40 p-2 font-mono text-xs md:text-sm transition-all duration-300"></div>
             </div>
@@ -54,7 +136,7 @@
                 <form id="login-form" onsubmit="event.preventDefault();" autocomplete="off" class="w-full">
                     <input type="email" id="login-email" class="login-input" placeholder="E-MAIL" autofocus autocomplete="username">
                     <input type="password" id="login-pass" class="login-input mt-2" placeholder="PASSWORT" autocomplete="current-password">
-                    </form>
+                </form>
                 <button id="btn-login" class="action-button w-full py-3 font-bold text-xl mb-2 mt-4">LOGIN</button>
                 <button id="btn-toggle-register" class="text-sm text-yellow-400 hover:text-yellow-200 cursor-pointer mb-4 underline bg-transparent border-none">Noch kein Account? Hier registrieren</button>
                 <div class="flex gap-2 w-full">
@@ -188,12 +270,14 @@
 </div>
 
 <script>
+    // --- LOAD SCRIPT MIT ERROR HANDLING ---
     function loadScript(src) { 
         return new Promise((resolve, reject) => { 
+            captureLog("LOADER", `Loading ${src}...`);
             const s = document.createElement('script'); 
             s.src = src; 
             s.onload = resolve; 
-            s.onerror = (e) => reject({src: src, evt: e}); 
+            s.onerror = (e) => reject({src: src, evt: e, message: "Script failed to load"}); 
             document.body.appendChild(s); 
         }); 
     }
@@ -223,7 +307,7 @@
 
         for (let line of initialLines) {
             addBootLine(line);
-            await new Promise(r => setTimeout(r, 400));
+            await new Promise(r => setTimeout(r, 200)); // Schnellerer Boot
         }
 
         addBootLine("INITIALIZING PIP-BOY 3003 INTERFACE...");
@@ -237,7 +321,7 @@
 
         function finishBoot() {
             const log = document.getElementById('boot-log');
-            log.innerHTML = '';
+            log.innerHTML = ''; // Clear for dramatic effect
             
             setTimeout(() => {
                 addBootLine("SYSTEM READY.", "text-green-400 font-bold animate-pulse text-lg");
@@ -251,7 +335,7 @@
                         UI.isSystemReady = true; 
                         console.log("Boot finished. System is now ready for interaction.");
                     }
-                }, 1500); 
+                }, 1000); 
             }, 300);
         }
     }
@@ -261,49 +345,63 @@
         const loginVerDisplay = document.getElementById('login-version-display'); 
         const devVer = Date.now();
 
-        fetch('Version?t=' + devVer).then(res => res.text()).then(v => {
-            const displayVer = v.trim(); 
-            runBootSequence(displayVer);
+        fetch('Version?t=' + devVer)
+            .then(res => res.text())
+            .then(v => {
+                const displayVer = v.trim(); 
+                runBootSequence(displayVer);
 
-            if(verDisplay) verDisplay.textContent = displayVer;
-            if(loginVerDisplay) loginVerDisplay.textContent = displayVer;
-            
-            loadScript('data_core.js?v=' + devVer)
-                .then(() => loadScript('data_items.js?v=' + devVer))
-                .then(() => loadScript('data_recipes.js?v=' + devVer))
-                .then(() => loadScript('data_monsters.js?v=' + devVer))
-                .then(() => loadScript('network.js?v=' + devVer))
-                .then(() => loadScript('ui_core.js?v=' + devVer)) 
-                .then(() => loadScript('game/game_core.js?v=' + devVer))
-                .then(() => loadScript('game/game_map.js?v=' + devVer))
-                .then(() => loadScript('game/game_render.js?v=' + devVer))
-                .then(() => loadScript('world_gen.js?v=' + devVer))
-                .then(() => loadScript('minigames.js?v=' + devVer))
-                .then(() => loadScript('game/game_inv_logic.js?v=' + devVer))
-                .then(() => loadScript('game/game_world_logic.js?v=' + devVer))
-                .then(() => loadScript('game/game_char_logic.js?v=' + devVer))
-                .then(() => loadScript('game/game_combat.js?v=' + devVer))
-                .then(() => loadScript('ui/ui_combat.js?v=' + devVer)) 
-                .then(() => loadScript('ui_input.js?v=' + devVer))
-                .then(() => loadScript('ui_view_inv.js?v=' + devVer))
-                .then(() => loadScript('ui_view_world.js?v=' + devVer))
-                .then(() => loadScript('ui_view_town.js?v=' + devVer))
-                .then(() => loadScript('ui_view_journal.js?v=' + devVer))
-                .then(() => loadScript('ui_view_camp.js?v=' + devVer))
-                .then(() => loadScript('ui_render_core.js?v=' + devVer)) 
-                .then(() => loadScript('ui_render_views.js?v=' + devVer))
-                .then(() => loadScript('ui_render_minigames.js?v=' + devVer))
-                .then(() => loadScript('ui_render_overlays.js?v=' + devVer))
-                .then(() => { 
-                    if(typeof UI !== 'undefined') UI.init(); 
-                    scriptsLoaded = true; 
-                    console.log("All Scripts Loaded & UI Initialized."); 
-                })
-                .catch(err => {
-                    console.error("Critical Load Error:", err);
-                    document.getElementById('login-status').innerHTML = `<span style="color:red">ERROR LOADING: ${err.src ? err.src.split('?')[0] : 'UNKNOWN'}</span>`;
+                if(verDisplay) verDisplay.textContent = displayVer;
+                if(loginVerDisplay) loginVerDisplay.textContent = displayVer;
+                
+                // Laden der Scripts (Reihenfolge ist wichtig!)
+                loadScript('data_core.js?v=' + devVer)
+                    .then(() => loadScript('data_items.js?v=' + devVer))
+                    .then(() => loadScript('data_recipes.js?v=' + devVer))
+                    .then(() => loadScript('data_monsters.js?v=' + devVer))
+                    .then(() => loadScript('network.js?v=' + devVer))
+                    .then(() => loadScript('ui_core.js?v=' + devVer)) 
+                    .then(() => loadScript('game/game_core.js?v=' + devVer))
+                    .then(() => loadScript('game/game_map.js?v=' + devVer))
+                    .then(() => loadScript('game/game_render.js?v=' + devVer))
+                    .then(() => loadScript('world_gen.js?v=' + devVer))
+                    .then(() => loadScript('minigames.js?v=' + devVer))
+                    .then(() => loadScript('game/game_inv_logic.js?v=' + devVer))
+                    .then(() => loadScript('game/game_world_logic.js?v=' + devVer))
+                    .then(() => loadScript('game/game_char_logic.js?v=' + devVer))
+                    .then(() => loadScript('game/game_combat.js?v=' + devVer))
+                    .then(() => loadScript('ui/ui_combat.js?v=' + devVer)) 
+                    .then(() => loadScript('ui_input.js?v=' + devVer))
+                    .then(() => loadScript('ui_view_inv.js?v=' + devVer))
+                    .then(() => loadScript('ui_view_world.js?v=' + devVer))
+                    .then(() => loadScript('ui_view_town.js?v=' + devVer))
+                    .then(() => loadScript('ui_view_journal.js?v=' + devVer))
+                    .then(() => loadScript('ui_view_camp.js?v=' + devVer))
+                    .then(() => loadScript('ui_render_core.js?v=' + devVer)) 
+                    .then(() => loadScript('ui_render_views.js?v=' + devVer))
+                    .then(() => loadScript('ui_render_minigames.js?v=' + devVer))
+                    .then(() => loadScript('ui_render_overlays.js?v=' + devVer))
+                    .then(() => { 
+                        if(typeof UI !== 'undefined') UI.init(); 
+                        scriptsLoaded = true; 
+                        console.log("All Scripts Loaded & UI Initialized."); 
+                    })
+                    .catch(err => {
+                        // Catch Error in Script Loading
+                        showCrashReport("SCRIPT_LOAD_ERROR", {
+                            msg: "Failed to load a script file. Check internet connection or file path.",
+                            url: err.src || "Unknown Script",
+                            line: 0, col: 0,
+                            stack: JSON.stringify(err)
+                        });
+                    });
+            })
+            .catch(err => {
+                showCrashReport("VERSION_CHECK_FAILED", {
+                    msg: "Could not fetch version file. Server might be offline.",
+                    stack: err.stack || err
                 });
-        });
+            });
     };
 </script>
 
