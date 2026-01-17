@@ -65,7 +65,8 @@
                 </div>
                 
                 <div class="text-xl font-bold text-yellow-400 mb-2 animate-pulse tracking-widest text-center">SYSTEM BOOT</div>
-                <div id="boot-log" class="w-full text-left pl-4 border-l-2 border-green-800 mt-2 h-32 overflow-hidden flex flex-col justify-end bg-black/40 p-2 font-mono text-xs md:text-sm"></div>
+                
+                <div id="boot-log" class="w-full text-left pl-4 border-l-2 border-green-800 mt-2 h-32 overflow-hidden flex flex-col justify-end bg-black/40 p-2 font-mono text-xs md:text-sm transition-all duration-300"></div>
             </div>
 
             <div id="login-content" class="hidden w-full flex-col items-center">
@@ -264,18 +265,25 @@
         }, 500);
 
         function finishBoot() {
-            addBootLine("SYSTEM READY.", "text-green-400 font-bold");
+            // [NEU] Log leeren für dramatischen Effekt
+            const log = document.getElementById('boot-log');
+            log.innerHTML = '';
             
+            // Kurze Pause vor dem finalen Status
             setTimeout(() => {
-                bootSeq.style.display = 'none';
-                loginContent.classList.remove('hidden');
-                loginContent.classList.add('flex');
+                addBootLine("SYSTEM READY.", "text-green-400 font-bold animate-pulse text-lg");
                 
-                if(typeof UI !== 'undefined') {
-                    UI.isSystemReady = true; 
-                    console.log("Boot finished. System is now ready for interaction.");
-                }
-            }, 1000);
+                setTimeout(() => {
+                    bootSeq.style.display = 'none';
+                    loginContent.classList.remove('hidden');
+                    loginContent.classList.add('flex');
+                    
+                    if(typeof UI !== 'undefined') {
+                        UI.isSystemReady = true; 
+                        console.log("Boot finished. System is now ready for interaction.");
+                    }
+                }, 1500); // Länger zeigen für den Effekt
+            }, 300);
         }
     }
 
