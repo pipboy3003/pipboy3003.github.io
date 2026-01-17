@@ -1,4 +1,4 @@
-// [2026-01-17 19:40:00] ui_view_inv.js - Active Backpack Visualization
+// [2026-01-17 20:05:00] ui_view_inv.js - Enhanced Backpack UI Visibility
 
 Object.assign(UI, {
 
@@ -19,34 +19,26 @@ Object.assign(UI, {
         const usedSlots = Game.getUsedSlots();
         const maxSlots = Game.getMaxSlots();
         
-        // [NEU] Rucksack-Anzeige im Header
+        // [UPDATE] Rucksack-Anzeige noch deutlicher
         if(countDisplay) {
-            // Prüfung: Welcher Rucksack ist angelegt?
             let backpackName = "";
-            let bpBonus = 0;
             if (Game.state.equip && Game.state.equip.back) {
                 const bp = Game.state.equip.back;
                 backpackName = bp.props && bp.props.name ? bp.props.name : bp.name;
-                // Icon für den Namen
-                backpackName = `🎒 ${backpackName}`;
             }
 
-            // Basis-Info
-            let text = `${usedSlots} / ${maxSlots}`;
-            
-            // Wenn Rucksack da ist, zeigen wir ihn an (als kleines Sub-Label oder direkt daneben)
-            // Um Platz zu sparen: Wir nutzen das "inv-count" Element für die Zahlen und fügen
-            // ein neues Element für den Rucksack-Namen ein, falls es noch nicht existiert.
-            
-            // Cleaner way: Setze TextContent neu
+            // Layout Update: Zwei Zeilen, Rucksack grün hervorgehoben
             countDisplay.innerHTML = `
-                <div class="flex flex-col items-end leading-none">
-                    <span>${usedSlots} / ${maxSlots}</span>
-                    ${backpackName ? `<span class="text-[10px] text-yellow-400 font-normal tracking-wide mt-0.5">${backpackName}</span>` : '<span class="text-[9px] text-gray-600">KEIN RUCKSACK</span>'}
+                <div class="flex flex-col items-end leading-tight">
+                    <span class="text-sm">${usedSlots} / ${maxSlots}</span>
+                    ${backpackName 
+                        ? `<span class="text-[10px] text-[#39ff14] font-bold tracking-wider border-t border-green-900 mt-0.5 pt-0.5">🎒 ${backpackName}</span>` 
+                        : '<span class="text-[9px] text-gray-600 border-t border-gray-800 mt-0.5 pt-0.5">KEIN RUCKSACK</span>'}
                 </div>
             `;
             
-            countDisplay.className = usedSlots >= maxSlots ? "text-red-500 font-bold animate-pulse" : "text-green-500 font-mono";
+            // Pulsieren bei Überladung
+            countDisplay.className = usedSlots >= maxSlots ? "text-red-500 font-bold animate-pulse" : "text-white font-mono";
         }
         
         const getIcon = (type) => {
@@ -59,7 +51,6 @@ Object.assign(UI, {
             }
         };
 
-        // Helper zum Erstellen der Buttons mit GLOW Logik
         const createBtn = (itemDef, entry, isEquipped, label, onClick) => {
             const btn = document.createElement('div');
             let cssClass = "relative border border-green-500 bg-green-900/30 w-full h-16 flex flex-col items-center justify-center transition-colors group";
@@ -67,7 +58,6 @@ Object.assign(UI, {
             if(onClick) cssClass += " cursor-pointer hover:bg-green-500 hover:text-black";
             else cssClass += " cursor-default opacity-80"; 
             
-            // Glow Effekt hinzufügen, wenn Item neu ist (nur im Inventar, nicht ausgerüstet)
             if (entry && entry.isNew && !isEquipped) {
                 cssClass += " new-item-glow";
             }
@@ -77,7 +67,6 @@ Object.assign(UI, {
             let displayName = entry.props && entry.props.name ? entry.props.name : itemDef.name;
             let extraClass = entry.props && entry.props.color ? entry.props.color : "";
 
-            // Anzahl nur anzeigen wenn > 1 oder Stapelbar (Munition)
             const countDisplay = (entry.count > 1 || itemDef.type === 'ammo') ? 
                 `<div class="absolute top-0 right-0 bg-green-900 text-white text-[10px] px-1 font-mono">${entry.count}</div>` : '';
 
@@ -120,7 +109,6 @@ Object.assign(UI, {
 
         const equippedList = [];
 
-        // 1. INVENTAR ITEMS RENDERN
         Game.state.inventory.forEach((entry, index) => {
             if(entry.count <= 0) return;
             const item = Game.items[entry.id];
@@ -156,26 +144,20 @@ Object.assign(UI, {
             }
         });
 
-        // 2. AUSGERÜSTETE ITEMS RENDERN (Inklusive Standard)
         const slots = ['weapon', 'head', 'body', 'arms', 'legs', 'feet', 'back'];
         slots.forEach(slot => {
             const equippedItem = Game.state.equip[slot];
-            
-            // HIER WAR DIE ÄNDERUNG: Wir erlauben jetzt ALLES, solange es nicht null ist
             if(!equippedItem) return;
 
             let baseDef = Game.items[equippedItem.id];
-            // Fallback falls ID fehlt aber Name da ist (Migration)
             if(!baseDef) {
                 const key = Object.keys(Game.items).find(k => Game.items[k].name === equippedItem.name);
                 if(key) baseDef = Game.items[key];
             }
-            // Fallback für Standard-Items, falls sie nicht in items.js wären (sind sie aber)
             if(!baseDef) baseDef = equippedItem;
 
             const onClick = () => UI.showEquippedDialog(slot);
 
-            // Fake Entry für ausgerüstete Items
             const fakeEntry = { 
                 id: equippedItem.id, 
                 count: 1, 
@@ -224,7 +206,6 @@ Object.assign(UI, {
             }
         });
 
-        // Tab Glow Logic
         const btnStats = document.getElementById('tab-btn-stats');
         if(btnStats) {
             if(Game.state.statPoints > 0) btnStats.classList.add('alert-glow-yellow');
@@ -283,8 +264,6 @@ Object.assign(UI, {
             if(!el) return;
 
             const item = Game.state.equip[slot];
-            
-            // HIER WAR DIE ÄNDERUNG: Einfachere Prüfung. Wenn Item da, zeigen wir es.
             const isEmpty = !item;
 
             const nameEl = el.querySelector('.item-name');
