@@ -1,6 +1,20 @@
-// [2026-01-17 13:00:00] ui_render_views.js - Fixed Header Click & Huge VATS
+// [2026-01-17 14:00:00] ui_render_views.js - Smart Header Navigation & Dynamic Level-Up Hint
 
 Object.assign(UI, {
+
+    // [NEU] Intelligente Navigation beim Klick auf den Header
+    handleHeaderClick: function() {
+        if(!Game.state) return;
+        const s = Game.state;
+        
+        if (s.statPoints > 0) {
+            this.renderStats('special'); // Prio 1: Stats verteilen
+        } else if (s.perkPoints > 0) {
+            this.renderStats('perks');   // Prio 2: Perks wählen
+        } else {
+            this.renderStats('special'); // Fallback: Einfach Stats ansehen
+        }
+    },
 
     renderStats: function(tab = 'stats', event = null) {
         if (event) {
@@ -75,15 +89,20 @@ Object.assign(UI, {
                 </div>
             `;
         };
+        
+        // Dynamischer Text-Hinweis
+        let actionText = '<span class="ml-2 text-xs uppercase border border-green-700 px-1 rounded text-green-500 opacity-50">Details ▶</span>';
+        if (p.statPoints > 0 || p.perkPoints > 0) {
+            actionText = '<span class="ml-2 text-xs uppercase border border-yellow-500 bg-yellow-900/40 px-1 rounded text-yellow-400 font-bold animate-pulse">LEVEL UP! ▶</span>';
+        }
 
-        // [FIX] Hier ist der Header jetzt klickbar und führt zu SPECIAL
         container.innerHTML = `
             <div class="flex flex-col items-center gap-4 max-w-md mx-auto">
-                <div class="text-center w-full border-b border-green-900 pb-2 cursor-pointer hover:bg-green-900/10 transition-colors group" onclick="UI.renderStats('special')">
+                <div class="text-center w-full border-b border-green-900 pb-2 cursor-pointer hover:bg-green-900/10 transition-colors group" onclick="UI.handleHeaderClick()">
                     <div class="text-4xl font-bold text-green-400 group-hover:text-yellow-400 transition-colors">${p.playerName}</div>
                     <div class="text-xs font-mono text-green-600 group-hover:text-green-300">
                         LVL ${p.lvl} | XP: ${p.xp} / ${Game.expToNextLevel(p.lvl)}
-                        <span class="ml-2 text-xs uppercase border border-green-700 px-1 rounded text-green-500">Stats ändern ▶</span>
+                        ${actionText}
                     </div>
                 </div>
                 
@@ -215,7 +234,7 @@ Object.assign(UI, {
         const hpText = document.getElementById('enemy-hp-text'); if(hpText) hpText.textContent = `${Math.max(0, enemy.hp)}/${enemy.maxHp} TP`;
         const hpBar = document.getElementById('enemy-hp-bar'); if(hpBar) hpBar.style.width = `${Math.max(0, (enemy.hp/enemy.maxHp)*100)}%`;
 
-        // [NEU] Layout: Links Name (RIESIG), Rechts Prozent (RIESIG)
+        // VATS Layout: Links Name (RIESIG), Rechts Prozent (RIESIG)
         if(typeof Combat !== 'undefined' && Combat.bodyParts) {
              Combat.bodyParts.forEach((part, index) => {
                  const btn = document.getElementById(`btn-vats-${index}`);
