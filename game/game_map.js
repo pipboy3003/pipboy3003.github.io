@@ -1,3 +1,5 @@
+// [TIMESTAMP] 2026-01-18 12:30:00 - game_map.js - Added Chest Minigame Logic
+
 Object.assign(Game, {
     reveal: function(px, py) { 
         if(!this.state) return;
@@ -303,7 +305,22 @@ Object.assign(Game, {
         UI.log("Du steigst tiefer hinab...", "text-purple-400 font-bold");
     },
     
+    // [MODIFIED] Truhe öffnen mit Minigame Check
     openChest: function(x, y) {
+        // Wenn Ebene >= 3 (meist letzte Ebene), starte Minigame
+        if(this.state.dungeonLevel >= 3) {
+             UI.log("Sicherheitsmechanismus aktiv...", "text-yellow-400 animate-pulse");
+             UI.startMinigame('memory', () => {
+                 this.forceOpenChest(x, y);
+             });
+             return;
+        }
+        
+        this.forceOpenChest(x, y);
+    },
+
+    // [NEW] Tatsächliche Loot-Logik (ausgelagert)
+    forceOpenChest: function(x, y) {
         this.state.currentMap[y][x] = 'B'; 
         this.renderStaticMap(); 
         
