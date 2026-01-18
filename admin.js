@@ -1,4 +1,4 @@
-// [2026-01-17 21:30:00] admin.js - Enhanced Bug Reporting & Copy Feature
+// [2026-01-18 14:00:00] admin.js - Updated for SPECIAL 20 & Backpack System
 
 const Admin = {
     gatePass: "bimbo123",
@@ -457,9 +457,10 @@ const Admin = {
             const val = stats[key];
             const div = document.createElement('div');
             div.className = "panel-box p-2 flex justify-between items-center";
+            // [UPDATED] Max 20 Slider
             div.innerHTML = `
                 <span class="font-bold text-xl w-12">${key}</span>
-                <input type="range" min="1" max="10" value="${val}" class="flex-grow mx-2 accent-[#39ff14]" 
+                <input type="range" min="1" max="20" value="${val}" class="flex-grow mx-2 accent-[#39ff14]" 
                     oninput="document.getElementById('val-${key}').textContent=this.value"
                     onchange="Admin.saveStat('${key}', this.value)">
                 <span id="val-${key}" class="font-bold text-xl w-6 text-right">${val}</span>
@@ -513,8 +514,30 @@ const Admin = {
 
     fillInv: function(d) {
         const invTab = document.getElementById('tab-inv');
+        
+        // [ADDED] Calculate Capacity for Display
+        const str = (d.stats && d.stats.STR) ? d.stats.STR : 5;
+        let sbLvl = 0;
+        if(d.perks) {
+            if(Array.isArray(d.perks)) { if(d.perks.includes('strong_back')) sbLvl = 1; }
+            else { sbLvl = d.perks['strong_back'] || 0; }
+        }
+        let packBonus = 0;
+        if(d.equip && d.equip.back) {
+             if(d.equip.back.bonus && d.equip.back.bonus.slots) packBonus = d.equip.back.bonus.slots;
+             else if(d.equip.back.props && d.equip.back.props.bonus && d.equip.back.props.bonus.slots) packBonus = d.equip.back.props.bonus.slots;
+        }
+        
+        const maxSlots = 10 + str + (sbLvl * 5) + packBonus;
+        const usedSlots = d.inventory ? d.inventory.length : 0;
+        const loadColor = usedSlots > maxSlots ? "text-red-500 animate-pulse" : "text-gray-400";
+
         invTab.innerHTML = `
             <div class="flex flex-col h-full gap-2">
+                <div class="flex justify-between items-center px-2 py-1 bg-[#001100] border border-[#1a551a]">
+                    <span class="text-[10px] text-green-600">INVENTORY LOAD (CALC)</span>
+                    <span class="text-xs font-bold ${loadColor}">${usedSlots} / ${maxSlots}</span>
+                </div>
                 <div class="panel-box p-2 shrink-0">
                     <h3 class="text-yellow-400 font-bold border-b border-[#1a551a] mb-1 text-xs">EQUIPPED</h3>
                     <div id="equip-list" class="grid grid-cols-2 gap-1 text-[10px]"></div>
@@ -689,11 +712,29 @@ const Admin = {
 
     fillCamp: function(d) {
         const container = document.getElementById('camp-data-content');
+        let html = '';
+        
         if(!d.camp) {
-            container.innerHTML = `<span class="text-gray-500 italic block mb-2">No camp deployed.</span><button onclick="Admin.action('force-camp')" class="btn border-yellow-500 text-yellow-500 w-full text-sm">FORCE DEPLOY (Lvl 1)</button>`;
-            return;
+            html += `<div class="mb-4 text-gray-500 italic">No camp deployed.</div>`;
+            
+            // [ADDED] Saved Level Display & Edit
+            const savedLvl = d.savedCampLevel || 1;
+            html += `
+                <div class="panel-box p-3 border border-gray-700 mb-4">
+                    <label class="block text-xs text-gray-500 mb-1">STORED CAMP LEVEL</label>
+                    <div class="flex items-center gap-2">
+                         <input type="number" value="${savedLvl}" class="text-xl font-bold w-16 text-center bg-black border border-gray-600 text-gray-300" onchange="Admin.saveVal('savedCampLevel', this.value)">
+                         <span class="text-[10px] text-gray-600">Persisted Level</span>
+                    </div>
+                </div>
+            `;
+            
+            html += `<button onclick="Admin.action('force-camp')" class="btn border-yellow-500 text-yellow-500 w-full text-sm">FORCE DEPLOY (Using Stored Lvl)</button>`;
+        } else {
+             html += `<div class="grid grid-cols-2 gap-4"><div><label class="block text-xs text-green-600 mb-1">LEVEL</label><input type="number" value="${d.camp.level || 1}" class="text-2xl font-bold w-20 text-center" onchange="Admin.saveVal('camp/level', this.value)"></div><div><label class="block text-xs text-green-600 mb-1">LOCATION</label><div class="text-xs text-gray-500">Sector: ${d.camp.sector.x},${d.camp.sector.y}</div></div></div><button onclick="Admin.action('destroy-camp')" class="btn btn-danger w-full mt-4">DESTROY CAMP</button>`;
         }
-        container.innerHTML = `<div class="grid grid-cols-2 gap-4"><div><label class="block text-xs text-green-600 mb-1">LEVEL</label><input type="number" value="${d.camp.level || 1}" class="text-2xl font-bold w-20 text-center" onchange="Admin.saveVal('camp/level', this.value)"></div><div><label class="block text-xs text-green-600 mb-1">LOCATION</label><div class="text-xs text-gray-500">Sector: ${d.camp.sector.x},${d.camp.sector.y}</div></div></div><button onclick="Admin.action('destroy-camp')" class="btn btn-danger w-full mt-4">DESTROY CAMP</button>`;
+        
+        container.innerHTML = html;
     },
 
     fillWorld: function(d) {
@@ -770,7 +811,14 @@ const Admin = {
         else if (type === 'delete') { this.confirm("DELETE SAVE", "Permanent löschen?", () => { Network.db.ref(p).remove(); this.currentPath = null; document.getElementById('editor-content').classList.add('hidden'); document.getElementById('no-selection').classList.remove('hidden'); this.showToast("SAVE DELETED."); }); }
         else if (type === 'reset-vault') { this.confirm("RESET TO VAULT", "Zurück zu Vault 101?", () => { updates['sector'] = {x: 4, y: 4}; updates['player'] = {x: 100, y: 100}; updates['view'] = 'map'; performUpdate(); }); }
         else if (type === 'destroy-camp') { this.confirm("DESTROY CAMP", "Camp löschen?", () => { Network.db.ref(p + '/camp').remove(); this.showToast("CAMP DESTROYED. SYNC!", "warning"); }); }
-        else if (type === 'force-camp') { const sec = this.currentUserData.sector || {x:4, y:4}; const pos = this.currentUserData.player || {x:100, y:100}; updates['camp'] = { sector: sec, x: pos.x, y: pos.y, level: 1 }; performUpdate(); }
+        else if (type === 'force-camp') { 
+            const sec = this.currentUserData.sector || {x:4, y:4}; 
+            const pos = this.currentUserData.player || {x:100, y:100}; 
+            // [UPDATED] Use Stored Level
+            const lvl = this.currentUserData.savedCampLevel || 1;
+            updates['camp'] = { sector: sec, x: pos.x, y: pos.y, level: lvl }; 
+            performUpdate(); 
+        }
     },
 
     teleport: function() {
