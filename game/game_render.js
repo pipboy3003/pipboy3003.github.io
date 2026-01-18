@@ -1,4 +1,4 @@
-// [2026-01-18 17:00:00] game_render.js - Procedural Tile Generation & Rendering
+// [2026-01-18 17:35:00] game_render.js - Fixed: Added 'draw' alias to prevent crash
 
 if(typeof Game === 'undefined') Game = {};
 
@@ -95,6 +95,12 @@ Object.assign(Game, {
     },
 
     // --- 2. HAUPT RENDER LOOP ---
+    
+    // [FIX] Alias für game_core.js Kompatibilität
+    draw: function() {
+        this.render();
+    },
+
     render: function() {
         const canvas = document.getElementById('game-canvas');
         if (!canvas) return;
