@@ -1,6 +1,24 @@
-// [2026-01-17 14:30:00] ui_render_views.js - Fix Header Click Logic & Debugging
+// [2026-01-18 10:00:00] ui_render_views.js - Added openEquipMenu & Fixed Click Crash
 
 Object.assign(UI, {
+
+    // [FIX] Fehlende Funktion für Equipment-Slot Klicks ergänzt
+    openEquipMenu: function(slot) {
+        if(!Game.state) return;
+        const item = Game.state.equip ? Game.state.equip[slot] : null;
+        
+        if(item) {
+            // Wenn Item existiert -> Dialog öffnen (in ui_render_overlays.js definiert)
+            if(typeof this.showEquippedDialog === 'function') {
+                this.showEquippedDialog(slot);
+            }
+        } else {
+            // Wenn leer -> Hinweis anzeigen
+            if(typeof this.showInfoDialog === 'function') {
+                this.showInfoDialog("SLOT LEER", "Gehe ins Inventar, um Ausrüstung anzulegen.");
+            }
+        }
+    },
 
     // [FIX] Robuste Klick-Logik mit Debugging und Typ-Sicherheit
     handleHeaderClick: function() {
