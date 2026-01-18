@@ -1,4 +1,4 @@
-// [2026-01-18 10:00:00] ui_render_views.js - Added openEquipMenu & Fixed Click Crash
+// [2026-01-18 14:00:00] ui_render_views.js - Fix Scroll Position & Stat Cap UI
 
 Object.assign(UI, {
 
@@ -59,6 +59,13 @@ Object.assign(UI, {
         
         const view = document.getElementById('view-container');
         if(!view) return;
+
+        // [FIX] Scroll-Position merken
+        const scrollId = 'char-scroll-content';
+        const existingScroll = document.getElementById(scrollId);
+        let savedScrollTop = 0;
+        if(existingScroll) savedScrollTop = existingScroll.scrollTop;
+
         view.innerHTML = ''; 
 
         // Haupt-Wrapper
@@ -68,6 +75,7 @@ Object.assign(UI, {
 
         // Scrollbarer Bereich
         const scrollContainer = document.createElement('div');
+        scrollContainer.id = scrollId; // ID für Wiedererkennung setzen
         scrollContainer.className = "flex-1 w-full overflow-y-auto pb-24 bg-black";
 
         const getTabClass = (t) => (tab === t) 
@@ -102,6 +110,14 @@ Object.assign(UI, {
         wrapper.appendChild(footer);
 
         view.appendChild(wrapper);
+
+        // [FIX] Scroll-Position wiederherstellen
+        if(savedScrollTop > 0) {
+            requestAnimationFrame(() => {
+                const el = document.getElementById(scrollId);
+                if(el) el.scrollTop = savedScrollTop;
+            });
+        }
 
         if (tab === 'stats') setTimeout(() => UI.drawVaultBoy('char-silhouette-canvas'), 100);
     },
@@ -174,10 +190,25 @@ Object.assign(UI, {
         
         for (let key in labels) {
             const val = stats[key] || 1;
+            
+            // [FIX] Neue Logic: Soft-Cap Kosten & Max 20
+            const cost = (val >= 10) ? 2 : 1;
+            const canAfford = points >= cost;
+            const isMaxed = val >= 20;
+
+            let btnHtml = '';
+            if (!isMaxed && canAfford) {
+                 const btnLabel = (cost > 1) ? '+' : '+'; // Optional: '+2P' anzeigen wenn man will
+                 btnHtml = `<button onclick="Game.upgradeStat('${key}', event)" class="w-10 h-10 bg-green-900 text-green-400 border border-green-500 font-bold text-xl rounded hover:bg-green-500 hover:text-black">${btnLabel}</button>`;
+            } else if (!isMaxed && !canAfford && points > 0) {
+                 // Anzeigen aber ausgegraut wenn Punkte da sind aber nicht genug für Softcap
+                 btnHtml = `<div class="w-10 h-10 flex items-center justify-center border border-red-900 text-red-700 font-bold bg-black opacity-50 cursor-not-allowed" title="Benötigt ${cost} Punkte">+</div>`;
+            }
+
             html += `<div class="flex items-center justify-between bg-black/40 p-3 border border-green-900">
                 <div class="flex flex-col"><span class="text-2xl font-bold text-green-400 font-vt323">${key}</span><span class="text-[10px] text-green-700">${labels[key]}</span></div>
                 <div class="flex items-center gap-4"><span class="text-3xl font-bold text-white">${val}</span>
-                ${points > 0 && val < 10 ? `<button onclick="Game.upgradeStat('${key}', event)" class="w-10 h-10 bg-green-900 text-green-400 border border-green-500 font-bold text-xl rounded">+</button>` : ''}</div>
+                ${btnHtml}</div>
             </div>`;
         }
         container.innerHTML = html + '</div>';
