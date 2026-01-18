@@ -1,7 +1,8 @@
-// [TIMESTAMP] 2026-01-18 12:30:00 - ui_render_minigames.js - Added Memory UI & Args Support
+// [TIMESTAMP] 2026-01-18 17:00:00 - ui_render_minigames.js - Added Memory UI & Args Support
 
 Object.assign(UI, {
     
+    // Updated: Supports Arguments for Minigames (like callback for memory)
     startMinigame: function(type, ...args) {
         if (!MiniGames[type]) return;
         MiniGames.active = type;
@@ -9,18 +10,24 @@ Object.assign(UI, {
     },
 
     stopMinigame: function() {
+        // Aufräumen Defusal Loop
         if(MiniGames.defusal && MiniGames.defusal.gameLoop) {
             clearInterval(MiniGames.defusal.gameLoop);
         }
         
         MiniGames.active = null;
         
+        // Overlays verstecken
         const dice = document.getElementById('dice-overlay');
         if(dice) dice.classList.add('hidden');
         
+        // WICHTIGER FIX:
+        // Wir nutzen switchView('map'), damit der Canvas und der Game-Loop
+        // sauber neu initialisiert werden. Das verhindert den Blackscreen.
         if(typeof UI.switchView === 'function') {
             UI.switchView('map'); 
         } else {
+            // Fallback (sollte nicht passieren)
             if(Game.state) Game.state.view = 'map';
             if(this.els && this.els.view) this.els.view.innerHTML = ''; 
         }
@@ -113,7 +120,7 @@ Object.assign(UI, {
         if(lock) lock.style.transform = `rotate(${MiniGames.lockpicking.lockAngle}deg)`;
     },
 
-    // --- DICE ---
+    // --- DICE (FIX: Auto-Create Overlay & 3 Würfel) ---
     renderDice: function(game, finalResult = null) {
         let container = document.getElementById('dice-overlay');
         
