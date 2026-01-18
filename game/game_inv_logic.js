@@ -1,4 +1,4 @@
-// [2026-01-17 19:35:00] game_inv_logic.js - Linking Crafting to Quest Progress
+// [2026-01-18 16:00:00] game_inv_logic.js - Camp Kit Permanent Protection
 
 Object.assign(Game, {
 
@@ -88,7 +88,6 @@ Object.assign(Game, {
             
             if (itemId === 'ammo') this.syncAmmo();
             
-            // [QUEST HOOK] Check if this added item is a quest target
             if(typeof Game.updateQuestProgress === 'function') {
                 Game.updateQuestProgress('collect', itemId, count);
             }
@@ -126,9 +125,9 @@ Object.assign(Game, {
         if(!this.state.inventory || !this.state.inventory[invIndex]) return;
         const item = this.state.inventory[invIndex];
         
-        // Schutz: Basis-Ausrüstung darf nicht weggeworfen werden
-        if (item.id === 'fists' || item.id === 'vault_suit') {
-            UI.log("Das gehört zu deiner Grundausstattung.", "text-gray-500");
+        // [FIX] Permanente Items schützen
+        if (item.id === 'fists' || item.id === 'vault_suit' || item.id === 'camp_kit') {
+            UI.log("Das ist ein permanenter Gegenstand.", "text-gray-500");
             return;
         }
 
@@ -148,8 +147,8 @@ Object.assign(Game, {
         if(!this.state.inventory || !this.state.inventory[invIndex]) return;
         const item = this.state.inventory[invIndex];
 
-        // Schutz: Basis-Ausrüstung darf nicht zerlegt werden
-        if (item.id === 'fists' || item.id === 'vault_suit') {
+        // [FIX] Permanente Items schützen
+        if (item.id === 'fists' || item.id === 'vault_suit' || item.id === 'camp_kit') {
             UI.log("Dieses Objekt kann nicht zerlegt werden!", "text-red-500");
             return;
         }
@@ -228,7 +227,6 @@ Object.assign(Game, {
         
         UI.log(`Hergestellt: ${recipe.count}x ${recipe.out === "AMMO" ? "Munition" : this.items[recipe.out].name}`, "text-green-400 font-bold");
 
-        // [FIX] Hier triggern wir die Quest-Logik explizit auch fürs Crafting
         if(typeof Game.updateQuestProgress === 'function' && recipe.out !== "AMMO") {
             Game.updateQuestProgress('collect', recipe.out, recipe.count);
         }
@@ -486,3 +484,5 @@ Object.assign(Game, {
 
 // Alias für Kompatibilität
 Game.addItem = Game.addToInventory;
+
+}
