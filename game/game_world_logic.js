@@ -1,8 +1,9 @@
-// [TIMESTAMP] 2026-01-10 07:00:00 - game_world_logic.js - Camp, Shop, Rest
+// [TIMESTAMP] 2026-01-18 12:00:00 - game_world_logic.js - Fixed Upgrade Logic (Multi-Stack Consumption)
 
 Object.assign(Game, {
 
     getCampUpgradeCost: function(currentLevel) {
+        // IDs abgeglichen mit data_items.js: 'junk_metal' ist korrekt.
         switch(currentLevel) {
             case 1: return { id: 'junk_metal', count: 25, name: 'Schrott' };
             case 2: return { id: 'cloth', count: 10, name: 'Stoff' };
@@ -68,16 +69,33 @@ Object.assign(Game, {
         const cost = this.getCampUpgradeCost(lvl);
         if(!cost) { UI.log("Kein weiteres Upgrade verfügbar.", "text-gray-500"); return; }
 
-        const scrapItem = this.state.inventory.find(i => i.id === cost.id);
-        if(!scrapItem || scrapItem.count < cost.count) {
+        // [FIX] 1. Gesamtmenge im Inventar prüfen (über alle Stacks hinweg)
+        const totalOwned = this.state.inventory.reduce((sum, item) => {
+            return (item.id === cost.id) ? sum + item.count : sum;
+        }, 0);
+
+        if(totalOwned < cost.count) {
              UI.log(`Upgrade benötigt: ${cost.count}x ${cost.name}`, "text-red-500");
              return;
         }
 
-        scrapItem.count -= cost.count;
-        if(scrapItem.count <= 0) {
-             this.state.inventory = this.state.inventory.filter(i => i.id !== cost.id);
+        // [FIX] 2. Kosten von den Stacks abziehen
+        let remainingCost = cost.count;
+        
+        // Wir iterieren durch und ziehen ab
+        for (let i = 0; i < this.state.inventory.length; i++) {
+            if (remainingCost <= 0) break;
+            
+            const item = this.state.inventory[i];
+            if (item.id === cost.id) {
+                const take = Math.min(item.count, remainingCost);
+                item.count -= take;
+                remainingCost -= take;
+            }
         }
+        
+        // [FIX] 3. Leere Stacks aufräumen
+        this.state.inventory = this.state.inventory.filter(i => i.count > 0);
 
         this.state.camp.level++;
         UI.log(`Lager verbessert auf Stufe ${this.state.camp.level}!`, "text-green-400 font-bold animate-pulse");
