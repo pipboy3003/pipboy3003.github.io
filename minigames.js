@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-18 17:00:00 - minigames.js - Added Memory Game & Test Point Support
+// [TIMESTAMP] 2026-01-18 18:30:00 - minigames.js - Full File Refreshed
 
 window.MiniGames = {
     active: null,
@@ -117,7 +117,7 @@ window.MiniGames = {
             const rollInterval = setInterval(() => {
                 this.d1 = Math.floor(Math.random() * 6) + 1;
                 this.d2 = Math.floor(Math.random() * 6) + 1;
-                this.d3 = Math.floor(Math.random() * 6) + 1; // 3. Würfel
+                this.d3 = Math.floor(Math.random() * 6) + 1; 
                 this.render();
                 rolls++;
                 if(rolls >= 10) {
@@ -129,7 +129,7 @@ window.MiniGames = {
         },
 
         finish: function() {
-            const sum = this.d1 + this.d2 + this.d3; // Summe aus 3 Würfeln
+            const sum = this.d1 + this.d2 + this.d3; 
             const luck = Game.getStat('LUC') || 1;
             const bonus = Math.floor(luck / 2);
             const total = sum + bonus;
