@@ -1,4 +1,4 @@
-// [2026-01-18 07:10:00] game_core.js - Quest Alert Trigger added
+// [2026-01-18 08:35:00] game_core.js - Fixed Quest Alert Initialization
 
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
@@ -215,9 +215,7 @@ window.Game = {
                         id: def.id, progress: 0, max: def.amount, type: def.type, target: def.target
                     });
                     
-                    // [NEU] Alert Trigger setzen
                     this.state.newQuestAlert = true; 
-                    
                     UI.log(`QUEST: "${def.title}" erhalten!`, "text-cyan-400 font-bold animate-pulse");
                 }
             }
@@ -377,7 +375,9 @@ window.Game = {
                     inventory: [], hp: 100, maxHp: 100, xp: 0, lvl: 1, caps: 50, ammo: 0, statPoints: 0, perkPoints: 0, perks: {}, 
                     camp: null, rads: 0, kills: 0, view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, 
                     explored: {}, visitedSectors: ["4,4"], tutorialsShown: { hacking: false, lockpicking: false },
-                    activeQuests: [], completedQuests: [], quests: [], 
+                    
+                    // [NEU] Explizite Initialisierung
+                    activeQuests: [], completedQuests: [], quests: [], newQuestAlert: false,
                     
                     knownRecipes: ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp', 'craft_bp_frame', 'craft_bp_leather', 'craft_bp_metal', 'craft_bp_military', 'craft_bp_cargo'], 
                     
@@ -389,7 +389,10 @@ window.Game = {
                 this.syncAmmo();
                 this.recalcStats(); 
                 this.state.hp = this.state.maxHp;
+                
+                // Hier wird der Alert dann auf true gesetzt
                 this.checkNewQuests(); 
+                
                 if(typeof UI !== 'undefined') UI.log(">> Neuer Charakter erstellt.", "text-green-400");
                 this.saveGame(true); 
             }
