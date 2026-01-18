@@ -1,4 +1,4 @@
-// [2026-01-17 17:45:00] ui_core.js - Auto-Generate Account Name from Email
+// [2026-01-18 07:15:00] ui_core.js - Quest Alert UI Logic
 
 const UI = {
     els: {},
@@ -23,7 +23,6 @@ const UI = {
     toastQueue: [],
     isToastShowing: false,
 
-    // --- NEW LOG SYSTEM (QUEUE BASED) ---
     log: function(message, colorClass = "text-green-500") {
         this.toastQueue.push({ message, colorClass });
         this.processToastQueue();
@@ -163,6 +162,22 @@ const UI = {
         if(this.els.btnInv) this.els.btnInv.classList.remove('alert-glow-yellow');
         if(this.els.btnMenu) this.els.btnMenu.classList.remove('alert-glow-yellow');
     },
+    
+    // [NEU] Quest Alert System
+    checkQuestAlert: function() {
+        if(Game.state && Game.state.newQuestAlert) {
+            if(this.els.btnMenu) this.els.btnMenu.classList.add('alert-glow-cyan');
+            if(this.els.btnQuests) this.els.btnQuests.classList.add('alert-glow-cyan');
+        } else {
+            if(this.els.btnMenu) this.els.btnMenu.classList.remove('alert-glow-cyan');
+            if(this.els.btnQuests) this.els.btnQuests.classList.remove('alert-glow-cyan');
+        }
+    },
+    
+    resetQuestAlert: function() {
+        if(Game.state) Game.state.newQuestAlert = false;
+        this.checkQuestAlert();
+    },
 
     openBugModal: function(autoErrorMsg = null) {
         if(document.getElementById('bug-report-overlay')) return;
@@ -260,6 +275,9 @@ const UI = {
                 console.log("AFK Trigger: Logout initiiert.");
                 this.logout("AFK: ZEITÜBERSCHREITUNG");
             }
+            
+            // [NEU] Check für Quest Alert
+            this.checkQuestAlert();
         }
         if(typeof this.renderChar === 'function' && this.charTab === 'status') this.renderChar();
     },
@@ -305,7 +323,7 @@ const UI = {
             loginStatus: document.getElementById('login-status'),
             inputEmail: document.getElementById('login-email'),
             inputPass: document.getElementById('login-pass'),
-            inputName: document.getElementById('login-name'), // Ist null, da entfernt
+            inputName: document.getElementById('login-name'),
             btnLogin: document.getElementById('btn-login'),
             btnToggleRegister: document.getElementById('btn-toggle-register'),
             loginTitle: document.getElementById('login-title'),
@@ -334,17 +352,11 @@ const UI = {
         
         if (this.els.btnBugReport) this.els.btnBugReport.addEventListener('click', () => { this.openBugModal(); });
         if(this.els.btnInv) this.els.btnInv.addEventListener('click', () => this.resetInventoryAlert());
+        
+        // [NEU] Klick auf Quests setzt Alert zurück
+        if(this.els.btnQuests) this.els.btnQuests.addEventListener('click', () => this.resetQuestAlert());
+        
         if(this.els.headerCharInfo) this.els.headerCharInfo.addEventListener('click', () => { this.switchView('char'); });
-
-        // [FIX] Button Listener für Register Toggle (ohne Name Input)
-        if(this.els.btnToggleRegister) {
-             this.els.btnToggleRegister.onclick = () => {
-                 this.isRegistering = !this.isRegistering;
-                 this.els.loginTitle.textContent = this.isRegistering ? "NEUEN ACCOUNT REGISTRIEREN" : "AUTHENTICATION REQUIRED";
-                 this.els.btnLogin.textContent = this.isRegistering ? "REGISTRIEREN" : "LOGIN";
-                 this.els.btnToggleRegister.textContent = this.isRegistering ? "Zurück zum Login" : "Noch kein Account? Hier registrieren";
-             }
-        }
 
         window.Game = Game;
         window.UI = this;
@@ -407,7 +419,7 @@ const UI = {
         this.loginBusy = true;
         const email = this.els.inputEmail.value.trim();
         const pass = this.els.inputPass.value.trim();
-        
+        const name = this.els.inputName ? this.els.inputName.value.trim().toUpperCase() : "";
         this.els.loginStatus.textContent = "VERBINDE MIT VAULT-TEC...";
         this.els.loginStatus.className = "mt-4 text-yellow-400 animate-pulse";
         try {
@@ -415,12 +427,8 @@ const UI = {
             Network.init();
             let saves = null;
             if (this.isRegistering) {
-                if (email.length < 5 || pass.length < 6) throw new Error("Daten unvollständig (PW min 6)");
-                
-                // [FIX] Auto-Generierter Name aus Email
-                const generatedName = email.split('@')[0].toUpperCase();
-                
-                saves = await Network.register(email, pass, generatedName);
+                if (email.length < 5 || pass.length < 6 || name.length < 3) throw new Error("Daten unvollständig (PW min 6, Name min 3)");
+                saves = await Network.register(email, pass, name);
             } else {
                 if (email.length < 5 || pass.length < 1) throw new Error("Bitte E-Mail und Passwort eingeben");
                 saves = await Network.login(email, pass);
