@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-13 08:35:00 - ui_view_camp.js - Fixed Visual Overlay Glitch (Z-Index & Hiding)
+// [TIMESTAMP] 2026-01-18 11:30:00 - ui_view_camp.js - Fixed Upgrade Cost Calculation (Multi-Stack Support)
 
 Object.assign(UI, {
 
@@ -130,8 +130,10 @@ Object.assign(UI, {
             } else {
                 const cost = Game.getCampUpgradeCost(lvl);
                 if(cost) {
-                    const hasItem = Game.state.inventory.find(i => i.id === cost.id);
-                    const count = hasItem ? hasItem.count : 0;
+                    // [FIX] Statt .find() (nur erster Stack) nutzen wir .reduce() um ALLE Stacks zu zählen
+                    const count = Game.state.inventory.reduce((sum, i) => {
+                        return (i.id === cost.id) ? sum + i.count : sum;
+                    }, 0);
                     
                     if(count >= cost.count) {
                         upgradeSub = `Kosten: ${cost.count}x ${cost.name}`;
@@ -209,8 +211,11 @@ Object.assign(UI, {
             
             for(let reqId in recipe.req) {
                 const countNeeded = recipe.req[reqId];
-                const invItem = Game.state.inventory.find(i => i.id === reqId);
-                const countHave = invItem ? invItem.count : 0;
+                
+                // [FIX] Auch beim Kochen alle Stacks zählen
+                const countHave = Game.state.inventory.reduce((sum, i) => {
+                    return (i.id === reqId) ? sum + i.count : sum;
+                }, 0);
                 
                 let color = "text-yellow-500";
                 if (countHave < countNeeded) { 
