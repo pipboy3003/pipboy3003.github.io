@@ -1,4 +1,4 @@
-// [2026-01-15 09:05:00] game_render.js - Applied Global drawText for consistently Sharp Text
+// [2026-01-18 13:00:00] game_render.js - Fixed IndexSizeError (Negative Radius)
 
 Object.assign(Game, {
     initCache: function() {
@@ -33,6 +33,9 @@ Object.assign(Game, {
         const ctx = this.ctx; 
         const cvs = ctx.canvas; 
         
+        // Wenn Canvas versteckt ist (Größe 0), brich sofort ab, um Fehler zu vermeiden
+        if (cvs.clientWidth === 0 || cvs.clientHeight === 0) return;
+
         const viewW = cvs.clientWidth;
         const viewH = cvs.clientHeight;
         
@@ -143,13 +146,18 @@ Object.assign(Game, {
         
         ctx.restore(); 
 
+        // VIGNETTE EFFEKT (MIT FIX FÜR NEGATIVEN RADIUS)
         const centerX = viewW / 2;
         const centerY = viewH / 2;
         const time = Date.now();
         const flicker = (Math.sin(time / 150) * 5) + (Math.random() * 2); 
-        const radius = Math.max(viewW, viewH) * 0.6 + flicker;
+        
+        // FIX: Sicherstellen, dass Radius >= 0.1 ist
+        let baseRadius = Math.max(viewW, viewH) * 0.6;
+        let radius = Math.max(0.1, baseRadius + flicker);
+        let innerRadius = Math.max(0, radius * 0.4);
 
-        const gradient = ctx.createRadialGradient(centerX, centerY, radius * 0.4, centerX, centerY, radius);
+        const gradient = ctx.createRadialGradient(centerX, centerY, innerRadius, centerX, centerY, radius);
         gradient.addColorStop(0, "rgba(0, 0, 0, 0)");        
         gradient.addColorStop(0.7, "rgba(0, 20, 0, 0.2)");    
         gradient.addColorStop(1, "rgba(0, 0, 0, 0.85)");      
