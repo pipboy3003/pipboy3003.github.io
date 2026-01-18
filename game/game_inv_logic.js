@@ -1,4 +1,4 @@
-// [2026-01-18 16:00:00] game_inv_logic.js - Camp Kit Permanent Protection
+// [2026-01-18 16:00:00] game_inv_logic.js - Camp Kit Permanent Protection (Fix Syntax)
 
 Object.assign(Game, {
 
@@ -484,5 +484,3 @@ Object.assign(Game, {
 
 // Alias für Kompatibilität
 Game.addItem = Game.addToInventory;
-
-}
