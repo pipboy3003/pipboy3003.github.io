@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-18 17:00:00 - game_map.js - Added Minigame Test Spot (?)
+// [TIMESTAMP] 2026-01-18 18:30:00 - game_map.js - Fix Script Error in Test Menu
 
 Object.assign(Game, {
     reveal: function(px, py) { 
@@ -363,6 +363,7 @@ Object.assign(Game, {
     },
 
     // --- NEUE FUNKTION: TEST MENÜ ---
+    // [FIX] onclick ohne komplexe Callback-Funktion, um Script-Fehler zu vermeiden
     testMinigames: function() {
         if(typeof UI !== 'undefined' && UI.els.dialog) {
              UI.els.dialog.style.display = 'flex';
@@ -375,7 +376,7 @@ Object.assign(Game, {
                         <button onclick="UI.startMinigame('lockpicking'); UI.els.dialog.style.display='none';" class="border border-green-500 text-green-400 p-3 hover:bg-green-900 font-mono">LOCKPICKING</button>
                         <button onclick="UI.startMinigame('dice'); UI.els.dialog.style.display='none';" class="border border-green-500 text-green-400 p-3 hover:bg-green-900 font-mono">WASTELAND DICE</button>
                         <button onclick="UI.startMinigame('defusal'); UI.els.dialog.style.display='none';" class="border border-green-500 text-green-400 p-3 hover:bg-green-900 font-mono">BOMB DEFUSAL</button>
-                        <button onclick="UI.startMinigame('memory', () => UI.log('Test erfolgreich!', 'text-yellow-400')); UI.els.dialog.style.display='none';" class="border border-green-500 text-green-400 p-3 hover:bg-green-900 font-mono">SECURITY MEMORY</button>
+                        <button onclick="UI.startMinigame('memory'); UI.els.dialog.style.display='none';" class="border border-green-500 text-green-400 p-3 hover:bg-green-900 font-mono">SECURITY MEMORY</button>
                     </div>
                     <button onclick="UI.els.dialog.style.display='none'; UI.els.dialog.innerHTML='';" class="border border-red-500 text-red-500 px-4 py-2 hover:bg-red-900 w-full uppercase">Schließen</button>
                 </div>
@@ -391,7 +392,6 @@ Object.assign(Game, {
         UI.log("Betrete Rusty Springs...", "text-yellow-400");
         this.saveGame();
         
-        // WICHTIG: .then() stellt sicher, dass der View geladen ist, BEVOR gerendert wird!
         UI.switchView('city').then(() => {
             if(typeof UI !== 'undefined' && UI.renderCity) {
                 UI.renderCity();
@@ -411,7 +411,6 @@ Object.assign(Game, {
             this.state.savedPosition = null;
         }
         
-        // Zurück zur Map (diesmal 'map' als Viewname, nicht 'worldmap', um sicherzugehen)
         UI.switchView('map').then(() => {
             if(this.renderStaticMap) this.renderStaticMap();
         });
