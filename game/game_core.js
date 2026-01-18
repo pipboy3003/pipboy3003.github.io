@@ -1,4 +1,4 @@
-// [2026-01-18 08:35:00] game_core.js - Fixed Quest Alert Initialization
+// [2026-01-17 19:10:00] game_core.js - Removed Store-Bought Backpacks
 
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
@@ -29,6 +29,7 @@ window.Game = {
         this.cacheCtx = this.cacheCanvas.getContext('2d'); 
     }, 
     
+    // [HiDPI Support]
     initCanvas: function() { 
         const cvs = document.getElementById('game-canvas'); 
         if(!cvs) return; 
@@ -214,8 +215,6 @@ window.Game = {
                     this.state.activeQuests.push({
                         id: def.id, progress: 0, max: def.amount, type: def.type, target: def.target
                     });
-                    
-                    this.state.newQuestAlert = true; 
                     UI.log(`QUEST: "${def.title}" erhalten!`, "text-cyan-400 font-bold animate-pulse");
                 }
             }
@@ -280,7 +279,7 @@ window.Game = {
                 if(a) stock[a] = 1;
             }
             
-            // Crafting Only - Keine Rucksäcke kaufen
+            // [FIX] Rucksäcke entfernt! Nur noch über Crafting.
             stock['camp_kit'] = 1;
             
             this.state.shop.merchantCaps = 500 + Math.floor(Math.random() * 1000);
@@ -331,7 +330,7 @@ window.Game = {
                 if(!this.state.quests) this.state.quests = [];
                 if(!this.state.camp) this.state.camp = null;
                 
-                // Rezepte Fix
+                // [FIX] Neue Rezepte für Rucksäcke automatisch lernen (für bestehende Saves)
                 const newRecs = ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp', 
                                  'craft_bp_frame', 'craft_bp_leather', 'craft_bp_metal', 'craft_bp_military', 'craft_bp_cargo'];
                 if(!this.state.knownRecipes) this.state.knownRecipes = [];
@@ -375,10 +374,9 @@ window.Game = {
                     inventory: [], hp: 100, maxHp: 100, xp: 0, lvl: 1, caps: 50, ammo: 0, statPoints: 0, perkPoints: 0, perks: {}, 
                     camp: null, rads: 0, kills: 0, view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, 
                     explored: {}, visitedSectors: ["4,4"], tutorialsShown: { hacking: false, lockpicking: false },
+                    activeQuests: [], completedQuests: [], quests: [], 
                     
-                    // [NEU] Explizite Initialisierung
-                    activeQuests: [], completedQuests: [], quests: [], newQuestAlert: false,
-                    
+                    // [FIX] Start-Rezepte für Rucksäcke
                     knownRecipes: ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp', 'craft_bp_frame', 'craft_bp_leather', 'craft_bp_metal', 'craft_bp_military', 'craft_bp_cargo'], 
                     
                     hiddenItems: {}, shop: { nextRestock: 0, stock: {}, merchantCaps: 1000 }, startTime: Date.now()
@@ -389,10 +387,7 @@ window.Game = {
                 this.syncAmmo();
                 this.recalcStats(); 
                 this.state.hp = this.state.maxHp;
-                
-                // Hier wird der Alert dann auf true gesetzt
                 this.checkNewQuests(); 
-                
                 if(typeof UI !== 'undefined') UI.log(">> Neuer Charakter erstellt.", "text-green-400");
                 this.saveGame(true); 
             }
