@@ -1,23 +1,105 @@
-// [TIMESTAMP] 2026-01-18 18:30:00 - ui_render_minigames.js - Added Safety Check & Memory UI
+// [TIMESTAMP] 2026-01-18 20:15:00 - ui_render_minigames.js - Auto-Tutorial Logic added
 
 Object.assign(UI, {
     
+    // Hilfsfunktion: Texte zentral verwalten (für Tutorial & Hilfe-Button)
+    getMinigameInfo: function(type) {
+        let title = "MINIGAME", text = "";
+        
+        if(type === 'hacking') {
+            title = "TERMINAL HACKING";
+            text = "Finde das korrekte Passwort.<br>Likeness = Anzahl korrekter Buchstaben an der richtigen Position.";
+        } else if (type === 'lockpicking') {
+            title = "SCHLOSS KNACKEN";
+            text = "Bewege den Dietrich (Maus/Touch) und drehe das Schloss (Leertaste/Button).<br>Sobald es wackelt: Sofort stoppen!";
+        } else if (type === 'dice') {
+            title = "WASTELAND GAMBLE";
+            text = "Würfle eine hohe Augenzahl!<br>Dein Glück (LUC) Attribut gibt einen Bonus auf das Ergebnis.";
+        } else if (type === 'defusal') {
+            title = "BOMBE ENTSCHÄRFEN";
+            text = "Reaktionstest: Drücke 'CUT WIRE', genau wenn der weiße Balken über dem grünen Bereich ist.<br>Du musst 3 Kabel erfolgreich durchtrennen.";
+        } else if (type === 'memory') {
+            title = "SECURITY OVERRIDE";
+            text = "Merk dir die Sequenz!<br>Die Felder leuchten auf. Wiederhole die Reihenfolge danach exakt durch Anklicken.";
+        }
+        
+        return { title, text };
+    },
+
+    // Startet das Spiel (mit Tutorial-Check)
     startMinigame: function(type, ...args) {
-        // [FIX] Safety check falls minigames.js nicht geladen ist
+        // Safety Check
         if (typeof MiniGames === 'undefined') {
-            console.error("CRITICAL: MiniGames object not found! Check minigames.js loading.");
-            UI.log("Fehler: Minigame-System nicht bereit.", "text-red-500");
+            console.error("CRITICAL: MiniGames object not found!");
             return;
         }
         if (!MiniGames[type]) {
             console.error(`Minigame type '${type}' not found.`);
             return;
         }
-        
+
+        // State initialisieren falls nötig
+        if(!Game.state.tutorialsSeen) {
+            Game.state.tutorialsSeen = {};
+        }
+
+        // CHECK: Wurde das Tutorial schon gesehen?
+        if(!Game.state.tutorialsSeen[type]) {
+            // NEIN -> Zeige Tutorial Overlay
+            this.showMinigameTutorial(type, () => {
+                // Wenn Spieler auf "Start" drückt:
+                Game.state.tutorialsSeen[type] = true; // Markiere als gesehen
+                Game.saveGame(); // Speichern
+                this._launchMinigame(type, ...args); // Spiel starten
+            });
+        } else {
+            // JA -> Starte direkt
+            this._launchMinigame(type, ...args);
+        }
+    },
+
+    // Interne Funktion zum tatsächlichen Starten
+    _launchMinigame: function(type, ...args) {
         MiniGames.active = type;
-        // Sicherstellen, dass init existiert
         if(typeof MiniGames[type].init === 'function') {
             MiniGames[type].init(...args);
+        }
+    },
+
+    // Zeigt das Tutorial-Overlay an (modal)
+    showMinigameTutorial: function(type, onConfirm) {
+        const info = this.getMinigameInfo(type);
+        
+        // Nutze den Dialog-Container (falls vorhanden) oder erstelle overlay
+        if(this.els && this.els.dialog) {
+            this.els.dialog.style.display = 'flex';
+            this.els.dialog.innerHTML = `
+                <div class="bg-black/95 border-2 border-green-500 p-6 rounded-lg shadow-[0_0_50px_#0f0] text-center w-full max-w-md pointer-events-auto relative z-[3000]">
+                    <h3 class="text-2xl font-bold text-green-400 mb-2 tracking-widest border-b border-green-800 pb-2">${info.title}</h3>
+                    <div class="text-gray-300 mb-6 font-mono text-sm leading-relaxed min-h-[80px] flex items-center justify-center">
+                        <p>${info.text}</p>
+                    </div>
+                    <div class="flex justify-center">
+                        <button id="btn-tutorial-start" class="border-2 border-green-500 bg-green-900/40 text-green-400 px-8 py-3 font-bold hover:bg-green-500 hover:text-black transition-all uppercase tracking-widest animate-pulse">
+                            SYSTEM STARTEN
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Event Listener für den Button
+            const btn = document.getElementById('btn-tutorial-start');
+            if(btn) {
+                btn.onclick = () => {
+                    this.els.dialog.style.display = 'none';
+                    this.els.dialog.innerHTML = '';
+                    if(onConfirm) onConfirm();
+                };
+            }
+        } else {
+            // Fallback falls Dialog-Element fehlt (sollte nicht passieren)
+            alert(info.title + "\n\n" + info.text.replace(/<br>/g, "\n"));
+            if(onConfirm) onConfirm();
         }
     },
 
@@ -282,29 +364,12 @@ Object.assign(UI, {
     },
 
     showMiniGameHelp: function(type) {
-        let title = "", text = "";
+        const info = this.getMinigameInfo(type);
         
-        if(type === 'hacking') {
-            title = "TERMINAL HACKING";
-            text = "Finde das korrekte Passwort. Likeness = Korrekte Buchstaben an richtiger Position.";
-        } else if (type === 'lockpicking') {
-            title = "SCHLOSS KNACKEN";
-            text = "Dietrich bewegen, Schloss drehen. Bei Wackeln sofort stoppen!";
-        } else if (type === 'dice') {
-            title = "WASTELAND GAMBLE";
-            text = "Würfle hoch! Dein Glück (LUC) addiert sich zum Ergebnis.";
-        } else if (type === 'defusal') {
-            title = "BOMBE ENTSCHÄRFEN";
-            text = "Drücke 'CUT WIRE', wenn der weiße Balken im grünen Bereich ist.<br>3 Kabel müssen durchtrennt werden.";
-        } else if (type === 'memory') {
-            title = "SECURITY OVERRIDE";
-            text = "Merke dir die Sequenz der aufleuchtenden Felder und gib sie danach exakt ein.";
-        }
-
         if (typeof this.showInfoDialog === 'function') {
-            this.showInfoDialog(title, text);
+            this.showInfoDialog(info.title, info.text);
         } else {
-            alert(title + ": " + text.replace(/<[^>]*>?/gm, ''));
+            alert(info.title + ": " + info.text.replace(/<[^>]*>?/gm, ''));
         }
     }
 });
