@@ -1,4 +1,4 @@
-// [2026-01-18 09:00:00] ui_core.js - FULL RESTORE: Char Select & Logic Fixes
+// [2026-01-17 17:45:00] ui_core.js - Auto-Generate Account Name from Email
 
 const UI = {
     els: {},
@@ -19,10 +19,11 @@ const UI = {
     focusableEls: [],
     inputMethod: 'touch', 
 
-    // Toast Queue
+    // Queue System für Toasts (Max 1)
     toastQueue: [],
     isToastShowing: false,
 
+    // --- NEW LOG SYSTEM (QUEUE BASED) ---
     log: function(message, colorClass = "text-green-500") {
         this.toastQueue.push({ message, colorClass });
         this.processToastQueue();
@@ -30,40 +31,115 @@ const UI = {
 
     processToastQueue: function() {
         if (this.isToastShowing || this.toastQueue.length === 0) return;
+
         const container = this.els.toastContainer || document.getElementById('game-toast-container');
         if(!container) return;
 
         this.isToastShowing = true;
         const item = this.toastQueue.shift(); 
-        
+
         let borderColor = "border-green-500"; 
         let icon = "ℹ️"; 
+
         if(item.colorClass.includes("red")) { borderColor = "border-red-600"; icon = "⚠️"; }
         else if(item.colorClass.includes("yellow") || item.colorClass.includes("orange")) { borderColor = "border-yellow-500"; icon = "⚡"; }
-        
+        else if(item.colorClass.includes("blue") || item.colorClass.includes("cyan")) { borderColor = "border-blue-500"; icon = "💾"; }
+        else if(item.colorClass.includes("gray")) { borderColor = "border-gray-500"; icon = "📝"; }
+
         const el = document.createElement('div');
-        el.className = `pointer-events-auto bg-black/95 border-l-4 ${borderColor} p-3 shadow-[0_0_15px_rgba(0,0,0,0.8)] animate-slide-in flex items-start justify-between gap-4 transition-all duration-300 ease-out mb-1 backdrop-blur-sm w-fit max-w-[90vw] md:max-w-md self-end rounded-l`;
-        el.innerHTML = `<div class="flex items-center gap-3"><span class="text-lg opacity-80 select-none">${icon}</span><span class="font-mono text-sm md:text-base font-bold ${item.colorClass} tracking-wide drop-shadow-md whitespace-nowrap md:whitespace-normal">${item.message}</span></div><button class="text-gray-600 hover:text-white font-bold text-xs self-start mt-0.5 px-1 ml-2">✕</button>`;
+        
+        el.className = `
+            pointer-events-auto bg-black/95 border-l-4 ${borderColor} p-3 
+            shadow-[0_0_15px_rgba(0,0,0,0.8)] animate-slide-in 
+            flex items-start justify-between gap-4 transition-all duration-300 ease-out 
+            mb-1 backdrop-blur-sm w-fit max-w-[90vw] md:max-w-md self-end rounded-l
+        `;
+
+        el.innerHTML = `
+            <div class="flex items-center gap-3">
+                <span class="text-lg opacity-80 select-none">${icon}</span>
+                <span class="font-mono text-sm md:text-base font-bold ${item.colorClass} tracking-wide drop-shadow-md whitespace-nowrap md:whitespace-normal">${item.message}</span>
+            </div>
+            <button class="text-gray-600 hover:text-white font-bold text-xs self-start mt-0.5 px-1 ml-2">✕</button>
+        `;
 
         const closeToast = () => {
             if (el.classList.contains('closing')) return; 
-            el.classList.add('closing'); el.classList.add('opacity-0', 'translate-x-full');
-            setTimeout(() => { if(el.parentNode) el.remove(); this.isToastShowing = false; setTimeout(() => this.processToastQueue(), 150); }, 300); 
+            el.classList.add('closing'); 
+            el.classList.add('opacity-0', 'translate-x-full');
+            setTimeout(() => {
+                if(el.parentNode) el.remove();
+                this.isToastShowing = false;
+                setTimeout(() => this.processToastQueue(), 150);
+            }, 300); 
         };
+
         el.querySelector('button').onclick = closeToast;
-        container.innerHTML = ''; container.appendChild(el);
-        setTimeout(() => { if(document.body.contains(el)) closeToast(); }, 3000);
+        container.innerHTML = ''; 
+        container.appendChild(el);
+
+        const duration = item.colorClass.includes("red") ? 4000 : 2500;
+        setTimeout(() => { if(document.body.contains(el)) closeToast(); }, duration);
     },
 
-    error: function(msg) { console.error(msg); this.log(`ERROR: ${msg}`, "text-red-500 blink-red"); },
+    error: function(msg) {
+        console.error(`ERROR: ${msg}`);
+        this.log(`ERROR: ${msg}`, "text-red-500 blink-red");
+        this.openBugModal(msg);
+    },
 
     showLoadingSequence: function() {
         return new Promise(resolve => {
             const overlay = document.createElement('div');
             overlay.className = "fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center font-vt323 text-green-500 cursor-wait select-none";
-            overlay.innerHTML = `<div class="text-center text-3xl mb-6 font-bold text-green-400 tracking-widest animate-pulse">SYSTEM BOOT</div><div class="text-xs text-green-600 font-mono animate-pulse">LOADING...</div>`;
+            overlay.innerHTML = `
+                <div class="w-72 max-w-[90%] relative">
+                    <div class="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,3px_100%] z-20 opacity-20"></div>
+                    <div class="text-center text-3xl mb-6 font-bold text-green-400 tracking-widest animate-pulse">PLEASE STAND BY</div>
+                    <div class="h-6 border-2 border-green-700 p-1 rounded relative bg-[#001100] shadow-[0_0_15px_#003300]">
+                        <div id="load-bar-fill" class="h-full bg-green-500 w-0 shadow-[0_0_10px_#0f0] transition-all duration-300 ease-out"></div>
+                    </div>
+                    <div class="flex justify-between items-end mt-2 px-1">
+                        <div id="load-text" class="text-xs text-green-600 font-mono animate-pulse">INITIALIZING...</div>
+                        <div id="load-percent" class="text-xl font-bold text-green-400">0%</div>
+                    </div>
+                    <div class="mt-8 flex justify-center opacity-50"><span class="animate-spin text-4xl">⚙️</span></div>
+                </div>
+            `;
             document.body.appendChild(overlay);
-            setTimeout(() => { overlay.remove(); resolve(); }, 1500); 
+
+            const steps = [
+                { t: "LOADING ASSETS...", p: 15 },
+                { t: "DECRYPTING SAVE DATA...", p: 30 },
+                { t: "SYNCHRONIZING PIP-BOY...", p: 55 },
+                { t: "ESTABLISHING UPLINK...", p: 75 },
+                { t: "RENDERING WASTELAND...", p: 90 },
+                { t: "SYSTEM READY.", p: 100 }
+            ];
+
+            let step = 0;
+            const bar = overlay.querySelector('#load-bar-fill');
+            const txt = overlay.querySelector('#load-text');
+            const pct = overlay.querySelector('#load-percent');
+
+            const interval = setInterval(() => {
+                if(step >= steps.length) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        overlay.classList.add('opacity-0', 'duration-500'); 
+                        setTimeout(() => {
+                            overlay.remove();
+                            resolve(); 
+                        }, 500);
+                    }, 400);
+                    return;
+                }
+                const s = steps[step];
+                bar.style.width = s.p + "%";
+                txt.textContent = s.t;
+                pct.textContent = s.p + "%";
+                step++;
+            }, 250); 
         });
     },
 
@@ -86,21 +162,6 @@ const UI = {
     resetInventoryAlert: function() {
         if(this.els.btnInv) this.els.btnInv.classList.remove('alert-glow-yellow');
         if(this.els.btnMenu) this.els.btnMenu.classList.remove('alert-glow-yellow');
-    },
-    
-    checkQuestAlert: function() {
-        if(Game.state && Game.state.newQuestAlert) {
-            if(this.els.btnMenu) this.els.btnMenu.classList.add('alert-glow-cyan');
-            if(this.els.btnQuests) this.els.btnQuests.classList.add('alert-glow-cyan');
-        } else {
-            if(this.els.btnMenu) this.els.btnMenu.classList.remove('alert-glow-cyan');
-            if(this.els.btnQuests) this.els.btnQuests.classList.remove('alert-glow-cyan');
-        }
-    },
-    
-    resetQuestAlert: function() {
-        if(Game.state) Game.state.newQuestAlert = false;
-        this.checkQuestAlert();
     },
 
     openBugModal: function(autoErrorMsg = null) {
@@ -199,50 +260,87 @@ const UI = {
                 console.log("AFK Trigger: Logout initiiert.");
                 this.logout("AFK: ZEITÜBERSCHREITUNG");
             }
-            this.checkQuestAlert();
         }
         if(typeof this.renderChar === 'function' && this.charTab === 'status') this.renderChar();
     },
 
     init: function() {
         const toastCont = document.getElementById('game-toast-container');
-        if(toastCont) { toastCont.classList.remove('w-72', 'md:w-96'); toastCont.classList.add('w-auto', 'items-end', 'max-w-full', 'md:max-w-[400px]'); }
+        if(toastCont) {
+            toastCont.classList.remove('w-72', 'md:w-96'); 
+            toastCont.classList.add('w-auto', 'items-end', 'max-w-full', 'md:max-w-[400px]'); 
+        }
 
         this.els = {
             touchArea: document.getElementById('main-content'),
             view: document.getElementById('view-container'),
             toastContainer: toastCont, 
-            hp: document.getElementById('val-hp'), hpBar: document.getElementById('bar-hp'), expBarTop: document.getElementById('bar-exp-top'),
-            lvl: document.getElementById('val-lvl'), xpTxt: document.getElementById('val-xp-txt'), caps: document.getElementById('val-caps'),
-            name: document.getElementById('val-name'), headerCharInfo: document.getElementById('header-char-info'),
-            version: document.getElementById('version-display'), joyBase: null, joyStick: null, dialog: document.getElementById('dialog-overlay'),
-            btnNew: document.getElementById('btn-new'), btnInv: document.getElementById('btn-inv'), btnWiki: document.getElementById('btn-wiki'),
-            btnMap: document.getElementById('btn-map'), btnChar: document.getElementById('btn-char'), btnQuests: document.getElementById('btn-quests'),
-            btnBugReport: document.getElementById('btn-bug-report'), btnMenuSave: document.getElementById('btn-menu-save'), btnLogout: document.getElementById('btn-logout'),
-            btnReset: document.getElementById('btn-reset'), btnMenu: document.getElementById('btn-menu-toggle'), navMenu: document.getElementById('main-nav'),
-            playerCount: document.getElementById('val-players'), playerList: document.getElementById('player-list-overlay'), playerListContent: document.getElementById('player-list-content'),
-            loginScreen: document.getElementById('login-screen'), loginStatus: document.getElementById('login-status'),
-            inputEmail: document.getElementById('login-email'), inputPass: document.getElementById('login-pass'),
-            btnLogin: document.getElementById('btn-login'), btnToggleRegister: document.getElementById('btn-toggle-register'), loginTitle: document.getElementById('login-title'),
-            charSelectScreen: document.getElementById('char-select-screen'), charSlotsList: document.getElementById('char-slots-list'),
-            newCharOverlay: document.getElementById('new-char-overlay'), inputNewCharName: document.getElementById('new-char-name'), btnCreateCharConfirm: document.getElementById('btn-create-char'),
-            btnCharDeleteAction: document.getElementById('btn-char-delete-action'), btnCharBack: document.getElementById('btn-char-back'),
-            deleteOverlay: document.getElementById('delete-confirm-overlay'), deleteTargetName: document.getElementById('delete-target-name'),
-            deleteInput: document.getElementById('delete-input'), btnDeleteConfirm: document.getElementById('btn-delete-confirm'), btnDeleteCancel: document.getElementById('btn-delete-cancel'),
-            spawnScreen: document.getElementById('spawn-screen'), spawnMsg: document.getElementById('spawn-msg'), spawnList: document.getElementById('spawn-list'), btnSpawnRandom: document.getElementById('btn-spawn-random'),
-            resetOverlay: document.getElementById('reset-overlay'), btnConfirmReset: document.getElementById('btn-confirm-reset'), btnCancelReset: document.getElementById('btn-cancel-reset'),
-            gameScreen: document.getElementById('game-screen'), gameOver: document.getElementById('game-over-screen')
+            hp: document.getElementById('val-hp'),
+            hpBar: document.getElementById('bar-hp'),
+            expBarTop: document.getElementById('bar-exp-top'),
+            lvl: document.getElementById('val-lvl'),
+            xpTxt: document.getElementById('val-xp-txt'),
+            caps: document.getElementById('val-caps'),
+            name: document.getElementById('val-name'),
+            headerCharInfo: document.getElementById('header-char-info'),
+            version: document.getElementById('version-display'),
+            joyBase: null, joyStick: null,
+            dialog: document.getElementById('dialog-overlay'),
+            btnNew: document.getElementById('btn-new'),
+            btnInv: document.getElementById('btn-inv'),
+            btnWiki: document.getElementById('btn-wiki'),
+            btnMap: document.getElementById('btn-map'),
+            btnChar: document.getElementById('btn-char'),
+            btnQuests: document.getElementById('btn-quests'),
+            btnBugReport: document.getElementById('btn-bug-report'),
+            btnMenuSave: document.getElementById('btn-menu-save'),
+            btnLogout: document.getElementById('btn-logout'),
+            btnReset: document.getElementById('btn-reset'),
+            btnMenu: document.getElementById('btn-menu-toggle'),
+            navMenu: document.getElementById('main-nav'),
+            playerCount: document.getElementById('val-players'),
+            playerList: document.getElementById('player-list-overlay'),
+            playerListContent: document.getElementById('player-list-content'),
+            loginScreen: document.getElementById('login-screen'),
+            loginStatus: document.getElementById('login-status'),
+            inputEmail: document.getElementById('login-email'),
+            inputPass: document.getElementById('login-pass'),
+            inputName: document.getElementById('login-name'), // Ist null, da entfernt
+            btnLogin: document.getElementById('btn-login'),
+            btnToggleRegister: document.getElementById('btn-toggle-register'),
+            loginTitle: document.getElementById('login-title'),
+            charSelectScreen: document.getElementById('char-select-screen'),
+            charSlotsList: document.getElementById('char-slots-list'),
+            newCharOverlay: document.getElementById('new-char-overlay'),
+            inputNewCharName: document.getElementById('new-char-name'),
+            btnCreateCharConfirm: document.getElementById('btn-create-char'),
+            btnCharDeleteAction: document.getElementById('btn-char-delete-action'),
+            btnCharBack: document.getElementById('btn-char-back'),
+            deleteOverlay: document.getElementById('delete-confirm-overlay'),
+            deleteTargetName: document.getElementById('delete-target-name'),
+            deleteInput: document.getElementById('delete-input'),
+            btnDeleteConfirm: document.getElementById('btn-delete-confirm'),
+            btnDeleteCancel: document.getElementById('btn-delete-cancel'),
+            spawnScreen: document.getElementById('spawn-screen'),
+            spawnMsg: document.getElementById('spawn-msg'),
+            spawnList: document.getElementById('spawn-list'),
+            btnSpawnRandom: document.getElementById('btn-spawn-random'),
+            resetOverlay: document.getElementById('reset-overlay'),
+            btnConfirmReset: document.getElementById('btn-confirm-reset'),
+            btnCancelReset: document.getElementById('btn-cancel-reset'),
+            gameScreen: document.getElementById('game-screen'),
+            gameOver: document.getElementById('game-over-screen')
         };
         
         if (this.els.btnBugReport) this.els.btnBugReport.addEventListener('click', () => { this.openBugModal(); });
         if(this.els.btnInv) this.els.btnInv.addEventListener('click', () => this.resetInventoryAlert());
-        if(this.els.btnQuests) this.els.btnQuests.addEventListener('click', () => this.resetQuestAlert());
         if(this.els.headerCharInfo) this.els.headerCharInfo.addEventListener('click', () => { this.switchView('char'); });
 
+        // [FIX] Button Listener für Register Toggle (ohne Name Input)
         if(this.els.btnToggleRegister) {
              this.els.btnToggleRegister.onclick = () => {
                  this.isRegistering = !this.isRegistering;
-                 this.els.loginTitle.textContent = this.isRegistering ? "NEUEN ACCOUNT ERSTELLEN" : "AUTHENTICATION REQUIRED";
+                 this.els.loginTitle.textContent = this.isRegistering ? "NEUEN ACCOUNT REGISTRIEREN" : "AUTHENTICATION REQUIRED";
                  this.els.btnLogin.textContent = this.isRegistering ? "REGISTRIEREN" : "LOGIN";
                  this.els.btnToggleRegister.textContent = this.isRegistering ? "Zurück zum Login" : "Noch kein Account? Hier registrieren";
              }
@@ -255,6 +353,50 @@ const UI = {
         setInterval(() => { if(this.update) this.update(); }, 1000);
     },
 
+    isMobile: function() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+    },
+
+    startGame: async function(saveData, slotIndex, newName=null) {
+        this.charSelectMode = false;
+        this.els.charSelectScreen.style.display = 'none';
+        
+        await this.showLoadingSequence(); 
+
+        this.els.gameScreen.classList.remove('hidden');
+        this.els.gameScreen.classList.remove('opacity-0');
+        
+        const isNewGame = !saveData;
+        Game.init(saveData, null, slotIndex, newName);
+        
+        if(this.isMobile() && isNewGame) this.showMobileControlsHint();
+        if(typeof Network !== 'undefined') Network.startPresence();
+    },
+
+    logout: async function(msg) {
+        this.loginBusy = false;
+        this.selectedSlot = -1; 
+        this.charSelectMode = false; 
+        
+        if(Game.state) { Game.saveGame(true); Game.state = null; }
+        if(typeof Network !== 'undefined') { await Network.disconnect(); }
+        
+        this.els.gameScreen.classList.add('hidden');
+        if(this.els.charSelectScreen) this.els.charSelectScreen.style.display = 'none'; 
+        if(this.els.newCharOverlay) this.els.newCharOverlay.classList.add('hidden');
+        if(this.els.deleteOverlay) this.els.deleteOverlay.style.display = 'none';
+        if(this.els.spawnScreen) this.els.spawnScreen.style.display = 'none';
+
+        this.els.loginScreen.style.display = 'flex';
+        this.els.loginScreen.classList.remove('hidden');
+        this.els.loginStatus.textContent = msg || "AUSGELOGGT";
+        this.els.loginStatus.className = "mt-4 text-yellow-400";
+        this.els.inputPass.value = "";
+        
+        if(this.els.navMenu) { this.els.navMenu.classList.add('hidden'); this.els.navMenu.style.display = 'none'; }
+        if(this.els.playerList) this.els.playerList.style.display = 'none';
+    },
+
     attemptLogin: async function() {
         if(!this.isSystemReady) {
             this.els.loginStatus.textContent = "SYSTEM INITIALIZING... PLEASE WAIT";
@@ -265,6 +407,7 @@ const UI = {
         this.loginBusy = true;
         const email = this.els.inputEmail.value.trim();
         const pass = this.els.inputPass.value.trim();
+        
         this.els.loginStatus.textContent = "VERBINDE MIT VAULT-TEC...";
         this.els.loginStatus.className = "mt-4 text-yellow-400 animate-pulse";
         try {
@@ -273,7 +416,10 @@ const UI = {
             let saves = null;
             if (this.isRegistering) {
                 if (email.length < 5 || pass.length < 6) throw new Error("Daten unvollständig (PW min 6)");
-                const generatedName = email.split('@')[0].toUpperCase().substring(0, 15);
+                
+                // [FIX] Auto-Generierter Name aus Email
+                const generatedName = email.split('@')[0].toUpperCase();
+                
                 saves = await Network.register(email, pass, generatedName);
             } else {
                 if (email.length < 5 || pass.length < 1) throw new Error("Bitte E-Mail und Passwort eingeben");
@@ -283,9 +429,11 @@ const UI = {
             if(this.renderCharacterSelection) this.renderCharacterSelection(saves || {});
         } catch(e) {
             let msg = e.message;
-            if(e.code === "auth/email-already-in-use") msg = "E-Mail wird bereits verwendet!";
+            if(msg && (msg.includes("INVALID_LOGIN_CREDENTIALS") || msg.includes("INVALID_EMAIL"))) msg = "E-Mail oder Passwort falsch!";
+            else if (e.code === "auth/email-already-in-use") msg = "E-Mail wird bereits verwendet!";
+            else if (e.code === "auth/invalid-email") msg = "Ungültige E-Mail-Adresse!";
             else if (e.code === "auth/wrong-password") msg = "Falsches Passwort!";
-            else if (e.code === "auth/user-not-found") msg = "Account nicht gefunden!";
+            else if (e.code === "auth/user-not-found") msg = "Benutzer nicht gefunden!";
             this.els.loginStatus.textContent = "FEHLER: " + msg;
             this.els.loginStatus.className = "mt-4 text-red-500 font-bold blink-red";
         } finally {
@@ -318,7 +466,6 @@ const UI = {
         if(mode === 'random') { this.startGame(null, this.selectedSlot, null); }
     },
     
-    // [RESTORED] Diese Funktionen fehlten!
     selectSlot: function(index) {
         if(this.selectedSlot === index) { this.triggerCharSlot(); return; }
         this.selectedSlot = index;
@@ -375,40 +522,6 @@ const UI = {
         this.deleteMode = false;
         this.els.deleteOverlay.style.display = 'none';
         this.els.charSelectScreen.focus();
-    },
-
-    renderCharacterSelection: function(saves) {
-        this.charSelectMode = true; this.currentSaves = saves;
-        if(this.els.loginScreen) this.els.loginScreen.style.display = 'none';
-        if(this.els.charSelectScreen) this.els.charSelectScreen.style.display = 'flex';
-        if(this.els.charSlotsList) this.els.charSlotsList.innerHTML = '';
-        for (let i = 0; i < 5; i++) {
-            const slot = document.createElement('div');
-            slot.className = "char-slot border-2 border-green-900 bg-black/80 p-4 mb-2 cursor-pointer hover:border-yellow-400 flex justify-between items-center group relative";
-            const save = saves[i];
-            if (save) {
-                const isDead = (save.hp !== undefined && save.hp <= 0);
-                slot.innerHTML = `<div class="flex flex-col z-10"><span class="text-xl ${isDead ? 'text-red-500' : 'text-yellow-400'} font-bold">${isDead ? '💀' : '👤'} ${save.playerName}</span><span class="text-xs text-green-300 font-mono">Level ${save.lvl}</span></div><button class="bg-green-700 text-black font-bold px-4 py-1 text-xs rounded group-hover:bg-[#39ff14]">START ▶</button>`;
-            } else {
-                slot.innerHTML = `<div class="text-gray-500 font-bold">+ NEUEN CHARAKTER</div>`;
-            }
-            slot.onclick = () => { if(typeof this.selectSlot === 'function') this.selectSlot(i); };
-            if(this.els.charSlotsList) this.els.charSlotsList.appendChild(slot);
-        }
-        if(typeof this.selectSlot === 'function') this.selectSlot(0);
-    },
-
-    renderSpawnList: function(players) {
-        if(!this.els.spawnList) return;
-        this.els.spawnList.innerHTML = '';
-        for(let pid in players) {
-            const p = players[pid];
-            const btn = document.createElement('button');
-            btn.className = "action-button w-full mb-2 text-left text-xs border-green-800 text-green-400 p-2";
-            btn.innerHTML = `SIGNAL: ${p.name}`;
-            btn.onclick = () => { if(this.els.spawnScreen) this.els.spawnScreen.style.display = 'none'; this.startGame(null, this.selectedSlot, null); };
-            this.els.spawnList.appendChild(btn);
-        }
     },
 
     showGameOver: function() {
