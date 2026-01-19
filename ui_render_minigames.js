@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-18 20:45:00 - ui_render_minigames.js - FIXED: Robust Start Logic
+// [TIMESTAMP] 2026-01-19 09:30:00 - ui_render_minigames.js - Added Mouse Control for Lockpicking
 
 Object.assign(UI, {
     
@@ -10,7 +10,7 @@ Object.assign(UI, {
             text = "Finde das korrekte Passwort.<br>Likeness = Anzahl korrekter Buchstaben an der richtigen Position.";
         } else if (type === 'lockpicking') {
             title = "SCHLOSS KNACKEN";
-            text = "Bewege den Dietrich (Maus/Touch) und drehe das Schloss (Leertaste/Button).<br>Sobald es wackelt: Sofort stoppen!";
+            text = "Bewege die Maus (links/rechts), um den Dietrich zu platzieren.<br>Drücke LEERTASTE oder 'DREHEN', um das Schloss zu testen.<br>Wenn es wackelt: Sofort loslassen!";
         } else if (type === 'dice') {
             title = "WASTELAND GAMBLE";
             text = "Würfle eine hohe Augenzahl!<br>Dein Glück (LUC) Attribut gibt einen Bonus auf das Ergebnis.";
@@ -26,59 +26,35 @@ Object.assign(UI, {
     },
 
     startMinigame: function(type, ...args) {
-        console.log(`[UI] Attempting to start minigame: ${type}`);
+        // Safety Checks
+        if (typeof MiniGames === 'undefined' || !MiniGames[type]) return;
 
-        // 1. Safety Checks
-        if (typeof MiniGames === 'undefined') {
-            console.error("[UI] CRITICAL: MiniGames object missing!");
-            UI.log("Fehler: Minigame-System fehlt.", "text-red-500");
-            return;
-        }
-        if (!MiniGames[type]) {
-            console.error(`[UI] Minigame '${type}' not defined.`);
-            UI.log(`Fehler: Spiel '${type}' unbekannt.`, "text-red-500");
-            return;
-        }
-
-        // Funktion zum tatsächlichen Starten (wird unten aufgerufen)
         const launch = () => {
-            console.log(`[UI] Launching ${type}...`);
             MiniGames.active = type;
             if(typeof MiniGames[type].init === 'function') {
-                try {
-                    MiniGames[type].init(...args);
-                } catch(e) {
-                    console.error("[UI] Error in MiniGame init:", e);
-                    UI.log("Crash beim Starten des Minigames!", "text-red-500");
-                }
-            } else {
-                console.error(`[UI] ${type}.init is not a function`);
+                try { MiniGames[type].init(...args); } catch(e) { console.error(e); }
             }
         };
 
-        // 2. Tutorial Logic
-        // Falls Game.state noch nicht bereit ist (z.B. Test-Modus ohne Savegame), sofort starten.
         if (!Game || !Game.state) {
             launch();
             return;
         }
 
-        if(!Game.state.tutorialsSeen) {
-            Game.state.tutorialsSeen = {};
-        }
+        if(!Game.state.tutorialsSeen) Game.state.tutorialsSeen = {};
 
-        // Wenn Tutorial noch NICHT gesehen -> Zeigen
-        if(!Game.state.tutorialsSeen[type]) {
-            this.showMinigameTutorial(type, () => {
-                // Callback wenn User auf "START" klickt
-                Game.state.tutorialsSeen[type] = true;
-                Game.saveGame();
+        // Verzögerung einbauen, damit onclick Events vom Menü sicher durch sind
+        setTimeout(() => {
+            if(!Game.state.tutorialsSeen[type]) {
+                this.showMinigameTutorial(type, () => {
+                    Game.state.tutorialsSeen[type] = true;
+                    Game.saveGame();
+                    launch();
+                });
+            } else {
                 launch();
-            });
-        } else {
-            // Wenn schon gesehen -> Direkt starten
-            launch();
-        }
+            }
+        }, 50);
     },
 
     showMinigameTutorial: function(type, onConfirm) {
@@ -100,28 +76,16 @@ Object.assign(UI, {
                 </div>
             `;
             
-            // Event Listener sicher anhängen
-            setTimeout(() => {
-                const btn = document.getElementById('btn-tutorial-start');
-                if(btn) {
-                    btn.onclick = function() {
-                        if(UI.els.dialog) {
-                            UI.els.dialog.style.display = 'none';
-                            UI.els.dialog.innerHTML = '';
-                        }
-                        if(onConfirm) onConfirm();
-                    };
-                    btn.focus(); // Fokus auf Button für Tastatur-User
-                } else {
-                    console.error("[UI] Tutorial button not found!");
-                    // Notfall-Fallback
+            const btn = document.getElementById('btn-tutorial-start');
+            if(btn) {
+                btn.onclick = () => {
+                    this.els.dialog.style.display = 'none';
+                    this.els.dialog.innerHTML = '';
                     if(onConfirm) onConfirm();
-                }
-            }, 50); // Kleines Delay damit DOM sicher bereit ist
-            
+                };
+            }
         } else {
-            // Fallback ohne Fancy UI
-            alert(`${info.title}\n\n${info.text.replace(/<br>/g, "\n")}`);
+            alert(info.title + "\n\n" + info.text.replace(/<br>/g, "\n"));
             if(onConfirm) onConfirm();
         }
     },
@@ -136,7 +100,6 @@ Object.assign(UI, {
         const dice = document.getElementById('dice-overlay');
         if(dice) dice.classList.add('hidden');
         
-        // Zurück zur Map
         if(typeof UI.switchView === 'function') {
             UI.switchView('map'); 
         } else {
@@ -204,34 +167,84 @@ Object.assign(UI, {
     renderLockpicking: function(init=false) {
         if(init && this.els.view) {
             this.els.view.innerHTML = `
-                <div class="w-full h-full flex flex-col items-center justify-center bg-black relative select-none">
+                <div id="lockpicking-root" class="w-full h-full flex flex-col items-center justify-center bg-black relative select-none">
                     <div class="absolute top-2 left-2 text-xs text-gray-500">LEVEL: ${MiniGames.lockpicking.difficulty.toUpperCase()}</div>
                     <button class="absolute top-2 right-2 border border-green-500 text-green-500 px-2 font-bold hover:bg-green-900 z-50" onclick="UI.showMiniGameHelp('lockpicking')">?</button>
-                    <div class="lock-container">
-                        <div class="lock-inner" id="lock-rotator"></div>
-                        <div class="lock-center"></div>
+                    
+                    <div class="lock-container" id="lock-zone">
+                        <div class="lock-inner" id="lock-rotator">
+                             <div class="lock-center"></div>
+                        </div>
                         <div class="bobby-pin" id="bobby-pin"></div>
                         <div class="screwdriver"></div>
                     </div>
+
                     <div class="mt-8 text-center text-sm text-green-300 font-mono">
-                        <p>MAUS/TOUCH: Dietrich bewegen</p>
-                        <p>LEERTASTE / KNOPF: Schloss drehen</p>
+                        <p class="mb-1">MAUS: Dietrich bewegen</p>
+                        <p>LEERTASTE / KNOPF: Drehen</p>
                     </div>
-                    <button id="btn-turn-lock" class="mt-4 action-button w-40 h-16 md:hidden">DREHEN</button>
+                    
+                    <button id="btn-turn-lock" class="mt-4 border-2 border-yellow-400 bg-yellow-900/30 text-yellow-400 w-48 h-16 text-xl font-bold tracking-widest active:bg-yellow-400 active:text-black md:hidden">
+                        DREHEN
+                    </button>
+                    
                     <button class="absolute bottom-4 right-4 border border-red-500 text-red-500 px-3 py-1 hover:bg-red-900" onclick="MiniGames.lockpicking.end()">ABBRECHEN</button>
                 </div>
             `;
+            
+            // --- INPUT HANDLERS ---
+            const root = document.getElementById('lockpicking-root');
             const btn = document.getElementById('btn-turn-lock');
+
+            // 1. DREHEN (Schloss testen)
+            const tryRotate = (e) => { 
+                if(e && e.preventDefault) e.preventDefault(); 
+                MiniGames.lockpicking.rotateLock(); 
+            };
+            const stopRotate = (e) => { 
+                if(e && e.preventDefault) e.preventDefault(); 
+                MiniGames.lockpicking.releaseLock(); 
+            };
+
             if(btn) {
-                btn.addEventListener('touchstart', (e) => { e.preventDefault(); MiniGames.lockpicking.rotateLock(); });
-                btn.addEventListener('touchend', (e) => { e.preventDefault(); MiniGames.lockpicking.releaseLock(); });
-                btn.addEventListener('mousedown', () => MiniGames.lockpicking.rotateLock());
-                btn.addEventListener('mouseup', () => MiniGames.lockpicking.releaseLock());
+                btn.addEventListener('touchstart', tryRotate);
+                btn.addEventListener('touchend', stopRotate);
+                btn.addEventListener('mousedown', tryRotate);
+                btn.addEventListener('mouseup', stopRotate);
+            }
+
+            // Spacebar Support
+            document.onkeydown = (e) => { if(e.code === 'Space') MiniGames.lockpicking.rotateLock(); };
+            document.onkeyup = (e) => { if(e.code === 'Space') MiniGames.lockpicking.releaseLock(); };
+
+            // 2. DIETRICH BEWEGEN (Maus/Touch)
+            const updatePinPosition = (clientX) => {
+                 if(MiniGames.active !== 'lockpicking') return;
+                 const screenWidth = window.innerWidth;
+                 // Mappe X-Position (0 bis Width) auf Winkel (-90 bis +90)
+                 const percentage = Math.max(0, Math.min(1, clientX / screenWidth));
+                 const angle = (percentage * 180) - 90;
+                 
+                 MiniGames.lockpicking.currentAngle = angle;
+                 
+                 // Performance: Update direkt via CSS statt komplettem Re-Render
+                 const pin = document.getElementById('bobby-pin');
+                 if(pin) pin.style.transform = `rotate(${angle}deg)`;
+            };
+
+            if(root) {
+                root.addEventListener('mousemove', (e) => updatePinPosition(e.clientX));
+                root.addEventListener('touchmove', (e) => {
+                    if(e.touches[0]) updatePinPosition(e.touches[0].clientX);
+                });
             }
         }
+
+        // Standard Render Updates (falls über Logic getriggert)
         const pin = document.getElementById('bobby-pin');
         const lock = document.getElementById('lock-rotator');
-        if(pin) pin.style.transform = `rotate(${MiniGames.lockpicking.currentAngle - 90}deg)`; 
+        
+        if(pin && !init) pin.style.transform = `rotate(${MiniGames.lockpicking.currentAngle}deg)`; 
         if(lock) lock.style.transform = `rotate(${MiniGames.lockpicking.lockAngle}deg)`;
     },
 
