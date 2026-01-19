@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-19 09:30:00 - ui_render_minigames.js - Added Mouse Control for Lockpicking
+// [TIMESTAMP] 2026-01-19 10:00:00 - ui_render_minigames.js - Added Danger Warnings to Tutorials
 
 Object.assign(UI, {
     
@@ -7,19 +7,19 @@ Object.assign(UI, {
         
         if(type === 'hacking') {
             title = "TERMINAL HACKING";
-            text = "Finde das korrekte Passwort.<br>Likeness = Anzahl korrekter Buchstaben an der richtigen Position.";
+            text = "Finde das korrekte Passwort.<br>Likeness = Anzahl korrekter Buchstaben an der richtigen Position.<br><span class='text-yellow-500'>Sperrt das Terminal bei Fehlschlag.</span>";
         } else if (type === 'lockpicking') {
             title = "SCHLOSS KNACKEN";
-            text = "Bewege die Maus (links/rechts), um den Dietrich zu platzieren.<br>Drücke LEERTASTE oder 'DREHEN', um das Schloss zu testen.<br>Wenn es wackelt: Sofort loslassen!";
+            text = "Bewege die Maus (links/rechts), um den Dietrich zu platzieren.<br>Drücke LEERTASTE oder 'DREHEN', um das Schloss zu testen.<br><span class='text-yellow-500'>Dietrich kann bei zu viel Druck abbrechen!</span>";
         } else if (type === 'dice') {
             title = "WASTELAND GAMBLE";
             text = "Würfle eine hohe Augenzahl!<br>Dein Glück (LUC) Attribut gibt einen Bonus auf das Ergebnis.";
         } else if (type === 'defusal') {
             title = "BOMBE ENTSCHÄRFEN";
-            text = "Reaktionstest: Drücke 'CUT WIRE', genau wenn der weiße Balken über dem grünen Bereich ist.<br>Du musst 3 Kabel erfolgreich durchtrennen.";
+            text = "Reaktionstest: Drücke 'CUT WIRE', genau wenn der weiße Balken über dem grünen Bereich ist.<br>Du musst 3 Kabel trennen.<br><span class='text-red-500 animate-pulse'>WARNUNG: Bei Fehler explodiert die Bombe (Schaden + Strahlung)!</span>";
         } else if (type === 'memory') {
             title = "SECURITY OVERRIDE";
-            text = "Merk dir die Sequenz!<br>Die Felder leuchten auf. Wiederhole die Reihenfolge danach exakt durch Anklicken.";
+            text = "Merk dir die Sequenz! Die Felder leuchten auf. Wiederhole die Reihenfolge danach exakt.<br><span class='text-red-500'>ACHTUNG: Falsche Eingabe löst Abwehrmechanismus aus (Schaden)!</span>";
         }
         
         return { title, text };
@@ -65,7 +65,7 @@ Object.assign(UI, {
             this.els.dialog.innerHTML = `
                 <div class="bg-black/95 border-2 border-green-500 p-6 rounded-lg shadow-[0_0_50px_#0f0] text-center w-full max-w-md pointer-events-auto relative z-[3000]">
                     <h3 class="text-2xl font-bold text-green-400 mb-2 tracking-widest border-b border-green-800 pb-2">${info.title}</h3>
-                    <div class="text-gray-300 mb-6 font-mono text-sm leading-relaxed min-h-[80px] flex items-center justify-center">
+                    <div class="text-gray-300 mb-6 font-mono text-sm leading-relaxed min-h-[80px] flex flex-col items-center justify-center gap-2">
                         <p>${info.text}</p>
                     </div>
                     <div class="flex justify-center">
@@ -85,7 +85,7 @@ Object.assign(UI, {
                 };
             }
         } else {
-            alert(info.title + "\n\n" + info.text.replace(/<br>/g, "\n"));
+            alert(info.title + "\n\n" + info.text.replace(/<[^>]*>?/gm, "\n"));
             if(onConfirm) onConfirm();
         }
     },
@@ -240,7 +240,7 @@ Object.assign(UI, {
             }
         }
 
-        // Standard Render Updates (falls über Logic getriggert)
+        // Standard Render Updates
         const pin = document.getElementById('bobby-pin');
         const lock = document.getElementById('lock-rotator');
         
