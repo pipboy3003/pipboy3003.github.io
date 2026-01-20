@@ -1,11 +1,10 @@
-// [TIMESTAMP] 2026-01-20 12:00:00 - ui_view_town.js - Added Smithy UI
+// [TIMESTAMP] 2026-01-20 14:00:00 - ui_view_town.js - Added Smithy UI
 
 Object.assign(UI, {
     
     shopQty: 1,
 
     renderCity: function(cityId = 'rusty_springs') {
-        // [UPDATE] Schmied Button hinzugefügt
         const view = document.getElementById('view-container');
         if(!view) return;
         view.innerHTML = ''; 
@@ -181,82 +180,88 @@ Object.assign(UI, {
         view.appendChild(wrapper);
     },
 
-    // --- SCHMIED UI ---
+    // --- SCHMIED UI (CRASH SAFE) ---
     renderSmithy: function() {
-        Game.state.view = 'smithy';
-        const view = document.getElementById('view-container');
-        if(!view) return;
-        view.innerHTML = '';
+        try {
+            Game.state.view = 'smithy';
+            const view = document.getElementById('view-container');
+            if(!view) return;
+            view.innerHTML = '';
 
-        const wrapper = document.createElement('div');
-        wrapper.className = "absolute inset-0 w-full h-full flex flex-col bg-black z-20 overflow-hidden";
+            const wrapper = document.createElement('div');
+            wrapper.className = "absolute inset-0 w-full h-full flex flex-col bg-black z-20 overflow-hidden";
 
-        // HEADER
-        const header = document.createElement('div');
-        header.className = "p-4 border-b-2 border-orange-500 bg-orange-900/20 flex justify-between items-end shadow-lg";
-        header.innerHTML = `
-            <div>
-                <h2 class="text-3xl text-orange-400 font-bold font-vt323 tracking-widest">DER SCHMIED</h2>
-                <div class="text-xs text-orange-300 tracking-wider">"Aus Alt mach Neu..."</div>
-            </div>
-            <div class="text-4xl text-orange-500 opacity-50">⚒️</div>
-        `;
-        wrapper.appendChild(header);
+            // HEADER
+            const header = document.createElement('div');
+            header.className = "p-4 border-b-2 border-orange-500 bg-orange-900/20 flex justify-between items-end shadow-lg";
+            header.innerHTML = `
+                <div>
+                    <h2 class="text-3xl text-orange-400 font-bold font-vt323 tracking-widest">DER SCHMIED</h2>
+                    <div class="text-xs text-orange-300 tracking-wider">"Aus Alt mach Neu..."</div>
+                </div>
+                <div class="text-4xl text-orange-500 opacity-50">⚒️</div>
+            `;
+            wrapper.appendChild(header);
 
-        // CONTENT
-        const content = document.createElement('div');
-        content.className = "flex-1 overflow-y-auto custom-scroll p-4 space-y-2 bg-[#0a0500]";
+            // CONTENT
+            const content = document.createElement('div');
+            content.className = "flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2 bg-[#0a0500]";
 
-        // Waffen filtern
-        const weapons = Game.state.inventory.map((item, idx) => ({...item, idx})).filter(i => {
-            const def = Game.items[i.id];
-            return def && def.type === 'weapon';
-        });
-
-        if(weapons.length === 0) {
-            content.innerHTML = '<div class="text-center text-orange-800 mt-10 p-4 border-2 border-dashed border-orange-900">Keine Waffen im Inventar.</div>';
-        } else {
-            weapons.forEach(w => {
-                const def = Game.items[w.id];
-                const name = w.name || def.name;
-                const isRusty = w.id.startsWith('rusty_');
-                const stats = Game.getWeaponStats(w);
-                
-                let actionBtn = '';
-                
-                if(isRusty) {
-                    actionBtn = `<button onclick="if(Game.restoreWeapon(${w.idx})) UI.renderSmithy()" class="bg-blue-900/30 text-xs px-3 py-2 border border-blue-500 hover:bg-blue-600 hover:text-black font-bold uppercase transition-colors">Restaurieren (50 KK + Öl)</button>`;
-                } else {
-                    actionBtn = `<button onclick="UI.renderModdingScreen(${w.idx})" class="bg-orange-900/30 text-xs px-3 py-2 border border-orange-500 hover:bg-orange-500 hover:text-black font-bold uppercase transition-colors">Modifizieren</button>`;
-                }
-
-                const div = document.createElement('div');
-                div.className = `flex justify-between items-center bg-black/40 p-3 border border-gray-700 hover:border-orange-500/50 transition-colors`;
-                div.innerHTML = `
-                    <div>
-                        <div class="${isRusty ? 'text-red-400' : 'text-orange-300'} font-bold text-lg">${name}</div>
-                        <div class="text-xs text-gray-500 font-mono">DMG: ${stats.dmg} | Mods: ${w.mods ? w.mods.length : 0}</div>
-                    </div>
-                    ${actionBtn}
-                `;
-                content.appendChild(div);
+            const weapons = Game.state.inventory.map((item, idx) => ({...item, idx})).filter(i => {
+                const def = Game.items[i.id];
+                return def && def.type === 'weapon';
             });
+
+            if(weapons.length === 0) {
+                content.innerHTML = '<div class="text-center text-orange-800 mt-10 p-4 border-2 border-dashed border-orange-900">Keine Waffen im Inventar.</div>';
+            } else {
+                weapons.forEach(w => {
+                    const def = Game.items[w.id];
+                    const name = w.name || def.name;
+                    const isRusty = w.id.startsWith('rusty_');
+                    
+                    // Fallback falls getWeaponStats fehlt
+                    const stats = (typeof Game.getWeaponStats === 'function') ? Game.getWeaponStats(w) : { dmg: def.dmg || 0 };
+                    
+                    let actionBtn = '';
+                    
+                    if(isRusty) {
+                        actionBtn = `<button onclick="if(Game.restoreWeapon(${w.idx})) UI.renderSmithy()" class="bg-blue-900/30 text-xs px-3 py-2 border border-blue-500 hover:bg-blue-600 hover:text-black font-bold uppercase transition-colors">Restaurieren (50 KK + Öl)</button>`;
+                    } else {
+                        actionBtn = `<button onclick="UI.renderModdingScreen(${w.idx})" class="bg-orange-900/30 text-xs px-3 py-2 border border-orange-500 hover:bg-orange-500 hover:text-black font-bold uppercase transition-colors">Modifizieren</button>`;
+                    }
+
+                    const div = document.createElement('div');
+                    div.className = `flex justify-between items-center bg-black/40 p-3 border border-gray-700 hover:border-orange-500/50 transition-colors`;
+                    div.innerHTML = `
+                        <div>
+                            <div class="${isRusty ? 'text-red-400' : 'text-orange-300'} font-bold text-lg">${name}</div>
+                            <div class="text-xs text-gray-500 font-mono">DMG: ${stats.dmg} | Mods: ${w.mods ? w.mods.length : 0}</div>
+                        </div>
+                        ${actionBtn}
+                    `;
+                    content.appendChild(div);
+                });
+            }
+            wrapper.appendChild(content);
+
+            // FOOTER
+            const footer = document.createElement('div');
+            footer.className = "absolute bottom-0 left-0 w-full p-4 bg-black border-t-2 border-orange-900 z-50";
+            footer.innerHTML = `<button class="action-button w-full border-2 border-orange-800 text-orange-700 hover:border-orange-500 hover:text-orange-400 transition-colors py-3 font-bold tracking-widest uppercase bg-black" onclick="UI.renderCity()">ZURÜCK ZUM ZENTRUM</button>`;
+            wrapper.appendChild(footer);
+
+            view.appendChild(wrapper);
+        } catch(e) {
+            console.error("Smithy Crash:", e);
+            UI.renderCity();
         }
-        wrapper.appendChild(content);
-
-        // FOOTER
-        const footer = document.createElement('div');
-        footer.className = "absolute bottom-0 left-0 w-full p-4 bg-black border-t-2 border-orange-900 z-50";
-        footer.innerHTML = `<button class="action-button w-full border-2 border-orange-800 text-orange-700 hover:border-orange-500 hover:text-orange-400 transition-colors py-3 font-bold tracking-widest uppercase bg-black" onclick="UI.renderCity()">ZURÜCK ZUM ZENTRUM</button>`;
-        wrapper.appendChild(footer);
-
-        view.appendChild(wrapper);
     },
 
     renderModdingScreen: function(weaponIdx) {
         const view = document.getElementById('view-container');
         if(!view) return;
-        view.innerHTML = ''; // Clear for full screen modding
+        view.innerHTML = ''; 
 
         const weapon = Game.state.inventory[weaponIdx];
         if(!weapon) { this.renderSmithy(); return; }
@@ -280,7 +285,6 @@ Object.assign(UI, {
         const content = document.createElement('div');
         content.className = "flex-1 overflow-y-auto custom-scroll p-4 space-y-2 bg-[#0a0500]";
 
-        // Finde kompatible Mods im Inventar
         const compatibleMods = Game.state.inventory.map((item, idx) => ({...item, idx})).filter(m => {
             const mDef = Game.items[m.id];
             return mDef && mDef.type === 'mod' && mDef.target === weapon.id;
