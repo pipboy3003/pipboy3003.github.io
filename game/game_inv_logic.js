@@ -1,4 +1,4 @@
-// [2026-01-19 12:30:00] game_inv_logic.js - Legendary Loot & Full Item Support
+// [TIMESTAMP] 2026-01-20 12:00:00 - game_inv_logic.js - Modding, Restoration & Full Items
 
 Object.assign(Game, {
 
@@ -22,19 +22,16 @@ Object.assign(Game, {
         return base;
     },
 
-    // [MODIFIED] addToInventory supports custom full item objects (for Legendaries)
     addToInventory: function(idOrItem, count=1, customData=null) { 
         if(!this.state.inventory) this.state.inventory = []; 
         let itemId, props = null, fullItemObj = null;
 
-        // Fall 1: idOrItem ist ein Objekt (alter Code) oder das neue Legendary Object
         if(typeof idOrItem === 'object') {
             itemId = idOrItem.id;
             props = idOrItem.props;
-            count = idOrItem.count || count || 1; // Count kann im Objekt oder als Parameter sein
-            fullItemObj = idOrItem; // Speichere das ganze Objekt für später
+            count = idOrItem.count || count || 1;
+            fullItemObj = idOrItem;
         } else { 
-            // Fall 2: ID String + optional customData
             itemId = idOrItem; 
             if(customData) fullItemObj = customData;
         }
@@ -50,10 +47,10 @@ Object.assign(Game, {
         let isActuallyNew = false; 
 
         // 1. Stacken (nur wenn es keine einzigartigen Eigenschaften hat)
-        // Legendaries mit UID sollten NICHT gestapelt werden
-        if (!props && (!fullItemObj || !fullItemObj.uid)) {
+        // Legendaries mit UID oder Mods sollten NICHT gestapelt werden
+        if (!props && (!fullItemObj || (!fullItemObj.uid && !fullItemObj.mods))) {
             for (let item of this.state.inventory) {
-                if (item.id === itemId && !item.props && !item.uid && item.count < limit) {
+                if (item.id === itemId && !item.props && !item.uid && !item.mods && item.count < limit) {
                     const space = limit - item.count;
                     const take = Math.min(space, remaining);
                     item.count += take;
@@ -76,15 +73,13 @@ Object.assign(Game, {
                 const take = Math.min(limit, remaining);
                 
                 let newItem;
-                if(fullItemObj && (fullItemObj.uid || fullItemObj.isLegendary)) {
-                    // [NEU] Wenn es ein Legendary/Custom Item ist, kopiere ALLES
+                if(fullItemObj && (fullItemObj.uid || fullItemObj.isLegendary || fullItemObj.mods)) {
+                    // [NEU] Wenn es ein Legendary/Mod Item ist, kopiere ALLES
                     newItem = JSON.parse(JSON.stringify(fullItemObj));
                     newItem.count = take;
                     newItem.isNew = true;
-                    // Sicherstellen, dass ID gesetzt ist
                     if(!newItem.id) newItem.id = itemId;
                 } else {
-                    // Standard Item
                     newItem = { id: itemId, count: take, isNew: true };
                     if (props) newItem.props = props;
                 }
@@ -98,7 +93,6 @@ Object.assign(Game, {
 
         if (added) {
             const itemDef = this.items[itemId];
-            // Name kann vom Custom Object kommen
             let name = (fullItemObj && fullItemObj.name) ? fullItemObj.name : ((props && props.name) ? props.name : (itemDef ? itemDef.name : itemId));
             const color = (props && props.color) ? props.color.split(' ')[0] : "text-green-400";
             
@@ -117,11 +111,140 @@ Object.assign(Game, {
             if(isActuallyNew && typeof UI !== 'undefined' && UI.triggerInventoryAlert) {
                 UI.triggerInventoryAlert();
             }
-            this.updateWeight(); // Gewicht neu berechnen
+            this.updateWeight(); 
             return true;
         }
         return false;
     }, 
+
+    // --- NEU: RESTAURIERUNG ---
+    restoreWeapon: function(invIndex) {
+        const item = this.state.inventory[invIndex];
+        if(!item || !item.id.startsWith('rusty_')) {
+            UI.log("Das ist keine rostige Waffe.", "text-red-500");
+            return false;
+        }
+
+        const costCaps = 50;
+        if(this.state.caps < costCaps) { UI.log("Nicht genug Kronkorken (50).", "text-red-500"); return false; }
+        if(this.getItemCount('weapon_oil') < 1) { UI.log("Fehlt: Waffenöl", "text-red-500"); return false; }
+
+        this.state.caps -= costCaps;
+        this.removeFromInventory('weapon_oil', 1);
+        
+        // rusty_pistol -> pistol
+        const cleanId = item.id.replace('rusty_', '');
+        // Mapping für 10mm (Sonderfall im Namen)
+        const targetId = cleanId === 'pistol' ? 'pistol_10mm' : (cleanId === 'rifle' ? 'hunting_rifle' : cleanId);
+
+        this.state.inventory.splice(invIndex, 1);
+        this.addToInventory(targetId, 1);
+        
+        UI.log("Waffe erfolgreich restauriert!", "text-green-400 font-bold");
+        return true;
+    },
+
+    // --- NEU: MOD INSTALLIEREN ---
+    installMod: function(weaponInvIndex, modInvIndex) {
+        const weapon = this.state.inventory[weaponInvIndex];
+        const mod = this.state.inventory[modInvIndex];
+        
+        if(!weapon || !mod) return false;
+        
+        const wDef = this.items[weapon.id];
+        const mDef = this.items[mod.id];
+
+        if(mDef.target !== weapon.id) {
+            UI.log("Dieser Mod passt nicht auf diese Waffe.", "text-red-500");
+            return false;
+        }
+        
+        if(!wDef.modSlots || !wDef.modSlots.includes(mDef.slot)) {
+            UI.log("Diese Waffe hat keinen Slot dafür.", "text-red-500");
+            return false;
+        }
+
+        this.removeFromInventory(mod.id, 1);
+
+        if(!weapon.mods) weapon.mods = [];
+        
+        // Alten Mod im selben Slot entfernen/überschreiben
+        const existingModIndex = weapon.mods.findIndex(mid => {
+            const md = this.items[mid];
+            return md && md.slot === mDef.slot;
+        });
+        
+        if(existingModIndex >= 0) {
+            weapon.mods.splice(existingModIndex, 1);
+        }
+        
+        weapon.mods.push(mod.id);
+        
+        if(!weapon.isLegendary) {
+            if(!weapon.name) weapon.name = wDef.name + " (+)";
+        }
+
+        // Unique machen
+        if(!weapon.uid) weapon.uid = Date.now() + Math.random();
+
+        UI.log("Modifikation installiert!", "text-green-400 font-bold");
+        return true;
+    },
+
+    // --- LEGENDARY LOOT (Minigame Reward) ---
+    gambleLegendaryLoot: function(score) {
+        const roll = Math.random() * 100;
+        const chance = score * 2; 
+        
+        if(roll > chance) {
+            UI.log(`Kein Glück (${Math.floor(roll)} > ${chance})`, "text-gray-500");
+            this.state.caps += score;
+            return;
+        }
+
+        const bases = ['pistol_10mm', 'hunting_rifle', 'combat_shotgun', 'machete', 'super_sledge'];
+        const baseId = bases[Math.floor(Math.random() * bases.length)];
+        const baseItem = this.items[baseId];
+
+        if(!baseItem) return;
+
+        const prefixes = [
+            { name: "Brutale", dmgMod: 1.3, desc: "+30% Schaden" },
+            { name: "Doppelschuss", dmgMod: 1.5, ammoMod: 2, desc: "Doppelter Schaden, doppelter Verbrauch" },
+            { name: "Vampir", hpDrain: 5, desc: "Heilt 5 TP pro Treffer" },
+            { name: "Atomare", dmgMod: 1.2, rads: 5, desc: "Verstrahlt den Gegner" },
+            { name: "Leichte", weightMod: 0.5, desc: "50% weniger Gewicht" }
+        ];
+
+        const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+        
+        // Das Legendäre Item bauen und Werte festschreiben
+        const legendaryItem = JSON.parse(JSON.stringify(baseItem));
+        
+        legendaryItem.id = baseId; 
+        legendaryItem.uid = 'LEGEND_' + Date.now(); 
+        legendaryItem.name = `${prefix.name} ${baseItem.name} ★`;
+        legendaryItem.isLegendary = true;
+        legendaryItem.desc = prefix.desc;
+        legendaryItem.value = (baseItem.value || 10) * 5;
+        
+        const baseDmg = baseItem.baseDmg || 2;
+        if(prefix.dmgMod) legendaryItem.dmg = Math.floor(baseDmg * prefix.dmgMod);
+        else legendaryItem.dmg = baseDmg;
+
+        legendaryItem.ammoType = baseItem.ammo; 
+        if(prefix.ammoMod) legendaryItem.ammoCost = (baseItem.ammoCost || 1) * prefix.ammoMod;
+        else legendaryItem.ammoCost = baseItem.ammoCost || 1;
+
+        if(prefix.hpDrain) legendaryItem.effectHeal = prefix.hpDrain;
+        if(prefix.rads) legendaryItem.effectRad = prefix.rads;
+        if(prefix.weightMod) legendaryItem.weight = (baseItem.weight || 1) * prefix.weightMod;
+
+        this.addToInventory(legendaryItem, 1);
+        
+        UI.log("LEGENDÄRES ITEM ERHALTEN!", "text-yellow-400 font-bold animate-pulse");
+        if(typeof UI.showItemOverlay === 'function') UI.showItemOverlay(legendaryItem);
+    },
 
     removeFromInventory: function(itemId, amount=1) {
         if(!this.state) return false;
@@ -191,7 +314,6 @@ Object.assign(Game, {
         
         let name = (item.props && item.props.name) ? item.props.name : (item.name || def.name);
         let value = def.cost || 5;
-        // Legendaries geben mehr Schrott
         if(item.isLegendary) value *= 2;
         
         this.state.inventory.splice(invIndex, 1);
@@ -280,17 +402,13 @@ Object.assign(Game, {
              return;
         }
 
-        // Ins Inventar legen
         let itemToAdd = item._fromInv || item.id;
         
-        // [FIX] Wenn es ein Legendary oder bearbeitetes Item ist, als Objekt speichern
-        if (item.uid || item.isLegendary) {
-            // Kopiere alle Eigenschaften außer _fromInv
+        if (item.uid || item.isLegendary || item.mods) {
             const { _fromInv, ...rest } = item;
             itemToAdd = rest;
             itemToAdd.count = 1;
         } else {
-            // Standard Item Fallback
             if (!itemToAdd && item.id) itemToAdd = item.id;
             let objToAdd = itemToAdd;
             if (!item._fromInv && item.props) objToAdd = { id: item.id, count: 1, props: item.props };
@@ -339,7 +457,6 @@ Object.assign(Game, {
             this.state.inventory.splice(index, 1);
             
             if(oldEquip) {
-                // [FIX] Wenn alt Item custom war, als solches zurückgeben
                 if(oldEquip.uid || oldEquip.isLegendary) {
                      const { _fromInv, ...rest } = oldEquip;
                      const oldItem = { ...rest, count: 1, isNew: true };
@@ -350,9 +467,7 @@ Object.assign(Game, {
                 }
             }
             
-            // Neues Item ausrüsten (merge props/custom stats)
             this.state.equip[slot] = { ...itemDef, ...invItem, count: 1 };
-            
             UI.log(`Rucksack angelegt: ${invItem.name || itemDef.name}`, "text-yellow-400");
             
             if(this.getUsedSlots() > this.getMaxSlots()) UI.log("WARNUNG: Überladen!", "text-red-500 blink-red");
@@ -444,8 +559,6 @@ Object.assign(Game, {
                 if(oldEquip && oldEquip.id !== "fists" && oldEquip.id !== "vault_suit") {
                     if(oldEquip._fromInv) this.state.inventory.push(oldEquip._fromInv);
                     else {
-                        // Wenn oldEquip legendär war und kein _fromInv hat (sollte nicht passieren),
-                        // müssen wir es rekonstruieren
                         if(oldEquip.uid) {
                              const { _fromInv, ...rest } = oldEquip;
                              this.state.inventory.push({ ...rest, count: 1, isNew: true });
@@ -458,11 +571,10 @@ Object.assign(Game, {
                 
                 this.state.inventory.splice(index, 1);
                 
-                // [FIX] Speichere das ganze Inventar-Item im Slot (enthält Stats)
                 const equipObject = { ...itemDef, ...invItem, _fromInv: invItem, count: 1 }; 
                 this.state.equip[slot] = equipObject;
                 
-                const displayName = invItem.name || itemDef.name; // Nimm Custom Namen zuerst
+                const displayName = invItem.name || itemDef.name;
                 UI.log(`Ausgerüstet: ${displayName}`, "text-yellow-400"); 
                 
                 this.recalcStats();
@@ -527,61 +639,6 @@ Object.assign(Game, {
         }
         if(typeof UI.renderChar === 'function') UI.renderChar();
     },
-
-    // [NEU] Wichtig für Minigame Loot!
-    gambleLegendaryLoot: function(score) {
-        const roll = Math.random() * 100;
-        const chance = score * 2; 
-        
-        if(roll > chance) {
-            UI.log(`Kein Glück (${Math.floor(roll)} > ${chance})`, "text-gray-500");
-            this.state.caps += score;
-            return;
-        }
-
-        const bases = ['pistol', 'rifle', 'shotgun', 'machete', 'super_sledge'];
-        const baseId = bases[Math.floor(Math.random() * bases.length)];
-        const baseItem = this.items[baseId];
-
-        if(!baseItem) return;
-
-        const prefixes = [
-            { name: "Brutale", dmgMod: 1.3, desc: "+30% Schaden" },
-            { name: "Doppelschuss", dmgMod: 1.5, ammoMod: 2, desc: "Doppelter Schaden, doppelter Verbrauch" },
-            { name: "Vampir", hpDrain: 5, desc: "Heilt 5 TP pro Treffer" },
-            { name: "Atomare", dmgMod: 1.2, rads: 5, desc: "Verstrahlt den Gegner" },
-            { name: "Leichte", weightMod: 0.5, desc: "50% weniger Gewicht" }
-        ];
-
-        const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-        
-        // [WICHTIG] Das Legendäre Item bauen und Werte festschreiben
-        const legendaryItem = JSON.parse(JSON.stringify(baseItem));
-        
-        legendaryItem.id = baseId; 
-        legendaryItem.uid = 'LEGEND_' + Date.now(); 
-        legendaryItem.name = `${prefix.name} ${baseItem.name} ★`;
-        legendaryItem.isLegendary = true;
-        legendaryItem.desc = prefix.desc;
-        legendaryItem.value = (baseItem.value || 10) * 5;
-        
-        if(prefix.dmgMod) legendaryItem.dmg = Math.floor((baseItem.dmg || 1) * prefix.dmgMod);
-        else legendaryItem.dmg = baseItem.dmg;
-
-        legendaryItem.ammoType = baseItem.ammoType; 
-        if(prefix.ammoMod) legendaryItem.ammoCost = (baseItem.ammoCost || 1) * prefix.ammoMod;
-        else legendaryItem.ammoCost = baseItem.ammoCost || 1;
-
-        if(prefix.hpDrain) legendaryItem.effectHeal = prefix.hpDrain;
-        if(prefix.rads) legendaryItem.effectRad = prefix.rads;
-        if(prefix.weightMod) legendaryItem.weight = (baseItem.weight || 1) * prefix.weightMod;
-
-        // Custom Item hinzufügen
-        this.addToInventory(legendaryItem, 1);
-        
-        UI.log("LEGENDÄRES ITEM ERHALTEN!", "text-yellow-400 font-bold animate-pulse");
-        if(typeof UI.showItemOverlay === 'function') UI.showItemOverlay(legendaryItem);
-    },
     
     updateWeight: function() {
         if(!this.state.player) return;
@@ -593,6 +650,10 @@ Object.assign(Game, {
             });
         }
         this.state.player.carryWeight = Math.floor(w * 10) / 10;
+    },
+    
+    getItemCount: function(id) {
+        return this.state.inventory.reduce((acc, i) => i.id === id ? acc + i.count : acc, 0);
     }
 });
 
