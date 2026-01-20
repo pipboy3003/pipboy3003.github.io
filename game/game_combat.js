@@ -1,35 +1,4 @@
-// [TIMESTAMP] 2026-01-20 12:15:00 - game_combat.js - Fixed Function Scope
-
-// Helper Funktion für globale Nutzung (Schmied, Inventar, Kampf)
-Object.assign(Game, {
-    // Berechnet Stats inkl. Mods und Instanz-Werten
-    getWeaponStats: function(item) {
-        if(!item) return { dmg: 1, ammoType: null, ammoCost: 0, name: "Nichts" };
-        
-        const dbItem = this.items[item.id] || {};
-        
-        // 1. Basis Werte (Instanz > DB > Default)
-        let stats = {
-            dmg: (item.dmg !== undefined) ? item.dmg : (item.baseDmg || dbItem.baseDmg || dbItem.dmg || 1),
-            ammoType: item.ammoType || dbItem.ammo || null, 
-            ammoCost: (item.ammoCost !== undefined) ? item.ammoCost : (dbItem.ammoCost || 1),
-            name: item.name || dbItem.name
-        };
-
-        // 2. MODS Checken
-        if (item.mods && Array.isArray(item.mods)) {
-            item.mods.forEach(modId => {
-                const modDef = this.items[modId];
-                if (modDef && modDef.stats) {
-                    if (modDef.stats.dmg) stats.dmg += modDef.stats.dmg;
-                    if (modDef.stats.ammoCost) stats.ammoCost += modDef.stats.ammoCost;
-                }
-            });
-        }
-
-        return stats;
-    }
-});
+// [TIMESTAMP] 2026-01-20 14:00:00 - game_combat.js - Fixed Scope & Deps
 
 window.Combat = {
     enemy: null,
@@ -103,7 +72,7 @@ window.Combat = {
 
     confirmSelection: function() {
         if(this.turn === 'player') {
-            this.playerAttack(); // [FIX] Ruft jetzt die interne Funktion auf
+            this.playerAttack();
         }
     },
 
@@ -179,7 +148,6 @@ window.Combat = {
         return Math.min(95, Math.floor(chance));
     },
 
-    // [MOVED BACK TO COMBAT OBJECT]
     playerAttack: function() {
         if(this.turn !== 'player') return;
 
@@ -259,10 +227,9 @@ window.Combat = {
 
         this.turn = 'enemy';
         this.render(); 
-        setTimeout(() => this.enemyTurn(), 1000); // [FIX] Ruft jetzt korrekt this.enemyTurn auf
+        setTimeout(() => this.enemyTurn(), 1000);
     },
 
-    // [MOVED BACK TO COMBAT OBJECT]
     enemyTurn: function() {
         if(!this.enemy || this.enemy.hp <= 0) return;
         
@@ -317,63 +284,5 @@ window.Combat = {
         this.turn = 'player';
         UI.update(); 
         this.render();
-    },
-
-    win: function() {
-        this.log(`${this.enemy.name} besiegt!`, 'text-yellow-400 font-bold');
-        
-        const xpBase = Array.isArray(this.enemy.xp) ? (this.enemy.xp[0] + Math.floor(Math.random()*(this.enemy.xp[1]-this.enemy.xp[0]))) : this.enemy.xp;
-        Game.gainExp(xpBase);
-        
-        if(this.enemy.loot > 0) {
-            let caps = Math.floor(Math.random() * this.enemy.loot) + 1;
-            Game.state.caps += caps;
-            this.log(`Gefunden: ${caps} Kronkorken`, 'text-yellow-200');
-        }
-        
-        if(this.enemy.drops) {
-            this.enemy.drops.forEach(d => {
-                if(Math.random() < d.c) {
-                    Game.addToInventory(d.id, 1);
-                }
-            });
-        }
-
-        let mobId = null;
-        if(Game.monsters) {
-            for(let k in Game.monsters) {
-                if(Game.monsters[k].name === this.enemy.name.replace('Legendäre ', '')) {
-                    mobId = k;
-                    break;
-                }
-            }
-        }
-        if(mobId && typeof Game.updateQuestProgress === 'function') {
-            Game.updateQuestProgress('kill', mobId, 1);
-        }
-
-        if(Game.state.kills === undefined) Game.state.kills = 0;
-        Game.state.kills++;
-        Game.saveGame();
-
-        setTimeout(() => {
-            Game.state.enemy = null;
-            UI.switchView('map');
-        }, 1500);
-    },
-
-    flee: function() {
-        if(Math.random() < 0.5) {
-            this.log("Flucht gelungen!", 'text-green-400');
-            this.triggerFeedback('dodge'); 
-            setTimeout(() => {
-                Game.state.enemy = null;
-                UI.switchView('map');
-            }, 800);
-        } else {
-            this.log("Flucht fehlgeschlagen!", 'text-red-500');
-            this.turn = 'enemy';
-            setTimeout(() => this.enemyTurn(), 800);
-        }
     }
 };
