@@ -1,4 +1,4 @@
-// [2026-01-19 12:30:00] game_combat.js - VATS Logic + Legendary Stats Fix
+// [TIMESTAMP] 2026-01-20 12:00:00 - game_combat.js - VATS Logic + Mod Support
 
 window.Combat = {
     enemy: null,
@@ -72,7 +72,7 @@ window.Combat = {
 
     confirmSelection: function() {
         if(this.turn === 'player') {
-            this.playerAttack();
+            Game.playerAttack();
         }
     },
 
@@ -130,21 +130,6 @@ window.Combat = {
         return wpn;
     },
 
-    // [NEU] Helper: Stats priorisieren (Instanz > DB)
-    getWeaponStats: function(item) {
-        const dbItem = Game.items[item.id] || {};
-        
-        // Werte priorisieren: Item-Instanz > Datenbank > Default
-        // WICHTIG: item.baseDmg aus alten Versionen wird auch berücksichtigt
-        const dmg = (item.dmg !== undefined) ? item.dmg : (item.baseDmg || dbItem.dmg || 2);
-        
-        const ammoType = item.ammoType || dbItem.ammoType || null;
-        // Munitionskosten: Standard 1, außer es steht anders im Item
-        const ammoCost = (item.ammoCost !== undefined) ? item.ammoCost : (dbItem.ammoCost || 1);
-        
-        return { dmg, ammoType, ammoCost };
-    },
-
     calculateHitChance: function(partIndex) {
         const part = this.bodyParts[partIndex];
         const perception = Game.getStat('PER');
@@ -161,40 +146,64 @@ window.Combat = {
         if (!isRanged) chance += 20; 
 
         return Math.min(95, Math.floor(chance));
+    }
+};
+
+// [GAME EXTENSIONS FOR COMBAT & MODS]
+Object.assign(Game, {
+    
+    // [MOD SYSTEM UPDATE] Berechnet Stats inkl. Mods
+    getWeaponStats: function(item) {
+        const dbItem = this.items[item.id] || {};
+        
+        // 1. Basis Werte (Instanz > DB > Default)
+        let stats = {
+            dmg: (item.dmg !== undefined) ? item.dmg : (item.baseDmg || dbItem.baseDmg || 2),
+            ammoType: item.ammoType || dbItem.ammo || null, // Hier korrigiert: data_items nutzt 'ammo', nicht 'ammoType'
+            ammoCost: (item.ammoCost !== undefined) ? item.ammoCost : (dbItem.ammoCost || 1),
+            name: item.name || dbItem.name
+        };
+
+        // 2. MODS Checken
+        if (item.mods && Array.isArray(item.mods)) {
+            item.mods.forEach(modId => {
+                const modDef = this.items[modId];
+                if (modDef && modDef.stats) {
+                    if (modDef.stats.dmg) stats.dmg += modDef.stats.dmg;
+                    if (modDef.stats.ammoCost) stats.ammoCost += modDef.stats.ammoCost;
+                }
+            });
+        }
+
+        return stats;
     },
 
     playerAttack: function() {
-        if(this.turn !== 'player') return;
+        if(Combat.turn !== 'player') return;
 
-        const partIndex = this.selectedPart;
-        const part = this.bodyParts[partIndex];
-        const hitChance = this.calculateHitChance(partIndex);
+        const partIndex = Combat.selectedPart;
+        const part = Combat.bodyParts[partIndex];
+        const hitChance = Combat.calculateHitChance(partIndex);
         
-        let wpn = this.getSafeWeapon();
-        const stats = this.getWeaponStats(wpn); // [NEU] Stats laden
+        let wpn = Combat.getSafeWeapon();
+        const stats = this.getWeaponStats(wpn); // [NEU] Stats inkl. Mods laden
         const wId = wpn.id.toLowerCase();
 
-        // Munitions-Check mit neuen Stats
-        if(stats.ammoType && wId !== 'alien_blaster') { 
+        // Ammo Check (Wichtig: Prüfen ob Waffe Munition braucht -> usesAmmo)
+        const dbItem = this.items[wpn.id] || {};
+        const usesAmmo = (wpn.usesAmmo !== undefined) ? wpn.usesAmmo : dbItem.usesAmmo;
+
+        if(usesAmmo && stats.ammoType && wId !== 'alien_blaster') { 
              const hasAmmo = Game.removeFromInventory(stats.ammoType, stats.ammoCost);
              if(!hasAmmo) {
-                 if(typeof UI.showCombatEffect === 'function') {
-                     UI.showCombatEffect("* KLICK *", "MUNITION LEER!", "red", 2300);
-                 }
-                 this.log("WAFFE LEER! *KLICK*", "text-red-500 font-bold text-xl");
-                 setTimeout(() => {
-                     if (typeof Game.switchToBestMelee === 'function') {
-                         Game.switchToBestMelee();
-                     } else {
-                         this.log("Manuell wechseln!", "text-yellow-400");
-                     }
-                 }, 800);
+                 if(typeof UI.showCombatEffect === 'function') UI.showCombatEffect("* KLICK *", "LEER!", "red", 1000);
+                 Combat.log("WAFFE LEER! *KLICK*", "text-red-500 font-bold");
+                 setTimeout(() => this.switchToBestMelee(), 800);
                  return; 
              }
         }
 
         const roll = Math.random() * 100;
-        
         const screen = document.getElementById('game-screen');
         if(screen) {
             screen.classList.add('shake-anim'); 
@@ -202,48 +211,40 @@ window.Combat = {
         }
 
         if(roll <= hitChance) {
-            // [NEU] Schaden basierend auf getWeaponStats
-            let dmg = stats.dmg;
+            let dmg = stats.dmg; // Schaden inkl. Mods
+            
+            // Multiplikatoren (Perks etc)
             if(wpn.props && wpn.props.dmgMult) dmg *= wpn.props.dmgMult;
-
-            const isRanged = stats.ammoType !== null; // Wenn Munition, dann Range
-
-            if(!isRanged || wpn.id === 'rifle_butt') {
-                dmg += Math.floor(Game.getStat('STR') / 2);
-                const sluggerLvl = Game.getPerkLevel('slugger');
-                if(sluggerLvl > 0) dmg = Math.floor(dmg * (1 + (sluggerLvl * 0.1)));
-            } else {
-                const gunLvl = Game.getPerkLevel('gunslinger');
+            
+            // Skill Boni
+            if(!usesAmmo) dmg += Math.floor(this.getStat('STR')/2); // Melee Bonus
+            else {
+                // Ranged Bonus (optional)
+                const gunLvl = this.getPerkLevel('gunslinger');
                 if(gunLvl > 0) dmg = Math.floor(dmg * (1 + (gunLvl * 0.1)));
             }
-
+            
             dmg *= part.dmgMod;
 
+            // Crit Logic
             let isCrit = false;
-            let critChance = Game.state.critChance || 5; 
-            
-            if(Math.random() * 100 <= critChance) {
-                dmg *= 2;
-                isCrit = true;
-                this.log(">> KRITISCHER TREFFER! <<", "text-yellow-400 font-bold animate-pulse");
-                if(typeof UI.showCombatEffect === 'function') UI.showCombatEffect("CRITICAL!", "DOPPELTER SCHADEN", "yellow", 1500);
-                
-                if (Game.getPerkLevel('mysterious_stranger') > 0) {
-                    this.log("Der Fremde hilft dir...", "text-gray-400 text-xs");
-                }
+            if(Math.random()*100 <= (this.state.critChance || 5)) {
+                dmg *= 2; isCrit = true;
+                Combat.log(">> CRIT! <<", "text-yellow-400 font-bold animate-pulse");
+                if (this.getPerkLevel('mysterious_stranger') > 0) Combat.log("Der Fremde hilft...", "text-gray-400 text-xs");
             }
 
             dmg = Math.floor(dmg);
-            this.enemy.hp -= dmg;
+            Combat.enemy.hp -= dmg;
             
-            // Effekte (Vampir, etc)
+            // Item-Effekte (z.B. Vampir)
             if(wpn.effectHeal) {
-                Game.state.hp = Math.min(Game.getMaxHp(), Game.state.hp + wpn.effectHeal);
-                this.log(`Vampir: +${wpn.effectHeal} HP`, "text-green-400");
+                this.state.hp = Math.min(this.getMaxHp(), this.state.hp + wpn.effectHeal);
+                Combat.log(`Vampir: +${wpn.effectHeal} HP`, "text-green-400");
             }
-            
-            this.log(`Treffer: ${part.name} für ${dmg} Schaden!`, 'text-green-400 font-bold');
-            this.triggerFeedback(isCrit ? 'crit' : 'hit', dmg);
+
+            Combat.log(`Treffer: ${part.name} für ${dmg} Schaden`, 'text-green-400 font-bold');
+            Combat.triggerFeedback(isCrit ? 'crit' : 'hit', dmg);
 
             const el = document.getElementById('enemy-img'); 
             if(el) {
@@ -251,139 +252,70 @@ window.Combat = {
                 setTimeout(() => el.classList.remove('animate-pulse'), 200);
             }
 
-            if(this.enemy.hp <= 0) {
-                this.win();
-                return;
-            }
+            if(Combat.enemy.hp <= 0) { Combat.win(); return; }
         } else {
-            this.log("Daneben!", 'text-gray-500');
-            this.triggerFeedback('miss');
+            Combat.log("Daneben!", 'text-gray-500');
+            Combat.triggerFeedback('miss');
         }
 
-        this.turn = 'enemy';
-        this.render(); 
-        setTimeout(() => this.enemyTurn(), 1000);
+        Combat.turn = 'enemy';
+        Combat.render(); 
+        setTimeout(() => Combat.enemyTurn(), 1000);
     },
 
     enemyTurn: function() {
-        if(!this.enemy || this.enemy.hp <= 0) return;
+        if(!Combat.enemy || Combat.enemy.hp <= 0) return;
         
-        const agi = Game.getStat('AGI');
+        const agi = this.getStat('AGI');
         const enemyHitChance = 85 - (agi * 3); 
-        
         const roll = Math.random() * 100;
 
         if(roll <= enemyHitChance) {
-            let dmg = this.enemy.dmg;
+            let dmg = Combat.enemy.dmg;
             let armor = 0;
             const slots = ['body', 'head', 'legs', 'feet', 'arms'];
             slots.forEach(s => {
-                if(Game.state.equip[s]) {
-                    if (Game.state.equip[s].def) armor += Game.state.equip[s].def;
-                    if (Game.state.equip[s].props && Game.state.equip[s].props.bonus && Game.state.equip[s].props.bonus.DEF) {
-                        armor += Game.state.equip[s].props.bonus.DEF;
+                if(this.state.equip[s]) {
+                    if (this.state.equip[s].def) armor += this.state.equip[s].def;
+                    if (this.state.equip[s].props && this.state.equip[s].props.bonus && this.state.equip[s].props.bonus.DEF) {
+                        armor += this.state.equip[s].props.bonus.DEF;
                     }
                 }
             });
             
             let dmgTaken = Math.max(1, dmg - Math.floor(armor / 2));
-            Game.state.hp -= dmgTaken;
-            this.log(`${this.enemy.name} trifft dich: -${dmgTaken} HP`, 'text-red-500 font-bold');
-            this.triggerFeedback('damage', dmgTaken);
+            this.state.hp -= dmgTaken;
+            Combat.log(`${Combat.enemy.name} trifft dich: -${dmgTaken} HP`, 'text-red-500 font-bold');
+            Combat.triggerFeedback('damage', dmgTaken);
 
-            if(Game.state.hp <= 0) {
-                Game.state.hp = 0;
-                Game.state.isGameOver = true;
+            if(this.state.hp <= 0) {
+                this.state.hp = 0;
+                this.state.isGameOver = true;
                 
-                console.log("☠️ PERMADEATH: Player died. Initiating deletion...");
+                console.log("☠️ PERMADEATH: Player died.");
                 
-                const slotToDelete = Game.state.saveSlot;
-                
-                if(typeof Network !== 'undefined' && Network.active) {
-                    Network.registerDeath(Game.state);
-                }
+                const slotToDelete = this.state.saveSlot;
+                if(typeof Network !== 'undefined' && Network.active) Network.registerDeath(this.state);
                 
                 if (typeof Network !== 'undefined' && slotToDelete !== undefined && slotToDelete !== null && slotToDelete !== -1) {
-                    Network.deleteSlot(slotToDelete)
-                        .then(() => console.log(`✅ Slot ${slotToDelete} permanent entfernt.`))
-                        .catch(err => console.error("❌ Firebase Delete Error:", err));
+                    Network.deleteSlot(slotToDelete).catch(err => console.error(err));
                 }
                 
-                if(typeof UI !== 'undefined' && UI.showGameOver) {
-                    UI.showGameOver();
-                }
+                if(typeof UI !== 'undefined' && UI.showGameOver) UI.showGameOver();
                 
-                Game.state.saveSlot = -1; 
+                this.state.saveSlot = -1; 
                 setTimeout(() => { 
-                    Game.state = null; 
+                    this.state = null; 
                     localStorage.removeItem('pipboy_save');
                 }, 1000);
                 return;
             }
         } else {
-            this.log(`${this.enemy.name} verfehlt dich!`, 'text-blue-300');
-            this.triggerFeedback('dodge');
+            Combat.log(`${Combat.enemy.name} verfehlt dich!`, 'text-blue-300');
+            Combat.triggerFeedback('dodge');
         }
-        this.turn = 'player';
+        Combat.turn = 'player';
         UI.update(); 
-        this.render();
-    },
-
-    win: function() {
-        this.log(`${this.enemy.name} besiegt!`, 'text-yellow-400 font-bold');
-        
-        const xpBase = Array.isArray(this.enemy.xp) ? (this.enemy.xp[0] + Math.floor(Math.random()*(this.enemy.xp[1]-this.enemy.xp[0]))) : this.enemy.xp;
-        Game.gainExp(xpBase);
-        
-        if(this.enemy.loot > 0) {
-            let caps = Math.floor(Math.random() * this.enemy.loot) + 1;
-            Game.state.caps += caps;
-            this.log(`Gefunden: ${caps} Kronkorken`, 'text-yellow-200');
-        }
-        
-        if(this.enemy.drops) {
-            this.enemy.drops.forEach(d => {
-                if(Math.random() < d.c) {
-                    Game.addToInventory(d.id, 1);
-                }
-            });
-        }
-
-        let mobId = null;
-        if(Game.monsters) {
-            for(let k in Game.monsters) {
-                if(Game.monsters[k].name === this.enemy.name.replace('Legendäre ', '')) {
-                    mobId = k;
-                    break;
-                }
-            }
-        }
-        if(mobId && typeof Game.updateQuestProgress === 'function') {
-            Game.updateQuestProgress('kill', mobId, 1);
-        }
-
-        if(Game.state.kills === undefined) Game.state.kills = 0;
-        Game.state.kills++;
-        Game.saveGame();
-
-        setTimeout(() => {
-            Game.state.enemy = null;
-            UI.switchView('map');
-        }, 1500);
-    },
-
-    flee: function() {
-        if(Math.random() < 0.5) {
-            this.log("Flucht gelungen!", 'text-green-400');
-            this.triggerFeedback('dodge'); 
-            setTimeout(() => {
-                Game.state.enemy = null;
-                UI.switchView('map');
-            }, 800);
-        } else {
-            this.log("Flucht fehlgeschlagen!", 'text-red-500');
-            this.turn = 'enemy';
-            setTimeout(() => this.enemyTurn(), 800);
-        }
+        Combat.render();
     }
-};
+});
