@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-20 22:00:00 - data_items.js - Added Rusty Weapons & Mods
+// [TIMESTAMP] 2026-01-22 15:00:00 - data_items.js - Consistency Fix
 
 if(typeof window.GameData === 'undefined') window.GameData = {};
 if(typeof window.GameData.items === 'undefined') window.GameData.items = {}; 
@@ -94,23 +94,24 @@ Object.assign(window.GameData.items, {
     // ==============================
     ammo: { name: "Munition", type: "ammo", cost: 2, desc: "Patronen.", weight: 0.05 },
 
+    // [MOD] Added ammo property for consistency
     pistol_10mm: { 
         name: "10mm Pistole", type: "weapon", slot: "weapon", baseDmg: 12, cost: 120, weight: 3.5, desc: "Verlässlich.", usesAmmo: true,
-        modSlots: ["receiver", "grip"] 
+        ammo: "10mm", ammoCost: 1, modSlots: ["receiver", "grip"] 
     },
     hunting_rifle: { 
         name: "Jagdgewehr", type: "weapon", slot: "weapon", baseDmg: 20, cost: 200, weight: 7, desc: "Präzise.", usesAmmo: true,
-        modSlots: ["receiver", "barrel", "stock"]
+        ammo: "308", ammoCost: 1, modSlots: ["receiver", "barrel", "stock"]
     },
     combat_shotgun: { 
         name: "Kampfflinte", type: "weapon", slot: "weapon", baseDmg: 38, cost: 600, weight: 5.5, desc: "Magazin-geladen.", usesAmmo: true,
-        modSlots: ["receiver", "barrel"]
+        ammo: "shell", ammoCost: 1, modSlots: ["receiver", "barrel"]
     },
     
-    pipe_pistol: { name: "Rohrpistole", type: "weapon", slot: "weapon", baseDmg: 5, cost: 15, desc: "Selbstgebaut.", usesAmmo: true },
-    shotgun: { name: "Doppelflinte", type: "weapon", slot: "weapon", baseDmg: 30, cost: 350, desc: "Zwei Läufe.", usesAmmo: true },
-    minigun: { name: "Minigun", type: "weapon", slot: "weapon", baseDmg: 15, cost: 1500, desc: "Extremes Schnellfeuer.", usesAmmo: true },
-    laser_pistol: { name: "Laserpistole", type: "weapon", slot: "weapon", baseDmg: 22, cost: 400, desc: "Vorsicht, heiß.", usesAmmo: true },
+    pipe_pistol: { name: "Rohrpistole", type: "weapon", slot: "weapon", baseDmg: 5, cost: 15, desc: "Selbstgebaut.", usesAmmo: true, ammo: "10mm", ammoCost: 1 },
+    shotgun: { name: "Doppelflinte", type: "weapon", slot: "weapon", baseDmg: 30, cost: 350, desc: "Zwei Läufe.", usesAmmo: true, ammo: "shell", ammoCost: 1 },
+    minigun: { name: "Minigun", type: "weapon", slot: "weapon", baseDmg: 15, cost: 1500, desc: "Extremes Schnellfeuer.", usesAmmo: true, ammo: "10mm", ammoCost: 1 },
+    laser_pistol: { name: "Laserpistole", type: "weapon", slot: "weapon", baseDmg: 22, cost: 400, desc: "Vorsicht, heiß.", usesAmmo: true, ammo: "10mm", ammoCost: 1 }, // Platzhalter Ammo
     alien_blaster: { name: "Alien Blaster", type: "weapon", slot: "weapon", baseDmg: 80, cost: 3000, desc: "Extraterrestrisch.", usesAmmo: false },
 
     // ====================
