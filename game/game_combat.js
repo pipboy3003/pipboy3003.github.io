@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-20 21:30:00 - game_combat.js - Fixed 'this' Context & Win Crash
+// [TIMESTAMP] 2026-01-20 22:00:00 - game_combat.js - Fixed 'this' Context & Win Crash
 
 window.Combat = {
     enemy: null,
@@ -156,8 +156,7 @@ window.Combat = {
         const hitChance = Combat.calculateHitChance(partIndex);
         
         let wpn = Combat.getSafeWeapon();
-        // Fallback falls getWeaponStats noch nicht bereit
-        const stats = (Game.getWeaponStats) ? Game.getWeaponStats(wpn) : { dmg: wpn.baseDmg || 2, ammoCost: 1, ammoType: null };
+        const stats = Game.getWeaponStats(wpn); 
         const wId = wpn.id.toLowerCase();
 
         // Ammo Check
@@ -220,7 +219,6 @@ window.Combat = {
                 setTimeout(() => el.classList.remove('animate-pulse'), 200);
             }
 
-            // CRASH FIX: Combat.win() statt this.win()
             if(Combat.enemy.hp <= 0) { 
                 Combat.win(); 
                 return; 
