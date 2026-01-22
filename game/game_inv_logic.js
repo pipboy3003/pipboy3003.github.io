@@ -1,25 +1,24 @@
-// [TIMESTAMP] 2026-01-22 13:00:00 - game_inv_logic.js - Crash Proofing
+// [TIMESTAMP] 2026-01-20 22:30:00 - game_inv_logic.js - Syntax Check Passed
 
 Object.assign(Game, {
 
-    // [FIX] Robustere Stats-Funktion
+    // Helper für Stats (Crash-sicher)
     getWeaponStats: function(item) {
-        // Fallback falls Item null/undefined
         if(!item) return { dmg: 1, ammoType: null, ammoCost: 0, name: "Unbekannt" };
         
-        // Hole DB Definition oder leeres Objekt
+        // Items DB Check
         const dbItem = (this.items && this.items[item.id]) ? this.items[item.id] : {};
         
-        // Werte priorisieren: Instanz > DB > Default
+        // Werte berechnen
         let stats = {
             dmg: (item.dmg !== undefined) ? item.dmg : (item.baseDmg || dbItem.baseDmg || dbItem.dmg || 1),
             ammoType: item.ammoType || dbItem.ammo || null, 
             ammoCost: (item.ammoCost !== undefined) ? item.ammoCost : (dbItem.ammoCost || 1),
-            name: item.name || dbItem.name || "Unbekanntes Item"
+            name: item.name || dbItem.name || "Item"
         };
 
-        // Mods berechnen (nur wenn Array existiert)
-        if (item.mods && Array.isArray(item.mods)) {
+        // Mods addieren
+        if (item.mods && Array.isArray(item.mods) && this.items) {
             item.mods.forEach(modId => {
                 const modDef = this.items[modId];
                 if (modDef && modDef.stats) {
@@ -117,8 +116,8 @@ Object.assign(Game, {
         }
 
         if (added) {
-            const itemDef = this.items[itemId];
-            let name = (fullItemObj && fullItemObj.name) ? fullItemObj.name : ((props && props.name) ? props.name : (itemDef ? itemDef.name : itemId));
+            const itemDef = (this.items && this.items[itemId]) ? this.items[itemId] : {name: itemId};
+            let name = (fullItemObj && fullItemObj.name) ? fullItemObj.name : ((props && props.name) ? props.name : itemDef.name);
             const color = (props && props.color) ? props.color.split(' ')[0] : "text-green-400";
             
             if(itemId !== 'ammo' || count < 10) {
@@ -143,8 +142,10 @@ Object.assign(Game, {
     }, 
 
     restoreWeapon: function(invIndex) {
+        if(!this.state.inventory[invIndex]) return false;
         const item = this.state.inventory[invIndex];
-        if(!item || !item.id.startsWith('rusty_')) {
+        
+        if(!item.id.startsWith('rusty_')) {
             UI.log("Das ist keine rostige Waffe.", "text-red-500");
             return false;
         }
@@ -157,6 +158,7 @@ Object.assign(Game, {
         this.removeFromInventory('weapon_oil', 1);
         
         const cleanId = item.id.replace('rusty_', '');
+        // Mapping (angepasst an data_items.js)
         let targetId = cleanId;
         if(cleanId === 'pistol') targetId = 'pistol_10mm';
         if(cleanId === 'rifle') targetId = 'hunting_rifle';
@@ -177,6 +179,8 @@ Object.assign(Game, {
         
         const wDef = this.items[weapon.id];
         const mDef = this.items[mod.id];
+
+        if(!wDef || !mDef) return false;
 
         if(mDef.target !== weapon.id) {
             UI.log("Dieser Mod passt nicht auf diese Waffe.", "text-red-500");
@@ -225,7 +229,7 @@ Object.assign(Game, {
 
         const bases = ['pistol_10mm', 'hunting_rifle', 'combat_shotgun', 'machete', 'super_sledge'];
         const baseId = bases[Math.floor(Math.random() * bases.length)];
-        const baseItem = this.items[baseId];
+        const baseItem = (this.items && this.items[baseId]) ? this.items[baseId] : null;
 
         if(!baseItem) return;
 
@@ -248,7 +252,7 @@ Object.assign(Game, {
         legendaryItem.desc = prefix.desc;
         legendaryItem.value = (baseItem.value || 10) * 5;
         
-        const baseDmg = baseItem.baseDmg || 2;
+        const baseDmg = baseItem.baseDmg || baseItem.dmg || 2;
         if(prefix.dmgMod) legendaryItem.dmg = Math.floor(baseDmg * prefix.dmgMod);
         else legendaryItem.dmg = baseDmg;
 
@@ -297,8 +301,8 @@ Object.assign(Game, {
             return;
         }
 
-        const def = this.items[item.id];
-        let name = (item.props && item.props.name) ? item.props.name : (item.name || def.name);
+        const def = (this.items && this.items[item.id]) ? this.items[item.id] : {};
+        let name = (item.props && item.props.name) ? item.props.name : (item.name || def.name || item.id);
 
         this.state.inventory.splice(invIndex, 1);
         if(item.id === 'ammo') this.syncAmmo();
@@ -329,7 +333,7 @@ Object.assign(Game, {
             return;
         }
         
-        const def = this.items[item.id];
+        const def = (this.items && this.items[item.id]) ? this.items[item.id] : null;
         if(!def) return;
         
         let name = (item.props && item.props.name) ? item.props.name : (item.name || def.name);
@@ -378,7 +382,10 @@ Object.assign(Game, {
         for(let reqId in recipe.req) {
             const countNeeded = recipe.req[reqId];
             const invItem = this.state.inventory.find(i => i.id === reqId);
-            if (!invItem || invItem.count < countNeeded) { UI.log(`Material fehlt: ${this.items[reqId].name}`, "text-red-500"); return; }
+            if (!invItem || invItem.count < countNeeded) { 
+                const name = (this.items && this.items[reqId]) ? this.items[reqId].name : reqId;
+                UI.log(`Material fehlt: ${name}`, "text-red-500"); return; 
+            }
         }
         for(let reqId in recipe.req) {
             const countNeeded = recipe.req[reqId];
@@ -393,7 +400,8 @@ Object.assign(Game, {
             this.addToInventory(recipe.out, recipe.count); 
         }
         
-        UI.log(`Hergestellt: ${recipe.count}x ${recipe.out === "AMMO" ? "Munition" : this.items[recipe.out].name}`, "text-green-400 font-bold");
+        const outName = (recipe.out === "AMMO") ? "Munition" : ((this.items && this.items[recipe.out]) ? this.items[recipe.out].name : recipe.out);
+        UI.log(`Hergestellt: ${recipe.count}x ${outName}`, "text-green-400 font-bold");
 
         if(typeof Game.updateQuestProgress === 'function' && recipe.out !== "AMMO") {
             Game.updateQuestProgress('collect', recipe.out, recipe.count);
@@ -439,11 +447,11 @@ Object.assign(Game, {
         this.state.inventory.push(itemToAdd);
         
         if(slot === 'weapon') {
-            const fists = this.items['fists'] ? { ...this.items['fists'] } : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon' };
+            const fists = (this.items && this.items['fists']) ? { ...this.items['fists'] } : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon' };
             this.state.equip.weapon = fists;
             UI.log(`${item.name || 'Waffe'} abgelegt. Du nutzt nun deine Fäuste.`, "text-yellow-400");
         } else if(slot === 'body') {
-            const suit = this.items['vault_suit'] ? { ...this.items['vault_suit'] } : { id: 'vault_suit', name: 'Vault-Anzug', def: 1, type: 'body' };
+            const suit = (this.items && this.items['vault_suit']) ? { ...this.items['vault_suit'] } : { id: 'vault_suit', name: 'Vault-Anzug', def: 1, type: 'body' };
             this.state.equip.body = suit;
             UI.log(`${item.name || 'Rüstung'} abgelegt. Du trägst wieder deinen Vault-Anzug.`, "text-blue-400");
         } else {
@@ -468,7 +476,7 @@ Object.assign(Game, {
 
         if(index === -1 || !this.state.inventory[index]) return;
         invItem = this.state.inventory[index];
-        const itemDef = this.items[invItem.id];
+        const itemDef = (this.items && this.items[invItem.id]) ? this.items[invItem.id] : { name: invItem.id };
         
         if (itemDef.type === 'back') {
             const slot = 'back';
@@ -616,7 +624,7 @@ Object.assign(Game, {
             : "Fernkampfwaffe";
 
         if(!this.state.inventory || this.state.inventory.length === 0) {
-            const fists = this.items['fists'] ? { ...this.items['fists'] } : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon' };
+            const fists = (this.items && this.items['fists']) ? { ...this.items['fists'] } : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon' };
             this.state.equip.weapon = fists;
             UI.log("Waffe abgelegt. Nutze Fäuste.", "text-red-500 font-bold");
             if(typeof UI.renderChar === 'function') UI.renderChar();
@@ -628,7 +636,7 @@ Object.assign(Game, {
         let bestIndex = -1;
 
         this.state.inventory.forEach((item, idx) => {
-            const def = this.items[item.id];
+            const def = (this.items && this.items[item.id]) ? this.items[item.id] : null;
             if (!def) return;
 
             const type = def.type ? def.type.toLowerCase() : '';
@@ -636,7 +644,8 @@ Object.assign(Game, {
             const needsAmmo = (item.ammoType || def.ammo) && (item.ammoType || def.ammo) !== 'none';
 
             if (isWeaponType && !needsAmmo) {
-                let dmg = Game.getWeaponStats(item).dmg;
+                // Fallback falls getWeaponStats fehlt
+                let dmg = (typeof Game.getWeaponStats === 'function') ? Game.getWeaponStats(item).dmg : (def.dmg || 0);
                 if (item.props && item.props.dmgMult) dmg *= item.props.dmgMult;
                 
                 if (dmg > bestDmg) {
@@ -649,10 +658,10 @@ Object.assign(Game, {
 
         if (bestWeapon) {
             this.useItem(bestIndex); 
-            const newName = bestWeapon.name || bestWeapon.props?.name || this.items[bestWeapon.id].name;
+            const newName = bestWeapon.name || bestWeapon.props?.name || ((this.items && this.items[bestWeapon.id]) ? this.items[bestWeapon.id].name : bestWeapon.id);
             UI.log(`${newName} wurde statt ${oldName} angelegt (Munition leer)`, "text-yellow-400 blink-red");
         } else {
-            const fists = this.items['fists'] ? { ...this.items['fists'] } : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon' };
+            const fists = (this.items && this.items['fists']) ? { ...this.items['fists'] } : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon' };
             this.state.equip.weapon = fists;
             UI.log("Keine Nahkampfwaffe gefunden! Du kämpfst mit Fäusten!", "text-red-500");
         }
@@ -664,7 +673,8 @@ Object.assign(Game, {
         let w = 0;
         if(this.state.inventory) {
             this.state.inventory.forEach(i => {
-                const weight = (i.weight !== undefined) ? i.weight : (this.items[i.id] ? this.items[i.id].weight : 0);
+                const itemDef = (this.items && this.items[i.id]) ? this.items[i.id] : null;
+                const weight = (i.weight !== undefined) ? i.weight : (itemDef ? itemDef.weight : 0);
                 w += weight * (i.count || 1);
             });
         }
