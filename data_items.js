@@ -1,9 +1,65 @@
-// [TIMESTAMP] 2026-01-22 15:00:00 - data_items.js - Consistency Fix
+// [TIMESTAMP] 2026-01-22 20:00:00 - data_items.js - Full Merge (Original + Smithy)
 
 if(typeof window.GameData === 'undefined') window.GameData = {};
 if(typeof window.GameData.items === 'undefined') window.GameData.items = {}; 
 
 Object.assign(window.GameData.items, {
+    // ===========================
+    // === NEU: SCHMIEDE ITEMS ===
+    // ===========================
+    
+    // Materialien
+    weapon_oil: { name: "Waffenöl", type: "junk", cost: 15, weight: 0.5, desc: "Wichtig für die Waffenpflege." },
+    cleaning_kit: { name: "Putzzeug", type: "tool", cost: 50, weight: 1, desc: "Zum Restaurieren alter Waffen." },
+    
+    // Rostige Varianten (Start/Händler)
+    rusty_pistol: { 
+        name: "Rostige 10mm Pistole", type: "weapon", slot: "weapon", 
+        baseDmg: 4, cost: 40, weight: 4, ammo: "10mm", ammoCost: 1,
+        desc: "Alt und unzuverlässig. Kann beim Schmied restauriert werden."
+    },
+    rusty_rifle: { 
+        name: "Rostiges Jagdgewehr", type: "weapon", slot: "weapon", 
+        baseDmg: 8, cost: 70, weight: 8, ammo: "308", ammoCost: 1,
+        desc: "Der Lauf ist völlig verdreckt. Restaurierung nötig."
+    },
+    rusty_shotgun: { 
+        name: "Rostige Flinte", type: "weapon", slot: "weapon", 
+        baseDmg: 20, cost: 80, weight: 6, ammo: "shell", ammoCost: 1,
+        desc: "Rost blockiert den Mechanismus. Restaurierung nötig."
+    },
+
+    // Mods
+    "mod_10mm_rec_hard": {
+        name: "Gehärteter Verschluss (10mm)", type: "mod", cost: 80, weight: 0.5,
+        target: "pistol_10mm", slot: "receiver", 
+        stats: { dmg: 3, val: 20 }, desc: "Erhöht den Schaden."
+    },
+    "mod_10mm_grip_comf": {
+        name: "Komfort-Griff (10mm)", type: "mod", cost: 50, weight: 0.2,
+        target: "pistol_10mm", slot: "grip", 
+        stats: { val: 10 }, desc: "Liegt besser in der Hand."
+    },
+    "mod_rifle_bar_long": {
+        name: "Langer Lauf (Jagdgewehr)", type: "mod", cost: 120, weight: 1.5,
+        target: "hunting_rifle", slot: "barrel",
+        stats: { dmg: 5, val: 40 }, desc: "Deutlich mehr Durchschlagskraft."
+    },
+    "mod_shotgun_rec_auto": {
+        name: "Automatik-Verschluss (Flinte)", type: "mod", cost: 200, weight: 1.0,
+        target: "combat_shotgun", slot: "receiver",
+        stats: { dmg: -5, ammoCost: 1, val: 50 }, desc: "Erhöht Feuerrate."
+    },
+    "mod_machete_blade_serrated": {
+        name: "Gezahnte Klinge", type: "mod", cost: 60, weight: 0.2,
+        target: "machete", slot: "blade",
+        stats: { dmg: 4, val: 15 }, desc: "Reißt Wunden."
+    },
+
+    // ==============================
+    // === ORIGINAL DATEN BESTAND ===
+    // ==============================
+
     // --- BLUEPRINTS ---
     bp_ammo: { name: "Bauplan: Munition", type: "blueprint", recipeId: "craft_ammo", cost: 50, desc: "Lerne Munition herzustellen." },
     bp_stimpack: { name: "Bauplan: Stimpack", type: "blueprint", recipeId: "craft_stimpack", cost: 100, desc: "Medizinische Grundlagen." },
@@ -18,7 +74,6 @@ Object.assign(window.GameData.items, {
     // --- CAMP & TOOLS ---
     camp_kit: { name: "Zelt-Bausatz", type: "tool", cost: 150, desc: "Errichtet ein Lager im Ödland.", weight: 5 },
     lockpick: { name: "Haarklammer", type: "tool", cost: 5, desc: "Zum Knacken von Schlössern." },
-    cleaning_kit: { name: "Putzzeug", type: "tool", cost: 50, weight: 1, desc: "Zum Restaurieren alter Waffen." },
 
     // --- MONSTER DROPS & FOOD ---
     meat_roach: { name: "Kakerlakenfleisch", type: "component", cost: 5, desc: "Ekelhaft, aber essbar." },
@@ -50,7 +105,6 @@ Object.assign(window.GameData.items, {
     buffout: { name: "Buffout", type: "consumable", effect: "buff", bonus: { STR: 2, END: 2 }, cost: 40, desc: "Mehr Muckis." },
 
     // --- CRAFTING MATS ---
-    weapon_oil: { name: "Waffenöl", type: "junk", cost: 15, weight: 0.5, desc: "Wichtig für die Waffenpflege." },
     junk_metal: { name: "Schrottmetall", type: "junk", cost: 2, desc: "Rostiges Metall." },
     screws: { name: "Schrauben", type: "component", cost: 5, desc: "Wichtig für Waffenmods." },
     duct_tape: { name: "Klebeband", type: "component", cost: 8, desc: "Hält die Welt zusammen." },
@@ -61,16 +115,8 @@ Object.assign(window.GameData.items, {
     adhesive: { name: "Kleber", type: "component", cost: 15, desc: "Wunderkleber." },
     oil: { name: "Öl", type: "component", cost: 8, desc: "Schmiermittel." },
     springs: { name: "Federn", type: "component", cost: 10, desc: "Spannung!" },
-    plastic: { name: "Plastik", type: "component", cost: 1, weight: 0.05, stackable: true },
     nuclear_mat: { name: "Nukleares Material", type: "rare", cost: 50, desc: "Strahlend." },
     legendary_part: { name: "Legendäres Modul", type: "rare", cost: 500, desc: "Unbekannte Technologie." },
-
-    // ===================================
-    // === ROSTIGE WAFFEN (SHOP ONLY) ===
-    // ===================================
-    rusty_pistol: { name: "Rostige 10mm Pistole", type: "weapon", slot: "weapon", baseDmg: 4, cost: 40, weight: 4, ammo: "10mm", ammoCost: 1, desc: "Alt und unzuverlässig. Kann beim Schmied restauriert werden." },
-    rusty_rifle: { name: "Rostiges Jagdgewehr", type: "weapon", slot: "weapon", baseDmg: 8, cost: 70, weight: 8, ammo: "308", ammoCost: 1, desc: "Der Lauf ist völlig verdreckt. Restaurierung nötig." },
-    rusty_shotgun: { name: "Rostige Flinte", type: "weapon", slot: "weapon", baseDmg: 20, cost: 80, weight: 6, ammo: "shell", ammoCost: 1, desc: "Rost blockiert den Mechanismus. Restaurierung nötig." },
 
     // ========================
     // === NAHKAMPF (Melee) ===
@@ -78,79 +124,68 @@ Object.assign(window.GameData.items, {
     fists: { name: "Fäuste", type: "weapon", slot: "weapon", baseDmg: 2, cost: 0, desc: "Immer dabei.", usesAmmo: false },
     knuckles: { name: "Schlagring", type: "weapon", slot: "weapon", baseDmg: 4, cost: 25, desc: "Eisen für die Fäuste.", usesAmmo: false },
     switchblade: { name: "Springmesser", type: "weapon", slot: "weapon", baseDmg: 5, cost: 15, desc: "Schnell.", usesAmmo: false },
+    rolling_pin: { name: "Nudelholz", type: "weapon", slot: "weapon", baseDmg: 3, cost: 5, desc: "Omas Waffe.", usesAmmo: false },
+    pipe_wrench: { name: "Rohrzange", type: "weapon", slot: "weapon", baseDmg: 6, cost: 30, desc: "Schweres Werkzeug.", usesAmmo: false },
+    police_baton: { name: "Schlagstock", type: "weapon", slot: "weapon", baseDmg: 7, cost: 40, desc: "Polizei-Ausgabe.", usesAmmo: false },
+    knife: { name: "Kampfmesser", type: "weapon", slot: "weapon", baseDmg: 8, cost: 50, desc: "Scharf und tödlich.", usesAmmo: false },
     machete: { 
-        name: "Machete", type: "weapon", slot: "weapon", baseDmg: 12, cost: 80, weight: 2, desc: "Hackt gut.", usesAmmo: false,
+        name: "Machete", type: "weapon", slot: "weapon", baseDmg: 12, cost: 80, desc: "Hackt gut.", usesAmmo: false,
         modSlots: ["blade"]
     },
-    super_sledge: { 
-        name: "Superhammer", type: "weapon", slot: "weapon", baseDmg: 45, cost: 700, weight: 18, desc: "Raketengetrieben.", usesAmmo: false,
-        modSlots: ["head"]
-    },
     baseball_bat: { name: "Baseballschläger", type: "weapon", slot: "weapon", baseDmg: 10, cost: 60, desc: "Aus Holz.", usesAmmo: false },
+    bat_alum: { name: "Alu-Schläger", type: "weapon", slot: "weapon", baseDmg: 13, cost: 120, desc: "Leichter und härter.", usesAmmo: false },
+    bat_spiked: { name: "Nagelschläger", type: "weapon", slot: "weapon", baseDmg: 16, cost: 150, desc: "Böse Wunden.", usesAmmo: false },
     sledgehammer: { name: "Vorschlaghammer", type: "weapon", slot: "weapon", baseDmg: 25, cost: 180, desc: "Sehr langsam, sehr schwer.", usesAmmo: false },
+    power_fist: { name: "Powerfaust", type: "weapon", slot: "weapon", baseDmg: 30, cost: 450, desc: "Pneumatischer Schlag.", usesAmmo: false },
+    super_sledge: { 
+        name: "Superhammer", type: "weapon", slot: "weapon", baseDmg: 45, cost: 700, desc: "Raketengetrieben.", usesAmmo: false,
+        modSlots: ["head"] 
+    },
+    ripper: { name: "Ripper", type: "weapon", slot: "weapon", baseDmg: 18, cost: 350, desc: "Kettensägen-Messer.", usesAmmo: false },
+    deathclaw_gauntlet: { name: "Todeskralle", type: "weapon", slot: "weapon", baseDmg: 50, cost: 1000, desc: "Die Klaue einer Bestie.", usesAmmo: false },
 
     // ==============================
-    // === FERNKAMPF (Guns) ===
+    // === FERNKAMPF (Guns/Ammo) ===
     // ==============================
     ammo: { name: "Munition", type: "ammo", cost: 2, desc: "Patronen.", weight: 0.05 },
 
-    // [MOD] Added ammo property for consistency
+    // Pipe Weapons (Schrott)
+    pipe_pistol: { name: "Rohrpistole", type: "weapon", slot: "weapon", baseDmg: 5, cost: 15, desc: "Selbstgebaut.", usesAmmo: true, ammo: "10mm", ammoCost: 1 },
+    pipe_rifle: { name: "Rohrgewehr", type: "weapon", slot: "weapon", baseDmg: 7, cost: 30, desc: "Längerer Lauf.", usesAmmo: true, ammo: "10mm", ammoCost: 1 },
+    pipe_revolver: { name: "Rohrrevolver", type: "weapon", slot: "weapon", baseDmg: 9, cost: 45, desc: "Kaliber .45.", usesAmmo: true, ammo: "10mm", ammoCost: 1 },
+    pipe_sniper: { name: "Rohr-Sniper", type: "weapon", slot: "weapon", baseDmg: 12, cost: 60, desc: "Mit Zielfernrohr.", usesAmmo: true, ammo: "10mm", ammoCost: 1 },
+
+    // Conventional
     pistol_10mm: { 
-        name: "10mm Pistole", type: "weapon", slot: "weapon", baseDmg: 12, cost: 120, weight: 3.5, desc: "Verlässlich.", usesAmmo: true,
-        ammo: "10mm", ammoCost: 1, modSlots: ["receiver", "grip"] 
+        name: "10mm Pistole", type: "weapon", slot: "weapon", baseDmg: 12, cost: 120, desc: "Verlässlich.", usesAmmo: true,
+        ammo: "10mm", ammoCost: 1, modSlots: ["receiver", "grip"]
     },
+    revolver_44: { name: ".44 Revolver", type: "weapon", slot: "weapon", baseDmg: 25, cost: 250, desc: "Dirty Harry Style.", usesAmmo: true, ammo: "10mm", ammoCost: 1 },
+    smg: { name: "Maschinenpistole", type: "weapon", slot: "weapon", baseDmg: 10, cost: 300, desc: "Schnellfeuer.", usesAmmo: true, ammo: "10mm", ammoCost: 1 },
     hunting_rifle: { 
-        name: "Jagdgewehr", type: "weapon", slot: "weapon", baseDmg: 20, cost: 200, weight: 7, desc: "Präzise.", usesAmmo: true,
+        name: "Jagdgewehr", type: "weapon", slot: "weapon", baseDmg: 20, cost: 200, desc: "Präzise.", usesAmmo: true,
         ammo: "308", ammoCost: 1, modSlots: ["receiver", "barrel", "stock"]
     },
+    sniper_rifle: { name: "Scharfschützengewehr", type: "weapon", slot: "weapon", baseDmg: 35, cost: 700, desc: "Tödlich auf Distanz.", usesAmmo: true, ammo: "308", ammoCost: 1 },
+    shotgun: { name: "Doppelflinte", type: "weapon", slot: "weapon", baseDmg: 30, cost: 350, desc: "Zwei Läufe.", usesAmmo: true, ammo: "shell", ammoCost: 1 },
     combat_shotgun: { 
-        name: "Kampfflinte", type: "weapon", slot: "weapon", baseDmg: 38, cost: 600, weight: 5.5, desc: "Magazin-geladen.", usesAmmo: true,
+        name: "Kampfflinte", type: "weapon", slot: "weapon", baseDmg: 38, cost: 600, desc: "Magazin-geladen.", usesAmmo: true,
         ammo: "shell", ammoCost: 1, modSlots: ["receiver", "barrel"]
     },
-    
-    pipe_pistol: { name: "Rohrpistole", type: "weapon", slot: "weapon", baseDmg: 5, cost: 15, desc: "Selbstgebaut.", usesAmmo: true, ammo: "10mm", ammoCost: 1 },
-    shotgun: { name: "Doppelflinte", type: "weapon", slot: "weapon", baseDmg: 30, cost: 350, desc: "Zwei Läufe.", usesAmmo: true, ammo: "shell", ammoCost: 1 },
-    minigun: { name: "Minigun", type: "weapon", slot: "weapon", baseDmg: 15, cost: 1500, desc: "Extremes Schnellfeuer.", usesAmmo: true, ammo: "10mm", ammoCost: 1 },
-    laser_pistol: { name: "Laserpistole", type: "weapon", slot: "weapon", baseDmg: 22, cost: 400, desc: "Vorsicht, heiß.", usesAmmo: true, ammo: "10mm", ammoCost: 1 }, // Platzhalter Ammo
-    alien_blaster: { name: "Alien Blaster", type: "weapon", slot: "weapon", baseDmg: 80, cost: 3000, desc: "Extraterrestrisch.", usesAmmo: false },
+    assault_rifle: { name: "Sturmgewehr", type: "weapon", slot: "weapon", baseDmg: 28, cost: 550, desc: "Militärstandard.", usesAmmo: true, ammo: "10mm", ammoCost: 1 },
+    minigun: { name: "Minigun", type: "weapon", slot: "weapon", baseDmg: 15, cost: 1500, desc: "Extremes Schnellfeuer (Mehrfach-Treffer).", usesAmmo: true, ammo: "10mm", ammoCost: 1 },
 
-    // ====================
-    // === WAFFEN MODS ===
-    // ====================
-    "mod_10mm_rec_hard": {
-        name: "Gehärteter Verschluss (10mm)", type: "mod", cost: 80, weight: 0.5,
-        target: "pistol_10mm", slot: "receiver", 
-        stats: { dmg: 3, val: 20 }, 
-        desc: "Erhöht den Schaden."
-    },
-    "mod_10mm_grip_comf": {
-        name: "Komfort-Griff (10mm)", type: "mod", cost: 50, weight: 0.2,
-        target: "pistol_10mm", slot: "grip",
-        stats: { val: 10 }, 
-        desc: "Liegt besser in der Hand."
-    },
-    "mod_rifle_bar_long": {
-        name: "Langer Lauf (Jagdgewehr)", type: "mod", cost: 120, weight: 1.5,
-        target: "hunting_rifle", slot: "barrel",
-        stats: { dmg: 5, val: 40 },
-        desc: "Deutlich mehr Durchschlagskraft."
-    },
-    "mod_shotgun_rec_auto": {
-        name: "Automatik-Verschluss (Flinte)", type: "mod", cost: 200, weight: 1.0,
-        target: "combat_shotgun", slot: "receiver",
-        stats: { dmg: -5, ammoCost: 1, val: 50 }, 
-        desc: "Erhöht Feuerrate, senkt Einzelschaden."
-    },
-    "mod_machete_blade_serrated": {
-        name: "Gezahnte Klinge", type: "mod", cost: 60, weight: 0.2,
-        target: "machete", slot: "blade",
-        stats: { dmg: 4, val: 15 },
-        desc: "Reißt Wunden."
-    },
+    // Energy
+    laser_pistol: { name: "Laserpistole", type: "weapon", slot: "weapon", baseDmg: 22, cost: 400, desc: "Vorsicht, heiß.", usesAmmo: true, ammo: "10mm", ammoCost: 1 },
+    laser_rifle: { name: "Lasergewehr", type: "weapon", slot: "weapon", baseDmg: 32, cost: 650, desc: "Lange Reichweite.", usesAmmo: true, ammo: "10mm", ammoCost: 1 },
+    plasma_pistol: { name: "Plasmapistole", type: "weapon", slot: "weapon", baseDmg: 35, cost: 600, desc: "Grüner Schleim.", usesAmmo: true, ammo: "10mm", ammoCost: 1 },
+    plasma_rifle: { name: "Plasmagewehr", type: "weapon", slot: "weapon", baseDmg: 45, cost: 900, desc: "Schmilzt Rüstung.", usesAmmo: true, ammo: "10mm", ammoCost: 1 },
+    alien_blaster: { name: "Alien Blaster", type: "weapon", slot: "weapon", baseDmg: 80, cost: 3000, desc: "Extraterrestrisch.", usesAmmo: false },
 
     // ======================================
     // === RÜSTUNGEN (Nach Sets sortiert) ===
     // ======================================
+
     raider_armor: { name: "Raider-Rüstung", type: "body", slot: "body", cost: 80, bonus: {END: 1, STR: 1}, desc: "Stachelig." },
     raider_helm: { name: "Sackgassen-Helm", type: "head", slot: "head", cost: 40, bonus: {PER: -1, END: 1}, desc: "Furchteinflößend." },
     raider_arm_l: { name: "Raider-Armschiene (L)", type: "arms", slot: "arms", cost: 30, bonus: {STR: 1}, desc: "Aus Reifen." },
@@ -176,6 +211,7 @@ Object.assign(window.GameData.items, {
     synth_armor: { name: "Synth-Rüstung", type: "body", slot: "body", cost: 800, bonus: {END: 5, INT: 2}, desc: "Institut-Technologie." },
     synth_helmet: { name: "Synth-Feldhelm", type: "head", slot: "head", cost: 400, bonus: {PER: 2, INT: 1}, desc: "Volle Abdeckung." },
 
+    vault_suit: { name: "Vault-Anzug", type: "body", slot: "body", cost: 0, bonus: {END: 1, INT: 1}, desc: "Blau und eng." },
     power_armor: { name: "Power Rüstung T-45", type: "body", slot: "body", cost: 2500, bonus: {END: 12, STR: 4, RAD: 100, AGI: -3}, desc: "Ein Panzer zum Anziehen." },
     hazmat_suit: { name: "Strahlenschutzanzug", type: "body", slot: "body", cost: 400, bonus: {RAD: 1000, END: -2}, desc: "Perfekt für das Leuchtende Meer." },
     
