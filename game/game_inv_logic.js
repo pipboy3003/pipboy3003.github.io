@@ -1,19 +1,24 @@
-// [TIMESTAMP] 2026-01-20 22:00:00 - game_inv_logic.js - Modding, Restoration & Shared Stats
+// [TIMESTAMP] 2026-01-22 13:00:00 - game_inv_logic.js - Crash Proofing
 
 Object.assign(Game, {
 
+    // [FIX] Robustere Stats-Funktion
     getWeaponStats: function(item) {
+        // Fallback falls Item null/undefined
         if(!item) return { dmg: 1, ammoType: null, ammoCost: 0, name: "Unbekannt" };
         
-        const dbItem = this.items[item.id] || {};
+        // Hole DB Definition oder leeres Objekt
+        const dbItem = (this.items && this.items[item.id]) ? this.items[item.id] : {};
         
+        // Werte priorisieren: Instanz > DB > Default
         let stats = {
             dmg: (item.dmg !== undefined) ? item.dmg : (item.baseDmg || dbItem.baseDmg || dbItem.dmg || 1),
             ammoType: item.ammoType || dbItem.ammo || null, 
             ammoCost: (item.ammoCost !== undefined) ? item.ammoCost : (dbItem.ammoCost || 1),
-            name: item.name || dbItem.name
+            name: item.name || dbItem.name || "Unbekanntes Item"
         };
 
+        // Mods berechnen (nur wenn Array existiert)
         if (item.mods && Array.isArray(item.mods)) {
             item.mods.forEach(modId => {
                 const modDef = this.items[modId];
@@ -29,6 +34,7 @@ Object.assign(Game, {
     getMaxSlots: function() {
         let base = 10;
         if (this.state.stats) base += (this.state.stats.STR || 1);
+        
         const strongBack = this.getPerkLevel('strong_back');
         if (strongBack > 0) base += (strongBack * 5);
 
@@ -151,11 +157,10 @@ Object.assign(Game, {
         this.removeFromInventory('weapon_oil', 1);
         
         const cleanId = item.id.replace('rusty_', '');
-        // Mapping fix
         let targetId = cleanId;
         if(cleanId === 'pistol') targetId = 'pistol_10mm';
         if(cleanId === 'rifle') targetId = 'hunting_rifle';
-        if(cleanId === 'shotgun') targetId = 'combat_shotgun'; // oder 'shotgun' (Doppelflinte) je nach ID
+        if(cleanId === 'shotgun') targetId = 'combat_shotgun';
 
         this.state.inventory.splice(invIndex, 1);
         this.addToInventory(targetId, 1);
