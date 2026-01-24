@@ -1,4 +1,6 @@
-// [TIMESTAMP] 2026-01-24 12:30:00 - ui_view_town.js - Crash Proof Version
+// [TIMESTAMP] 2026-01-24 13:00:00 - ui_view_town.js - Debug & Crash Fix
+
+console.log(">> UI VIEW TOWN WIRD GELADEN...");
 
 Object.assign(UI, {
     
@@ -60,7 +62,19 @@ Object.assign(UI, {
             else { baseClass += " border-green-600 hover:border-green-400 shadow-green-900/20"; }
 
             card.className = baseClass;
-            card.onclick = conf.onClick;
+            
+            // [DEBUG] Sicherer Click-Handler mit Logging
+            card.onclick = () => {
+                console.log("Karte geklickt:", conf.label);
+                if(typeof conf.onClick === 'function') {
+                    try {
+                        conf.onClick();
+                    } catch(e) {
+                        alert("Fehler beim Öffnen von " + conf.label + ":\n" + e.message);
+                        console.error(e);
+                    }
+                }
+            };
 
             const iconSize = conf.type === 'trader' ? 'text-6xl' : 'text-5xl';
             let titleClass = `text-${themeColor}-500 group-hover:text-${themeColor}-300`;
@@ -94,105 +108,92 @@ Object.assign(UI, {
 
     // --- SCHMIED UI ---
     renderSmithy: function() {
-        // [SICHERHEITS-CHECK] Verhindert Black-Screen, indem wir zuerst Daten prüfen
-        try {
-            console.log("Lade Schmied Daten...");
-            
-            // Lokale Hilfsfunktion für Stats (falls Game.getWeaponStats fehlt)
-            const getStatsSafe = (wItem) => {
-                if (typeof Game.getWeaponStats === 'function') {
-                    return Game.getWeaponStats(wItem);
-                }
-                // Notfall-Berechnung
-                const def = Game.items[wItem.id] || { baseDmg: 0 };
-                return { 
-                    dmg: (wItem.dmg !== undefined ? wItem.dmg : (def.baseDmg || 0)), 
-                    name: wItem.name || def.name || wItem.id 
-                };
+        console.log(">> Öffne Schmied...");
+
+        // [NOTFALL-FUNKTION] Falls die Logik-Datei fehlt oder kaputt ist
+        if (typeof Game.getWeaponStats !== 'function') {
+            console.warn("Game.getWeaponStats fehlt! Nutze Notfall-Funktion.");
+            Game.getWeaponStats = function(item) { 
+                const def = Game.items[item.id] || { baseDmg: 0 };
+                return { dmg: item.baseDmg || def.baseDmg || 1, name: item.name || def.name || item.id }; 
             };
-
-            if(!Game.state.inventory) Game.state.inventory = [];
-            
-            // Erst Daten sammeln, BEVOR wir den View löschen!
-            const weapons = Game.state.inventory.map((item, idx) => ({...item, idx})).filter(i => {
-                const def = Game.items[i.id];
-                return def && (def.type === 'weapon' || def.type === 'melee');
-            });
-
-            // Wenn wir hier ankommen, gab es keinen Crash beim Daten-Lesen.
-            // JETZT erst View löschen.
-            const view = document.getElementById('view-container');
-            if(!view) return;
-            view.innerHTML = '';
-            
-            Game.state.view = 'smithy';
-            
-            const wrapper = document.createElement('div');
-            wrapper.className = "absolute inset-0 w-full h-full flex flex-col bg-black z-20 overflow-hidden";
-
-            // HEADER
-            const header = document.createElement('div');
-            header.className = "p-4 border-b-2 border-orange-500 bg-orange-900/20 flex justify-between items-end shadow-lg";
-            header.innerHTML = `
-                <div>
-                    <h2 class="text-3xl text-orange-400 font-bold font-vt323 tracking-widest">DER SCHMIED</h2>
-                    <div class="text-xs text-orange-300 tracking-wider">"Aus Alt mach Neu..."</div>
-                </div>
-                <div class="text-4xl text-orange-500 opacity-50">⚒️</div>
-            `;
-            wrapper.appendChild(header);
-
-            // CONTENT
-            const content = document.createElement('div');
-            content.className = "flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2 bg-[#0a0500]";
-
-            if(weapons.length === 0) {
-                content.innerHTML = '<div class="text-center text-orange-800 mt-10 p-4 border-2 border-dashed border-orange-900">Keine Waffen im Inventar.</div>';
-            } else {
-                weapons.forEach(w => {
-                    const def = Game.items[w.id];
-                    if(!def) return; 
-                    
-                    const name = w.name || def.name;
-                    const isRusty = w.id.startsWith('rusty_');
-                    const stats = getStatsSafe(w); // Sichere Funktion nutzen
-                    
-                    let actionBtn = '';
-                    
-                    if(isRusty) {
-                        actionBtn = `<button onclick="Game.restoreWeapon(${w.idx}); UI.renderSmithy()" class="bg-blue-900/30 text-xs px-3 py-2 border border-blue-500 hover:bg-blue-600 hover:text-black font-bold uppercase transition-colors">Restaurieren (50 KK + Öl)</button>`;
-                    } else {
-                        actionBtn = `<button onclick="UI.renderModdingScreen(${w.idx})" class="bg-orange-900/30 text-xs px-3 py-2 border border-orange-500 hover:bg-orange-500 hover:text-black font-bold uppercase transition-colors">Modifizieren</button>`;
-                    }
-
-                    const div = document.createElement('div');
-                    div.className = `flex justify-between items-center bg-black/40 p-3 border border-gray-700 hover:border-orange-500/50 transition-colors`;
-                    div.innerHTML = `
-                        <div>
-                            <div class="${isRusty ? 'text-red-400' : 'text-orange-300'} font-bold text-lg">${name}</div>
-                            <div class="text-xs text-gray-500 font-mono">DMG: ${stats.dmg} | Mods: ${w.mods ? w.mods.length : 0}</div>
-                        </div>
-                        ${actionBtn}
-                    `;
-                    content.appendChild(div);
-                });
-            }
-            wrapper.appendChild(content);
-
-            // FOOTER
-            const footer = document.createElement('div');
-            footer.className = "absolute bottom-0 left-0 w-full p-4 bg-black border-t-2 border-orange-900 z-50";
-            footer.innerHTML = `<button class="action-button w-full border-2 border-orange-800 text-orange-700 hover:border-orange-500 hover:text-orange-400 transition-colors py-3 font-bold tracking-widest uppercase bg-black" onclick="UI.renderCity()">ZURÜCK ZUM ZENTRUM</button>`;
-            wrapper.appendChild(footer);
-
-            view.appendChild(wrapper);
-        } catch(e) {
-            console.error("FATAL ERROR IM SCHMIED:", e);
-            if(typeof UI !== 'undefined' && UI.log) UI.log("Fehler im Schmied-System!", "text-red-500");
-            alert("Schmied-System Fehler:\n" + e.message + "\n\n(Das Spiel läuft weiter, aber das Menü konnte nicht laden.)");
-            // Falls es crasht, versuchen wir zumindest ins Stadtmenü zurückzukehren, falls view noch existiert
-            if(Game && Game.state) Game.state.view = 'city';
         }
+
+        Game.state.view = 'smithy';
+        const view = document.getElementById('view-container');
+        if(!view) return;
+        view.innerHTML = '';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = "absolute inset-0 w-full h-full flex flex-col bg-black z-20 overflow-hidden";
+
+        // HEADER
+        const header = document.createElement('div');
+        header.className = "p-4 border-b-2 border-orange-500 bg-orange-900/20 flex justify-between items-end shadow-lg";
+        header.innerHTML = `
+            <div>
+                <h2 class="text-3xl text-orange-400 font-bold font-vt323 tracking-widest">DER SCHMIED</h2>
+                <div class="text-xs text-orange-300 tracking-wider">"Aus Alt mach Neu..."</div>
+            </div>
+            <div class="text-4xl text-orange-500 opacity-50">⚒️</div>
+        `;
+        wrapper.appendChild(header);
+
+        // CONTENT
+        const content = document.createElement('div');
+        content.className = "flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2 bg-[#0a0500]";
+
+        if(!Game.state.inventory) Game.state.inventory = [];
+
+        // Filtere nur Waffen
+        const weapons = Game.state.inventory.map((item, idx) => ({...item, idx})).filter(i => {
+            const def = (Game.items && Game.items[i.id]) ? Game.items[i.id] : null;
+            return def && (def.type === 'weapon' || def.type === 'melee');
+        });
+
+        if(weapons.length === 0) {
+            content.innerHTML = '<div class="text-center text-orange-800 mt-10 p-4 border-2 border-dashed border-orange-900">Keine Waffen im Inventar.</div>';
+        } else {
+            weapons.forEach(w => {
+                const def = Game.items[w.id];
+                if(!def) return; 
+                
+                const name = w.name || def.name;
+                const isRusty = w.id.startsWith('rusty_');
+                
+                // Hier könnte es crashen, daher try-catch für einzelnes Item
+                let stats = { dmg: "?" };
+                try { stats = Game.getWeaponStats(w); } catch(e) { console.error("Stats Error:", e); }
+
+                let actionBtn = '';
+                
+                if(isRusty) {
+                    actionBtn = `<button onclick="Game.restoreWeapon(${w.idx}); UI.renderSmithy()" class="bg-blue-900/30 text-xs px-3 py-2 border border-blue-500 hover:bg-blue-600 hover:text-black font-bold uppercase transition-colors">Restaurieren (50 KK + Öl)</button>`;
+                } else {
+                    actionBtn = `<button onclick="UI.renderModdingScreen(${w.idx})" class="bg-orange-900/30 text-xs px-3 py-2 border border-orange-500 hover:bg-orange-500 hover:text-black font-bold uppercase transition-colors">Modifizieren</button>`;
+                }
+
+                const div = document.createElement('div');
+                div.className = `flex justify-between items-center bg-black/40 p-3 border border-gray-700 hover:border-orange-500/50 transition-colors`;
+                div.innerHTML = `
+                    <div>
+                        <div class="${isRusty ? 'text-red-400' : 'text-orange-300'} font-bold text-lg">${name}</div>
+                        <div class="text-xs text-gray-500 font-mono">DMG: ${stats.dmg} | Mods: ${w.mods ? w.mods.length : 0}</div>
+                    </div>
+                    ${actionBtn}
+                `;
+                content.appendChild(div);
+            });
+        }
+        wrapper.appendChild(content);
+
+        // FOOTER
+        const footer = document.createElement('div');
+        footer.className = "absolute bottom-0 left-0 w-full p-4 bg-black border-t-2 border-orange-900 z-50";
+        footer.innerHTML = `<button class="action-button w-full border-2 border-orange-800 text-orange-700 hover:border-orange-500 hover:text-orange-400 transition-colors py-3 font-bold tracking-widest uppercase bg-black" onclick="UI.renderCity()">ZURÜCK ZUM ZENTRUM</button>`;
+        wrapper.appendChild(footer);
+
+        view.appendChild(wrapper);
     },
 
     renderModdingScreen: function(weaponIdx) {
@@ -208,7 +209,6 @@ Object.assign(UI, {
             }
             
             const wDef = (Game.items && Game.items[weapon.id]) ? Game.items[weapon.id] : { name: weapon.id };
-            
             view.innerHTML = ''; 
 
             const wrapper = document.createElement('div');
@@ -699,3 +699,5 @@ Object.assign(UI, {
         view.appendChild(wrapper);
     }
 });
+
+console.log(">> UI VIEW TOWN WURDE ERFOLGREICH GELADEN");
