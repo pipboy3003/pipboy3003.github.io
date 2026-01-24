@@ -1,6 +1,16 @@
-// [TIMESTAMP] 2026-01-25 10:30:00 - ui_view_town.js - Added Modding Help
+// [TIMESTAMP] 2026-01-25 12:00:00 - ui_view_town.js - Modding Fix & Help
 
-console.log(">> UI VIEW TOWN (WITH HELP) GELADEN");
+console.log(">> UI VIEW TOWN (MOD FIX) GELADEN");
+
+// GLOBALE FUNKTION FÜR DEN BUTTON (Damit HTML 'onclick' sie immer findet)
+window.openModding = function(idx) {
+    console.log("Global Modding Call:", idx);
+    if(UI && UI.renderModdingScreen) {
+        UI.renderModdingScreen(idx);
+    } else {
+        alert("FEHLER: UI.renderModdingScreen nicht gefunden!");
+    }
+};
 
 Object.assign(UI, {
     
@@ -108,7 +118,7 @@ Object.assign(UI, {
         view.appendChild(wrapper);
     },
 
-    // --- DER SCHMIED (GEHÄRTET & MIT HILFE) ---
+    // --- DER SCHMIED ---
     renderSmithy: function() {
         console.log(">> Starte Schmied...");
         const view = document.getElementById('view-container');
@@ -118,13 +128,14 @@ Object.assign(UI, {
         view.innerHTML = '';
 
         try {
-            // LOKALE FALLBACK FUNKTION (Verhindert Crash durch fehlende Logik)
+            // LOKALE STATS BERECHNUNG (Fallback)
             const getWeaponStatsSafe = (item) => {
                 if (typeof Game.getWeaponStats === 'function') {
-                    try { return Game.getWeaponStats(item); } catch(e) { console.warn("Global stats failed", e); }
+                    try { return Game.getWeaponStats(item); } catch(e) {}
                 }
                 const def = (Game.items && Game.items[item.id]) ? Game.items[item.id] : {};
                 let dmg = item.dmg !== undefined ? item.dmg : (item.baseDmg || def.baseDmg || 1);
+                // Mods simulieren
                 if (item.mods && Array.isArray(item.mods) && Game.items) {
                     item.mods.forEach(mid => {
                         const m = Game.items[mid];
@@ -137,7 +148,7 @@ Object.assign(UI, {
             const wrapper = document.createElement('div');
             wrapper.className = "absolute inset-0 w-full h-full flex flex-col bg-black z-20 overflow-hidden";
 
-            // Header mit Hilfe-Button
+            // HEADER MIT HILFE BUTTON
             const header = document.createElement('div');
             header.className = "p-4 border-b-2 border-orange-500 bg-orange-900/20 flex justify-between items-center shadow-lg";
             header.innerHTML = `
@@ -146,13 +157,13 @@ Object.assign(UI, {
                     <div class="text-xs text-orange-300 tracking-wider">"Aus Alt mach Neu..."</div>
                 </div>
                 
-                <button onclick="UI.renderSmithyHelp()" class="mx-2 w-10 h-10 border-2 border-orange-500 rounded-full text-orange-500 font-bold text-xl hover:bg-orange-500 hover:text-black transition-colors animate-pulse" title="Hilfe & Infos">?</button>
+                <button onclick="UI.renderSmithyHelp()" class="mx-4 w-10 h-10 border-2 border-orange-500 rounded-full text-orange-500 font-bold text-xl hover:bg-orange-500 hover:text-black transition-colors animate-pulse flex items-center justify-center bg-black" title="Hilfe & Infos">?</button>
 
                 <div class="text-4xl text-orange-500 opacity-50 ml-2">⚒️</div>
             `;
             wrapper.appendChild(header);
 
-            // Content
+            // CONTENT
             const content = document.createElement('div');
             content.className = "flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2 bg-[#0a0500]";
 
@@ -167,7 +178,7 @@ Object.assign(UI, {
             }
 
             if(weapons.length === 0) {
-                content.innerHTML = '<div class="text-center text-orange-800 mt-10 p-4 border-2 border-dashed border-orange-900">Keine Waffen im Inventar.</div>';
+                content.innerHTML = '<div class="text-center text-orange-800 mt-10 p-4 border-2 border-dashed border-orange-900">Keine Waffen im Inventar.<br><span class="text-gray-500 text-xs">(Klicke oben auf [?] für Infos)</span></div>';
             } else {
                 weapons.forEach(w => {
                     const stats = getWeaponStatsSafe(w);
@@ -183,7 +194,8 @@ Object.assign(UI, {
                             actionBtn = `<div class="text-red-500 text-xs border border-red-500 px-2 py-1">LOGIK FEHLT</div>`;
                         }
                     } else {
-                        actionBtn = `<button onclick="UI.renderModdingScreen(${w.idx})" class="bg-orange-900/30 text-xs px-3 py-2 border border-orange-500 hover:bg-orange-500 hover:text-black font-bold uppercase transition-colors">Modifizieren</button>`;
+                        // NUTZE GLOBALE FUNKTION FÜR MODDING
+                        actionBtn = `<button onclick="window.openModding(${w.idx})" class="bg-orange-900/30 text-xs px-3 py-2 border border-orange-500 hover:bg-orange-500 hover:text-black font-bold uppercase transition-colors">Modifizieren</button>`;
                     }
 
                     const div = document.createElement('div');
@@ -239,42 +251,36 @@ Object.assign(UI, {
                 <div class="p-6 overflow-y-auto custom-scrollbar text-sm font-mono space-y-6 text-orange-200">
                     
                     <div>
-                        <h3 class="text-orange-400 font-bold border-b border-orange-800 mb-2">1. WAS IST MODDING?</h3>
+                        <h3 class="text-orange-400 font-bold border-b border-orange-800 mb-2">1. MODDING GRUNDLAGEN</h3>
                         <p class="opacity-80">
-                            Hier kannst du deine Waffen verbessern. Jede Waffe hat bestimmte Slots (z.B. Lauf, Visier, Magazin), in die du Modifikationen einbauen kannst. Mods erhöhen Schaden, Präzision oder ändern den Munitionsverbrauch.
+                            Waffen können durch Mods verbessert werden (Schaden, Munitionsverbrauch, etc.).
+                            Klicke auf <span class="text-orange-400 font-bold">MODIFIZIEREN</span> bei einer Waffe, um verfügbare Mods einzubauen.
                         </p>
                     </div>
 
                     <div>
-                        <h3 class="text-orange-400 font-bold border-b border-orange-800 mb-2">2. WIE FUNKTIONIERT ES?</h3>
-                        <ul class="list-disc pl-4 space-y-1 opacity-80">
-                            <li>Wähle eine Waffe aus der Liste und klicke auf <span class="text-orange-400 border border-orange-500 px-1 text-xs">MODIFIZIEREN</span>.</li>
-                            <li>Du siehst nun alle Mods in deinem Inventar, die auf diese Waffe passen.</li>
-                            <li>Klicke auf <span class="text-green-400 border border-green-500 px-1 text-xs">EINBAUEN</span>, um den Mod zu installieren.</li>
-                            <li>Alte Mods im selben Slot werden dabei zerstört/ersetzt.</li>
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h3 class="text-orange-400 font-bold border-b border-orange-800 mb-2">3. FUNDORTE</h3>
-                        <p class="opacity-80 mb-2">Wo bekomme ich Mods her?</p>
-                        <div class="grid grid-cols-1 gap-2">
-                            <div class="bg-black/40 p-2 border-l-2 border-yellow-500 text-xs">
-                                <strong class="text-yellow-500">HANDELSPOSTEN:</strong> Der Händler verkauft oft Basis-Mods.
+                        <h3 class="text-orange-400 font-bold border-b border-orange-800 mb-2">2. WO FINDE ICH MODS?</h3>
+                        <div class="space-y-2">
+                            <div class="bg-black/40 p-2 border-l-2 border-yellow-500">
+                                <strong class="text-yellow-500">HANDELSPOSTEN:</strong><br>
+                                Der Händler in der Stadt hat oft eine kleine Auswahl an Basis-Mods.
                             </div>
-                            <div class="bg-black/40 p-2 border-l-2 border-red-500 text-xs">
-                                <strong class="text-red-500">BEUTE:</strong> Gegner im Ödland lassen selten Mods fallen. Legendäre Gegner haben höhere Chancen.
+                            <div class="bg-black/40 p-2 border-l-2 border-red-500">
+                                <strong class="text-red-500">PLÜNDERN (LOOT):</strong><br>
+                                Besiege Gegner im Ödland. Legendäre Gegner und Boss-Monster droppen häufig Mods.
                             </div>
-                            <div class="bg-black/40 p-2 border-l-2 border-blue-500 text-xs">
-                                <strong class="text-blue-500">WERKBANK:</strong> (Bald verfügbar) Zerlege Waffen, um Baupläne für Mods zu lernen.
+                            <div class="bg-black/40 p-2 border-l-2 border-blue-500">
+                                <strong class="text-blue-500">QUESTS:</strong><br>
+                                Manche Aufgaben belohnen dich mit seltenen Modifikationen.
                             </div>
                         </div>
                     </div>
 
                     <div>
-                        <h3 class="text-orange-400 font-bold border-b border-orange-800 mb-2">4. ROSTIGE WAFFEN</h3>
+                        <h3 class="text-orange-400 font-bold border-b border-orange-800 mb-2">3. ROSTIGE WAFFEN</h3>
                         <p class="opacity-80">
-                            Rostige Waffen ("Rusty ...") können nicht modifiziert werden. Du musst sie zuerst <span class="text-blue-400">Restaurieren</span>. Dafür benötigst du <span class="text-yellow-400">50 Kronkorken</span> und <span class="text-gray-400">Waffenöl</span>.
+                            Rostige Waffen (rote Schrift) sind zu alt für Mods. Du musst sie erst <span class="text-blue-400">RESTAURIEREN</span>.
+                            <br>Kosten: <span class="text-yellow-400">50 KK</span> + <span class="text-gray-400">1x Waffenöl</span> (Findet man im Ödland).
                         </p>
                     </div>
 
@@ -289,16 +295,19 @@ Object.assign(UI, {
     },
 
     renderModdingScreen: function(weaponIdx) {
+        console.log("Render Modding Screen for:", weaponIdx);
         try {
             const view = document.getElementById('view-container');
             if(!view) return;
             
-            const weapon = Game.state.inventory[weaponIdx];
-            if(!weapon) { 
+            if(!Game.state.inventory || !Game.state.inventory[weaponIdx]) {
+                alert("Fehler: Waffe nicht gefunden! (Index: " + weaponIdx + ")");
                 this.renderSmithy(); 
                 return; 
             }
-            
+
+            const weapon = Game.state.inventory[weaponIdx];
+            // Safe Item Def Access
             const wDef = (Game.items && Game.items[weapon.id]) ? Game.items[weapon.id] : { name: weapon.id };
 
             view.innerHTML = ''; 
@@ -324,12 +333,17 @@ Object.assign(UI, {
             if (Game.items) {
                 compatibleMods = Game.state.inventory.map((item, idx) => ({...item, idx})).filter(m => {
                     const mDef = Game.items[m.id];
+                    // Prüfe ob Mod passt
                     return mDef && mDef.type === 'mod' && mDef.target === weapon.id;
                 });
             }
 
             if(compatibleMods.length === 0) {
-                content.innerHTML = '<div class="text-red-500 text-sm text-center mt-10">Keine passenden Mods im Inventar gefunden.<br><span class="text-xs text-gray-500">(Klicke ? im Hauptmenü für Hilfe)</span></div>';
+                content.innerHTML = `
+                    <div class="text-red-500 text-sm text-center mt-10 border border-red-900 p-4">
+                        Keine passenden Mods im Inventar gefunden.<br>
+                        <span class="text-gray-500 text-xs block mt-2">Mods müssen exakt zur Waffe passen (z.B. "10mm Pistole").</span>
+                    </div>`;
             } else {
                 compatibleMods.forEach(m => {
                     const mDef = Game.items[m.id];
@@ -358,7 +372,7 @@ Object.assign(UI, {
             view.appendChild(wrapper);
         } catch(e) {
             console.error("Modding Screen Error:", e);
-            alert("MODDING ERROR:\n" + e.message);
+            alert("FEHLER IM MODDING SCREEN:\n" + e.message);
             UI.renderSmithy(); 
         }
     },
