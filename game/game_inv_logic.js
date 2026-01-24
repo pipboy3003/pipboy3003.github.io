@@ -1,12 +1,13 @@
-// [TIMESTAMP] 2026-01-24 13:00:00 - game_inv_logic.js - Logic Fix
+// [TIMESTAMP] 2026-01-24 14:00:00 - game_inv_logic.js - SAFE VERSION
 
-console.log(">> GAME INV LOGIC WIRD GELADEN...");
+console.log("!!! GAME_INV_LOGIC NEU GELADEN !!!");
 
 Object.assign(Game, {
 
     getWeaponStats: function(item) {
         if(!item) return { dmg: 1, ammoType: null, ammoCost: 0, name: "Unbekannt" };
         
+        // Safety Fallback für ItemsDB Access
         const dbItem = (this.items && this.items[item.id]) ? this.items[item.id] : {};
         
         let stats = {
@@ -157,7 +158,7 @@ Object.assign(Game, {
         
         const cleanId = item.id.replace('rusty_', '');
         
-        // MAPPING FIX: rusty_pistol -> pistol_10mm (nicht 'pistol')
+        // MAPPING FIX: rusty_pistol -> pistol_10mm
         let targetId = cleanId;
         if(cleanId === 'pistol') targetId = 'pistol_10mm';
         if(cleanId === 'rifle') targetId = 'hunting_rifle';
@@ -693,4 +694,4 @@ Object.assign(Game, {
 // Alias für Kompatibilität
 Game.addItem = Game.addToInventory;
 
-console.log(">> GAME INV LOGIC WURDE ERFOLGREICH GELADEN");
+console.log("!!! GAME_INV_LOGIC WURDE ERFOLGREICH GELADEN !!!");
