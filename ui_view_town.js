@@ -1,6 +1,6 @@
-// [TIMESTAMP] 2026-01-24 13:00:00 - ui_view_town.js - Debug & Crash Fix
+// [TIMESTAMP] 2026-01-24 14:00:00 - ui_view_town.js - CACHE BUSTER VERSION
 
-console.log(">> UI VIEW TOWN WIRD GELADEN...");
+console.log("!!! UI_VIEW_TOWN NEU GELADEN !!!");
 
 Object.assign(UI, {
     
@@ -63,16 +63,14 @@ Object.assign(UI, {
 
             card.className = baseClass;
             
-            // [DEBUG] Sicherer Click-Handler mit Logging
-            card.onclick = () => {
-                console.log("Karte geklickt:", conf.label);
-                if(typeof conf.onClick === 'function') {
-                    try {
-                        conf.onClick();
-                    } catch(e) {
-                        alert("Fehler beim Öffnen von " + conf.label + ":\n" + e.message);
-                        console.error(e);
-                    }
+            // EXTRA SICHERER CLICK HANDLER
+            card.onclick = function() {
+                console.log("Klick auf:", conf.label);
+                try {
+                    conf.onClick();
+                } catch(err) {
+                    console.error("CRASH BEI KLICK:", err);
+                    alert("Fehler: " + err.message);
                 }
             };
 
@@ -93,7 +91,8 @@ Object.assign(UI, {
 
         grid.appendChild(createCard({ type: 'trader', icon: "🛒", label: "HANDELSPOSTEN", sub: "Waffen & Munition", onClick: () => UI.renderShop() }));
         grid.appendChild(createCard({ type: 'clinic', icon: "⚕️", label: "KLINIK", sub: "Dr. Zimmermann", onClick: () => UI.renderClinic() }));
-        grid.appendChild(createCard({ type: 'smithy', icon: "⚒️", label: "DER SCHMIED", sub: "Reparaturen & Mods", onClick: () => UI.renderSmithy() }));
+        // HIER IST DER NAMENS-CHECK - WENN HIER NICHT [FIX] STEHT, IST DIE DATEI ALT
+        grid.appendChild(createCard({ type: 'smithy', icon: "⚒️", label: "DER SCHMIED [FIX]", sub: "Reparaturen & Mods", onClick: () => UI.renderSmithy() }));
         grid.appendChild(createCard({ type: 'craft', icon: "🛠️", label: "WERKBANK", sub: "Zerlegen & Bauen", onClick: () => UI.renderCrafting() }));
 
         wrapper.appendChild(grid);
@@ -106,23 +105,38 @@ Object.assign(UI, {
         view.appendChild(wrapper);
     },
 
-    // --- SCHMIED UI ---
     renderSmithy: function() {
-        console.log(">> Öffne Schmied...");
-
-        // [NOTFALL-FUNKTION] Falls die Logik-Datei fehlt oder kaputt ist
+        console.log(">> UI.renderSmithy gestartet");
+        
+        // 1. Notfall-Check für Logic
         if (typeof Game.getWeaponStats !== 'function') {
-            console.warn("Game.getWeaponStats fehlt! Nutze Notfall-Funktion.");
-            Game.getWeaponStats = function(item) { 
-                const def = Game.items[item.id] || { baseDmg: 0 };
-                return { dmg: item.baseDmg || def.baseDmg || 1, name: item.name || def.name || item.id }; 
+            console.warn("WARNUNG: Game.getWeaponStats fehlt. Nutze Fallback.");
+            Game.getWeaponStats = function(item) {
+                return { dmg: item.baseDmg || 1, name: item.name || "Error-Waffe" };
             };
         }
 
-        Game.state.view = 'smithy';
+        // 2. Daten sammeln (BEVOR wir den Screen leeren)
+        let weapons = [];
+        try {
+            if(!Game.state.inventory) Game.state.inventory = [];
+            weapons = Game.state.inventory.map((item, idx) => ({...item, idx})).filter(i => {
+                // Sicherheitscheck, ob Item in DB existiert
+                const def = Game.items[i.id];
+                return def && (def.type === 'weapon' || def.type === 'melee');
+            });
+        } catch(e) {
+            console.error("Fehler beim Laden des Inventars:", e);
+            alert("Inventar-Fehler: " + e.message);
+            return; // Abbrechen, Screen nicht leeren
+        }
+
+        // 3. Screen leeren (Erst jetzt!)
         const view = document.getElementById('view-container');
         if(!view) return;
         view.innerHTML = '';
+        
+        Game.state.view = 'smithy';
 
         const wrapper = document.createElement('div');
         wrapper.className = "absolute inset-0 w-full h-full flex flex-col bg-black z-20 overflow-hidden";
@@ -133,7 +147,7 @@ Object.assign(UI, {
         header.innerHTML = `
             <div>
                 <h2 class="text-3xl text-orange-400 font-bold font-vt323 tracking-widest">DER SCHMIED</h2>
-                <div class="text-xs text-orange-300 tracking-wider">"Aus Alt mach Neu..."</div>
+                <div class="text-xs text-orange-300 tracking-wider">"Alles kann repariert werden."</div>
             </div>
             <div class="text-4xl text-orange-500 opacity-50">⚒️</div>
         `;
@@ -142,14 +156,6 @@ Object.assign(UI, {
         // CONTENT
         const content = document.createElement('div');
         content.className = "flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2 bg-[#0a0500]";
-
-        if(!Game.state.inventory) Game.state.inventory = [];
-
-        // Filtere nur Waffen
-        const weapons = Game.state.inventory.map((item, idx) => ({...item, idx})).filter(i => {
-            const def = (Game.items && Game.items[i.id]) ? Game.items[i.id] : null;
-            return def && (def.type === 'weapon' || def.type === 'melee');
-        });
 
         if(weapons.length === 0) {
             content.innerHTML = '<div class="text-center text-orange-800 mt-10 p-4 border-2 border-dashed border-orange-900">Keine Waffen im Inventar.</div>';
@@ -161,10 +167,10 @@ Object.assign(UI, {
                 const name = w.name || def.name;
                 const isRusty = w.id.startsWith('rusty_');
                 
-                // Hier könnte es crashen, daher try-catch für einzelnes Item
-                let stats = { dmg: "?" };
-                try { stats = Game.getWeaponStats(w); } catch(e) { console.error("Stats Error:", e); }
-
+                // Safe Stats Call
+                let stats = { dmg: 0 };
+                try { stats = Game.getWeaponStats(w); } catch(err) { stats.dmg = "?"; }
+                
                 let actionBtn = '';
                 
                 if(isRusty) {
@@ -203,12 +209,12 @@ Object.assign(UI, {
             
             const weapon = Game.state.inventory[weaponIdx];
             if(!weapon) { 
-                UI.log("Waffe nicht gefunden!", "text-red-500");
                 this.renderSmithy(); 
                 return; 
             }
             
             const wDef = (Game.items && Game.items[weapon.id]) ? Game.items[weapon.id] : { name: weapon.id };
+
             view.innerHTML = ''; 
 
             const wrapper = document.createElement('div');
@@ -699,5 +705,3 @@ Object.assign(UI, {
         view.appendChild(wrapper);
     }
 });
-
-console.log(">> UI VIEW TOWN WURDE ERFOLGREICH GELADEN");
