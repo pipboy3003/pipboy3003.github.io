@@ -1,10 +1,12 @@
-// [TIMESTAMP] 2026-01-22 20:00:00 - game_inv_logic.js - Robust Restore
+// [TIMESTAMP] 2026-01-24 12:05:00 - game_inv_logic.js - Added getWeaponStats for Smithy
 
 Object.assign(Game, {
 
+    // [NEU] Zentral für den Schmied: Berechnet Schaden inkl. Mods
     getWeaponStats: function(item) {
         if(!item) return { dmg: 1, ammoType: null, ammoCost: 0, name: "Unbekannt" };
         
+        // Basis-Daten aus der DB holen (Fallback)
         const dbItem = (this.items && this.items[item.id]) ? this.items[item.id] : {};
         
         let stats = {
@@ -14,6 +16,7 @@ Object.assign(Game, {
             name: item.name || dbItem.name || item.id
         };
 
+        // Mods verrechnen
         if (item.mods && Array.isArray(item.mods)) {
             item.mods.forEach(modId => {
                 const modDef = this.items[modId];
@@ -155,7 +158,7 @@ Object.assign(Game, {
         
         const cleanId = item.id.replace('rusty_', '');
         
-        // MAPPING FIX: rusty_pistol -> pistol_10mm (nicht 'pistol')
+        // MAPPING FIX: rusty_pistol -> pistol_10mm
         let targetId = cleanId;
         if(cleanId === 'pistol') targetId = 'pistol_10mm';
         if(cleanId === 'rifle') targetId = 'hunting_rifle';
@@ -193,6 +196,7 @@ Object.assign(Game, {
 
         if(!weapon.mods) weapon.mods = [];
         
+        // Alten Mod im gleichen Slot entfernen
         const existingModIndex = weapon.mods.findIndex(mid => {
             const md = this.items[mid];
             return md && md.slot === mDef.slot;
