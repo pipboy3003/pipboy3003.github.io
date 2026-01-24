@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-22 20:00:00 - ui_view_town.js - Final Debug
+// [TIMESTAMP] 2026-01-24 12:00:00 - ui_view_town.js - Fixed Smithy Opening & Modding
 
 Object.assign(UI, {
     
@@ -95,10 +95,18 @@ Object.assign(UI, {
     // --- SCHMIED UI ---
     renderSmithy: function() {
         try {
+            console.log("Öffne Schmied...");
+            
             // Checks
             if(typeof Game === 'undefined') throw new Error("Game Object fehlt");
-            if(typeof Game.getWeaponStats !== 'function') throw new Error("Game.getWeaponStats fehlt (game_inv_logic.js prüfen)");
             if(!Game.items) throw new Error("Game.items Datenbank fehlt");
+            
+            // Fallback für fehlende Funktion
+            if(typeof Game.getWeaponStats !== 'function') {
+                console.error("Game.getWeaponStats fehlt! Nutze Notfall-Fallback.");
+                Game.getWeaponStats = function(item) { return { dmg: item.baseDmg || 1, name: item.name || "Error-Waffe" }; };
+                UI.log("Warnung: Logic-Update fehlt!", "text-red-500");
+            }
 
             Game.state.view = 'smithy';
             const view = document.getElementById('view-container');
@@ -147,6 +155,7 @@ Object.assign(UI, {
                     if(isRusty) {
                         actionBtn = `<button onclick="Game.restoreWeapon(${w.idx}); UI.renderSmithy()" class="bg-blue-900/30 text-xs px-3 py-2 border border-blue-500 hover:bg-blue-600 hover:text-black font-bold uppercase transition-colors">Restaurieren (50 KK + Öl)</button>`;
                     } else {
+                        // FIX: Stellen sicher, dass renderModdingScreen existiert
                         actionBtn = `<button onclick="UI.renderModdingScreen(${w.idx})" class="bg-orange-900/30 text-xs px-3 py-2 border border-orange-500 hover:bg-orange-500 hover:text-black font-bold uppercase transition-colors">Modifizieren</button>`;
                     }
 
@@ -172,8 +181,8 @@ Object.assign(UI, {
 
             view.appendChild(wrapper);
         } catch(e) {
-            alert("FATAL ERROR IM SCHMIED:\n" + e.message + "\n\n" + e.stack);
             console.error(e);
+            alert("FEHLER IM SCHMIED:\n" + e.message);
         }
     },
 
@@ -184,7 +193,11 @@ Object.assign(UI, {
             view.innerHTML = ''; 
 
             const weapon = Game.state.inventory[weaponIdx];
-            if(!weapon) { this.renderSmithy(); return; }
+            if(!weapon) { 
+                UI.log("Waffe nicht gefunden!", "text-red-500");
+                this.renderSmithy(); 
+                return; 
+            }
             
             const wDef = (Game.items && Game.items[weapon.id]) ? Game.items[weapon.id] : { name: weapon.id };
 
@@ -239,6 +252,7 @@ Object.assign(UI, {
 
             view.appendChild(wrapper);
         } catch(e) {
+            console.error("Modding Screen Error:", e);
             alert("MODDING ERROR:\n" + e.message);
             UI.renderSmithy(); 
         }
