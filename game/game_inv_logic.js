@@ -1,14 +1,14 @@
-// [TIMESTAMP] 2026-01-24 14:00:00 - game_inv_logic.js - SAFE VERSION
-
-console.log("!!! GAME_INV_LOGIC NEU GELADEN !!!");
+// [TIMESTAMP] 2026-01-24 20:00:00 - game_inv_logic.js - Context Safe Version
 
 Object.assign(Game, {
 
+    // FIX: 'this' durch 'Game' ersetzt, um Scope-Probleme zu verhindern
     getWeaponStats: function(item) {
         if(!item) return { dmg: 1, ammoType: null, ammoCost: 0, name: "Unbekannt" };
         
-        // Safety Fallback für ItemsDB Access
-        const dbItem = (this.items && this.items[item.id]) ? this.items[item.id] : {};
+        // Direkter Zugriff auf Game.items statt this.items
+        const dbItems = Game.items || {}; 
+        const dbItem = dbItems[item.id] ? dbItems[item.id] : {};
         
         let stats = {
             dmg: (item.dmg !== undefined) ? item.dmg : (item.baseDmg || dbItem.baseDmg || dbItem.dmg || 1),
@@ -19,7 +19,7 @@ Object.assign(Game, {
 
         if (item.mods && Array.isArray(item.mods)) {
             item.mods.forEach(modId => {
-                const modDef = this.items[modId];
+                const modDef = dbItems[modId];
                 if (modDef && modDef.stats) {
                     if (modDef.stats.dmg) stats.dmg += modDef.stats.dmg;
                     if (modDef.stats.ammoCost) stats.ammoCost += modDef.stats.ammoCost;
@@ -41,8 +41,8 @@ Object.assign(Game, {
             let packBonus = 0;
             if (pack.bonus && pack.bonus.slots) packBonus = pack.bonus.slots;
             else if (pack.props && pack.props.bonus && pack.props.bonus.slots) packBonus = pack.props.bonus.slots;
-            else if (this.items[pack.id] && this.items[pack.id].bonus && this.items[pack.id].bonus.slots) {
-                packBonus = this.items[pack.id].bonus.slots;
+            else if (Game.items[pack.id] && Game.items[pack.id].bonus && Game.items[pack.id].bonus.slots) {
+                packBonus = Game.items[pack.id].bonus.slots;
             }
             base += packBonus;
         }
@@ -115,7 +115,7 @@ Object.assign(Game, {
         }
 
         if (added) {
-            const itemDef = (this.items && this.items[itemId]) ? this.items[itemId] : {name: itemId};
+            const itemDef = (Game.items && Game.items[itemId]) ? Game.items[itemId] : {name: itemId};
             let name = (fullItemObj && fullItemObj.name) ? fullItemObj.name : ((props && props.name) ? props.name : itemDef.name);
             const color = (props && props.color) ? props.color.split(' ')[0] : "text-green-400";
             
@@ -158,7 +158,6 @@ Object.assign(Game, {
         
         const cleanId = item.id.replace('rusty_', '');
         
-        // MAPPING FIX: rusty_pistol -> pistol_10mm
         let targetId = cleanId;
         if(cleanId === 'pistol') targetId = 'pistol_10mm';
         if(cleanId === 'rifle') targetId = 'hunting_rifle';
@@ -177,8 +176,8 @@ Object.assign(Game, {
         
         if(!weapon || !mod) return false;
         
-        const wDef = this.items[weapon.id];
-        const mDef = this.items[mod.id];
+        const wDef = Game.items[weapon.id];
+        const mDef = Game.items[mod.id];
 
         if(!wDef || !mDef) return false;
 
@@ -197,7 +196,7 @@ Object.assign(Game, {
         if(!weapon.mods) weapon.mods = [];
         
         const existingModIndex = weapon.mods.findIndex(mid => {
-            const md = this.items[mid];
+            const md = Game.items[mid];
             return md && md.slot === mDef.slot;
         });
         
@@ -229,7 +228,7 @@ Object.assign(Game, {
 
         const bases = ['pistol_10mm', 'hunting_rifle', 'combat_shotgun', 'machete', 'super_sledge'];
         const baseId = bases[Math.floor(Math.random() * bases.length)];
-        const baseItem = this.items[baseId];
+        const baseItem = Game.items[baseId];
 
         if(!baseItem) return;
 
@@ -301,7 +300,7 @@ Object.assign(Game, {
             return;
         }
 
-        const def = (this.items && this.items[item.id]) ? this.items[item.id] : {};
+        const def = (Game.items && Game.items[item.id]) ? Game.items[item.id] : {};
         let name = (item.props && item.props.name) ? item.props.name : (item.name || def.name || item.id);
 
         this.state.inventory.splice(invIndex, 1);
@@ -333,7 +332,7 @@ Object.assign(Game, {
             return;
         }
         
-        const def = (this.items && this.items[item.id]) ? this.items[item.id] : null;
+        const def = (Game.items && Game.items[item.id]) ? Game.items[item.id] : null;
         if(!def) return;
         
         let name = (item.props && item.props.name) ? item.props.name : (item.name || def.name);
@@ -383,7 +382,7 @@ Object.assign(Game, {
             const countNeeded = recipe.req[reqId];
             const invItem = this.state.inventory.find(i => i.id === reqId);
             if (!invItem || invItem.count < countNeeded) { 
-                const name = (this.items && this.items[reqId]) ? this.items[reqId].name : reqId;
+                const name = (Game.items && Game.items[reqId]) ? Game.items[reqId].name : reqId;
                 UI.log(`Material fehlt: ${name}`, "text-red-500"); return; 
             }
         }
@@ -400,7 +399,7 @@ Object.assign(Game, {
             this.addToInventory(recipe.out, recipe.count); 
         }
         
-        const outName = (recipe.out === "AMMO") ? "Munition" : ((this.items && this.items[recipe.out]) ? this.items[recipe.out].name : recipe.out);
+        const outName = (recipe.out === "AMMO") ? "Munition" : ((Game.items && Game.items[recipe.out]) ? Game.items[recipe.out].name : recipe.out);
         UI.log(`Hergestellt: ${recipe.count}x ${outName}`, "text-green-400 font-bold");
 
         if(typeof Game.updateQuestProgress === 'function' && recipe.out !== "AMMO") {
@@ -447,11 +446,11 @@ Object.assign(Game, {
         this.state.inventory.push(itemToAdd);
         
         if(slot === 'weapon') {
-            const fists = (this.items && this.items['fists']) ? { ...this.items['fists'] } : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon' };
+            const fists = (Game.items && Game.items['fists']) ? { ...Game.items['fists'] } : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon' };
             this.state.equip.weapon = fists;
             UI.log(`${item.name || 'Waffe'} abgelegt. Du nutzt nun deine Fäuste.`, "text-yellow-400");
         } else if(slot === 'body') {
-            const suit = (this.items && this.items['vault_suit']) ? { ...this.items['vault_suit'] } : { id: 'vault_suit', name: 'Vault-Anzug', def: 1, type: 'body' };
+            const suit = (Game.items && Game.items['vault_suit']) ? { ...Game.items['vault_suit'] } : { id: 'vault_suit', name: 'Vault-Anzug', def: 1, type: 'body' };
             this.state.equip.body = suit;
             UI.log(`${item.name || 'Rüstung'} abgelegt. Du trägst wieder deinen Vault-Anzug.`, "text-blue-400");
         } else {
@@ -476,7 +475,7 @@ Object.assign(Game, {
 
         if(index === -1 || !this.state.inventory[index]) return;
         invItem = this.state.inventory[index];
-        const itemDef = (this.items && this.items[invItem.id]) ? this.items[invItem.id] : { name: invItem.id };
+        const itemDef = (Game.items && Game.items[invItem.id]) ? Game.items[invItem.id] : { name: invItem.id };
         
         if (itemDef.type === 'back') {
             const slot = 'back';
@@ -591,7 +590,7 @@ Object.assign(Game, {
                              const { _fromInv, ...rest } = oldEquip;
                              this.state.inventory.push({ ...rest, count: 1, isNew: true });
                         } else {
-                             const oldKey = Object.keys(this.items).find(k => this.items[k].name === oldEquip.name);
+                             const oldKey = Object.keys(Game.items).find(k => Game.items[k].name === oldEquip.name);
                              if(oldKey) this.state.inventory.push({id: oldKey, count: 1, isNew: true});
                         }
                     }
@@ -624,7 +623,7 @@ Object.assign(Game, {
             : "Fernkampfwaffe";
 
         if(!this.state.inventory || this.state.inventory.length === 0) {
-            const fists = (this.items && this.items['fists']) ? { ...this.items['fists'] } : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon' };
+            const fists = (Game.items && Game.items['fists']) ? { ...Game.items['fists'] } : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon' };
             this.state.equip.weapon = fists;
             UI.log("Waffe abgelegt. Nutze Fäuste.", "text-red-500 font-bold");
             if(typeof UI.renderChar === 'function') UI.renderChar();
@@ -636,7 +635,7 @@ Object.assign(Game, {
         let bestIndex = -1;
 
         this.state.inventory.forEach((item, idx) => {
-            const def = (this.items && this.items[item.id]) ? this.items[item.id] : null;
+            const def = (Game.items && Game.items[item.id]) ? Game.items[item.id] : null;
             if (!def) return;
 
             const type = def.type ? def.type.toLowerCase() : '';
@@ -658,10 +657,10 @@ Object.assign(Game, {
 
         if (bestWeapon) {
             this.useItem(bestIndex); 
-            const newName = bestWeapon.name || bestWeapon.props?.name || ((this.items && this.items[bestWeapon.id]) ? this.items[bestWeapon.id].name : bestWeapon.id);
+            const newName = bestWeapon.name || bestWeapon.props?.name || ((Game.items && Game.items[bestWeapon.id]) ? Game.items[bestWeapon.id].name : bestWeapon.id);
             UI.log(`${newName} wurde statt ${oldName} angelegt (Munition leer)`, "text-yellow-400 blink-red");
         } else {
-            const fists = (this.items && this.items['fists']) ? { ...this.items['fists'] } : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon' };
+            const fists = (Game.items && Game.items['fists']) ? { ...Game.items['fists'] } : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon' };
             this.state.equip.weapon = fists;
             UI.log("Keine Nahkampfwaffe gefunden! Du kämpfst mit Fäusten!", "text-red-500");
         }
@@ -673,7 +672,7 @@ Object.assign(Game, {
         let w = 0;
         if(this.state.inventory) {
             this.state.inventory.forEach(i => {
-                const itemDef = (this.items && this.items[i.id]) ? this.items[i.id] : null;
+                const itemDef = (Game.items && Game.items[i.id]) ? Game.items[i.id] : null;
                 const weight = (i.weight !== undefined) ? i.weight : (itemDef ? itemDef.weight : 0);
                 w += weight * (i.count || 1);
             });
@@ -693,5 +692,3 @@ Object.assign(Game, {
 
 // Alias für Kompatibilität
 Game.addItem = Game.addToInventory;
-
-console.log("!!! GAME_INV_LOGIC WURDE ERFOLGREICH GELADEN !!!");
