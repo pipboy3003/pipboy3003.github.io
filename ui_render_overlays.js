@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-27 14:30:00 - ui_render_overlays.js - Complete with Epic Quest Animation
+// [2026-01-28 16:00:00] ui_render_overlays.js - Complete with Quest HUD & Animation
 
 Object.assign(UI, {
     
@@ -290,12 +290,12 @@ Object.assign(UI, {
     showQuestComplete: function(questDef) {
         let container = document.getElementById('hud-quest-overlay');
         if(!container) {
-            const view = document.getElementById('game-screen'); 
-            if(!view) return;
-            container = document.createElement('div');
-            container.id = 'hud-quest-overlay';
-            container.className = "fixed top-24 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none z-[100] w-full max-w-sm";
-            view.appendChild(container);
+             const view = document.getElementById('game-screen'); 
+             if(!view) return;
+             container = document.createElement('div');
+             container.id = 'hud-quest-overlay';
+             container.className = "fixed top-24 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none z-[100] w-full max-w-sm";
+             view.appendChild(container);
         }
 
         const msg = document.createElement('div');
@@ -763,5 +763,96 @@ Object.assign(UI, {
         box.appendChild(restBtn); 
         box.appendChild(leaveBtn);
         overlay.appendChild(box);
+    },
+
+    // [NEU] ACTIVE QUEST HUD TRACKER
+    updateQuestTracker: function() {
+        // 1. Container suchen oder erstellen
+        let hud = document.getElementById('quest-tracker-hud');
+        if(!hud) {
+            const view = document.getElementById('game-screen');
+            if(!view) return; // Wenn Spiel noch nicht geladen, abbrechen
+            hud = document.createElement('div');
+            hud.id = 'quest-tracker-hud';
+            // Position: Oben rechts, fixiert, halbtransparent
+            hud.className = "absolute top-4 right-4 z-40 bg-black/80 border-l-4 border-yellow-500 p-3 max-w-xs shadow-lg pointer-events-none transition-opacity duration-500";
+            view.appendChild(hud);
+        }
+
+        // 2. Prüfen ob wir eine Quest tracken
+        if(!Game.state || !Game.state.trackedQuestId) {
+            hud.style.opacity = '0';
+            return;
+        }
+
+        const qId = Game.state.trackedQuestId;
+        const qData = Game.state.activeQuests.find(q => q.id === qId);
+        const def = Game.questDefs.find(d => d.id === qId);
+
+        if(!qData || !def) {
+            // Falls Quest erledigt oder nicht gefunden, Tracker ausblenden
+            hud.style.opacity = '0';
+            return;
+        }
+
+        hud.style.opacity = '1';
+
+        // 3. Inhalt bauen
+        let objectives = "";
+        
+        // A) Multi-Collect
+        if(def.type === 'collect_multi') {
+            objectives = Object.entries(def.reqItems).map(([id, amt]) => {
+                const inInv = Game.state.inventory.filter(i => i.id === id).reduce((s, i) => s + i.count, 0);
+                const iName = Game.items[id]?.name || id;
+                const done = inInv >= amt;
+                const icon = done ? "✔" : "☐";
+                return `<div class="${done ? 'text-green-500 line-through' : 'text-yellow-100'} text-xs font-mono ml-2">
+                    ${icon} ${inInv}/${amt} ${iName}
+                </div>`;
+            }).join('');
+        } 
+        // B) Standard (Kill, Collect, Visit)
+        else {
+            const current = qData.progress;
+            const max = qData.max;
+            let verb = "Ziel";
+            if(def.type === 'kill') verb = "Eliminiere";
+            if(def.type === 'collect') verb = "Sammle";
+            if(def.type === 'visit') verb = "Reise nach";
+            
+            objectives = `<div class="text-yellow-100 text-xs font-mono ml-2">
+                [${current}/${max}] ${verb} ${def.target}
+            </div>`;
+        }
+
+        // 4. Richtungsanzeige (Kompass)
+        let directionHint = "";
+        if(def.target && typeof def.target === 'string' && def.target.includes(',')) {
+            const coords = def.target.split(',').map(Number);
+            if(coords.length === 2 && Game.state.sector) {
+                const tx = coords[0]; const ty = coords[1];
+                const cx = Game.state.sector.x; const cy = Game.state.sector.y;
+                
+                if(tx === cx && ty === cy) {
+                    directionHint = `<div class="text-green-400 text-[10px] mt-1 animate-pulse">📍 ZIEL IM AKTUELLEN SEKTOR!</div>`;
+                } else {
+                    let dir = "";
+                    if(ty < cy) dir += "Nord";
+                    if(ty > cy) dir += "Süd";
+                    if(tx > cx) dir += "ost";
+                    if(tx < cx) dir += "west";
+                    if(dir) directionHint = `<div class="text-gray-400 text-[10px] mt-1 italic">📡 Ziel liegt im ${dir}</div>`;
+                }
+            }
+        }
+
+        hud.innerHTML = `
+            <div class="text-yellow-500 font-bold text-xs uppercase tracking-widest mb-1 shadow-black">◉ ${def.title}</div>
+            <div class="flex flex-col gap-1 mb-1">
+                ${objectives}
+            </div>
+            ${directionHint}
+        `;
     }
 });
