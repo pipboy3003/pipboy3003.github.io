@@ -1,26 +1,29 @@
-// [2026-01-27 14:15:00] ui_view_journal.js - Überarbeitetes Quest-Journal mit Detail-Anzeige
-/* Änderungen: 
-   - Prozentuale Fortschrittsanzeige hinzugefügt
-   - Detail-Auflistung für Multi-Sammelquests integriert
-*/
+// [2026-01-28 12:15:00] ui_view_journal.js - Fully Dynamic Wiki & Quests
 
 Object.assign(UI, {
 
-    // [v0.6.9a] Wiki Overhaul & Fixes
+    // [v3.2] DYNAMISCHES WIKI
+    // Liest ALLES aus GameData. Keine Hardcoded Listen mehr!
     renderWiki: function(category = 'monsters') {
         const content = document.getElementById('wiki-content');
         if(!content) return;
 
-        // --- HELPER: SELF-HEALING UI ---
+        // --- HELPER: Navigation Buttons prüfen/erstellen ---
         const btnContainer = document.querySelector('#wiki-btn-monsters')?.parentElement;
-        if(btnContainer && !document.getElementById('wiki-btn-perks')) {
-            const btn = document.createElement('button');
-            btn.id = 'wiki-btn-perks';
-            btn.className = "border border-green-500 px-3 py-1 text-sm font-bold whitespace-nowrap hover:bg-green-500 hover:text-black transition-colors text-green-500";
-            btn.textContent = "PERKS";
-            btn.onclick = () => UI.renderWiki('perks');
-            btnContainer.appendChild(btn);
-        }
+        // Wir fügen Buttons hinzu, falls sie fehlen (z.B. Perks oder Quests)
+        const ensureButton = (id, label, catName) => {
+            if(btnContainer && !document.getElementById(id)) {
+                const btn = document.createElement('button');
+                btn.id = id;
+                btn.className = "border border-green-500 px-3 py-1 text-sm font-bold whitespace-nowrap hover:bg-green-500 hover:text-black transition-colors text-green-500";
+                btn.textContent = label;
+                btn.onclick = () => UI.renderWiki(catName);
+                btnContainer.appendChild(btn);
+            }
+        };
+        
+        ensureButton('wiki-btn-perks', 'PERKS', 'perks');
+        ensureButton('wiki-btn-quests', 'QUESTS', 'quests'); // NEUER BUTTON FÜR QUESTS
 
         const getIcon = (type) => {
             const map = {
@@ -31,7 +34,8 @@ Object.assign(UI, {
             return map[type] || '❓';
         };
 
-        const categories = ['monsters', 'items', 'crafting', 'locs', 'perks'];
+        // Button Styles update
+        const categories = ['monsters', 'items', 'crafting', 'locs', 'perks', 'quests'];
         categories.forEach(cat => {
             const btn = document.getElementById(`wiki-btn-${cat}`);
             if(btn) {
@@ -47,6 +51,7 @@ Object.assign(UI, {
 
         let html = '';
 
+        // --- 👾 MONSTER (Dynamisch) ---
         if(category === 'monsters') {
             const list = Object.values(Game.monsters || {}).sort((a,b) => a.minLvl - b.minLvl);
             if(list.length === 0) html = '<div class="text-gray-500 text-center mt-10">Keine Daten verfügbar.</div>';
@@ -77,7 +82,9 @@ Object.assign(UI, {
                         </div>
                     </div>`;
             });
-        } else if (category === 'items') {
+        } 
+        // --- 📦 ITEMS (Dynamisch) ---
+        else if (category === 'items') {
             const groups = {};
             if (Game.items) {
                 Object.keys(Game.items).forEach(k => {
@@ -85,7 +92,7 @@ Object.assign(UI, {
                     if(!groups[i.type]) groups[i.type] = [];
                     groups[i.type].push(i);
                 });
-                const order = ['weapon', 'body', 'head', 'arms', 'legs', 'feet', 'back', 'consumable', 'ammo', 'tool', 'blueprint', 'component', 'junk'];
+                const order = ['weapon', 'body', 'head', 'arms', 'legs', 'feet', 'back', 'consumable', 'ammo', 'tool', 'blueprint', 'component', 'junk', 'quest', 'valuable'];
                 const sortedKeys = Object.keys(groups).sort((a,b) => {
                     let ia = order.indexOf(a), ib = order.indexOf(b);
                     if(ia === -1) ia = 99; if(ib === -1) ib = 99;
@@ -110,7 +117,9 @@ Object.assign(UI, {
                     });
                 });
             }
-        } else if (category === 'crafting') {
+        } 
+        // --- 🔧 CRAFTING (Dynamisch) ---
+        else if (category === 'crafting') {
             if (Game.recipes && Game.recipes.length > 0) {
                 const list = [...Game.recipes].sort((a,b) => a.lvl - b.lvl);
                 list.forEach(r => {
@@ -136,7 +145,9 @@ Object.assign(UI, {
             } else {
                 html = '<div class="text-center text-gray-500 mt-10">Keine Baupläne in Datenbank.</div>';
             }
-        } else if (category === 'perks') {
+        } 
+        // --- 🌟 PERKS (Dynamisch) ---
+        else if (category === 'perks') {
             if(Game.perkDefs) {
                 Game.perkDefs.forEach(p => {
                     const lvl = Game.getPerkLevel(p.id);
@@ -155,30 +166,54 @@ Object.assign(UI, {
             } else {
                 html = '<div class="text-center text-gray-500 p-4">Keine Perks gefunden.</div>';
             }
-        } else if (category === 'locs') {
-             const locs = [
-                {name: "Vault 101", coord: "[START]", desc: "Dein Startpunkt. Ein sicherer Bunker unter der Erde. Bietet Schutz und kostenlose Heilung."},
-                {name: "Rusty Springs", coord: "[3,3]", desc: "Die größte bekannte Siedlung. Hier findest du Händler, einen Arzt und Werkbänke."},
-                {name: "Oasis", coord: "[NW]", desc: "Fruchtbares Gebiet im Nordwesten. Dichter Wald, aber gefährliche Flora."},
-                {name: "The Pitt", coord: "[SO]", desc: "Trostlose Wüste im Südosten. Hohe Strahlung und Raider-Banden."},
-                {name: "Sumpf", coord: "[NO]", desc: "Heimat der Mirelurks. Vorsicht vor dem Wasser!"},
-                {name: "Gebirge", coord: "[SW]", desc: "Felsiges Terrain im Südwesten. Reich an Erzen."}
-            ];
-            locs.forEach(l => {
-                html += `
-                    <div class="mb-4 border-l-4 border-green-600 pl-3 py-1 bg-gradient-to-r from-green-900/20 to-transparent">
-                        <div class="flex justify-between">
-                            <span class="font-bold text-cyan-400 text-lg tracking-wider">${l.name}</span>
-                            <span class="font-mono text-xs text-yellow-600 bg-black px-1 border border-yellow-900 flex items-center">${l.coord}</span>
-                        </div>
-                        <div class="text-sm text-green-300 mt-1 leading-relaxed">${l.desc}</div>
-                    </div>`;
-            });
+        } 
+        // --- 🌍 LOCATIONS (NEU: Dynamisch aus GameData.locations) ---
+        else if (category === 'locs') {
+             // FALLBACK: Falls noch keine Locations in data_core stehen, nutzen wir Dummy-Daten
+             const locs = Game.locations || window.GameData.locations || [];
+             
+             if(locs.length === 0) {
+                 html = '<div class="text-center text-gray-500 mt-10">Keine Ortsdaten gefunden.</div>';
+             } else {
+                locs.forEach(l => {
+                    html += `
+                        <div class="mb-4 border-l-4 border-green-600 pl-3 py-1 bg-gradient-to-r from-green-900/20 to-transparent">
+                            <div class="flex justify-between">
+                                <span class="font-bold text-cyan-400 text-lg tracking-wider">${l.name}</span>
+                                <span class="font-mono text-xs text-yellow-600 bg-black px-1 border border-yellow-900 flex items-center">${l.coord}</span>
+                            </div>
+                            <div class="text-sm text-green-300 mt-1 leading-relaxed">${l.desc}</div>
+                        </div>`;
+                });
+             }
         }
+        // --- 📜 QUESTS (NEU: Quest-Übersicht für Wiki) ---
+        else if (category === 'quests') {
+            if(Game.questDefs) {
+                Game.questDefs.forEach(q => {
+                    // Zeige Quest an (ggf. als ??? wenn Voraussetzung fehlt, hier erstmal alles sichtbar als "Datenbank")
+                    html += `
+                        <div class="border border-green-900/50 p-3 mb-2 bg-black/40">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-yellow-400">${q.title}</span>
+                                <span class="text-[10px] bg-green-900 text-green-200 px-1 rounded">Min-Lvl: ${q.minLvl}</span>
+                            </div>
+                            <div class="text-xs text-green-200 italic mb-2">${q.desc}</div>
+                            <div class="text-[10px] text-gray-500 font-mono">
+                                Typ: ${q.type.toUpperCase()} | Ziel: ${q.target}
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html = '<div class="text-center text-gray-500 p-4">Keine Quests in Datenbank.</div>';
+            }
+        }
+
         content.innerHTML = html;
     },
 
-    // [v3.1] Quest Render Logic mit Prozentanzeige & Multi-Collect Details
+    // [v3.1] Quest Render Logic mit Prozentanzeige (Bleibt unverändert wie oben, muss aber in der Datei bleiben)
     renderQuests: function() {
         const list = document.getElementById('quest-list');
         if(!list) return;
