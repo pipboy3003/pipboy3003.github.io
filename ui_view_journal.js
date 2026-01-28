@@ -1,16 +1,20 @@
-// [2026-01-28 12:15:00] ui_view_journal.js - Fully Dynamic Wiki & Quests
+// [2026-01-28 14:00:00] ui_view_journal.js - Questlines Overhaul
+/* Features:
+   - Komplett neue Quest-Ansicht
+   - Automatische Erkennung von Quest-Ketten (Storylines)
+   - Timeline-Visualisierung
+   - Dynamisches Wiki (beibehalten)
+*/
 
 Object.assign(UI, {
 
-    // [v3.2] DYNAMISCHES WIKI
-    // Liest ALLES aus GameData. Keine Hardcoded Listen mehr!
+    // [v3.2] DYNAMISCHES WIKI (Beibehalten aus vorherigem Update)
     renderWiki: function(category = 'monsters') {
         const content = document.getElementById('wiki-content');
         if(!content) return;
 
         // --- HELPER: Navigation Buttons prüfen/erstellen ---
         const btnContainer = document.querySelector('#wiki-btn-monsters')?.parentElement;
-        // Wir fügen Buttons hinzu, falls sie fehlen (z.B. Perks oder Quests)
         const ensureButton = (id, label, catName) => {
             if(btnContainer && !document.getElementById(id)) {
                 const btn = document.createElement('button');
@@ -23,7 +27,7 @@ Object.assign(UI, {
         };
         
         ensureButton('wiki-btn-perks', 'PERKS', 'perks');
-        ensureButton('wiki-btn-quests', 'QUESTS', 'quests'); // NEUER BUTTON FÜR QUESTS
+        ensureButton('wiki-btn-quests', 'QUESTS', 'quests');
 
         const getIcon = (type) => {
             const map = {
@@ -34,7 +38,6 @@ Object.assign(UI, {
             return map[type] || '❓';
         };
 
-        // Button Styles update
         const categories = ['monsters', 'items', 'crafting', 'locs', 'perks', 'quests'];
         categories.forEach(cat => {
             const btn = document.getElementById(`wiki-btn-${cat}`);
@@ -51,7 +54,6 @@ Object.assign(UI, {
 
         let html = '';
 
-        // --- 👾 MONSTER (Dynamisch) ---
         if(category === 'monsters') {
             const list = Object.values(Game.monsters || {}).sort((a,b) => a.minLvl - b.minLvl);
             if(list.length === 0) html = '<div class="text-gray-500 text-center mt-10">Keine Daten verfügbar.</div>';
@@ -83,7 +85,6 @@ Object.assign(UI, {
                     </div>`;
             });
         } 
-        // --- 📦 ITEMS (Dynamisch) ---
         else if (category === 'items') {
             const groups = {};
             if (Game.items) {
@@ -118,7 +119,6 @@ Object.assign(UI, {
                 });
             }
         } 
-        // --- 🔧 CRAFTING (Dynamisch) ---
         else if (category === 'crafting') {
             if (Game.recipes && Game.recipes.length > 0) {
                 const list = [...Game.recipes].sort((a,b) => a.lvl - b.lvl);
@@ -146,7 +146,6 @@ Object.assign(UI, {
                 html = '<div class="text-center text-gray-500 mt-10">Keine Baupläne in Datenbank.</div>';
             }
         } 
-        // --- 🌟 PERKS (Dynamisch) ---
         else if (category === 'perks') {
             if(Game.perkDefs) {
                 Game.perkDefs.forEach(p => {
@@ -167,11 +166,8 @@ Object.assign(UI, {
                 html = '<div class="text-center text-gray-500 p-4">Keine Perks gefunden.</div>';
             }
         } 
-        // --- 🌍 LOCATIONS (NEU: Dynamisch aus GameData.locations) ---
         else if (category === 'locs') {
-             // FALLBACK: Falls noch keine Locations in data_core stehen, nutzen wir Dummy-Daten
              const locs = Game.locations || window.GameData.locations || [];
-             
              if(locs.length === 0) {
                  html = '<div class="text-center text-gray-500 mt-10">Keine Ortsdaten gefunden.</div>';
              } else {
@@ -187,11 +183,9 @@ Object.assign(UI, {
                 });
              }
         }
-        // --- 📜 QUESTS (NEU: Quest-Übersicht für Wiki) ---
         else if (category === 'quests') {
             if(Game.questDefs) {
                 Game.questDefs.forEach(q => {
-                    // Zeige Quest an (ggf. als ??? wenn Voraussetzung fehlt, hier erstmal alles sichtbar als "Datenbank")
                     html += `
                         <div class="border border-green-900/50 p-3 mb-2 bg-black/40">
                             <div class="flex justify-between items-center mb-1">
@@ -213,90 +207,190 @@ Object.assign(UI, {
         content.innerHTML = html;
     },
 
-    // [v3.1] Quest Render Logic mit Prozentanzeige (Bleibt unverändert wie oben, muss aber in der Datei bleiben)
+    // [v4.0] QUEST SYSTEM REWORK - Story Lines & Timeline
     renderQuests: function() {
         const list = document.getElementById('quest-list');
         if(!list) return;
         list.innerHTML = '';
-        
-        if(!this.questTab) this.questTab = 'active';
 
-        const tabsContainer = document.createElement('div');
-        tabsContainer.className = "flex w-full border-b border-green-900 mb-4";
-        
-        const btnActive = document.createElement('button');
-        btnActive.className = `flex-1 py-2 font-bold text-center transition-colors ${this.questTab === 'active' ? 'bg-green-900/40 text-green-400 border-b-2 border-green-500' : 'bg-black text-gray-600 hover:text-green-500'}`;
-        btnActive.textContent = "AKTIV";
-        btnActive.onclick = (e) => { e.stopPropagation(); this.questTab = 'active'; this.renderQuests(); };
-        
-        const btnCompleted = document.createElement('button');
-        btnCompleted.className = `flex-1 py-2 font-bold text-center transition-colors ${this.questTab === 'completed' ? 'bg-green-900/40 text-green-400 border-b-2 border-green-500' : 'bg-black text-gray-600 hover:text-green-500'}`;
-        btnCompleted.textContent = "ERLEDIGT";
-        btnCompleted.onclick = (e) => { e.stopPropagation(); this.questTab = 'completed'; this.renderQuests(); };
-        
-        tabsContainer.appendChild(btnActive);
-        tabsContainer.appendChild(btnCompleted);
-        list.appendChild(tabsContainer);
+        // --- SCHRITT 1: Quest-Ketten (Chains) aufbauen ---
+        const chains = []; // Array von Arrays (QuestLines)
+        const sideQuests = [];
+        const processedIds = new Set();
+        const allDefs = Game.questDefs || [];
 
-        if(this.questTab === 'active') {
-            const quests = Game.state.activeQuests || [];
-            if(quests.length === 0) {
-                list.innerHTML += '<div class="text-gray-500 italic text-center mt-10">Keine aktiven Aufgaben.</div>';
-                return;
+        // Helper: Finde Nachfolger
+        const findNext = (currentId) => allDefs.find(q => q.preReq === currentId);
+
+        // Suche Start-Quests (Root nodes)
+        const roots = allDefs.filter(q => !q.preReq);
+
+        roots.forEach(root => {
+            const chain = [root];
+            processedIds.add(root.id);
+            
+            let current = root;
+            let next = findNext(current.id);
+            
+            // Kette verfolgen
+            while(next) {
+                chain.push(next);
+                processedIds.add(next.id);
+                current = next;
+                next = findNext(current.id);
             }
-            quests.forEach(q => {
-                const def = Game.questDefs ? Game.questDefs.find(d => d.id === q.id) : null;
-                const title = def ? def.title : "Unbekannte Quest";
-                const desc = def ? def.desc : "???";
-                const pct = Math.min(100, Math.floor((q.progress / q.max) * 100));
+
+            // Wenn Kette > 1 Element hat, ist es eine Story Line
+            if(chain.length > 1) {
+                chains.push(chain);
+            } else {
+                // Einzelne Quest -> Side Quest
+                sideQuests.push(root);
+            }
+        });
+
+        // Alle Quests, die nicht Teil einer Root-Kette waren (Sicherheitsnetz)
+        allDefs.forEach(q => {
+            if(!processedIds.has(q.id)) sideQuests.push(q);
+        });
+
+        // --- SCHRITT 2: Rendering Helper ---
+        
+        const renderQuestCard = (def, status, isCompact = false) => {
+            // Status: 'done', 'active', 'locked'
+            const activeData = Game.state.activeQuests.find(q => q.id === def.id);
+            const isDone = status === 'done';
+            const isLocked = status === 'locked';
+            
+            let colorClass = isDone ? "text-gray-500" : (isLocked ? "text-gray-600" : "text-yellow-400");
+            let borderClass = isDone ? "border-gray-800 opacity-60" : (isLocked ? "border-gray-800 opacity-40" : "border-green-500 bg-green-900/10");
+            let icon = isDone ? "✔" : (isLocked ? "🔒" : "◉");
+
+            // Prozentberechnung für Aktive
+            let pct = 0;
+            let detailHtml = "";
+            if(activeData) {
+                pct = Math.min(100, Math.floor((activeData.progress / activeData.max) * 100));
                 
-                let detailHtml = "";
-                if(def && def.type === 'collect_multi') {
-                    detailHtml = `<div class='text-[10px] text-green-500 font-mono mb-2'>STATUS: `;
-                    detailHtml += Object.entries(def.reqItems).map(([id, amt]) => {
+                if(def.type === 'collect_multi') {
+                     const details = Object.entries(def.reqItems).map(([id, amt]) => {
                         const inInv = Game.state.inventory.filter(i => i.id === id).reduce((s, i) => s + i.count, 0);
-                        return `${inInv}/${amt} ${Game.items[id]?.name || id}`;
-                    }).join(' | ') + `</div>`;
+                        const iName = Game.items[id]?.name || id;
+                        const done = inInv >= amt;
+                        return `<span class="${done ? 'text-green-500 line-through' : 'text-yellow-200'}">${inInv}/${amt} ${iName}</span>`;
+                    }).join(', ');
+                    detailHtml = `<div class="text-[10px] mt-1 border-t border-green-900/30 pt-1">${details}</div>`;
                 }
-
-                const div = document.createElement('div');
-                div.className = "border border-green-900 bg-green-900/10 p-3 mb-2 relative";
-                div.innerHTML = `
-                    <div class="font-bold text-yellow-400 text-lg mb-1 flex justify-between">
-                        <span>${title}</span>
-                        <span class="text-xs text-gray-400 border border-gray-600 px-1 rounded">LVL ${def?.minLvl || 1}</span>
-                    </div>
-                    <div class="text-green-200 text-sm mb-3">${desc}</div>
-                    ${detailHtml}
-                    <div class="w-full bg-black border border-green-700 h-5 relative mb-2">
-                        <div class="bg-green-600 h-full transition-all duration-700" style="width: ${pct}%"></div>
-                        <div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white shadow-black">
-                            ${pct}% ABGESCHLOSSEN
-                        </div>
-                    </div>
-                    <div class="mt-2 text-right text-[10px] text-yellow-600 font-bold">
-                        BELOHNUNG: ${def?.reward?.caps ? def.reward.caps + ' KK, ' : ''}${def?.reward?.xp || 0} XP
-                    </div>`;
-                list.appendChild(div);
-            });
-        } else {
-            const completedIds = Game.state.completedQuests || [];
-            if(completedIds.length === 0) {
-                list.innerHTML += '<div class="text-gray-500 italic text-center mt-10">Noch nichts erledigt.</div>';
-                return;
             }
-            completedIds.forEach(qId => {
-                const def = Game.questDefs?.find(d => d.id === qId);
-                if(!def) return;
-                const div = document.createElement('div');
-                div.className = "border border-gray-800 bg-black p-3 mb-2 opacity-60";
-                div.innerHTML = `
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="font-bold text-gray-400 line-through">${def.title}</span>
-                        <span class="text-[9px] bg-green-900 text-green-300 px-2 rounded">ERLEDIGT</span>
-                    </div>`;
-                list.appendChild(div);
+
+            if(isLocked) return `
+                <div class="flex items-center gap-3 p-2 border-l-2 border-gray-700 ml-2">
+                    <div class="text-gray-600 font-mono">???</div>
+                    <div class="text-xs text-gray-700 italic">Noch nicht verfügbar</div>
+                </div>`;
+
+            if(isCompact && isDone) return `
+                <div class="flex items-center gap-2 mb-1 opacity-50 ml-1">
+                    <span class="text-green-600 text-xs">✔</span>
+                    <span class="text-xs text-green-800 line-through decoration-green-900">${def.title}</span>
+                </div>`;
+
+            return `
+                <div class="border-l-2 ${isDone ? 'border-green-800' : 'border-yellow-400'} pl-3 py-2 mb-2 ml-1 relative group transition-all">
+                    <div class="flex justify-between items-start">
+                        <div class="font-bold ${colorClass} text-sm flex items-center gap-2">
+                            ${icon} ${def.title}
+                        </div>
+                        ${!isLocked && !isDone ? `<span class="text-[9px] border border-green-900 text-green-400 px-1 rounded">LVL ${def.minLvl}</span>` : ''}
+                    </div>
+                    
+                    ${!isDone && !isLocked ? `<div class="text-xs text-green-200 mt-1 mb-2 leading-relaxed">${def.desc}</div>` : ''}
+                    
+                    ${activeData ? `
+                        <div class="w-full bg-black border border-green-900 h-1.5 mt-1 mb-1">
+                            <div class="bg-yellow-500 h-full transition-all duration-500" style="width: ${pct}%"></div>
+                        </div>
+                        <div class="flex justify-between text-[9px] font-mono text-green-400">
+                            <span>${activeData.progress} / ${activeData.max}</span>
+                            <span>${pct}%</span>
+                        </div>
+                        ${detailHtml}
+                        <div class="mt-2 text-[10px] text-yellow-600 font-bold border-t border-dashed border-green-900/50 pt-1">
+                            BELOHNUNG: ${def.reward?.caps ? def.reward.caps + ' KK ' : ''}${def.reward?.xp ? def.reward.xp + ' XP' : ''}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        };
+
+        // --- SCHRITT 3: Rendering der Story Lines ---
+
+        if(chains.length > 0) {
+            list.innerHTML += `<h3 class="text-yellow-500 font-bold text-xs tracking-[0.2em] border-b border-yellow-900/50 mb-3 pb-1">HAUPTGESCHICHTEN</h3>`;
+            
+            chains.forEach((chain, idx) => {
+                const chainContainer = document.createElement('div');
+                chainContainer.className = "mb-6 bg-black/20 p-2 rounded border border-green-900/30";
+                
+                // Titel der Storyline (basierend auf der ersten Quest)
+                const isComplete = chain.every(q => Game.state.completedQuests.includes(q.id));
+                const isActive = chain.some(q => Game.state.activeQuests.find(aq => aq.id === q.id));
+                
+                let headerColor = isComplete ? "text-green-700" : (isActive ? "text-green-300" : "text-gray-500");
+                chainContainer.innerHTML = `<div class="font-bold ${headerColor} mb-2 text-sm uppercase tracking-wider flex items-center gap-2">
+                    <span class="text-xl">${isActive ? '📖' : (isComplete ? '✅' : '🔒')}</span> GESCHICHTE: ${chain[0].title}
+                </div>`;
+
+                let lineHtml = `<div class="flex flex-col gap-0 border-l border-green-900/30 ml-2 pl-2">`;
+                
+                let lockedFound = false; // Damit wir nur die *nächste* gesperrte Quest anzeigen, nicht alle
+
+                chain.forEach(q => {
+                    const isDone = Game.state.completedQuests.includes(q.id);
+                    const isActiveQ = Game.state.activeQuests.find(aq => aq.id === q.id);
+                    
+                    if(isDone) {
+                        lineHtml += renderQuestCard(q, 'done', true); // Compact view für erledigte
+                    } else if (isActiveQ) {
+                        lineHtml += renderQuestCard(q, 'active');
+                    } else {
+                        if(!lockedFound) {
+                            lineHtml += renderQuestCard(q, 'locked');
+                            lockedFound = true; // Nur eine locked Quest anzeigen
+                        }
+                    }
+                });
+
+                lineHtml += `</div>`;
+                chainContainer.innerHTML += lineHtml;
+                list.appendChild(chainContainer);
             });
+        }
+
+        // --- SCHRITT 4: Rendering der Side Quests ---
+
+        if(sideQuests.length > 0) {
+            // Filtere Sidequests: Zeige nur Aktive oder Erledigte an (keine gesperrten Spoilers)
+            const visibleSide = sideQuests.filter(q => 
+                Game.state.activeQuests.find(aq => aq.id === q.id) || 
+                Game.state.completedQuests.includes(q.id)
+            );
+
+            if(visibleSide.length > 0) {
+                const sideContainer = document.createElement('div');
+                sideContainer.innerHTML = `<h3 class="text-green-500 font-bold text-xs tracking-[0.2em] border-b border-green-900/50 mb-3 pb-1 mt-6">NEBENMISSIONEN</h3>`;
+                
+                visibleSide.forEach(q => {
+                    const isDone = Game.state.completedQuests.includes(q.id);
+                    sideContainer.innerHTML += renderQuestCard(q, isDone ? 'done' : 'active', isDone);
+                });
+                
+                list.appendChild(sideContainer);
+            }
+        }
+
+        if(chains.length === 0 && sideQuests.length === 0) {
+             list.innerHTML = '<div class="text-center text-gray-500 italic mt-10">Keine Aufzeichnungen vorhanden.</div>';
         }
     }
 });
