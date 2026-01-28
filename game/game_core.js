@@ -1,4 +1,4 @@
-// [2026-01-27 13:45:00] game_core.js - Added Quest PreReqs & Multi-Item Support
+// [2026-01-28 15:00:00] game_core.js - Added Tracked Quest Logic & HUD Trigger
 
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
@@ -218,10 +218,8 @@ window.Game = {
                         id: def.id, progress: 0, max: def.amount || 0, type: def.type, target: def.target || null
                     };
 
-                    // Initialisierung für Multi-Sammel-Quests
                     if(def.type === 'collect_multi' && def.reqItems) {
                         newQuest.max = Object.values(def.reqItems).reduce((a, b) => a + b, 0);
-                        // Sofortigen Fortschritt prüfen falls Items bereits im Inventar
                         let currentTotal = 0;
                         for(let id in def.reqItems) {
                             const inInv = this.state.inventory.filter(i => i.id === id).reduce((s, i) => s + i.count, 0);
@@ -233,7 +231,12 @@ window.Game = {
                     this.state.activeQuests.push(newQuest);
                     UI.log(`QUEST: "${def.title}" erhalten!`, "text-cyan-400 font-bold animate-pulse");
                     
-                    // Falls Sammelquest bereits beim Erhalt fertig ist
+                    // AUTO-TRACK: Wenn es die einzige Quest ist, tracke sie
+                    if(this.state.activeQuests.length === 1 && !this.state.trackedQuestId) {
+                        this.state.trackedQuestId = newQuest.id;
+                        if(typeof UI !== 'undefined' && UI.updateQuestTracker) UI.updateQuestTracker();
+                    }
+
                     if(newQuest.progress >= newQuest.max && newQuest.max > 0) {
                         const idx = this.state.activeQuests.findIndex(q => q.id === def.id);
                         if(idx !== -1) this.completeQuest(idx);
@@ -252,11 +255,7 @@ window.Game = {
             if(!def) continue;
 
             let match = false;
-            
-            // Standard Ziele (Kill, Visit, einfaches Collect)
             if(q.type === type && q.target === target) match = true;
-            
-            // Multi-Collect Ziel Prüfung
             if(q.type === 'collect_multi' && type === 'collect' && def.reqItems && def.reqItems[target]) {
                 let currentTotal = 0;
                 for(let itemId in def.reqItems) {
@@ -275,9 +274,13 @@ window.Game = {
             if(q.progress >= q.max) this.completeQuest(i);
         }
         
-        // Immer prüfen, ob neue Quests durch Abschluss/Level getriggert wurden
         this.checkNewQuests();
-        if(updated && typeof UI !== 'undefined') UI.update();
+        
+        // HUD Update bei Fortschritt
+        if(updated && typeof UI !== 'undefined') {
+            UI.update();
+            if(UI.updateQuestTracker) UI.updateQuestTracker();
+        }
     },
 
     completeQuest: function(index) {
@@ -296,11 +299,26 @@ window.Game = {
             this.state.completedQuests.push(q.id);
             if(typeof UI !== 'undefined' && UI.showQuestComplete) UI.showQuestComplete(def);
         }
-        this.state.activeQuests.splice(index, 1);
-        this.saveGame(true);
         
-        // Folgequests direkt prüfen
+        // Wenn die getrackte Quest abgeschlossen wurde, Track-ID löschen
+        if(this.state.trackedQuestId === q.id) {
+            this.state.trackedQuestId = null;
+            // Versuch, automatisch die nächste zu tracken
+            if(this.state.activeQuests.length > 1) { // >1 weil die aktuelle gleich gelöscht wird
+                 // Wird unten gehandhabt, aber wir können es hier nullen
+            }
+        }
+        
+        this.state.activeQuests.splice(index, 1);
+        
+        // Wenn wir jetzt keine getrackte haben, aber Quests da sind, nimm die erste
+        if(!this.state.trackedQuestId && this.state.activeQuests.length > 0) {
+            this.state.trackedQuestId = this.state.activeQuests[0].id;
+        }
+
+        this.saveGame(true);
         this.checkNewQuests();
+        if(typeof UI !== 'undefined' && UI.updateQuestTracker) UI.updateQuestTracker();
     },
     
     checkShopRestock: function() {
@@ -372,6 +390,7 @@ window.Game = {
                 if(!this.state.completedQuests) this.state.completedQuests = [];
                 if(!this.state.quests) this.state.quests = [];
                 if(!this.state.camp) this.state.camp = null;
+                if(!this.state.trackedQuestId) this.state.trackedQuestId = null; // NEU
                 
                 const newRecs = ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp', 
                                  'craft_bp_frame', 'craft_bp_leather', 'craft_bp_metal', 'craft_bp_military', 'craft_bp_cargo'];
@@ -417,6 +436,7 @@ window.Game = {
                     camp: null, rads: 0, kills: 0, view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, 
                     explored: {}, visitedSectors: ["4,4"], tutorialsShown: { hacking: false, lockpicking: false },
                     activeQuests: [], completedQuests: [], quests: [], 
+                    trackedQuestId: null, // NEU
                     
                     knownRecipes: ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp', 'craft_bp_frame', 'craft_bp_leather', 'craft_bp_metal', 'craft_bp_military', 'craft_bp_cargo'], 
                     
@@ -442,6 +462,7 @@ window.Game = {
                 UI.switchView('map').then(() => { 
                     if(UI.els.gameOver) UI.els.gameOver.classList.add('hidden'); 
                     if(isNewGame) { setTimeout(() => UI.showPermadeathWarning(), 500); }
+                    if(UI.updateQuestTracker) UI.updateQuestTracker(); // Initiales HUD Update
                 });
             }
         } catch(e) { console.error(e); }
