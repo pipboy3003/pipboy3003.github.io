@@ -1,8 +1,8 @@
-// [2026-01-28 17:30:00] ui_render_overlays.js - Complete with Dynamic HUD & Epic Quest Animation
+// [2026-01-29 09:00:00] ui_render_overlays.js - Corrected HUD Position (Left/Top aligned)
 
 Object.assign(UI, {
     
-    // [v0.5.5] ZENTRALE OVERLAY LOGIC (Layer 1 - Hauptdialoge)
+    // [v0.5.5] ZENTRALE OVERLAY LOGIC
     restoreOverlay: function() {
         let overlay = document.getElementById('ui-dialog-overlay');
         if(!overlay) {
@@ -14,7 +14,7 @@ Object.assign(UI, {
             this.els.dialog = overlay;
         }
         
-        // RESET Click Handler: Klick auf Hintergrund schließt Layer 1
+        // Click-Handler: Schließen bei Klick auf Hintergrund
         overlay.onclick = (e) => {
             if(e.target === overlay) {
                 e.preventDefault();
@@ -26,11 +26,10 @@ Object.assign(UI, {
         return overlay;
     },
 
-    // Schließt Layer 1 (Hauptdialoge) und entfernt ESC-Listener
+    // Schließt Layer 1 (Hauptdialoge)
     leaveDialog: function() {
         if(Game.state) Game.state.inDialog = false;
         
-        // ESC Listener aufräumen
         if(this._activeEscHandler) {
             document.removeEventListener('keydown', this._activeEscHandler);
             this._activeEscHandler = null;
@@ -42,30 +41,27 @@ Object.assign(UI, {
             overlay.innerHTML = ''; 
         }
         
-        // UI Update feuern
         if(typeof this.update === 'function') this.update();
         
-        // Falls wir im Inventar waren, Liste neu laden (z.B. nach Verbrauch)
         if(document.getElementById('inventory-list')) {
             if(typeof UI.renderInventory === 'function') UI.renderInventory();
         }
     },
 
-    // Helper: Aktiviert ESC-Falle
     _trapEscKey: function() {
         if(this._activeEscHandler) document.removeEventListener('keydown', this._activeEscHandler);
         
         this._activeEscHandler = (e) => {
             if(e.key === "Escape") {
                 e.preventDefault();
-                e.stopPropagation(); // Verhindert Schließen von Fenstern im Hintergrund
+                e.stopPropagation();
                 UI.leaveDialog();
             }
         };
         document.addEventListener('keydown', this._activeEscHandler);
     },
 
-    // [NEU] GENERISCHER CONFIRM DIALOG (JA/NEIN)
+    // [NEU] GENERISCHER CONFIRM DIALOG
     showConfirm: function(title, htmlContent, onConfirm) {
         if(Game.state) Game.state.inDialog = true;
 
@@ -99,12 +95,11 @@ Object.assign(UI, {
         };
     },
 
-    // [v0.5.5] GENERIC INFO DIALOG (Layer 2 - Info Popups)
+    // INFO POPUP
     showInfoDialog: function(title, htmlContent) {
         if(Game.state) Game.state.inDialog = true;
 
         const infoOverlay = document.createElement('div');
-        // --- FIX: Z-Index auf 2000 erhöht (vorher 70), damit es über dem Char-Screen (1000) liegt ---
         infoOverlay.className = "fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fadeIn pointer-events-auto";
         
         const box = document.createElement('div');
@@ -124,7 +119,6 @@ Object.assign(UI, {
             if(e) { e.preventDefault(); e.stopPropagation(); }
             infoOverlay.remove();
             
-            // Check ob Layer 1 noch offen ist
             const baseOverlay = document.getElementById('ui-dialog-overlay');
             const isBaseOpen = baseOverlay && baseOverlay.style.display !== 'none';
             
@@ -141,7 +135,7 @@ Object.assign(UI, {
         document.body.appendChild(infoOverlay);
     },
 
-    // [v0.5.5] INVENTAR ITEM DETAILS & AKTIONEN
+    // ITEM ACTION DIALOG
     showItemConfirm: function(invIndex) {
         const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
@@ -159,7 +153,7 @@ Object.assign(UI, {
         box.className = "bg-black border-2 border-green-500 p-4 shadow-[0_0_15px_green] max-w-sm text-center mb-4 w-full pointer-events-auto";
         box.onclick = (e) => e.stopPropagation();
 
-        // --- SPEZIAL LOGIK: STIMPACK ---
+        // Stimpack Spezialbehandlung
         const isStimpack = (invItem.id && invItem.id.toLowerCase().includes('stimpack')) || (item.name && item.name.toLowerCase().includes('stimpack'));
 
         if (isStimpack) {
@@ -188,14 +182,12 @@ Object.assign(UI, {
             `;
             overlay.appendChild(box);
             
-            // Events binden
             document.getElementById('btn-use-one').onclick = () => { Game.useItem(invIndex, 1); setTimeout(() => UI.leaveDialog(), 50); };
             document.getElementById('btn-use-max').onclick = () => { Game.useItem(invIndex, 'max'); setTimeout(() => UI.leaveDialog(), 50); };
             document.getElementById('btn-cancel').onclick = () => { UI.leaveDialog(); };
             return;
         }
 
-        // --- GENERISCHES ITEM ---
         let statsText = "";
         let displayName = item.name;
         
@@ -250,7 +242,7 @@ Object.assign(UI, {
         overlay.appendChild(box);
     },
 
-    // [v0.5.5] AUSGERÜSTETES ITEM DIALOG
+    // EQUIPPED ITEM DIALOG
     showEquippedDialog: function(slot) {
         const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
@@ -284,9 +276,7 @@ Object.assign(UI, {
         document.getElementById('btn-cancel-eq').onclick = () => { UI.leaveDialog(); };
     },
 
-    // --- SONSTIGE DIALOGE (Shop, Quest, etc.) ---
-
-    // [v3.1] Epic Quest Completion Overlay
+    // QUEST COMPLETION OVERLAY
     showQuestComplete: function(questDef) {
         let container = document.getElementById('hud-quest-overlay');
         if(!container) {
@@ -330,22 +320,21 @@ Object.assign(UI, {
         }, 4500);
     },
 
-    // [NEU] ACTIVE QUEST HUD TRACKER
-    // Automatisch positioniert neben Camp-Button (Links oben)
+    // [NEU & KORRIGIERT] QUEST TRACKER HUD
     updateQuestTracker: function() {
-        // 1. Container suchen oder erstellen
+        // 1. Container prüfen
         let hud = document.getElementById('quest-tracker-hud');
         if(!hud) {
             const view = document.getElementById('game-screen');
-            if(!view) return; // Wenn Spiel noch nicht geladen, abbrechen
+            if(!view) return;
             hud = document.createElement('div');
             hud.id = 'quest-tracker-hud';
-            // Start mit Basis-Klasse (left wird unten überschrieben)
-            hud.className = "absolute top-2 z-40 bg-black/80 border-l-4 border-yellow-500 p-2 max-w-xs shadow-lg pointer-events-none transition-all duration-500";
+            // Initiale Position (wird unten überschrieben)
+            hud.className = "absolute top-14 left-2 z-40 bg-black/80 border-l-4 border-yellow-500 p-2 max-w-xs shadow-lg pointer-events-none transition-all duration-500";
             view.appendChild(hud);
         }
 
-        // 2. Prüfen ob wir eine Quest tracken
+        // 2. Daten laden
         if(!Game.state || !Game.state.trackedQuestId) {
             hud.style.opacity = '0';
             return;
@@ -356,30 +345,23 @@ Object.assign(UI, {
         const def = Game.questDefs.find(d => d.id === qId);
 
         if(!qData || !def) {
-            // Falls Quest erledigt oder nicht gefunden, Tracker ausblenden
             hud.style.opacity = '0';
             return;
         }
 
         hud.style.opacity = '1';
         
-        // Dynamische Positionierung: Rechts neben dem Camp Button (wenn existent)
-        // Camp Button ist oben links (left-2). 
-        // Wenn Camp da ist (Game.state.camp !== null), muss HUD weiter nach rechts.
-        // Wenn kein Camp, kann HUD direkt an left-16 (ca. 64px) oder sogar left-2 (wenn Camp ganz weg ist)
-        
-        // Wir nehmen an: Sektor-Anzeige ist ganz links. Camp-Button (wenn da) ist daneben.
-        // Wenn Camp da ist -> HUD weiter rechts.
+        // 3. Positionierung
+        // top-14 = 3.5rem (ca. 56px). Sollte unter der Topbar sitzen.
+        // Camp Button Check:
         const hasCamp = (Game.state.camp !== null);
-        const leftClass = hasCamp ? 'left-32' : 'left-16'; 
+        const leftClass = hasCamp ? 'left-36' : 'left-16'; // 36 = 9rem, 16 = 4rem
         
-        // Klasse neu setzen mit korrekter Position
-        hud.className = `absolute top-2 ${leftClass} z-40 bg-black/80 border-l-4 border-yellow-500 p-2 max-w-xs shadow-lg pointer-events-none transition-all duration-500`;
+        hud.className = `absolute top-14 ${leftClass} z-40 bg-black/80 border-l-4 border-yellow-500 p-2 max-w-xs shadow-lg pointer-events-none transition-all duration-500`;
 
-        // 3. Inhalt bauen
+        // 4. Inhalt rendern
         let objectives = "";
         
-        // A) Multi-Collect
         if(def.type === 'collect_multi') {
             objectives = Object.entries(def.reqItems).map(([id, amt]) => {
                 const inInv = Game.state.inventory.filter(i => i.id === id).reduce((s, i) => s + i.count, 0);
@@ -390,9 +372,7 @@ Object.assign(UI, {
                     ${icon} ${inInv}/${amt} ${iName}
                 </div>`;
             }).join('');
-        } 
-        // B) Standard (Kill, Collect, Visit)
-        else {
+        } else {
             const current = qData.progress;
             const max = qData.max;
             let verb = "Ziel";
@@ -405,7 +385,6 @@ Object.assign(UI, {
             </div>`;
         }
 
-        // 4. Richtungsanzeige (Kompass)
         let directionHint = "";
         if(def.target && typeof def.target === 'string' && def.target.includes(',')) {
             const coords = def.target.split(',').map(Number);
