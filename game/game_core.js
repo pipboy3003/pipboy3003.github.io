@@ -1,4 +1,4 @@
-// [2026-01-28 15:00:00] game_core.js - Added Tracked Quest Logic & HUD Trigger
+// [2026-01-28 17:00:00] game_core.js - Complete Core Logic
 
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
@@ -231,7 +231,6 @@ window.Game = {
                     this.state.activeQuests.push(newQuest);
                     UI.log(`QUEST: "${def.title}" erhalten!`, "text-cyan-400 font-bold animate-pulse");
                     
-                    // AUTO-TRACK: Wenn es die einzige Quest ist, tracke sie
                     if(this.state.activeQuests.length === 1 && !this.state.trackedQuestId) {
                         this.state.trackedQuestId = newQuest.id;
                         if(typeof UI !== 'undefined' && UI.updateQuestTracker) UI.updateQuestTracker();
@@ -276,7 +275,6 @@ window.Game = {
         
         this.checkNewQuests();
         
-        // HUD Update bei Fortschritt
         if(updated && typeof UI !== 'undefined') {
             UI.update();
             if(UI.updateQuestTracker) UI.updateQuestTracker();
@@ -300,18 +298,12 @@ window.Game = {
             if(typeof UI !== 'undefined' && UI.showQuestComplete) UI.showQuestComplete(def);
         }
         
-        // Wenn die getrackte Quest abgeschlossen wurde, Track-ID löschen
         if(this.state.trackedQuestId === q.id) {
             this.state.trackedQuestId = null;
-            // Versuch, automatisch die nächste zu tracken
-            if(this.state.activeQuests.length > 1) { // >1 weil die aktuelle gleich gelöscht wird
-                 // Wird unten gehandhabt, aber wir können es hier nullen
-            }
         }
         
         this.state.activeQuests.splice(index, 1);
         
-        // Wenn wir jetzt keine getrackte haben, aber Quests da sind, nimm die erste
         if(!this.state.trackedQuestId && this.state.activeQuests.length > 0) {
             this.state.trackedQuestId = this.state.activeQuests[0].id;
         }
@@ -390,7 +382,7 @@ window.Game = {
                 if(!this.state.completedQuests) this.state.completedQuests = [];
                 if(!this.state.quests) this.state.quests = [];
                 if(!this.state.camp) this.state.camp = null;
-                if(!this.state.trackedQuestId) this.state.trackedQuestId = null; // NEU
+                if(!this.state.trackedQuestId) this.state.trackedQuestId = null; 
                 
                 const newRecs = ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp', 
                                  'craft_bp_frame', 'craft_bp_leather', 'craft_bp_metal', 'craft_bp_military', 'craft_bp_cargo'];
@@ -436,7 +428,7 @@ window.Game = {
                     camp: null, rads: 0, kills: 0, view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, 
                     explored: {}, visitedSectors: ["4,4"], tutorialsShown: { hacking: false, lockpicking: false },
                     activeQuests: [], completedQuests: [], quests: [], 
-                    trackedQuestId: null, // NEU
+                    trackedQuestId: null, 
                     
                     knownRecipes: ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp', 'craft_bp_frame', 'craft_bp_leather', 'craft_bp_metal', 'craft_bp_military', 'craft_bp_cargo'], 
                     
@@ -462,7 +454,7 @@ window.Game = {
                 UI.switchView('map').then(() => { 
                     if(UI.els.gameOver) UI.els.gameOver.classList.add('hidden'); 
                     if(isNewGame) { setTimeout(() => UI.showPermadeathWarning(), 500); }
-                    if(UI.updateQuestTracker) UI.updateQuestTracker(); // Initiales HUD Update
+                    if(UI.updateQuestTracker) UI.updateQuestTracker(); 
                 });
             }
         } catch(e) { console.error(e); }
