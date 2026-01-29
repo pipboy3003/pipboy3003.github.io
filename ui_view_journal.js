@@ -1,13 +1,11 @@
-// [2026-01-28 16:00:00] ui_view_journal.js - Complete: High Vis Questlines + Pin Tracking + Full Wiki
+// [2026-01-28 17:00:00] ui_view_journal.js - Complete
 
 Object.assign(UI, {
 
-    // [v3.2] DYNAMISCHES WIKI (Vollständig integriert)
     renderWiki: function(category = 'monsters') {
         const content = document.getElementById('wiki-content');
         if(!content) return;
 
-        // --- HELPER: Navigation Buttons prüfen/erstellen ---
         const btnContainer = document.querySelector('#wiki-btn-monsters')?.parentElement;
         const ensureButton = (id, label, catName) => {
             if(btnContainer && !document.getElementById(id)) {
@@ -48,7 +46,6 @@ Object.assign(UI, {
 
         let html = '';
 
-        // --- 👾 MONSTER ---
         if(category === 'monsters') {
             const list = Object.values(Game.monsters || {}).sort((a,b) => a.minLvl - b.minLvl);
             if(list.length === 0) html = '<div class="text-gray-400 text-center mt-10">Keine Daten verfügbar.</div>';
@@ -80,7 +77,6 @@ Object.assign(UI, {
                     </div>`;
             });
         } 
-        // --- 📦 ITEMS ---
         else if (category === 'items') {
             const groups = {};
             if (Game.items) {
@@ -115,7 +111,6 @@ Object.assign(UI, {
                 });
             }
         } 
-        // --- 🔧 CRAFTING ---
         else if (category === 'crafting') {
             if (Game.recipes && Game.recipes.length > 0) {
                 const list = [...Game.recipes].sort((a,b) => a.lvl - b.lvl);
@@ -143,7 +138,6 @@ Object.assign(UI, {
                 html = '<div class="text-center text-gray-400 mt-10">Keine Baupläne in Datenbank.</div>';
             }
         } 
-        // --- 🌟 PERKS ---
         else if (category === 'perks') {
             if(Game.perkDefs) {
                 Game.perkDefs.forEach(p => {
@@ -164,7 +158,6 @@ Object.assign(UI, {
                 html = '<div class="text-center text-gray-400 p-4">Keine Perks gefunden.</div>';
             }
         } 
-        // --- 🌍 LOCATIONS ---
         else if (category === 'locs') {
              const locs = Game.locations || window.GameData.locations || [];
              if(locs.length === 0) {
@@ -182,7 +175,6 @@ Object.assign(UI, {
                 });
              }
         }
-        // --- 📜 QUESTS (WIKI) ---
         else if (category === 'quests') {
             if(Game.questDefs) {
                 Game.questDefs.forEach(q => {
@@ -207,13 +199,11 @@ Object.assign(UI, {
         content.innerHTML = html;
     },
 
-    // [v4.2] QUEST SYSTEM REWORK - High Visibility + Pin Tracking
     renderQuests: function() {
         const list = document.getElementById('quest-list');
         if(!list) return;
         list.innerHTML = '';
 
-        // --- SCHRITT 1: Quest-Ketten (Chains) aufbauen ---
         const chains = []; 
         const sideQuests = [];
         const processedIds = new Set();
@@ -240,13 +230,10 @@ Object.assign(UI, {
             if(!processedIds.has(q.id)) sideQuests.push(q);
         });
 
-        // --- SCHRITT 2: Rendering Helper (High Contrast + PIN) ---
         const renderQuestCard = (def, status, isCompact = false) => {
             const activeData = Game.state.activeQuests.find(q => q.id === def.id);
             const isDone = status === 'done';
             const isLocked = status === 'locked';
-            
-            // TRACKING LOGIC
             const isTracked = Game.state.trackedQuestId === def.id;
             
             let colorClass = isDone ? "text-gray-400 line-through" : (isLocked ? "text-gray-400" : "text-yellow-400");
@@ -281,7 +268,6 @@ Object.assign(UI, {
                     <span class="text-sm text-gray-400 line-through decoration-gray-600">${def.title}</span>
                 </div>`;
 
-            // Active Card (Voll) mit PIN Button
             return `
                 <div class="border-l-4 ${isDone ? 'border-green-700 opacity-50' : 'border-yellow-400 bg-black/80'} pl-4 py-3 mb-3 ml-1 relative shadow-lg group">
                     <div class="flex justify-between items-start">
@@ -321,43 +307,24 @@ Object.assign(UI, {
             `;
         };
 
-        // --- SCHRITT 3: Rendering ---
-
         if(chains.length > 0) {
             list.innerHTML += `<h3 class="text-yellow-500 font-bold text-sm tracking-[0.2em] border-b-2 border-yellow-800 mb-4 pb-1 uppercase">Haupt-Missionen</h3>`;
-            
             chains.forEach((chain) => {
                 const chainContainer = document.createElement('div');
                 chainContainer.className = "mb-8 bg-black/40 p-3 rounded border border-green-900"; 
-                
                 const isComplete = chain.every(q => Game.state.completedQuests.includes(q.id));
                 const isActive = chain.some(q => Game.state.activeQuests.find(aq => aq.id === q.id));
-                
                 let headerColor = isComplete ? "text-green-600" : (isActive ? "text-green-300" : "text-gray-500");
-                chainContainer.innerHTML = `<div class="font-bold ${headerColor} mb-4 text-base uppercase tracking-wider flex items-center gap-3 border-b border-gray-800 pb-2">
-                    <span class="text-2xl">${isActive ? '📖' : (isComplete ? '✅' : '🔒')}</span> 
-                    <span>GESCHICHTE: ${chain[0].title}</span>
-                </div>`;
-
+                chainContainer.innerHTML = `<div class="font-bold ${headerColor} mb-4 text-base uppercase tracking-wider flex items-center gap-3 border-b border-gray-800 pb-2"><span class="text-2xl">${isActive ? '📖' : (isComplete ? '✅' : '🔒')}</span> <span>GESCHICHTE: ${chain[0].title}</span></div>`;
                 let lineHtml = `<div class="flex flex-col gap-1 border-l-2 border-gray-800 ml-3 pl-4">`;
                 let lockedFound = false;
-
                 chain.forEach(q => {
                     const isDone = Game.state.completedQuests.includes(q.id);
                     const isActiveQ = Game.state.activeQuests.find(aq => aq.id === q.id);
-                    
-                    if(isDone) {
-                        lineHtml += renderQuestCard(q, 'done', true); 
-                    } else if (isActiveQ) {
-                        lineHtml += renderQuestCard(q, 'active');
-                    } else {
-                        if(!lockedFound) {
-                            lineHtml += renderQuestCard(q, 'locked');
-                            lockedFound = true;
-                        }
-                    }
+                    if(isDone) lineHtml += renderQuestCard(q, 'done', true); 
+                    else if (isActiveQ) lineHtml += renderQuestCard(q, 'active');
+                    else if(!lockedFound) { lineHtml += renderQuestCard(q, 'locked'); lockedFound = true; }
                 });
-
                 lineHtml += `</div>`;
                 chainContainer.innerHTML += lineHtml;
                 list.appendChild(chainContainer);
@@ -365,26 +332,17 @@ Object.assign(UI, {
         }
 
         if(sideQuests.length > 0) {
-            const visibleSide = sideQuests.filter(q => 
-                Game.state.activeQuests.find(aq => aq.id === q.id) || 
-                Game.state.completedQuests.includes(q.id)
-            );
-
+            const visibleSide = sideQuests.filter(q => Game.state.activeQuests.find(aq => aq.id === q.id) || Game.state.completedQuests.includes(q.id));
             if(visibleSide.length > 0) {
                 const sideContainer = document.createElement('div');
                 sideContainer.innerHTML = `<h3 class="text-green-400 font-bold text-sm tracking-[0.2em] border-b-2 border-green-800 mb-4 pb-1 mt-8 uppercase">Neben-Missionen</h3>`;
-                
                 visibleSide.forEach(q => {
                     const isDone = Game.state.completedQuests.includes(q.id);
                     sideContainer.innerHTML += renderQuestCard(q, isDone ? 'done' : 'active', isDone);
                 });
-                
                 list.appendChild(sideContainer);
             }
         }
-
-        if(chains.length === 0 && sideQuests.length === 0) {
-             list.innerHTML = '<div class="text-center text-gray-400 italic mt-10 text-lg">Keine Aufzeichnungen vorhanden.</div>';
-        }
+        if(chains.length === 0 && sideQuests.length === 0) { list.innerHTML = '<div class="text-center text-gray-400 italic mt-10 text-lg">Keine Aufzeichnungen vorhanden.</div>'; }
     }
 });
