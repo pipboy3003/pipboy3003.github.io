@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-10 23:00:00 - ui_combat.js - Tactical VATS HUD
+// [TIMESTAMP] 2026-01-29 10:00:00 - ui_combat.js - Added Enemy Level Display
 
 Object.assign(UI, {
 
@@ -50,13 +50,21 @@ Object.assign(UI, {
         let isLegendary = Combat.enemy.isLegendary;
         let themeColor = isLegendary ? "yellow" : "red"; // Legendär = Gelb, Normal = Rot
         
+        // [NEU] Level Ermittlung (Fallback auf 1)
+        let enemyLvl = Combat.enemy.level || Combat.enemy.minLvl || 1;
+        
         const topBar = document.createElement('div');
         topBar.className = "w-full max-w-lg flex flex-col items-center mb-4 relative";
         topBar.innerHTML = `
             <div class="flex justify-between w-full border-b-2 border-${themeColor}-500/50 pb-1 mb-1 items-end">
-                <span class="text-2xl font-bold text-${themeColor}-500 font-vt323 tracking-widest uppercase drop-shadow-[0_0_5px_rgba(255,0,0,0.5)]">
-                    ${Combat.enemy.name} ${isLegendary ? '★' : ''}
-                </span>
+                <div class="flex flex-col">
+                    <span class="text-2xl font-bold text-${themeColor}-500 font-vt323 tracking-widest uppercase drop-shadow-[0_0_5px_rgba(255,0,0,0.5)] leading-none">
+                        ${Combat.enemy.name} ${isLegendary ? '★' : ''}
+                    </span>
+                    <span class="text-xs font-mono text-${themeColor}-400 opacity-80 mt-1 bg-${themeColor}-900/20 px-1 w-fit rounded">
+                        LEVEL ${enemyLvl}
+                    </span>
+                </div>
                 <span class="text-lg font-mono text-${themeColor}-300">${Math.ceil(Combat.enemy.hp)}/${Combat.enemy.maxHp} HP</span>
             </div>
             <div class="w-full h-6 bg-black border border-${themeColor}-900 relative skew-x-[-10deg] shadow-[0_0_10px_rgba(0,0,0,0.5)]">
