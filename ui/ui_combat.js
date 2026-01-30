@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-29 10:00:00 - ui_combat.js - Added Enemy Level Display
+// [TIMESTAMP] 2026-01-29 13:00:00 - ui_combat.js - Fixed HUD Visibility & Big Level Display
 
 Object.assign(UI, {
 
@@ -10,6 +10,10 @@ Object.assign(UI, {
         const view = document.getElementById('view-container');
         if(!view) return;
         
+        // [FIX] Quest HUD im Kampf zwingend ausblenden
+        const questHud = document.getElementById('quest-tracker-hud');
+        if(questHud) questHud.style.display = 'none';
+        
         // Sicherheitscheck: Kein Gegner? Zurück zur Map.
         if(!Combat.enemy) { UI.switchView('map'); return; }
 
@@ -20,7 +24,6 @@ Object.assign(UI, {
         wrapper.className = "w-full h-full flex flex-col bg-black relative overflow-hidden select-none";
 
         // 1. BACKGROUND FX (Scanlines & Grid)
-        // Erzeugt einen leichten grünen Raster-Effekt im Hintergrund
         const bgFX = document.createElement('div');
         bgFX.className = "absolute inset-0 pointer-events-none z-0 opacity-20";
         bgFX.style.backgroundImage = `
@@ -30,7 +33,7 @@ Object.assign(UI, {
         bgFX.style.backgroundSize = "50px 50px";
         wrapper.appendChild(bgFX);
 
-        // Feedback & Flash Layer (für Treffer-Texte)
+        // Feedback & Flash Layer
         const feedbackLayer = document.createElement('div');
         feedbackLayer.id = "combat-feedback-layer";
         feedbackLayer.className = "absolute inset-0 pointer-events-none z-50 overflow-hidden";
@@ -45,24 +48,24 @@ Object.assign(UI, {
         const hudContainer = document.createElement('div');
         hudContainer.className = "flex-grow relative flex flex-col items-center justify-center z-10 p-4";
 
-        // 2. TOP BAR (Gegner Status)
+        // 2. TOP BAR (Gegner Status & LEVEL)
         let hpPercent = (Combat.enemy.hp / Combat.enemy.maxHp) * 100;
         let isLegendary = Combat.enemy.isLegendary;
-        let themeColor = isLegendary ? "yellow" : "red"; // Legendär = Gelb, Normal = Rot
+        let themeColor = isLegendary ? "yellow" : "red"; 
         
-        // [NEU] Level Ermittlung (Fallback auf 1)
+        // [FIX] Level sicher ermitteln
         let enemyLvl = Combat.enemy.level || Combat.enemy.minLvl || 1;
         
         const topBar = document.createElement('div');
         topBar.className = "w-full max-w-lg flex flex-col items-center mb-4 relative";
         topBar.innerHTML = `
             <div class="flex justify-between w-full border-b-2 border-${themeColor}-500/50 pb-1 mb-1 items-end">
-                <div class="flex flex-col">
+                <div class="flex items-center gap-3">
                     <span class="text-2xl font-bold text-${themeColor}-500 font-vt323 tracking-widest uppercase drop-shadow-[0_0_5px_rgba(255,0,0,0.5)] leading-none">
                         ${Combat.enemy.name} ${isLegendary ? '★' : ''}
                     </span>
-                    <span class="text-xs font-mono text-${themeColor}-400 opacity-80 mt-1 bg-${themeColor}-900/20 px-1 w-fit rounded">
-                        LEVEL ${enemyLvl}
+                    <span class="text-xl font-mono text-yellow-400 font-bold bg-black/80 px-2 py-0.5 border-2 border-yellow-600 rounded shadow-[0_0_10px_orange]">
+                        LVL ${enemyLvl}
                     </span>
                 </div>
                 <span class="text-lg font-mono text-${themeColor}-300">${Math.ceil(Combat.enemy.hp)}/${Combat.enemy.maxHp} HP</span>
@@ -75,12 +78,10 @@ Object.assign(UI, {
         `;
         hudContainer.appendChild(topBar);
 
-        // 3. TARGETING SCOPE (Das Herzstück)
-        // Hier rendern wir den Gegner und die Trefferzonen
+        // 3. TARGETING SCOPE
         const scopeBox = document.createElement('div');
         scopeBox.className = "relative w-full max-w-md aspect-square border-2 border-green-500/30 rounded-lg flex items-center justify-center bg-green-900/5 shadow-[inset_0_0_50px_rgba(0,255,0,0.1)]";
         
-        // Fadenkreuz-Ecken
         scopeBox.innerHTML = `
             <div class="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-green-400"></div>
             <div class="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-green-400"></div>
@@ -92,9 +93,7 @@ Object.assign(UI, {
             </div>
         `;
 
-        // Zonen-Logik (Nur wenn Spieler dran ist)
         if(Combat.turn === 'player') {
-            // Definition der 3 Zonen (Prozentual auf dem Scope)
             const zones = [
                 { id: 0, top: 0, height: 30, label: "KOPF" },
                 { id: 1, top: 30, height: 40, label: "KÖRPER" },
@@ -105,7 +104,6 @@ Object.assign(UI, {
                 const hitChance = Combat.calculateHitChance(z.id);
                 const isSelected = (Combat.selectedPart === z.id);
                 
-                // Zone Div
                 const zoneEl = document.createElement('div');
                 zoneEl.className = "absolute left-2 right-2 transition-all duration-150 cursor-pointer z-10 flex items-center justify-between px-4 group border border-transparent hover:bg-green-500/10 hover:border-green-500/30 rounded";
                 
@@ -116,13 +114,11 @@ Object.assign(UI, {
                 zoneEl.style.top = z.top + "%";
                 zoneEl.style.height = z.height + "%";
 
-                // Click Handler
                 zoneEl.onclick = (e) => {
                     e.stopPropagation();
                     Combat.selectPart(z.id);
                 };
 
-                // Inhalt der Zone (Label links, Prozent rechts)
                 zoneEl.innerHTML = `
                     <div class="font-bold text-xs tracking-widest ${isSelected ? 'text-yellow-400' : 'text-green-600 opacity-50 group-hover:opacity-100 group-hover:text-green-400'} transition-all">
                         ${z.label}
@@ -134,8 +130,7 @@ Object.assign(UI, {
                 scopeBox.appendChild(zoneEl);
             });
 
-            // 4. STATS PANEL (Rechts schwebend)
-            // Zeigt Details zur aktuellen Auswahl an
+            // 4. STATS PANEL
             const currentPart = Combat.bodyParts[Combat.selectedPart];
             const currentChance = Combat.calculateHitChance(Combat.selectedPart);
             
@@ -153,7 +148,6 @@ Object.assign(UI, {
             scopeBox.appendChild(stats);
 
         } else {
-            // Gegner ist am Zug (Overlay)
             const warning = document.createElement('div');
             warning.className = "absolute inset-0 flex items-center justify-center z-30 bg-black/60 backdrop-blur-sm rounded-lg";
             warning.innerHTML = `
@@ -174,7 +168,7 @@ Object.assign(UI, {
         const footerArea = document.createElement('div');
         footerArea.className = "flex-shrink-0 flex flex-col bg-[#050a05] border-t-2 border-green-600 z-20 shadow-[0_-5px_20px_rgba(0,0,0,0.8)]";
 
-        // Combat Log (Kompakt)
+        // Combat Log
         const logArea = document.createElement('div');
         logArea.id = "combat-log";
         logArea.className = "h-20 p-2 font-mono text-xs overflow-hidden flex flex-col justify-end text-green-400 leading-tight opacity-80 border-b border-green-900";
