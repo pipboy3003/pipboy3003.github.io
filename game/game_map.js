@@ -1,4 +1,4 @@
-// [2026-02-16 20:10:00] game_map.js - Updated Bridge Logic
+// [2026-02-16 21:05:00] game_map.js - Anti-Stuck & Force Path Logic
 
 Object.assign(Game, {
     reveal: function(px, py) { 
@@ -45,8 +45,7 @@ Object.assign(Game, {
         if (tile === 'v') { this.descendDungeon(); return; }
         if (tile === '?') { this.testMinigames(); return; } 
 
-        // Kollision: Wasser (~) und Berge (^) blockieren.
-        // Brücken (+) und Straßen (=) sind erlaubt.
+        // Kollision
         if(['M', 'W', '#', 'U', 't', 'o', 'Y', '|', 'F', 'T', 'R', '^', '~'].includes(tile) && tile !== 'R') { 
             if(this.state.hiddenItems && this.state.hiddenItems[posKey]) {
                  const itemId = this.state.hiddenItems[posKey];
@@ -103,7 +102,10 @@ Object.assign(Game, {
         this.loadSector(sx, sy); 
         this.state.player.x = newPx;
         this.state.player.y = newPy;
-        this.findSafeSpawn(); 
+        
+        // WICHTIG: Prüfen ob Spawn blockiert ist und FREIRÄUMEN
+        this.ensureWalkableSpawn();
+        
         this.reveal(this.state.player.x, this.state.player.y); 
         this.saveGame();
         
@@ -112,6 +114,33 @@ Object.assign(Game, {
         }
         
         UI.log(`Sektorwechsel: ${sx},${sy}`, "text-blue-400"); 
+    },
+
+    // NEU: Diese Funktion garantiert einen Weg
+    ensureWalkableSpawn: function() {
+        if(!this.state || !this.state.currentMap) return;
+        const px = this.state.player.x;
+        const py = this.state.player.y;
+        
+        // Bereich um Spieler (1 Radius) prüfen
+        for(let dy=-1; dy<=1; dy++) {
+            for(let dx=-1; dx<=1; dx++) {
+                const tx = px + dx;
+                const ty = py + dy;
+                
+                if(tx >= 0 && tx < this.MAP_W && ty >= 0 && ty < this.MAP_H) {
+                    const tile = this.state.currentMap[ty][tx];
+                    // Blockierende Tiles löschen
+                    if(['^', 't', '~', '#'].includes(tile)) {
+                        this.state.currentMap[ty][tx] = '.';
+                    }
+                }
+            }
+        }
+        
+        // Falls wir genau auf Wasser stehen, Brücke bauen
+        const currentTile = this.state.currentMap[py][px];
+        if(currentTile === '~') this.state.currentMap[py][px] = '+';
     },
 
     loadSector: function(sx_in, sy_in) { 
@@ -202,7 +231,8 @@ Object.assign(Game, {
         if(data.biome === 'mountain') zn = "Gebirge";
         this.state.zone = `${zn} (${sx},${sy})`; 
         
-        this.findSafeSpawn();
+        // Erst laden, dann prüfen ob Spawn sicher ist!
+        this.ensureWalkableSpawn(); 
         if(this.renderStaticMap) this.renderStaticMap(); 
         this.reveal(this.state.player.x, this.state.player.y);
     },
@@ -214,13 +244,19 @@ Object.assign(Game, {
     
     findSafeSpawn: function() {
         if(!this.state || !this.state.currentMap) return;
+        
+        // Zuerst versuchen wir, den aktuellen Platz freizuräumen (aggressiv)
+        this.ensureWalkableSpawn();
+        
+        // Fallback: Wenn wir in einem POI stecken, suchen wir was in der Nähe
         const isSafe = (x, y) => {
             if(x < 0 || x >= this.MAP_W || y < 0 || y >= this.MAP_H) return false;
             const t = this.state.currentMap[y][x];
-            // Wasser (~) und Berge (^) sind NICHT sicher. Brücken (+) schon.
             return !['M', 'W', '#', 'U', 't', 'T', 'o', 'Y', '|', 'F', 'R', 'A', 'K', '?', '^', '~'].includes(t);
         };
+        
         if(isSafe(this.state.player.x, this.state.player.y)) return;
+        
         const rMax = 6;
         for(let r=1; r<=rMax; r++) {
             for(let dy=-r; dy<=r; dy++) {
@@ -237,6 +273,7 @@ Object.assign(Game, {
         }
         this.state.player.x = 20;
         this.state.player.y = 20;
+        this.ensureWalkableSpawn(); // Selbst hier erzwingen wir Sicherheit
     },
 
     tryEnterDungeon: function(type) {
@@ -292,7 +329,7 @@ Object.assign(Game, {
         UI.update();
     },
 
-    descendDungeon: function() {
+    descendDungeon: function(type) {
         this.enterDungeon(this.state.dungeonType, this.state.dungeonLevel + 1);
         UI.shakeView();
         UI.log("Du steigst tiefer hinab...", "text-purple-400 font-bold");
