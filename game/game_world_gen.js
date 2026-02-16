@@ -1,4 +1,4 @@
-// [2026-02-16 21:00:00] game_world_gen.js - Walkable Worlds Fix
+// [2026-02-16 22:00:00] game_world_gen.js - Ruins Update
 
 const WorldGen = {
     _seed: 12345,
@@ -18,7 +18,6 @@ const WorldGen = {
     },
 
     smoothNoise: function(x, y, seed) {
-        // Starke Glättung für zusammenhängende Gebiete
         const corners = (this.noise(x-1 + seed, y-1 + seed) + this.noise(x+1 + seed, y-1 + seed) + this.noise(x-1 + seed, y+1 + seed) + this.noise(x+1 + seed, y+1 + seed)) / 16;
         const sides = (this.noise(x-1 + seed, y + seed) + this.noise(x+1 + seed, y + seed) + this.noise(x + seed, y-1 + seed) + this.noise(x + seed, y+1 + seed)) / 8;
         const center = this.noise(x + seed, y + seed) / 4;
@@ -37,34 +36,18 @@ const WorldGen = {
         let map = Array(height).fill().map(() => Array(width).fill('.'));
         const sectorSeed = this.rand() * 1000;
 
-        // --- NEUE CONFIG: VIEL WENIGER HINDERNISSE ---
-        // Werte: Je höher Tree/Mountain Level, desto SELTENER sind sie (muss Noise überschreiten)
-        // River: Je kleiner Width, desto schmaler
-        
+        // Config
         let riverWidth = 0.02; 
-        let mountainThresh = 0.85; // Nur die höchsten Spitzen 15%
-        let treeThresh = 0.75;     // Nur bei > 75% Feuchtigkeit Bäume (viel seltener)
+        let mountainThresh = 0.85; 
+        let treeThresh = 0.75;     
+        let ruinThresh = 0.88; // Hoher Wert = Seltene Ruinen
         
-        // Zoom: Größere Zahl = Mehr "Chaos/Krümel", Kleinere Zahl = Große Flächen
         let scale = 0.08; 
 
-        if(biomeType === 'forest') { 
-            treeThresh = 0.55; // Wald ist dichter, aber immer noch begehbar
-            scale = 0.1; 
-        }
-        if(biomeType === 'swamp') { 
-            riverWidth = 0.10; // Breite Sumpflöcher
-            treeThresh = 0.65; 
-        } 
-        if(biomeType === 'desert') { 
-            riverWidth = 0.00; 
-            treeThresh = 0.95; // Fast keine Bäume
-            mountainThresh = 0.75; 
-        }
-        if(biomeType === 'mountain') { 
-            mountainThresh = 0.60; // Viele Berge
-            treeThresh = 0.80;
-        }
+        if(biomeType === 'forest') { treeThresh = 0.55; scale = 0.1; ruinThresh = 0.92; } // Weniger Ruinen im Wald
+        if(biomeType === 'swamp') { riverWidth = 0.10; treeThresh = 0.65; } 
+        if(biomeType === 'desert') { riverWidth = 0.00; treeThresh = 0.95; mountainThresh = 0.75; ruinThresh = 0.80; } // Mehr Ruinen in der Wüste
+        if(biomeType === 'mountain') { mountainThresh = 0.60; treeThresh = 0.80; }
 
         for(let y = 0; y < height; y++) {
             for(let x = 0; x < width; x++) {
@@ -74,10 +57,13 @@ const WorldGen = {
                 let riverVal = Math.abs(this.smoothNoise(nx * 0.5, ny * 0.5, sectorSeed + 500) - 0.5);
                 let elevation = this.smoothNoise(nx, ny, sectorSeed + 100);
                 let moisture = this.smoothNoise(nx + 50, ny + 50, sectorSeed + 200);
+                
+                // Ruinen-Noise (höhere Frequenz für "Gebäude-artige" Cluster)
+                let ruins = this.smoothNoise(nx * 3, ny * 3, sectorSeed + 800);
 
-                map[y][x] = '.'; // Default ist immer begehbarer Boden
+                map[y][x] = '.'; 
 
-                // 1. Fluss (hat Priorität)
+                // 1. Fluss
                 if (riverVal < riverWidth) {
                     map[y][x] = '~';
                 }
@@ -85,31 +71,31 @@ const WorldGen = {
                 else if (elevation > mountainThresh) {
                     map[y][x] = '^';
                 }
-                // 3. Bäume (nur wenn kein Berg/Wasser)
+                // 3. Ruinen (NEU) - Bevor Bäume kommen
+                else if (ruins > ruinThresh) {
+                    map[y][x] = '#'; // Alte Mauer
+                }
+                // 4. Bäume
                 else if (moisture > treeThresh) {
                     map[y][x] = 't';
                 }
                 
-                // RÄNDER FREI HALTEN (Sicherheits-Korridor am Kartenrand)
-                // Damit man immer in den nächsten Sektor laufen kann
+                // RÄNDER FREI HALTEN
                 if(x < 2 || x > width - 3 || y < 2 || y > height - 3) {
-                    // Nur Wasser darf am Rand sein (Brücken bauen wir später), aber keine Berge/Bäume
-                    if(map[y][x] === '^' || map[y][x] === 't') map[y][x] = '.';
+                    if(['^', 't', '#'].includes(map[y][x])) map[y][x] = '.';
                 }
             }
         }
 
-        // POIs platzieren und Umgebung planieren
         if(poiList) {
             poiList.forEach(poi => {
                 if(poi.x >= 0 && poi.x < width && poi.y >= 0 && poi.y < height) {
                     map[poi.y][poi.x] = poi.type;
-                    this.clearArea(map, poi.x, poi.y, 3); // Großflächig roden um POIs
+                    this.clearArea(map, poi.x, poi.y, 3); 
                 }
             });
         }
 
-        // Straßen & Brücken
         if(poiList && poiList.length > 1) {
             for(let i=0; i<poiList.length-1; i++) {
                 this.buildRoad(map, poiList[i], poiList[i+1]);
@@ -119,7 +105,6 @@ const WorldGen = {
         return map;
     },
 
-    // Hilfsfunktion zum Roden
     clearArea: function(map, cx, cy, radius) {
         const h = map.length;
         const w = map[0].length;
@@ -128,8 +113,7 @@ const WorldGen = {
                 const ny = cy+dy, nx = cx+dx;
                 if(ny>=0 && ny<h && nx>=0 && nx<w) {
                     const t = map[ny][nx];
-                    // Alles was blockiert wegmachen, außer dem POI selbst
-                    if(['^', 't', '~'].includes(t) && map[ny][nx] !== map[cy][cx]) {
+                    if(['^', 't', '~', '#'].includes(t) && map[ny][nx] !== map[cy][cx]) {
                         map[ny][nx] = '.';
                     }
                 }
@@ -184,17 +168,16 @@ const WorldGen = {
             if(x < 0 || x >= map[0].length || y < 0 || y >= map.length) continue;
             
             const makeRoad = (cx, cy) => {
+                // Brücken über Wasser, und auch über Ruinen hinwegbauen
                 if (map[cy][cx] === '~' || map[cy][cx] === '+') {
-                    map[cy][cx] = '+'; // Brücke
+                    map[cy][cx] = '+'; 
                 } else {
-                    map[cy][cx] = '='; // Straße
+                    map[cy][cx] = '='; 
                 }
-                // Straße rodet Umgebung (3x3)
                 this.clearArea(map, cx, cy, 1);
             };
             makeRoad(x, y);
             
-            // Doppelte Breite für bessere Begehbarkeit
             if (x+1 < map[0].length) {
                 if(map[y][x+1] !== '~') map[y][x+1] = '=';
                 else map[y][x+1] = '+';
