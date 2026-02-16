@@ -1,4 +1,4 @@
-// [2026-02-16 18:00:00] game_world_gen.js - River Networks & Bridges
+// [2026-02-16 19:00:00] game_world_gen.js - No Border Walls Fix
 
 const WorldGen = {
     _seed: 12345,
@@ -13,13 +13,11 @@ const WorldGen = {
         return (this._seed - 1) / 2147483646;
     },
 
-    // Noise Funktion (Simplex-Artig)
     noise: function(nx, ny) {
         return Math.sin(nx * 12.9898 + ny * 78.233) * 43758.5453 % 1;
     },
 
     smoothNoise: function(x, y, seed) {
-        // Glättung für natürlichere Übergänge
         const corners = (this.noise(x-1 + seed, y-1 + seed) + this.noise(x+1 + seed, y-1 + seed) + this.noise(x-1 + seed, y+1 + seed) + this.noise(x+1 + seed, y+1 + seed)) / 16;
         const sides = (this.noise(x-1 + seed, y + seed) + this.noise(x+1 + seed, y + seed) + this.noise(x + seed, y-1 + seed) + this.noise(x + seed, y+1 + seed)) / 8;
         const center = this.noise(x + seed, y + seed) / 4;
@@ -38,56 +36,46 @@ const WorldGen = {
         let map = Array(height).fill().map(() => Array(width).fill('.'));
         const sectorSeed = this.rand() * 1000;
 
-        // Config
-        let riverWidth = 0.04; // Wie breit sind Flüsse?
+        let riverWidth = 0.04; 
         let mountainLevel = 0.85;
         let treeDensity = 0.15;
         let groundChar = '.';
 
         if(biomeType === 'forest') { riverWidth = 0.06; treeDensity = 0.65; }
-        if(biomeType === 'swamp')  { riverWidth = 0.20; treeDensity = 0.40; } // Breite Flüsse = Sumpf
+        if(biomeType === 'swamp')  { riverWidth = 0.20; treeDensity = 0.40; } 
         if(biomeType === 'desert') { riverWidth = 0.01; treeDensity = 0.02; mountainLevel = 0.7; }
         if(biomeType === 'mountain') { riverWidth = 0.03; treeDensity = 0.1; mountainLevel = 0.6; }
 
         for(let y = 0; y < height; y++) {
             for(let x = 0; x < width; x++) {
-                // Skalierung: Kleinere Zahl = Größere Landschaftsmerkmale
                 let nx = x * 0.1;
                 let ny = y * 0.1;
                 
-                // 1. FLUSS GENERIERUNG (Ridge Noise)
-                // Wir nehmen den Noise, ziehen 0.5 ab und nehmen den Absolutwert.
-                // Werte nahe 0 bedeuten, wir sind in der "Mitte" der Noise-Welle -> Flussbett
                 let riverVal = Math.abs(this.smoothNoise(nx * 0.5, ny * 0.5, sectorSeed) - 0.5);
-                
-                // 2. Berge & Bäume
                 let elevation = this.smoothNoise(nx, ny, sectorSeed + 100);
                 let moisture = this.smoothNoise(nx + 50, ny + 50, sectorSeed + 200);
 
                 map[y][x] = groundChar;
 
-                // Logik Reihenfolge: Fluss > Berg > Baum
                 if (riverVal < riverWidth) {
-                    map[y][x] = '~'; // Fluss
+                    map[y][x] = '~'; 
                 }
                 else if (elevation > mountainLevel) {
-                    map[y][x] = '^'; // Berg
+                    map[y][x] = '^'; 
                 }
                 else if (moisture < treeDensity) {
-                    map[y][x] = 't'; // Baum
+                    map[y][x] = 't'; 
                 }
                 
-                // Welt-Grenzen
-                if(x===0 || x===width-1 || y===0 || y===height-1) map[y][x] = '^';
+                // WICHTIG: KEINE ERZWUNGENEN BERGE AM RAND MEHR!
+                // if(x===0 || x===width-1 || y===0 || y===height-1) map[y][x] = '^';
             }
         }
 
-        // POIs
         if(poiList) {
             poiList.forEach(poi => {
                 if(poi.x >= 0 && poi.x < width && poi.y >= 0 && poi.y < height) {
                     map[poi.y][poi.x] = poi.type;
-                    // Platz machen
                     for(let dy=-2; dy<=2; dy++) {
                         for(let dx=-2; dx<=2; dx++) {
                             const ny = poi.y+dy, nx = poi.x+dx;
@@ -100,7 +88,6 @@ const WorldGen = {
             });
         }
 
-        // Straßen & Brücken
         if(poiList && poiList.length > 1) {
             for(let i=0; i<poiList.length-1; i++) {
                 this.buildRoad(map, poiList[i], poiList[i+1]);
@@ -157,29 +144,19 @@ const WorldGen = {
             if(x < 0 || x >= map[0].length || y < 0 || y >= map.length) continue;
             
             const makeRoad = (cx, cy) => {
-                // WICHTIG: Wenn Wasser (~), dann Brücke (=) bauen, sonst Straße (=)
-                // In deinem Tile-Set ist = Straße. Wir rendern es als Brücke, wenn Wasser drunter ist.
-                // Aber wir müssen das Terrain überschreiben.
-                
-                // Falls wir auf Wasser stoßen -> Brücke bleibt '=' (logisch gleich), aber Render ändert sich.
-                // Wir überschreiben Bäume/Berge.
                 if (map[cy][cx] !== '~') {
                     map[cy][cx] = '='; 
                 } else {
-                    // Wasser behalten wir im Kopf? Nein, wir setzen '='.
-                    // Der Renderer muss wissen, dass '=' über Wasser eine Brücke ist.
-                    // Da wir das schwer speichern können, setzen wir einfach '='.
-                    // Wenn der Renderer '=' sieht und links/rechts Wasser ist, malt er eine Brücke.
-                    map[cy][cx] = '='; 
+                    map[cy][cx] = '='; // Brücke
                 }
 
-                // Breite Straße (3x3 grob putzen)
+                // Breite Straße
                 const neighbors = [[0,1],[0,-1],[1,0],[-1,0]];
                 neighbors.forEach(([dx, dy]) => {
                     let nx = cx+dx, ny = cy+dy;
                     if(nx>=0 && nx<map[0].length && ny>=0 && ny<map.length) {
                         const t = map[ny][nx];
-                        if(['^','t'].includes(t)) map[ny][nx] = '.'; // Weg frei machen
+                        if(['^','t'].includes(t)) map[ny][nx] = '.'; 
                     }
                 });
             };
