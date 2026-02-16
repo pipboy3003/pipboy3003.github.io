@@ -13,6 +13,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+
     <script>document.write('<link rel="stylesheet" href="style.css?v=' + Date.now() + '">');</script>
     
     <style>
@@ -354,7 +362,8 @@ ${window.logBuffer.slice(-10).join('\n')}
                 if(verDisplay) verDisplay.textContent = displayVer;
                 if(loginVerDisplay) loginVerDisplay.textContent = displayVer;
                 
-                // Laden der Scripts (Reihenfolge ist wichtig!)
+                // Laden der Scripts (REIHENFOLGE WICHTIG!)
+                // [UPDATE] game_render.js wurde durch game_render_3d.js ersetzt
                 loadScript('data/data_core.js?v=' + devVer)
                     .then(() => loadScript('data/data_items.js?v=' + devVer))
                     .then(() => loadScript('data/data_recipes.js?v=' + devVer))
@@ -364,7 +373,11 @@ ${window.logBuffer.slice(-10).join('\n')}
                     .then(() => loadScript('ui/ui_core.js?v=' + devVer)) 
                     .then(() => loadScript('game/game_core.js?v=' + devVer))
                     .then(() => loadScript('game/game_map.js?v=' + devVer))
-                    .then(() => loadScript('game/game_render.js?v=' + devVer))
+                    
+                    // --- GRAPHIC ENGINE UPDATE START ---
+                    .then(() => loadScript('game/game_render_3d.js?v=' + devVer)) 
+                    // --- GRAPHIC ENGINE UPDATE END ---
+
                     .then(() => loadScript('game/game_world_gen.js?v=' + devVer))
                     .then(() => loadScript('game/game_inv_logic.js?v=' + devVer))
                     .then(() => loadScript('game/game_world_logic.js?v=' + devVer))
