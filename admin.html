@@ -322,9 +322,9 @@
 
     // Korrekte Lade-Reihenfolge inkl. data_monsters.js
     load('data_core.js')
-    .then(() => load('data_items.js')) 
-    .then(() => load('data_recipes.js'))
-    .then(() => load('data_monsters.js')) // WICHTIG für Monster/Loot
+    .then(() => load('data/data_items.js')) 
+    .then(() => load('data/data_recipes.js'))
+    .then(() => load('data/data_monsters.js')) // WICHTIG für Monster/Loot
     .then(() => load('network.js'))
     .then(() => load('admin.js'))
     .catch(e => document.body.innerHTML = `<h1 style="color:red;padding:20px">BOOT ERROR: ${e}</h1>`);
