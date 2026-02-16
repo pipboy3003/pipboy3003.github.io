@@ -1,4 +1,4 @@
-// [2026-02-16 19:00:00] game_world_gen.js - No Border Walls Fix
+// [2026-02-16 20:00:00] game_world_gen.js - River Update
 
 const WorldGen = {
     _seed: 12345,
@@ -36,39 +36,46 @@ const WorldGen = {
         let map = Array(height).fill().map(() => Array(width).fill('.'));
         const sectorSeed = this.rand() * 1000;
 
-        let riverWidth = 0.04; 
-        let mountainLevel = 0.85;
+        // Config für breitere, längere Flüsse
+        let riverWidth = 0.025; // Schmaler Threshold = Schärfere Flüsse
+        let mountainLevel = 0.82;
         let treeDensity = 0.15;
         let groundChar = '.';
+        
+        // Frequenz (Zoom): Kleiner = Größere, längere Formen
+        let scale = 0.04; 
 
-        if(biomeType === 'forest') { riverWidth = 0.06; treeDensity = 0.65; }
-        if(biomeType === 'swamp')  { riverWidth = 0.20; treeDensity = 0.40; } 
-        if(biomeType === 'desert') { riverWidth = 0.01; treeDensity = 0.02; mountainLevel = 0.7; }
-        if(biomeType === 'mountain') { riverWidth = 0.03; treeDensity = 0.1; mountainLevel = 0.6; }
+        if(biomeType === 'forest') { riverWidth = 0.04; treeDensity = 0.60; scale = 0.05; }
+        if(biomeType === 'swamp')  { riverWidth = 0.15; treeDensity = 0.30; scale = 0.08; } 
+        if(biomeType === 'desert') { riverWidth = 0.005; treeDensity = 0.01; mountainLevel = 0.7; }
+        if(biomeType === 'mountain') { riverWidth = 0.02; treeDensity = 0.1; mountainLevel = 0.55; }
 
         for(let y = 0; y < height; y++) {
             for(let x = 0; x < width; x++) {
-                let nx = x * 0.1;
-                let ny = y * 0.1;
+                let nx = x * scale;
+                let ny = y * scale;
                 
-                let riverVal = Math.abs(this.smoothNoise(nx * 0.5, ny * 0.5, sectorSeed) - 0.5);
+                // FLUSS: Ridge Noise (Tal-Bildung)
+                // Wir nutzen einen anderen Seed und Zoom für den Fluss, damit er unabhängig vom Berg ist
+                let riverRaw = this.smoothNoise(nx * 0.5, ny * 0.5, sectorSeed + 500);
+                let riverVal = Math.abs(riverRaw - 0.5); // 0 ist die Mitte des "Tals"
+
+                // BERGE & BÄUME
                 let elevation = this.smoothNoise(nx, ny, sectorSeed + 100);
                 let moisture = this.smoothNoise(nx + 50, ny + 50, sectorSeed + 200);
 
                 map[y][x] = groundChar;
 
+                // Priorität: Fluss > Berg > Baum
                 if (riverVal < riverWidth) {
-                    map[y][x] = '~'; 
+                    map[y][x] = '~'; // Wasser
                 }
                 else if (elevation > mountainLevel) {
-                    map[y][x] = '^'; 
+                    map[y][x] = '^'; // Berg
                 }
                 else if (moisture < treeDensity) {
-                    map[y][x] = 't'; 
+                    map[y][x] = 't'; // Baum
                 }
-                
-                // WICHTIG: KEINE ERZWUNGENEN BERGE AM RAND MEHR!
-                // if(x===0 || x===width-1 || y===0 || y===height-1) map[y][x] = '^';
             }
         }
 
@@ -76,6 +83,7 @@ const WorldGen = {
             poiList.forEach(poi => {
                 if(poi.x >= 0 && poi.x < width && poi.y >= 0 && poi.y < height) {
                     map[poi.y][poi.x] = poi.type;
+                    // Platz machen
                     for(let dy=-2; dy<=2; dy++) {
                         for(let dx=-2; dx<=2; dx++) {
                             const ny = poi.y+dy, nx = poi.x+dx;
@@ -144,13 +152,14 @@ const WorldGen = {
             if(x < 0 || x >= map[0].length || y < 0 || y >= map.length) continue;
             
             const makeRoad = (cx, cy) => {
-                if (map[cy][cx] !== '~') {
-                    map[cy][cx] = '='; 
+                // Brücke bauen, wenn Wasser
+                if (map[cy][cx] === '~') {
+                    map[cy][cx] = '+'; // + ist jetzt explizit Brücke
                 } else {
-                    map[cy][cx] = '='; // Brücke
+                    map[cy][cx] = '='; // Straße
                 }
 
-                // Breite Straße
+                // Breite Straße (3x3 grob putzen)
                 const neighbors = [[0,1],[0,-1],[1,0],[-1,0]];
                 neighbors.forEach(([dx, dy]) => {
                     let nx = cx+dx, ny = cy+dy;
@@ -161,7 +170,8 @@ const WorldGen = {
                 });
             };
             makeRoad(x, y);
-            if (x+1 < map[0].length) map[y][x+1] = '=';
+            if (x+1 < map[0].length && map[y][x+1] !== '~') map[y][x+1] = '=';
+            else if (x+1 < map[0].length) map[y][x+1] = '+';
         }
     }
 };
