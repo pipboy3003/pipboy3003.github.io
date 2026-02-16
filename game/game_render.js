@@ -1,4 +1,4 @@
-// [2026-02-16 19:10:00] game_render.js - Better NPC Sprites
+// [2026-02-16 20:05:00] game_render.js - Clean Landscape & Bridges
 
 Object.assign(Game, {
     initCache: function() {
@@ -25,11 +25,15 @@ Object.assign(Game, {
         for(let y=0; y<this.MAP_H; y++) {
             for(let x=0; x<this.MAP_W; x++) {
                 const t = map[y][x];
+                
+                // 1. BODEN & STEINE
                 this.drawFloorDetail(ctx, x, y, t);
 
+                // 2. OBJEKTE
                 if(t === '#') this.drawConnectedWall(ctx, x, y, map);
                 else if(t === '^') this.drawMountain(ctx, x, y);
-                else if(t === '=') this.drawRoadOrBridge(ctx, x, y, map); 
+                else if(t === '=') this.drawRoad(ctx, x, y); 
+                else if(t === '+') this.drawBridge(ctx, x, y); // NEU
                 else if(t === '~') {
                     ctx.fillStyle = "#081820";
                     ctx.fillRect(x*this.TILE, y*this.TILE, this.TILE, this.TILE);
@@ -52,41 +56,56 @@ Object.assign(Game, {
         ctx.fillStyle = color;
         ctx.fillRect(px, py, ts, ts);
 
-        if(type === '=') return; 
-
-        if(rand > 0.7) {
-            ctx.fillStyle = "rgba(255,255,255,0.05)";
-            const s = rand * 3; 
-            ctx.fillRect(px + (ts*rand), py + (ts*(1-rand)), s, s);
+        // Kleine Steine / Details
+        if(type === '.') {
+            if(rand > 0.6) {
+                ctx.fillStyle = "#333"; // Kleiner Stein
+                ctx.fillRect(px + (ts*rand), py + (ts*(1-rand)), 2, 2);
+            }
+            if(rand > 0.9) {
+                ctx.fillStyle = "#444"; // Etwas größerer Stein
+                ctx.fillRect(px + (ts*(1-rand)), py + (ts*rand), 3, 3);
+            }
         }
     },
 
-    drawRoadOrBridge: function(ctx, x, y, map) {
+    drawRoad: function(ctx, x, y) {
         const ts = this.TILE;
         const px = x * ts;
         const py = y * ts;
         
-        let nearWater = false;
-        if(x>0 && map[y][x-1]==='~') nearWater = true;
-        if(x<this.MAP_W-1 && map[y][x+1]==='~') nearWater = true;
-        if(y>0 && map[y-1][x]==='~') nearWater = true;
-        if(y<this.MAP_H-1 && map[y+1][x]==='~') nearWater = true;
-
-        if(nearWater) {
-            ctx.fillStyle = "#3e2723"; 
-            ctx.fillRect(px, py, ts, ts);
-            ctx.fillStyle = "#5d4037"; 
-            for(let i=2; i<ts; i+=6) {
-                ctx.fillRect(px, py+i, ts, 4);
-            }
-        } else {
-            ctx.fillStyle = "#333";
-            ctx.fillRect(px, py, ts, ts);
-            if(this.pseudoRand(x,y) > 0.3) {
-                ctx.fillStyle = "#aa0";
-                ctx.fillRect(px + ts/2 - 2, py + ts/2 - 4, 4, 8);
-            }
+        ctx.fillStyle = "#333";
+        ctx.fillRect(px, py, ts, ts);
+        
+        // Dreck/Schmutz auf Straße
+        if(this.pseudoRand(x,y) > 0.5) {
+            ctx.fillStyle = "#2a2a2a";
+            ctx.fillRect(px+4, py+4, ts-8, ts-8);
         }
+    },
+
+    drawBridge: function(ctx, x, y) {
+        const ts = this.TILE;
+        const px = x * ts;
+        const py = y * ts;
+
+        // Wasser drunter andeuten
+        ctx.fillStyle = "#0d47a1"; 
+        ctx.fillRect(px, py, ts, ts);
+        
+        // Brückenplanken
+        ctx.fillStyle = "#5d4037"; // Mittelbraun
+        ctx.fillRect(px + 2, py, ts - 4, ts); // Hauptsteg
+
+        ctx.fillStyle = "#3e2723"; // Dunkle Fugen
+        for(let i=0; i<ts; i+=4) {
+            ctx.fillRect(px, py+i, ts, 1);
+        }
+        
+        // Geländer
+        ctx.fillStyle = "#8d6e63";
+        ctx.fillRect(px, py, 2, ts); // Links
+        ctx.fillRect(px + ts - 2, py, 2, ts); // Rechts
     },
 
     drawConnectedWall: function(ctx, x, y, map) {
@@ -97,7 +116,6 @@ Object.assign(Game, {
 
         ctx.fillStyle = "#444"; 
         ctx.fillRect(px, py, ts, ts);
-
         ctx.fillStyle = "#222"; 
         ctx.fillRect(px, py + ts - 8, ts, 8);
         ctx.fillStyle = "#555"; 
@@ -110,6 +128,7 @@ Object.assign(Game, {
         const py = y * ts;
         const rand = this.pseudoRand(x, y);
 
+        // Basis
         ctx.fillStyle = "#2a2a2a";
         ctx.beginPath();
         ctx.moveTo(px, py + ts);
@@ -117,18 +136,20 @@ Object.assign(Game, {
         ctx.lineTo(px + ts, py + ts);
         ctx.fill();
 
-        ctx.fillStyle = (rand > 0.6) ? "#e0e0e0" : "#555"; 
+        // Struktur (Steine im Berg)
+        ctx.fillStyle = "#333";
         ctx.beginPath();
-        ctx.moveTo(px + ts/2, py + ts * 0.1);
-        ctx.lineTo(px + ts * 0.3, py + ts * 0.5);
-        ctx.lineTo(px + ts * 0.7, py + ts * 0.5);
+        ctx.moveTo(px + ts*0.3, py + ts);
+        ctx.lineTo(px + ts*0.5, py + ts*0.4);
+        ctx.lineTo(px + ts*0.7, py + ts);
         ctx.fill();
 
-        ctx.fillStyle = "rgba(0,0,0,0.5)";
+        // Highlight Spitze
+        ctx.fillStyle = (rand > 0.7) ? "#ddd" : "#555"; 
         ctx.beginPath();
         ctx.moveTo(px + ts/2, py + ts * 0.1);
-        ctx.lineTo(px + ts/2, py + ts); 
-        ctx.lineTo(px + ts, py + ts);
+        ctx.lineTo(px + ts * 0.35, py + ts * 0.4);
+        ctx.lineTo(px + ts * 0.65, py + ts * 0.4);
         ctx.fill();
     },
 
@@ -167,6 +188,7 @@ Object.assign(Game, {
         ctx.fillStyle = "#0d47a1"; 
         ctx.fillRect(px, py, ts, ts);
 
+        // Fließendes Wasser
         ctx.strokeStyle = "rgba(100, 200, 255, 0.3)"; 
         ctx.lineWidth = 1;
         const offset = (time / 100 + x * 10) % ts;
@@ -194,69 +216,10 @@ Object.assign(Game, {
         ctx.beginPath();
         ctx.moveTo(px + 10, py + ts);
         ctx.lineTo(px + 10 + sway, py + ts - 8);
-        ctx.moveTo(px + 15, py + ts);
-        ctx.lineTo(px + 15 + sway/2, py + ts - 10);
         ctx.stroke();
     },
 
-    // --- GEGNER & NPCs ---
-
-    drawMonster: function(ctx, x, y, time) {
-        const ts = this.TILE;
-        const px = x * ts + ts/2;
-        const py = y * ts + ts/2;
-        const scale = 1 + Math.sin(time / 200) * 0.1;
-
-        ctx.save();
-        ctx.translate(px, py);
-        ctx.scale(scale, scale);
-
-        ctx.fillStyle = "#d32f2f";
-        ctx.beginPath();
-        ctx.arc(0, 0, 8, 0, Math.PI*2);
-        ctx.fill();
-
-        ctx.strokeStyle = "#ff5252";
-        ctx.lineWidth = 2;
-        for(let i=0; i<8; i++) {
-            ctx.beginPath();
-            ctx.moveTo(0,0);
-            const ang = (i / 8) * Math.PI * 2;
-            ctx.lineTo(Math.cos(ang)*12, Math.sin(ang)*12);
-            ctx.stroke();
-        }
-
-        ctx.fillStyle = "#ffeb3b";
-        ctx.fillRect(-4, -2, 3, 3);
-        ctx.fillRect(2, -2, 3, 3);
-
-        ctx.restore();
-    },
-
-    drawWanderer: function(ctx, x, y, time) {
-        const ts = this.TILE;
-        const px = x * ts + ts/2;
-        const py = y * ts + ts/2;
-        const bounce = Math.abs(Math.sin(time / 300)) * 3;
-
-        ctx.save();
-        ctx.translate(px, py - bounce);
-
-        // Umhang / Kapuze (Blau)
-        ctx.fillStyle = "#4fc3f7";
-        ctx.beginPath();
-        ctx.arc(0, -6, 5, Math.PI, 0); // Kopf
-        ctx.lineTo(6, 10); // Mantel rechts
-        ctx.lineTo(-6, 10); // Mantel links
-        ctx.fill();
-
-        // Rucksack
-        ctx.fillStyle = "#8d6e63";
-        ctx.fillRect(-4, 0, 8, 6);
-
-        ctx.restore();
-    },
-
+    // --- LINE OF SIGHT ---
     checkLineOfSight: function(x0, y0, x1, y1) {
         let dx = Math.abs(x1 - x0);
         let dy = Math.abs(y1 - y0);
@@ -338,14 +301,12 @@ Object.assign(Game, {
                     if(t === '~') this.drawWater(ctx, x, y, time);
                     else if(t === 't') this.drawTree(ctx, x, y, time);
                     else if(t === '.') this.drawGrass(ctx, x, y, time);
-                    else if(t === 'M') this.drawMonster(ctx, x, y, time);
-                    else if(t === 'W') this.drawWanderer(ctx, x, y, time);
-
-                    // C. Andere Objekte
+                    
+                    // C. Objekte
                     if(['X', 'V', 'R', 'S'].includes(t)) {
                         this.drawTile(ctx, x, y, t);
                     }
-                    if(t === '?') this.drawTile(ctx, x, y, t); // NEU: Debug Spot
+                    if(t === '?') this.drawTile(ctx, x, y, t);
                     
                     // D. Schatten
                     const opacity = Math.max(0, (dist - 4) / (viewDist - 4));
@@ -444,7 +405,7 @@ Object.assign(Game, {
             case 'H': drawIcon("⛰️", "#888", 22); break;
             case 'E': drawIcon("EXIT", "#00ffff", 10); break;
             case 'P': drawIcon("✚", "#ff0000", 18); break; 
-            case '?': drawIcon("?", "#ff00ff", 20); break; // Debug
+            case '?': drawIcon("?", "#ff00ff", 20); break; 
         } 
     }
 });
