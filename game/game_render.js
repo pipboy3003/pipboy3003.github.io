@@ -1,4 +1,4 @@
-// [2026-02-16 20:05:00] game_render.js - Clean Landscape & Bridges
+// [2026-02-16 22:05:00] game_render.js - Weathered Ruins Update
 
 Object.assign(Game, {
     initCache: function() {
@@ -26,14 +26,12 @@ Object.assign(Game, {
             for(let x=0; x<this.MAP_W; x++) {
                 const t = map[y][x];
                 
-                // 1. BODEN & STEINE
                 this.drawFloorDetail(ctx, x, y, t);
 
-                // 2. OBJEKTE
                 if(t === '#') this.drawConnectedWall(ctx, x, y, map);
                 else if(t === '^') this.drawMountain(ctx, x, y);
                 else if(t === '=') this.drawRoad(ctx, x, y); 
-                else if(t === '+') this.drawBridge(ctx, x, y); // NEU
+                else if(t === '+') this.drawBridge(ctx, x, y); 
                 else if(t === '~') {
                     ctx.fillStyle = "#081820";
                     ctx.fillRect(x*this.TILE, y*this.TILE, this.TILE, this.TILE);
@@ -56,14 +54,13 @@ Object.assign(Game, {
         ctx.fillStyle = color;
         ctx.fillRect(px, py, ts, ts);
 
-        // Kleine Steine / Details
         if(type === '.') {
             if(rand > 0.6) {
-                ctx.fillStyle = "#333"; // Kleiner Stein
+                ctx.fillStyle = "#333"; 
                 ctx.fillRect(px + (ts*rand), py + (ts*(1-rand)), 2, 2);
             }
             if(rand > 0.9) {
-                ctx.fillStyle = "#444"; // Etwas größerer Stein
+                ctx.fillStyle = "#444"; 
                 ctx.fillRect(px + (ts*(1-rand)), py + (ts*rand), 3, 3);
             }
         }
@@ -73,11 +70,8 @@ Object.assign(Game, {
         const ts = this.TILE;
         const px = x * ts;
         const py = y * ts;
-        
         ctx.fillStyle = "#333";
         ctx.fillRect(px, py, ts, ts);
-        
-        // Dreck/Schmutz auf Straße
         if(this.pseudoRand(x,y) > 0.5) {
             ctx.fillStyle = "#2a2a2a";
             ctx.fillRect(px+4, py+4, ts-8, ts-8);
@@ -89,37 +83,58 @@ Object.assign(Game, {
         const px = x * ts;
         const py = y * ts;
 
-        // Wasser drunter andeuten
         ctx.fillStyle = "#0d47a1"; 
         ctx.fillRect(px, py, ts, ts);
         
-        // Brückenplanken
-        ctx.fillStyle = "#5d4037"; // Mittelbraun
-        ctx.fillRect(px + 2, py, ts - 4, ts); // Hauptsteg
+        ctx.fillStyle = "#5d4037"; 
+        ctx.fillRect(px + 2, py, ts - 4, ts); 
 
-        ctx.fillStyle = "#3e2723"; // Dunkle Fugen
+        ctx.fillStyle = "#3e2723"; 
         for(let i=0; i<ts; i+=4) {
             ctx.fillRect(px, py+i, ts, 1);
         }
         
-        // Geländer
         ctx.fillStyle = "#8d6e63";
-        ctx.fillRect(px, py, 2, ts); // Links
-        ctx.fillRect(px + ts - 2, py, 2, ts); // Rechts
+        ctx.fillRect(px, py, 2, ts); 
+        ctx.fillRect(px + ts - 2, py, 2, ts); 
     },
 
+    // RUINEN & WÄNDE (Verbessert)
     drawConnectedWall: function(ctx, x, y, map) {
         const ts = this.TILE;
         const px = x * ts;
         const py = y * ts;
+        const rand = this.pseudoRand(x, y);
         const n = (y > 0) && map[y-1][x] === '#';
 
-        ctx.fillStyle = "#444"; 
+        // Basis (Variiert für alten Look)
+        const shade = Math.floor(60 + rand * 20); // 60-80
+        ctx.fillStyle = `rgb(${shade},${shade},${shade})`; 
         ctx.fillRect(px, py, ts, ts);
+
+        // 3D Front
         ctx.fillStyle = "#222"; 
         ctx.fillRect(px, py + ts - 8, ts, 8);
+        
+        // Top Highlight
         ctx.fillStyle = "#555"; 
         if(!n) ctx.fillRect(px, py, ts, 4);
+
+        // DETAILS: Risse und Dreck (Fallout Vibe)
+        if(rand > 0.4) {
+            ctx.fillStyle = "#111";
+            // Kleiner Riss
+            ctx.beginPath();
+            ctx.moveTo(px + ts*rand, py + ts*0.2);
+            ctx.lineTo(px + ts*rand + 3, py + ts*0.6);
+            ctx.stroke();
+        }
+        
+        if(rand > 0.7) {
+            // Rostfleck / Moos
+            ctx.fillStyle = (rand > 0.85) ? "#3e3e3e" : "#2e3b2e"; // Dunkelgrau oder leicht grünlich
+            ctx.fillRect(px + 4, py + 10, 4, 4);
+        }
     },
 
     drawMountain: function(ctx, x, y) {
@@ -128,7 +143,6 @@ Object.assign(Game, {
         const py = y * ts;
         const rand = this.pseudoRand(x, y);
 
-        // Basis
         ctx.fillStyle = "#2a2a2a";
         ctx.beginPath();
         ctx.moveTo(px, py + ts);
@@ -136,7 +150,6 @@ Object.assign(Game, {
         ctx.lineTo(px + ts, py + ts);
         ctx.fill();
 
-        // Struktur (Steine im Berg)
         ctx.fillStyle = "#333";
         ctx.beginPath();
         ctx.moveTo(px + ts*0.3, py + ts);
@@ -144,7 +157,6 @@ Object.assign(Game, {
         ctx.lineTo(px + ts*0.7, py + ts);
         ctx.fill();
 
-        // Highlight Spitze
         ctx.fillStyle = (rand > 0.7) ? "#ddd" : "#555"; 
         ctx.beginPath();
         ctx.moveTo(px + ts/2, py + ts * 0.1);
@@ -188,7 +200,6 @@ Object.assign(Game, {
         ctx.fillStyle = "#0d47a1"; 
         ctx.fillRect(px, py, ts, ts);
 
-        // Fließendes Wasser
         ctx.strokeStyle = "rgba(100, 200, 255, 0.3)"; 
         ctx.lineWidth = 1;
         const offset = (time / 100 + x * 10) % ts;
@@ -219,7 +230,6 @@ Object.assign(Game, {
         ctx.stroke();
     },
 
-    // --- LINE OF SIGHT ---
     checkLineOfSight: function(x0, y0, x1, y1) {
         let dx = Math.abs(x1 - x0);
         let dy = Math.abs(y1 - y0);
@@ -301,7 +311,9 @@ Object.assign(Game, {
                     if(t === '~') this.drawWater(ctx, x, y, time);
                     else if(t === 't') this.drawTree(ctx, x, y, time);
                     else if(t === '.') this.drawGrass(ctx, x, y, time);
-                    
+                    else if(t === 'M') this.drawMonster(ctx, x, y, time);
+                    else if(t === 'W') this.drawWanderer(ctx, x, y, time);
+
                     // C. Objekte
                     if(['X', 'V', 'R', 'S'].includes(t)) {
                         this.drawTile(ctx, x, y, t);
@@ -395,6 +407,8 @@ Object.assign(Game, {
         switch(type) { 
             case 'V': drawIcon("⚙️", "#ffff00", 24); break; 
             case 'R': drawIcon("💰", "#ff3333", 22); break;
+            case 'M': drawIcon("💀", "#ff0000", 20); break;
+            case 'W': drawIcon("👁️", "#ff8800", 20); break;
             case 'X': 
                 ctx.fillStyle = "#8B4513"; 
                 ctx.fillRect(cx - 8, cy - 6, 16, 12);
