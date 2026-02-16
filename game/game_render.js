@@ -1,4 +1,4 @@
-// [2026-02-16 22:05:00] game_render.js - Weathered Ruins Update
+// [2026-02-16 22:35:00] game_render.js - Colors Pop Update
 
 Object.assign(Game, {
     initCache: function() {
@@ -33,7 +33,7 @@ Object.assign(Game, {
                 else if(t === '=') this.drawRoad(ctx, x, y); 
                 else if(t === '+') this.drawBridge(ctx, x, y); 
                 else if(t === '~') {
-                    ctx.fillStyle = "#081820";
+                    ctx.fillStyle = "#0d47a1"; // Helleres Blau
                     ctx.fillRect(x*this.TILE, y*this.TILE, this.TILE, this.TILE);
                 }
             }
@@ -46,22 +46,20 @@ Object.assign(Game, {
         const py = y * ts;
         const rand = this.pseudoRand(x, y);
 
+        // Bodenfarben heller
         let color = "#1a1a1a"; 
-        if(type === 't') color = "#141f14"; 
-        if(type === '^') color = "#222"; 
+        if(type === 't') color = "#1e2e1e"; // Wald ist jetzt sichtbar grünlich
+        if(type === '^') color = "#2a2a2a"; 
         if(type === '~') return; 
 
         ctx.fillStyle = color;
         ctx.fillRect(px, py, ts, ts);
 
+        // Steine
         if(type === '.') {
             if(rand > 0.6) {
                 ctx.fillStyle = "#333"; 
                 ctx.fillRect(px + (ts*rand), py + (ts*(1-rand)), 2, 2);
-            }
-            if(rand > 0.9) {
-                ctx.fillStyle = "#444"; 
-                ctx.fillRect(px + (ts*(1-rand)), py + (ts*rand), 3, 3);
             }
         }
     },
@@ -70,10 +68,10 @@ Object.assign(Game, {
         const ts = this.TILE;
         const px = x * ts;
         const py = y * ts;
-        ctx.fillStyle = "#333";
+        ctx.fillStyle = "#444"; // Heller
         ctx.fillRect(px, py, ts, ts);
         if(this.pseudoRand(x,y) > 0.5) {
-            ctx.fillStyle = "#2a2a2a";
+            ctx.fillStyle = "#222";
             ctx.fillRect(px+4, py+4, ts-8, ts-8);
         }
     },
@@ -86,7 +84,7 @@ Object.assign(Game, {
         ctx.fillStyle = "#0d47a1"; 
         ctx.fillRect(px, py, ts, ts);
         
-        ctx.fillStyle = "#5d4037"; 
+        ctx.fillStyle = "#795548"; // Helleres Holz
         ctx.fillRect(px + 2, py, ts - 4, ts); 
 
         ctx.fillStyle = "#3e2723"; 
@@ -94,12 +92,11 @@ Object.assign(Game, {
             ctx.fillRect(px, py+i, ts, 1);
         }
         
-        ctx.fillStyle = "#8d6e63";
+        ctx.fillStyle = "#a1887f";
         ctx.fillRect(px, py, 2, ts); 
         ctx.fillRect(px + ts - 2, py, 2, ts); 
     },
 
-    // RUINEN & WÄNDE (Verbessert)
     drawConnectedWall: function(ctx, x, y, map) {
         const ts = this.TILE;
         const px = x * ts;
@@ -107,33 +104,24 @@ Object.assign(Game, {
         const rand = this.pseudoRand(x, y);
         const n = (y > 0) && map[y-1][x] === '#';
 
-        // Basis (Variiert für alten Look)
-        const shade = Math.floor(60 + rand * 20); // 60-80
+        // Hellerer Beton
+        const shade = Math.floor(80 + rand * 30); 
         ctx.fillStyle = `rgb(${shade},${shade},${shade})`; 
         ctx.fillRect(px, py, ts, ts);
 
-        // 3D Front
-        ctx.fillStyle = "#222"; 
+        ctx.fillStyle = "#333"; 
         ctx.fillRect(px, py + ts - 8, ts, 8);
         
-        // Top Highlight
-        ctx.fillStyle = "#555"; 
+        ctx.fillStyle = "#777"; 
         if(!n) ctx.fillRect(px, py, ts, 4);
 
-        // DETAILS: Risse und Dreck (Fallout Vibe)
+        // Details
         if(rand > 0.4) {
             ctx.fillStyle = "#111";
-            // Kleiner Riss
             ctx.beginPath();
             ctx.moveTo(px + ts*rand, py + ts*0.2);
             ctx.lineTo(px + ts*rand + 3, py + ts*0.6);
             ctx.stroke();
-        }
-        
-        if(rand > 0.7) {
-            // Rostfleck / Moos
-            ctx.fillStyle = (rand > 0.85) ? "#3e3e3e" : "#2e3b2e"; // Dunkelgrau oder leicht grünlich
-            ctx.fillRect(px + 4, py + 10, 4, 4);
         }
     },
 
@@ -143,21 +131,21 @@ Object.assign(Game, {
         const py = y * ts;
         const rand = this.pseudoRand(x, y);
 
-        ctx.fillStyle = "#2a2a2a";
+        ctx.fillStyle = "#333"; // Heller
         ctx.beginPath();
         ctx.moveTo(px, py + ts);
         ctx.lineTo(px + ts/2, py + ts * 0.1); 
         ctx.lineTo(px + ts, py + ts);
         ctx.fill();
 
-        ctx.fillStyle = "#333";
+        ctx.fillStyle = "#444";
         ctx.beginPath();
         ctx.moveTo(px + ts*0.3, py + ts);
         ctx.lineTo(px + ts*0.5, py + ts*0.4);
         ctx.lineTo(px + ts*0.7, py + ts);
         ctx.fill();
 
-        ctx.fillStyle = (rand > 0.7) ? "#ddd" : "#555"; 
+        ctx.fillStyle = (rand > 0.7) ? "#eee" : "#777"; 
         ctx.beginPath();
         ctx.moveTo(px + ts/2, py + ts * 0.1);
         ctx.lineTo(px + ts * 0.35, py + ts * 0.4);
@@ -177,16 +165,17 @@ Object.assign(Game, {
         ctx.ellipse(px + ts/2, py + ts - 5, ts/3, ts/6, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = "#3e2723"; 
+        ctx.fillStyle = "#5d4037"; // Hellerer Stamm
         ctx.fillRect(px + ts/2 - 3, py + ts/2, 6, ts/2);
 
-        const green = (rand > 0.5) ? "#2e7d32" : "#1b5e20"; 
+        // Deutlich helleres Grün
+        const green = (rand > 0.5) ? "#388e3c" : "#2e7d32"; 
         ctx.fillStyle = green;
         ctx.beginPath();
         ctx.arc(px + ts/2 + sway, py + ts/2, ts/2.5, 0, Math.PI*2);
         ctx.fill();
 
-        ctx.fillStyle = (rand > 0.5) ? "#4caf50" : "#388e3c";
+        ctx.fillStyle = (rand > 0.5) ? "#66bb6a" : "#4caf50";
         ctx.beginPath();
         ctx.arc(px + ts/2 + (sway*1.5), py + ts/3, ts/3, 0, Math.PI*2);
         ctx.fill();
@@ -200,7 +189,7 @@ Object.assign(Game, {
         ctx.fillStyle = "#0d47a1"; 
         ctx.fillRect(px, py, ts, ts);
 
-        ctx.strokeStyle = "rgba(100, 200, 255, 0.3)"; 
+        ctx.strokeStyle = "rgba(100, 220, 255, 0.4)"; 
         ctx.lineWidth = 1;
         const offset = (time / 100 + x * 10) % ts;
         
@@ -221,7 +210,7 @@ Object.assign(Game, {
 
         const sway = Math.sin(time / 500 + x * y) * 3;
 
-        ctx.strokeStyle = (rand > 0.8) ? "#558b2f" : "#33691e"; 
+        ctx.strokeStyle = (rand > 0.8) ? "#7cb342" : "#558b2f"; // Helleres Gras
         ctx.lineWidth = 1;
 
         ctx.beginPath();
@@ -388,6 +377,60 @@ Object.assign(Game, {
         } 
     },
 
+    drawMonster: function(ctx, x, y, time) {
+        const ts = this.TILE;
+        const px = x * ts + ts/2;
+        const py = y * ts + ts/2;
+        const scale = 1 + Math.sin(time / 200) * 0.1;
+
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.scale(scale, scale);
+
+        ctx.fillStyle = "#d32f2f";
+        ctx.beginPath();
+        ctx.arc(0, 0, 8, 0, Math.PI*2);
+        ctx.fill();
+
+        ctx.strokeStyle = "#ff5252";
+        ctx.lineWidth = 2;
+        for(let i=0; i<8; i++) {
+            ctx.beginPath();
+            ctx.moveTo(0,0);
+            const ang = (i / 8) * Math.PI * 2;
+            ctx.lineTo(Math.cos(ang)*12, Math.sin(ang)*12);
+            ctx.stroke();
+        }
+
+        ctx.fillStyle = "#ffeb3b";
+        ctx.fillRect(-4, -2, 3, 3);
+        ctx.fillRect(2, -2, 3, 3);
+
+        ctx.restore();
+    },
+
+    drawWanderer: function(ctx, x, y, time) {
+        const ts = this.TILE;
+        const px = x * ts + ts/2;
+        const py = y * ts + ts/2;
+        const bounce = Math.abs(Math.sin(time / 300)) * 3;
+
+        ctx.save();
+        ctx.translate(px, py - bounce);
+
+        ctx.fillStyle = "#4fc3f7";
+        ctx.beginPath();
+        ctx.arc(0, -6, 5, Math.PI, 0); 
+        ctx.lineTo(6, 10); 
+        ctx.lineTo(-6, 10); 
+        ctx.fill();
+
+        ctx.fillStyle = "#8d6e63";
+        ctx.fillRect(-4, 0, 8, 6);
+
+        ctx.restore();
+    },
+
     drawTile: function(ctx, x, y, type) { 
         const ts = this.TILE; 
         const cx = x * ts + ts/2; 
@@ -407,8 +450,6 @@ Object.assign(Game, {
         switch(type) { 
             case 'V': drawIcon("⚙️", "#ffff00", 24); break; 
             case 'R': drawIcon("💰", "#ff3333", 22); break;
-            case 'M': drawIcon("💀", "#ff0000", 20); break;
-            case 'W': drawIcon("👁️", "#ff8800", 20); break;
             case 'X': 
                 ctx.fillStyle = "#8B4513"; 
                 ctx.fillRect(cx - 8, cy - 6, 16, 12);
