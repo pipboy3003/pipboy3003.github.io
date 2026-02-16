@@ -1,4 +1,4 @@
-// [2026-02-16 17:05:00] game_map.js - Updated Collision & Sector Logic
+// [2026-02-16 18:15:00] game_map.js (Compatible with River Update)
 
 Object.assign(Game, {
     reveal: function(px, py) { 
@@ -32,7 +32,6 @@ Object.assign(Game, {
         const tile = this.state.currentMap[ny][nx];
         const posKey = `${nx},${ny}`;
 
-        // --- HIDDEN ITEM CHECK ---
         if(this.state.hiddenItems && this.state.hiddenItems[posKey]) {
             const itemId = this.state.hiddenItems[posKey];
             this.addToInventory(itemId, 1);
@@ -42,13 +41,11 @@ Object.assign(Game, {
             delete this.state.hiddenItems[posKey]; 
         }
 
-        // --- INTERAKTIONEN ---
         if (tile === 'X') { this.openChest(nx, ny); return; } 
         if (tile === 'v') { this.descendDungeon(); return; }
         if (tile === '?') { this.testMinigames(); return; } 
 
-        // --- KOLLISION (UPDATED) ---
-        // Blockiert jetzt: Wand(#), Berg(^), Wasser(~), Baum(t), etc.
+        // Kollision: Jetzt auch für '~' (Wasser) und '^' (Berg)
         if(['M', 'W', '#', 'U', 't', 'o', 'Y', '|', 'F', 'T', 'R', '^', '~'].includes(tile) && tile !== 'R') { 
             if(this.state.hiddenItems && this.state.hiddenItems[posKey]) {
                  const itemId = this.state.hiddenItems[posKey];
@@ -62,7 +59,6 @@ Object.assign(Game, {
             return; 
         }
         
-        // --- BEWEGUNG ---
         this.state.player.x = nx;
         this.state.player.y = ny;
         
@@ -74,19 +70,14 @@ Object.assign(Game, {
         this.reveal(nx, ny);
         if(typeof Network !== 'undefined') Network.sendHeartbeat();
 
-        // --- POI EVENTS ---
         if(tile === 'V') { UI.switchView('vault'); return; }
-        
-        // TRIGGER CITY DASHBOARD
         if(tile === 'C') { this.enterCity(); return; } 
-        
         if(tile === 'S') { this.tryEnterDungeon("market"); return; }
         if(tile === 'H') { this.tryEnterDungeon("cave"); return; }
         if(tile === 'A') { this.tryEnterDungeon("military"); return; }
         if(tile === 'R') { this.tryEnterDungeon("raider"); return; }
         if(tile === 'K') { this.tryEnterDungeon("tower"); return; }
         
-        // Zufallskampf (im Gras häufiger, auf Straße seltener)
         if(['.', ',', '_', ';', '"', '+', 'x', 'B'].includes(tile)) {
             if(Math.random() < 0.04) { 
                 this.startCombat();
@@ -128,7 +119,6 @@ Object.assign(Game, {
         const sy = parseInt(sy_in);
         const key = `${sx},${sy}`; 
         
-        // Nutzt WorldGen für Seed
         const mapSeed = (sx + 1) * 5323 + (sy + 1) * 8237 + 9283;
         if(typeof WorldGen !== 'undefined') WorldGen.setSeed(mapSeed);
         const rng = () => { return typeof WorldGen !== 'undefined' ? WorldGen.rand() : Math.random(); };
@@ -180,7 +170,6 @@ Object.assign(Game, {
         
         this.state.hiddenItems = {}; 
         
-        // Verstecke Items jetzt auch in Bäumen (t)
         if(Math.random() < 0.3) { 
             let hiddenX, hiddenY;
             let attempts = 0;
@@ -202,7 +191,6 @@ Object.assign(Game, {
             }
         }
 
-        // Keine Rand-Fixes mehr nötig, WorldGen macht das
         if(!this.state.explored) this.state.explored = {};
         
         let zn = "Ödland"; 
@@ -221,7 +209,6 @@ Object.assign(Game, {
 
     isValidHiddenSpot: function(x, y) {
         const t = this.state.currentMap[y][x];
-        // Items können in Bäumen (t), Ruinen (#) oder Objekten versteckt sein
         return ['t', 'T', 'o', 'Y', '#', '"'].includes(t);
     },
     
@@ -230,7 +217,7 @@ Object.assign(Game, {
         const isSafe = (x, y) => {
             if(x < 0 || x >= this.MAP_W || y < 0 || y >= this.MAP_H) return false;
             const t = this.state.currentMap[y][x];
-            // Nicht in Wasser oder Berg spawnen!
+            // Update: Nicht in Wasser oder Berg spawnen!
             return !['M', 'W', '#', 'U', 't', 'T', 'o', 'Y', '|', 'F', 'R', 'A', 'K', '?', '^', '~'].includes(t);
         };
         if(isSafe(this.state.player.x, this.state.player.y)) return;
@@ -248,7 +235,6 @@ Object.assign(Game, {
                 }
             }
         }
-        // Fallback
         this.state.player.x = 20;
         this.state.player.y = 20;
     },
@@ -320,7 +306,6 @@ Object.assign(Game, {
              });
              return;
         }
-        
         this.forceOpenChest(x, y);
     },
 
@@ -384,33 +369,25 @@ Object.assign(Game, {
     enterCity: function() {
         this.state.savedPosition = { x: this.state.player.x, y: this.state.player.y };
         this.state.view = 'city';
-        
         UI.log("Betrete Rusty Springs...", "text-yellow-400");
         this.saveGame();
-        
         UI.switchView('city').then(() => {
-            if(typeof UI !== 'undefined' && UI.renderCity) {
-                UI.renderCity();
-            } else {
-                console.error("UI.renderCity missing!");
-            }
+            if(typeof UI !== 'undefined' && UI.renderCity) { UI.renderCity(); } 
+            else { console.error("UI.renderCity missing!"); }
         });
     },
 
     leaveCity: function() {
         this.state.view = 'map';
         this.state.dungeonLevel = 0; 
-        
         if(this.state.savedPosition) {
             this.state.player.x = this.state.savedPosition.x;
             this.state.player.y = this.state.savedPosition.y;
             this.state.savedPosition = null;
         }
-        
         UI.switchView('map').then(() => {
             if(this.renderStaticMap) this.renderStaticMap();
         });
-        
         UI.log("Zurück im Ödland.", "text-green-400");
     }
 });
