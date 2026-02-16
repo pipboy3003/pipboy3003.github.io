@@ -1,4 +1,4 @@
-// [TIMESTAMP] 2026-01-18 21:30:00 - game_map.js - Fixed Menu Closing Order
+// [2026-02-16 17:05:00] game_map.js - Updated Collision & Sector Logic
 
 Object.assign(Game, {
     reveal: function(px, py) { 
@@ -45,10 +45,11 @@ Object.assign(Game, {
         // --- INTERAKTIONEN ---
         if (tile === 'X') { this.openChest(nx, ny); return; } 
         if (tile === 'v') { this.descendDungeon(); return; }
-        if (tile === '?') { this.testMinigames(); return; } // TEST SPOT
+        if (tile === '?') { this.testMinigames(); return; } 
 
-        // --- KOLLISION ---
-        if(['M', 'W', '#', 'U', 't', 'o', 'Y', '|', 'F', 'T', 'R'].includes(tile) && tile !== 'R') { 
+        // --- KOLLISION (UPDATED) ---
+        // Blockiert jetzt: Wand(#), Berg(^), Wasser(~), Baum(t), etc.
+        if(['M', 'W', '#', 'U', 't', 'o', 'Y', '|', 'F', 'T', 'R', '^', '~'].includes(tile) && tile !== 'R') { 
             if(this.state.hiddenItems && this.state.hiddenItems[posKey]) {
                  const itemId = this.state.hiddenItems[posKey];
                  this.addToInventory(itemId, 1);
@@ -85,6 +86,7 @@ Object.assign(Game, {
         if(tile === 'R') { this.tryEnterDungeon("raider"); return; }
         if(tile === 'K') { this.tryEnterDungeon("tower"); return; }
         
+        // Zufallskampf (im Gras häufiger, auf Straße seltener)
         if(['.', ',', '_', ';', '"', '+', 'x', 'B'].includes(tile)) {
             if(Math.random() < 0.04) { 
                 this.startCombat();
@@ -126,6 +128,7 @@ Object.assign(Game, {
         const sy = parseInt(sy_in);
         const key = `${sx},${sy}`; 
         
+        // Nutzt WorldGen für Seed
         const mapSeed = (sx + 1) * 5323 + (sy + 1) * 8237 + 9283;
         if(typeof WorldGen !== 'undefined') WorldGen.setSeed(mapSeed);
         const rng = () => { return typeof WorldGen !== 'undefined' ? WorldGen.rand() : Math.random(); };
@@ -167,7 +170,6 @@ Object.assign(Game, {
         const data = this.worldData[key]; 
         this.state.currentMap = data.layout; 
         
-        // --- DEV TEST SPOT ---
         if(this.state.currentMap[20] && this.state.currentMap[20][22]) {
             this.state.currentMap[20][22] = '?';
         }
@@ -178,6 +180,7 @@ Object.assign(Game, {
         
         this.state.hiddenItems = {}; 
         
+        // Verstecke Items jetzt auch in Bäumen (t)
         if(Math.random() < 0.3) { 
             let hiddenX, hiddenY;
             let attempts = 0;
@@ -199,7 +202,7 @@ Object.assign(Game, {
             }
         }
 
-        this.fixMapBorders(this.state.currentMap, sx, sy);
+        // Keine Rand-Fixes mehr nötig, WorldGen macht das
         if(!this.state.explored) this.state.explored = {};
         
         let zn = "Ödland"; 
@@ -207,23 +210,19 @@ Object.assign(Game, {
         if(data.biome === 'desert') zn = "Aschewüste"; 
         if(data.biome === 'jungle') zn = "Dschungel"; 
         if(data.biome === 'swamp') zn = "Sumpf";
+        if(data.biome === 'forest') zn = "Verstrahlter Wald";
+        if(data.biome === 'mountain') zn = "Gebirge";
         this.state.zone = `${zn} (${sx},${sy})`; 
         
         this.findSafeSpawn();
-        this.renderStaticMap(); 
+        if(this.renderStaticMap) this.renderStaticMap(); 
         this.reveal(this.state.player.x, this.state.player.y);
     },
 
     isValidHiddenSpot: function(x, y) {
         const t = this.state.currentMap[y][x];
+        // Items können in Bäumen (t), Ruinen (#) oder Objekten versteckt sein
         return ['t', 'T', 'o', 'Y', '#', '"'].includes(t);
-    },
-
-    fixMapBorders: function(map, sx, sy) {
-        if(sy === 0) { for(let i=0; i<this.MAP_W; i++) map[0][i] = '#'; }
-        if(sy === this.WORLD_H - 1) { for(let i=0; i<this.MAP_W; i++) map[this.MAP_H-1][i] = '#'; }
-        if(sx === 0) { for(let i=0; i<this.MAP_H; i++) map[i][0] = '#'; }
-        if(sx === this.WORLD_W - 1) { for(let i=0; i<this.MAP_H; i++) map[i][this.MAP_W-1] = '#'; }
     },
     
     findSafeSpawn: function() {
@@ -231,7 +230,8 @@ Object.assign(Game, {
         const isSafe = (x, y) => {
             if(x < 0 || x >= this.MAP_W || y < 0 || y >= this.MAP_H) return false;
             const t = this.state.currentMap[y][x];
-            return !['M', 'W', '#', 'U', 't', 'T', 'o', 'Y', '|', 'F', 'R', 'A', 'K', '?'].includes(t);
+            // Nicht in Wasser oder Berg spawnen!
+            return !['M', 'W', '#', 'U', 't', 'T', 'o', 'Y', '|', 'F', 'R', 'A', 'K', '?', '^', '~'].includes(t);
         };
         if(isSafe(this.state.player.x, this.state.player.y)) return;
         const rMax = 6;
@@ -248,6 +248,7 @@ Object.assign(Game, {
                 }
             }
         }
+        // Fallback
         this.state.player.x = 20;
         this.state.player.y = 20;
     },
@@ -300,7 +301,7 @@ Object.assign(Game, {
         this.state.explored = {}; 
         this.reveal(this.state.player.x, this.state.player.y);
         
-        this.renderStaticMap();
+        if(this.renderStaticMap) this.renderStaticMap();
         UI.log(`${typeName} - Ebene ${level} betreten!`, "text-red-500 font-bold");
         UI.update();
     },
@@ -325,7 +326,7 @@ Object.assign(Game, {
 
     forceOpenChest: function(x, y) {
         this.state.currentMap[y][x] = 'B'; 
-        this.renderStaticMap(); 
+        if(this.renderStaticMap) this.renderStaticMap(); 
         
         const multiplier = this.state.dungeonLevel || 1;
         const caps = (Math.floor(Math.random() * 200) + 100) * multiplier;
@@ -360,7 +361,6 @@ Object.assign(Game, {
         setTimeout(() => { this.leaveCity(); }, 4000);
     },
 
-    // --- TEST MENÜ (FIXED ORDER) ---
     testMinigames: function() {
         if(typeof UI !== 'undefined' && UI.els.dialog) {
              UI.els.dialog.style.display = 'flex';
