@@ -1,4 +1,4 @@
-// [2026-02-16 12:00:00] game_render_3d.js - WebGL & Three.js Renderer (No Assets Required)
+// [2026-02-16 12:30:00] game_render_3d.js - WebGL Renderer Fixed (Lighting & Visibility)
 
 Object.assign(Game, {
     // --- THREE.JS GLOBALS ---
@@ -10,67 +10,76 @@ Object.assign(Game, {
     walls: [],
     
     // Config
-    TILE_SIZE: 1, // Wir skalieren die Welt auf 1 Unit pro Tile (einfacher für Three.js)
+    TILE_SIZE: 1, 
     
-    // Materials (werden in initCache erstellt)
+    // Materials
     mats: {},
 
-    // Override Init: Startet Three.js statt 2D Canvas
+    // Override Init: Startet Three.js
     initCanvas: function() {
         const cvs = document.getElementById('game-canvas');
         if(!cvs) return;
         const viewContainer = document.getElementById('view-container');
         
-        // 1. Scene & Camera
+        // 1. Scene Setup
         this.scene = new THREE.Scene();
-        // Nebel für Atmosphäre
-        this.scene.fog = new THREE.FogExp2(0x050505, 0.15); 
-        this.scene.background = new THREE.Color(0x000000);
+        // Leichter Nebel (startet erst ab Distanz 2, damit man die Füße sieht)
+        this.scene.fog = new THREE.Fog(0x050505, 2, 15); 
+        this.scene.background = new THREE.Color(0x050505); // Sehr dunkles Grau statt Schwarz
 
         const aspect = viewContainer.clientWidth / viewContainer.clientHeight;
         this.camera = new THREE.PerspectiveCamera(60, aspect, 0.1, 100);
-        this.camera.position.set(0, 10, 5);
-        this.camera.lookAt(0, 0, 0);
-
-        // 2. Renderer
+        
+        // 2. Renderer Setup
         this.renderer = new THREE.WebGLRenderer({ 
             canvas: cvs, 
-            antialias: false,
+            antialias: true, // Antialias an für schärfere Kanten
             powerPreference: "high-performance"
         });
         this.renderer.setSize(viewContainer.clientWidth, viewContainer.clientHeight);
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-        // 3. Post-Processing (BLOOM)
-        const renderScene = new THREE.RenderPass(this.scene, this.camera);
-        const bloomPass = new THREE.UnrealBloomPass(
-            new THREE.Vector2(viewContainer.clientWidth, viewContainer.clientHeight),
-            1.5, 0.4, 0.85
-        );
-        bloomPass.threshold = 0.2;
-        bloomPass.strength = 1.2; // Glow Stärke
-        bloomPass.radius = 0.5;
+        // 3. Post-Processing (BLOOM) - Mit Fehler-Check
+        try {
+            const renderScene = new THREE.RenderPass(this.scene, this.camera);
+            
+            // Bloom Parameter angepasst (weniger aggressiv)
+            const bloomPass = new THREE.UnrealBloomPass(
+                new THREE.Vector2(viewContainer.clientWidth, viewContainer.clientHeight),
+                1.0, 0.4, 0.85
+            );
+            bloomPass.threshold = 0.1;
+            bloomPass.strength = 0.8; 
+            bloomPass.radius = 0.2;
 
-        this.composer = new THREE.EffectComposer(this.renderer);
-        this.composer.addPass(renderScene);
-        this.composer.addPass(bloomPass);
+            this.composer = new THREE.EffectComposer(this.renderer);
+            this.composer.addPass(renderScene);
+            this.composer.addPass(bloomPass);
+        } catch(e) {
+            console.warn("Bloom Shader Error:", e);
+            this.composer = null; // Fallback auf normalen Renderer
+        }
 
-        // 4. Init Materials (Prozedural)
+        // 4. Init Materials & World
         this.initMaterials();
 
-        // 5. Start Loop
+        // 5. AMBIENT LIGHT (Sicherheits-Licht)
+        // Das sorgt dafür, dass nichts komplett schwarz ist
+        const ambientLight = new THREE.AmbientLight(0x404040, 1.5); 
+        this.scene.add(ambientLight);
+
+        // 6. Start Loop
         if(this.loopId) cancelAnimationFrame(this.loopId);
         this.drawLoop();
         
-        console.log("WebGL Renderer Initialized");
+        console.log("WebGL Renderer Fixed & Initialized");
     },
 
-    // Erstellt Texturen/Materialien ohne Bilddateien
     initMaterials: function() {
         const texLoader = new THREE.TextureLoader();
         
-        // Helper: Canvas texture generator für Noise
+        // Textur Generator (Heller für bessere Sichtbarkeit)
         const createNoiseTexture = (colorHex) => {
             const size = 64;
             const canvas = document.createElement('canvas');
@@ -79,54 +88,48 @@ Object.assign(Game, {
             ctx.fillStyle = colorHex;
             ctx.fillRect(0,0,size,size);
             
-            // Noise overlay
-            for(let i=0; i<400; i++) {
-                ctx.fillStyle = Math.random() < 0.5 ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
+            for(let i=0; i<300; i++) {
+                ctx.fillStyle = Math.random() < 0.5 ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.1)';
                 ctx.fillRect(Math.random()*size, Math.random()*size, 2, 2);
             }
             const tex = new THREE.CanvasTexture(canvas);
             tex.magFilter = THREE.NearestFilter;
+            tex.minFilter = THREE.NearestFilter;
             return tex;
         };
 
+        // Material heller machen
         this.mats.wall = new THREE.MeshStandardMaterial({ 
-            map: createNoiseTexture('#222222'),
-            roughness: 0.9, 
-            metalness: 0.1 
+            map: createNoiseTexture('#555555'), // Helleres Grau
+            roughness: 0.6, 
+            metalness: 0.2 
         });
         
         this.mats.floor = new THREE.MeshStandardMaterial({ 
-            map: createNoiseTexture('#111111'),
+            map: createNoiseTexture('#333333'), // Hellerer Boden
             roughness: 0.8,
-            metalness: 0.0
+            metalness: 0.1
         });
 
-        // Glowing Materials for POIs
-        this.mats.vault = new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0xffff00, emissiveIntensity: 2 });
-        this.mats.enemy = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 1 });
-        this.mats.loot = new THREE.MeshStandardMaterial({ color: 0x39ff14, emissive: 0x39ff14, emissiveIntensity: 0.8 });
+        this.mats.vault = new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0xffff00, emissiveIntensity: 1 });
+        this.mats.enemy = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.8 });
+        this.mats.loot = new THREE.MeshStandardMaterial({ color: 0x39ff14, emissive: 0x39ff14, emissiveIntensity: 0.6 });
     },
 
-    // Wird aufgerufen, wenn Sektor gewechselt wird
     renderStaticMap: function() {
         if(!this.scene) return;
         
-        // 1. Clear Scene (behalte Licht am Spieler, falls existent, sonst alles weg)
-        // Einfachheitshalber: Alles weg, Player neu bauen.
-        while(this.scene.children.length > 0){ 
-            this.scene.remove(this.scene.children[0]); 
-        }
+        // Scene leeren (außer Licht)
+        this.scene.children = this.scene.children.filter(c => c.isLight); // Behalte Lichter
 
         if(!this.state.currentMap) return;
 
-        // 2. Build Floor & Walls
         const geoWall = new THREE.BoxGeometry(this.TILE_SIZE, this.TILE_SIZE * 1.5, this.TILE_SIZE);
         const geoFloor = new THREE.PlaneGeometry(this.TILE_SIZE, this.TILE_SIZE);
         
         const mapW = this.MAP_W;
         const mapH = this.MAP_H;
 
-        // Group für statische Welt
         const worldGroup = new THREE.Group();
         this.scene.add(worldGroup);
 
@@ -136,14 +139,14 @@ Object.assign(Game, {
                 const px = x * this.TILE_SIZE;
                 const pz = y * this.TILE_SIZE;
 
-                // BODEN (Überall)
+                // BODEN
                 const floor = new THREE.Mesh(geoFloor, this.mats.floor);
                 floor.rotation.x = -Math.PI / 2;
                 floor.position.set(px, 0, pz);
                 floor.receiveShadow = true;
                 worldGroup.add(floor);
 
-                // OBJEKTE
+                // WÄNDE & OBJEKTE
                 if(type === '#') {
                     const wall = new THREE.Mesh(geoWall, this.mats.wall);
                     wall.position.set(px, this.TILE_SIZE * 0.75, pz);
@@ -151,104 +154,92 @@ Object.assign(Game, {
                     wall.receiveShadow = true;
                     worldGroup.add(wall);
                 }
-                else if(type === 'V') { // Vault
+                else if(type === 'V') { 
                     const v = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.1, 16), this.mats.vault);
                     v.position.set(px, 0.1, pz);
                     worldGroup.add(v);
-                    
-                    // Schwebendes Label? Vorerst einfach Glow.
                 }
-                else if(['M', 'W'].includes(type)) { // Monster
+                else if(['M', 'W'].includes(type)) {
                     const m = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), this.mats.enemy);
                     m.position.set(px, 0.5, pz);
                     worldGroup.add(m);
                 }
-                else if(['X', 'B', 't', 'T'].includes(type)) { // Loot
+                else if(['X', 'B', 't', 'T'].includes(type)) {
                     const l = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), this.mats.loot);
                     l.position.set(px, 0.2, pz);
-                    l.rotation.y = Math.random();
                     worldGroup.add(l);
                 }
             }
         }
 
-        // 3. Player Setup
         this.createPlayer();
     },
 
     createPlayer: function() {
-        // Player Container
         this.playerMesh = new THREE.Group();
         
-        // Körper (Unsichtbar oder angedeutet, damit Schatten korrekt fallen?)
-        // Wir machen ihn klein und unsichtbar, die Kamera ist der "Kopf"
+        // DEBUG CUBE (Damit du siehst wo der Spieler ist, falls Licht ausfällt)
+        // const debugCube = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), new THREE.MeshBasicMaterial({color: 0x00ff00, wireframe: true}));
+        // this.playerMesh.add(debugCube);
         
-        // TASCHENLAMPE (SpotLight)
-        const spotLight = new THREE.SpotLight(0xffffee, 2, 15, Math.PI / 6, 0.5, 1);
-        spotLight.position.set(0, 2, 0); // Über dem Kopf
-        spotLight.target.position.set(0, 0, -3); // Leuchtet nach vorne
+        // TASCHENLAMPE (Breiter und Heller)
+        const spotLight = new THREE.SpotLight(0xffffee, 3, 20, Math.PI / 4, 0.5, 1);
+        spotLight.position.set(0, 3, 0); 
+        spotLight.target.position.set(0, 0, -4); 
         spotLight.castShadow = true;
-        spotLight.shadow.bias = -0.0001;
         
+        // WICHTIG: Shadow Bias gegen Artefakte
+        spotLight.shadow.bias = -0.0001; 
+        spotLight.shadow.mapSize.width = 1024;
+        spotLight.shadow.mapSize.height = 1024;
+
         this.playerMesh.add(spotLight);
         this.playerMesh.add(spotLight.target);
         
-        // Kleines Ambient Light um Spieler herum (damit man nicht komplett blind ist in Ecken)
-        const pointLight = new THREE.PointLight(0x39ff14, 0.2, 5);
-        this.playerMesh.add(pointLight);
-
         this.scene.add(this.playerMesh);
     },
 
-    // Der Loop
     draw: function() {
         if(!this.renderer || !this.scene || !this.playerMesh) return;
         
         const cvs = this.renderer.domElement;
-        // Resize Check
+        // Auto-Resize
         if (cvs.width !== cvs.clientWidth || cvs.height !== cvs.clientHeight) {
-            this.renderer.setSize(cvs.clientWidth, cvs.clientHeight, false);
-            this.composer.setSize(cvs.clientWidth, cvs.clientHeight);
-            this.camera.aspect = cvs.clientWidth / cvs.clientHeight;
+            const w = cvs.clientWidth;
+            const h = cvs.clientHeight;
+            this.renderer.setSize(w, h, false);
+            if(this.composer) this.composer.setSize(w, h);
+            this.camera.aspect = w / h;
             this.camera.updateProjectionMatrix();
         }
 
-        // 1. Sync Player Pos
+        // Spieler-Position syncen
         const targetX = this.state.player.x * this.TILE_SIZE;
         const targetZ = this.state.player.y * this.TILE_SIZE;
         
-        // Smooth Movement
+        // Lerp (Bewegungsglättung)
         this.playerMesh.position.x += (targetX - this.playerMesh.position.x) * 0.2;
         this.playerMesh.position.z += (targetZ - this.playerMesh.position.z) * 0.2;
         
-        // Rotation (Blickrichtung)
-        // Wir nehmen den Rotation-Wert aus Game.state.player.rot (Radiants)
-        // Aber Achtung: In game_map ist 0 = oben (bei -y). In 3D ist -z "vorne".
-        // Das Mapping muss passen.
+        // Rotation korrigieren (Game Rot ist 2D Radian, 3D braucht Mapping)
         this.playerMesh.rotation.y = -this.state.player.rot + Math.PI; 
 
-        // 2. Camera Follow (Top Down, slightly angled)
+        // Kamera folgt Spieler
+        // Leicht schräg von oben (Top Down RPG Style)
         this.camera.position.x = this.playerMesh.position.x;
-        this.camera.position.z = this.playerMesh.position.z + 4; // Hinter/Über Spieler
-        this.camera.position.y = 8; // Höhe
+        this.camera.position.z = this.playerMesh.position.z + 5; 
+        this.camera.position.y = 7; 
         this.camera.lookAt(this.playerMesh.position.x, 0, this.playerMesh.position.z);
 
-        // 3. Render
-        // Statt renderer.render nehmen wir composer.render für Bloom
-        this.composer.render();
+        // Rendern (Fallback falls Composer fehlt)
+        if(this.composer) {
+            this.composer.render();
+        } else {
+            this.renderer.render(this.scene, this.camera);
+        }
     },
 
-    // Kompatibilität: Dummy-Funktionen für Dinge, die game_core.js vielleicht aufruft
-    initCache: function() { 
-        // Brauchen wir in 3D nicht mehr, aber Funktion muss existieren
-    },
-    
-    // Text zeichnen?
-    // game_core.js nutzt drawText. 
-    // Wir können versuchen, das auf ein 2D-Overlay zu mappen, aber
-    // für diesen Schritt lassen wir es leer, damit es keine Fehler wirft.
-    // Die wichtigsten Infos sind im UI HTML.
-    drawText: function(ctx, text, x, y, size, color) {
-        // Ignorieren, da wir kein 2D Context mehr auf dem Main Canvas haben.
-    }
+    // Compatibility Stubs
+    initCache: function() {},
+    drawText: function() {}
 });
