@@ -1,4 +1,4 @@
-// [2026-02-16 18:15:00] game_map.js (Compatible with River Update)
+// [2026-02-16 20:10:00] game_map.js - Updated Bridge Logic
 
 Object.assign(Game, {
     reveal: function(px, py) { 
@@ -45,13 +45,13 @@ Object.assign(Game, {
         if (tile === 'v') { this.descendDungeon(); return; }
         if (tile === '?') { this.testMinigames(); return; } 
 
-        // Kollision: Jetzt auch für '~' (Wasser) und '^' (Berg)
+        // Kollision: Wasser (~) und Berge (^) blockieren.
+        // Brücken (+) und Straßen (=) sind erlaubt.
         if(['M', 'W', '#', 'U', 't', 'o', 'Y', '|', 'F', 'T', 'R', '^', '~'].includes(tile) && tile !== 'R') { 
             if(this.state.hiddenItems && this.state.hiddenItems[posKey]) {
                  const itemId = this.state.hiddenItems[posKey];
                  this.addToInventory(itemId, 1);
-                 const iName = (this.items && this.items[itemId]) ? this.items[itemId].name : itemId;
-                 UI.log(`Im Objekt gefunden: ${iName}!`, "text-yellow-400 font-bold");
+                 UI.log("Item gefunden!", "text-yellow-400 font-bold");
                  delete this.state.hiddenItems[posKey];
                  return; 
             }
@@ -78,7 +78,7 @@ Object.assign(Game, {
         if(tile === 'R') { this.tryEnterDungeon("raider"); return; }
         if(tile === 'K') { this.tryEnterDungeon("tower"); return; }
         
-        if(['.', ',', '_', ';', '"', '+', 'x', 'B'].includes(tile)) {
+        if(['.', ',', '_', ';', '"', '+', 'x', 'B', '=', '+'].includes(tile)) {
             if(Math.random() < 0.04) { 
                 this.startCombat();
                 return;
@@ -217,7 +217,7 @@ Object.assign(Game, {
         const isSafe = (x, y) => {
             if(x < 0 || x >= this.MAP_W || y < 0 || y >= this.MAP_H) return false;
             const t = this.state.currentMap[y][x];
-            // Update: Nicht in Wasser oder Berg spawnen!
+            // Wasser (~) und Berge (^) sind NICHT sicher. Brücken (+) schon.
             return !['M', 'W', '#', 'U', 't', 'T', 'o', 'Y', '|', 'F', 'R', 'A', 'K', '?', '^', '~'].includes(t);
         };
         if(isSafe(this.state.player.x, this.state.player.y)) return;
