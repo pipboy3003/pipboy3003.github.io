@@ -1,4 +1,4 @@
-// [2026-01-18 13:00:00] game_render.js - Fixed IndexSizeError (Negative Radius)
+// [2026-02-16 13:00:00] game_render.js - Advanced 2.5D Lighting (Raycasting)
 
 Object.assign(Game, {
     initCache: function() {
@@ -17,12 +17,37 @@ Object.assign(Game, {
         
         if(!this.state.currentMap) return;
 
+        // Render nur Boden (statisch)
         for(let y=0; y<this.MAP_H; y++) {
             for(let x=0; x<this.MAP_W; x++) {
                 if(this.state.currentMap[y]) {
-                    this.drawTile(ctx, x, y, this.state.currentMap[y][x]); 
+                    this.drawTile(ctx, x, y, this.state.currentMap[y][x], true); // true = nur Boden
                 }
             }
+        }
+    },
+
+    // Bresenham Line Algorithm für Sichtprüfung
+    checkLineOfSight: function(x0, y0, x1, y1) {
+        let dx = Math.abs(x1 - x0);
+        let dy = Math.abs(y1 - y0);
+        let sx = (x0 < x1) ? 1 : -1;
+        let sy = (y0 < y1) ? 1 : -1;
+        let err = dx - dy;
+
+        while(true) {
+            if(x0 === x1 && y0 === y1) return true; // Ziel erreicht
+            
+            // Check Collision (Blockiert Sicht?)
+            // Wir erlauben Durchsicht durch Spieler/Boden, aber nicht Wände
+            if(x0 >= 0 && x0 < this.MAP_W && y0 >= 0 && y0 < this.MAP_H) {
+                const t = this.state.currentMap[y0][x0];
+                if(['#', 'M', 'W'].includes(t)) return false; // Sicht blockiert
+            }
+
+            let e2 = 2 * err;
+            if(e2 > -dy) { err -= dy; x0 += sx; }
+            if(e2 < dx) { err += dx; y0 += sy; }
         }
     },
 
@@ -33,12 +58,12 @@ Object.assign(Game, {
         const ctx = this.ctx; 
         const cvs = ctx.canvas; 
         
-        // Wenn Canvas versteckt ist (Größe 0), brich sofort ab, um Fehler zu vermeiden
         if (cvs.clientWidth === 0 || cvs.clientHeight === 0) return;
 
         const viewW = cvs.clientWidth;
         const viewH = cvs.clientHeight;
         
+        // Kamera Smooth Lerp (Optional, hier direkt)
         let targetCamX = (this.state.player.x * this.TILE) - (viewW / 2); 
         let targetCamY = (this.state.player.y * this.TILE) - (viewH / 2); 
         
@@ -48,14 +73,9 @@ Object.assign(Game, {
         this.camera.x = Math.max(0, Math.min(targetCamX, maxCamX)); 
         this.camera.y = Math.max(0, Math.min(targetCamY, maxCamY)); 
         
+        // 1. Hintergrund löschen
         ctx.fillStyle = "#000"; 
         ctx.fillRect(0, 0, viewW, viewH); 
-        
-        ctx.drawImage(
-            this.cacheCanvas, 
-            this.camera.x, this.camera.y, viewW, viewH, 
-            0, 0, viewW, viewH                          
-        ); 
         
         ctx.save(); 
         ctx.translate(-this.camera.x, -this.camera.y); 
@@ -64,81 +84,118 @@ Object.assign(Game, {
         const startY = Math.floor(this.camera.y / this.TILE); 
         const endX = startX + Math.ceil(viewW / this.TILE) + 1; 
         const endY = startY + Math.ceil(viewH / this.TILE) + 1; 
+
+        // 2. RAYCASTING LOOP
+        // Wir zeichnen nur Tiles, die der Spieler sehen kann
         
-        const secKey = `${this.state.sector.x},${this.state.sector.y}`;
-        const pulse = Math.sin(Date.now() / 200) * 0.3 + 0.7; 
+        const px = this.state.player.x;
+        const py = this.state.player.y;
+        const viewDist = 8; // Sichtweite
 
         for(let y=startY; y<endY; y++) { 
             for(let x=startX; x<endX; x++) { 
                 if(y>=0 && y<this.MAP_H && x>=0 && x<this.MAP_W) { 
                     
-                    const tileKey = `${secKey}_${x},${y}`;
-                    const isCity = (this.state.zone && this.state.zone.includes("Stadt")); 
+                    const dist = Math.sqrt((x-px)**2 + (y-py)**2);
                     
-                    if(!isCity && !this.state.explored[tileKey]) {
-                        ctx.fillStyle = "#000";
-                        ctx.fillRect(x * this.TILE, y * this.TILE, this.TILE, this.TILE);
-                        continue; 
+                    // A. Distanz Check
+                    if(dist > viewDist) {
+                        // Zu weit weg -> Schwarz (oder extrem dunkel)
+                        // Wir zeichnen nichts = Schwarz (durch Background)
+                        continue;
                     }
 
-                    if(!this.state.currentMap[y]) continue; 
+                    // B. Line of Sight Check (Schatten)
+                    // Wir checken vom Spieler-Zentrum zum Tile-Zentrum
+                    const isVisible = this.checkLineOfSight(px, py, x, y);
+                    
+                    if(!isVisible) {
+                        // Im Schatten -> Schwarz
+                        continue;
+                    }
 
+                    // C. Zeichne Boden (aus Cache) & Objekt
                     const t = this.state.currentMap[y][x]; 
                     
-                    if(['V', 'S', 'C', 'G', 'H', 'R', '^', 'v', '<', '>', '$', '&', 'P', 'E', 'F', 'X'].includes(t)) { 
-                        this.drawTile(ctx, x, y, t, pulse); 
-                    } 
+                    // Boden zeichnen (aus Cache für Performance, aber nur den Ausschnitt)
+                    ctx.drawImage(
+                        this.cacheCanvas, 
+                        x*this.TILE, y*this.TILE, this.TILE, this.TILE,
+                        x*this.TILE, y*this.TILE, this.TILE, this.TILE
+                    );
+
+                    // Objekt darauf zeichnen
+                    if(t !== '.') {
+                        this.drawTile(ctx, x, y, t, 1);
+                    }
                     
+                    // D. Dynamische Beleuchtung (Vignette pro Tile)
+                    // Je weiter weg, desto dunkler
+                    const opacity = Math.min(0.9, dist / viewDist);
+                    if(opacity > 0) {
+                        ctx.fillStyle = `rgba(0,0,0,${opacity})`;
+                        ctx.fillRect(x*this.TILE, y*this.TILE, this.TILE, this.TILE);
+                    }
+                    
+                    // Hidden Items Glow
                     if(this.state.hiddenItems && this.state.hiddenItems[`${x},${y}`]) {
-                        const shimmer = (Math.sin(Date.now() / 200) + 1) / 2;
-                        ctx.globalAlpha = 0.3 + (shimmer * 0.5);
-                        ctx.fillStyle = "#ffffff";
+                        ctx.fillStyle = "rgba(255,255,255,0.2)";
                         ctx.beginPath();
-                        ctx.arc(x * this.TILE + this.TILE/2, y * this.TILE + this.TILE/2, 4 + shimmer * 2, 0, Math.PI * 2);
+                        ctx.arc(x * this.TILE + this.TILE/2, y * this.TILE + this.TILE/2, 4, 0, Math.PI * 2);
                         ctx.fill();
-                        ctx.globalAlpha = 1.0;
                     }
                 } 
             } 
         } 
         
+        // 3. Andere Spieler
         if(typeof Network !== 'undefined' && Network.otherPlayers) { 
             for(let pid in Network.otherPlayers) { 
                 const p = Network.otherPlayers[pid]; 
                 if(p.sector && (p.sector.x !== this.state.sector.x || p.sector.y !== this.state.sector.y)) continue; 
                 
+                // Nur zeichnen wenn sichtbar? Optional. Hier immer zeichnen.
                 const ox = p.x * this.TILE + this.TILE/2; 
                 const oy = p.y * this.TILE + this.TILE/2; 
                 
                 ctx.fillStyle = "#00ffff"; 
-                ctx.shadowBlur = 5; 
-                ctx.shadowColor = "#00ffff"; 
                 ctx.beginPath(); 
                 ctx.arc(ox, oy, 5, 0, Math.PI*2); 
                 ctx.fill(); 
-                
-                // Name mit der neuen globalen Funktion zeichnen
                 Game.drawText(ctx, p.name ? p.name.substring(0,3) : "P", ox+6, oy, 10, "white", "left");
-                ctx.shadowBlur = 0; 
             } 
         } 
         
-        const px = this.state.player.x * this.TILE + this.TILE/2; 
-        const py = this.state.player.y * this.TILE + this.TILE/2; 
+        // 4. Player Zeichnen (mit Taschenlampen-Kegel)
+        const screenPx = this.state.player.x * this.TILE + this.TILE/2; 
+        const screenPy = this.state.player.y * this.TILE + this.TILE/2; 
         
         ctx.save();
-        ctx.translate(px, py); 
+        ctx.translate(screenPx, screenPy); 
         ctx.rotate(this.state.player.rot); 
-        ctx.translate(-px, -py); 
+        
+        // Taschenlampe (Kegel)
+        // Wir malen "Licht" über die Dunkelheit? 
+        // Nein, wir haben die Dunkelheit schon per Tile-Opacity gemacht.
+        // Hier malen wir nur den Schein der Lampe (optional)
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, 150, -Math.PI/6, Math.PI/6);
+        ctx.fillStyle = "rgba(255, 255, 200, 0.1)"; // Gelblicher Schein
+        ctx.fill();
+
+        // Player Icon
+        ctx.rotate(-this.state.player.rot); // Reset Rotation für Icon (optional)
+        ctx.rotate(this.state.player.rot); // Wieder hin
         
         ctx.fillStyle = "#39ff14"; 
         ctx.shadowBlur = 10; 
         ctx.shadowColor = "#39ff14"; 
         ctx.beginPath(); 
-        ctx.moveTo(px, py - 8); 
-        ctx.lineTo(px + 6, py + 8); 
-        ctx.lineTo(px, py + 5); 
-        ctx.lineTo(px - 6, py + 8); 
+        ctx.moveTo(0, -8); 
+        ctx.lineTo(6, 8); 
+        ctx.lineTo(0, 5); 
+        ctx.lineTo(-6, 8); 
         ctx.fill(); 
         ctx.shadowBlur = 0; 
         
@@ -146,76 +203,57 @@ Object.assign(Game, {
         
         ctx.restore(); 
 
-        // VIGNETTE EFFEKT (MIT FIX FÜR NEGATIVEN RADIUS)
-        const centerX = viewW / 2;
-        const centerY = viewH / 2;
-        const time = Date.now();
-        const flicker = (Math.sin(time / 150) * 5) + (Math.random() * 2); 
-        
-        // FIX: Sicherstellen, dass Radius >= 0.1 ist
-        let baseRadius = Math.max(viewW, viewH) * 0.6;
-        let radius = Math.max(0.1, baseRadius + flicker);
-        let innerRadius = Math.max(0, radius * 0.4);
-
-        const gradient = ctx.createRadialGradient(centerX, centerY, innerRadius, centerX, centerY, radius);
-        gradient.addColorStop(0, "rgba(0, 0, 0, 0)");        
-        gradient.addColorStop(0.7, "rgba(0, 20, 0, 0.2)");    
-        gradient.addColorStop(1, "rgba(0, 0, 0, 0.85)");      
-
+        // 5. Global Vignette (für Atmosphäre am Rand)
+        const gradient = ctx.createRadialGradient(viewW/2, viewH/2, viewH*0.3, viewW/2, viewH/2, viewH*0.8);
+        gradient.addColorStop(0, "rgba(0,0,0,0)");
+        gradient.addColorStop(1, "rgba(0,10,0,0.6)");
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, viewW, viewH);
     },
 
-    drawTile: function(ctx, x, y, type, pulse = 1) { 
+    drawTile: function(ctx, x, y, type, onlyFloor = false) { 
         const ts = this.TILE; const px = x * ts; const py = y * ts; 
         const cx = px + ts/2; const cy = py + ts/2;
         
-        let bg = this.colors['.']; 
-        if(['_', ',', ';', '=', 'W', 'M', '~', '|', 'B'].includes(type)) bg = this.colors[type]; 
+        // Bodenfarbe
+        let bg = "#111"; // Standard dunkel
+        if(['M', 'W', '~'].includes(type)) bg = "#221111"; // Gefahrenzone Boden
         
-        if (!['^','v','<','>'].includes(type) && type !== '#') { ctx.fillStyle = bg; ctx.fillRect(px, py, ts, ts); } 
-        if(!['^','v','<','>','M','W','~','X'].includes(type) && type !== '#') { ctx.strokeStyle = "rgba(40, 90, 40, 0.05)"; ctx.lineWidth = 1; ctx.strokeRect(px, py, ts, ts); } 
-        
-        if(['^', 'v', '<', '>'].includes(type)) { 
-            ctx.fillStyle = "#000"; ctx.fillRect(px, py, ts, ts); ctx.fillStyle = "#1aff1a"; ctx.strokeStyle = "#000"; ctx.beginPath(); 
-            if (type === '^') { ctx.moveTo(px + ts/2, py + 5); ctx.lineTo(px + ts - 5, py + ts - 5); ctx.lineTo(px + 5, py + ts - 5); } 
-            else if (type === 'v') { ctx.moveTo(px + ts/2, py + ts - 5); ctx.lineTo(px + ts - 5, py + 5); ctx.lineTo(px + 5, py + 5); } 
-            else if (type === '<') { ctx.moveTo(px + 5, py + ts/2); ctx.lineTo(px + ts - 5, py + 5); ctx.lineTo(px + ts - 5, py + ts - 5); } 
-            else if (type === '>') { ctx.moveTo(px + ts - 5, py + ts/2); ctx.lineTo(px + 5, py + 5); ctx.lineTo(px + 5, py + ts - 5); } 
-            ctx.fill(); ctx.stroke(); return; 
+        if (onlyFloor) {
+            ctx.fillStyle = bg; 
+            ctx.fillRect(px, py, ts, ts);
+            // Gittermuster
+            ctx.strokeStyle = "rgba(40, 90, 40, 0.05)"; 
+            ctx.lineWidth = 1; 
+            ctx.strokeRect(px, py, ts, ts);
+            return;
         }
         
+        // Objekte
         ctx.beginPath(); 
-        
         switch(type) { 
-            case '#': ctx.fillStyle = "#222"; ctx.fillRect(px, py, ts, ts); ctx.lineWidth=1; ctx.strokeStyle="#444"; ctx.strokeRect(px, py, ts, ts); break; 
-            case 't': ctx.fillStyle = this.colors['t']; ctx.moveTo(px + ts/2, py + 2); ctx.lineTo(px + ts - 4, py + ts - 2); ctx.lineTo(px + 4, py + ts - 2); ctx.fill(); break;
-            case 'T': ctx.fillStyle = this.colors['T']; ctx.moveTo(px + ts/2, py + 2); ctx.lineTo(px + ts - 2, py + ts - 2); ctx.lineTo(px + 2, py + ts - 2); ctx.fill(); break;
-            case 'x': ctx.strokeStyle = this.colors['x']; ctx.lineWidth = 2; ctx.moveTo(px+5, py+ts-5); ctx.lineTo(px+ts-5, py+5); ctx.moveTo(px+5, py+5); ctx.lineTo(px+ts-5, py+ts-5); ctx.stroke(); break;
-            case '"': ctx.strokeStyle = this.colors['"']; ctx.lineWidth = 1; ctx.moveTo(px+5, py+ts-5); ctx.lineTo(px+5, py+10); ctx.moveTo(px+15, py+ts-5); ctx.lineTo(px+15, py+5); ctx.moveTo(px+25, py+ts-5); ctx.lineTo(px+25, py+12); ctx.stroke(); break;
-            case 'Y': ctx.strokeStyle = this.colors['Y']; ctx.lineWidth = 3; ctx.moveTo(px+15, py+ts-5); ctx.lineTo(px+15, py+5); ctx.moveTo(px+15, py+15); ctx.lineTo(px+5, py+10); ctx.moveTo(px+15, py+10); ctx.lineTo(px+25, py+5); ctx.stroke(); break;
-            case 'o': ctx.fillStyle = this.colors['o']; ctx.arc(px+ts/2, py+ts/2, ts/3, 0, Math.PI*2); ctx.fill(); break;
-            case '+': ctx.fillStyle = this.colors['+']; ctx.fillRect(px+5, py+10, 5, 5); ctx.fillRect(px+15, py+20, 4, 4); ctx.fillRect(px+20, py+5, 6, 6); break;
-            case 'M': ctx.fillStyle = "#3e2723"; ctx.moveTo(px + ts/2, py + 2); ctx.lineTo(px + ts, py + ts); ctx.lineTo(px, py + ts); ctx.fill(); break;
-            case 'W': ctx.strokeStyle = "#4fc3f7"; ctx.lineWidth = 2; ctx.moveTo(px+5, py+15); ctx.lineTo(px+15, py+10); ctx.lineTo(px+25, py+15); ctx.stroke(); break;
-            case '~': ctx.strokeStyle = "#556b2f"; ctx.lineWidth = 2; ctx.moveTo(px+5, py+15); ctx.lineTo(px+15, py+10); ctx.lineTo(px+25, py+15); ctx.stroke(); break;
-            case '=': ctx.strokeStyle = "#5d4037"; ctx.lineWidth = 2; ctx.moveTo(px, py+5); ctx.lineTo(px+ts, py+5); ctx.moveTo(px, py+25); ctx.lineTo(px+ts, py+25); ctx.stroke(); break;
-            case 'U': ctx.fillStyle = "#000"; ctx.arc(px+ts/2, py+ts/2, ts/3, 0, Math.PI, true); ctx.fill(); break;
+            case '#': // Wand 
+                ctx.fillStyle = "#444"; 
+                ctx.fillRect(px, py, ts, ts); 
+                // 3D Effekt (Top Face)
+                ctx.fillStyle = "#555";
+                ctx.fillRect(px, py, ts, ts-4);
+                // Front Face
+                ctx.fillStyle = "#222";
+                ctx.fillRect(px, py+ts-4, ts, 4);
+                break; 
             
-            // --- HIER: Alles auf Game.drawText umgestellt ---
             case 'V': 
                 Game.drawText(ctx, "⚙️", cx, cy, 35, "#ffff00", "center", true);
-                Game.drawText(ctx, "VAULT 101", cx, py + ts - 2, 10, "#ffffff", "center", true);
                 break; 
 
             case 'R':
                 Game.drawText(ctx, "🛒", cx, cy, 30, "#ff3333", "center", true);
-                Game.drawText(ctx, "SUPER-MART", cx, py + ts - 2, 9, "#ffffff", "center", true);
                 break;
 
-            case 'C': ctx.globalAlpha = pulse; ctx.fillStyle = this.colors['C']; ctx.fillRect(px+6, py+14, 18, 12); ctx.beginPath(); ctx.moveTo(px+4, py+14); ctx.lineTo(px+15, py+4); ctx.lineTo(px+26, py+14); ctx.fill(); break; 
-            case 'S': ctx.globalAlpha = pulse; ctx.fillStyle = this.colors['S']; ctx.arc(px+ts/2, py+12, 6, 0, Math.PI*2); ctx.fill(); ctx.fillRect(px+10, py+18, 10, 6); break; 
-            case 'H': ctx.globalAlpha = pulse; ctx.fillStyle = this.colors['H']; ctx.arc(px+ts/2, py+ts/2, ts/2.5, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = "#000"; ctx.beginPath(); ctx.arc(px+ts/2, py+ts/2, ts/4, 0, Math.PI*2); ctx.fill(); break; 
+            case 'C': ctx.fillStyle = this.colors['C']; ctx.fillRect(px+6, py+14, 18, 12); break; 
+            case 'S': ctx.fillStyle = this.colors['S']; ctx.arc(px+ts/2, py+12, 6, 0, Math.PI*2); ctx.fill(); break; 
+            case 'H': ctx.fillStyle = this.colors['H']; ctx.arc(px+ts/2, py+ts/2, ts/2.5, 0, Math.PI*2); ctx.fill(); break; 
             
             case '$': Game.drawText(ctx, "$$", cx, py+20, 12, this.colors['$']); break;
             case '&': Game.drawText(ctx, "🔧", cx, py+20, 12, this.colors['&']); break;
@@ -226,6 +264,5 @@ Object.assign(Game, {
             case '|': ctx.fillStyle = this.colors['|']; ctx.fillRect(px, py, ts, ts); break;
             case 'X': ctx.fillStyle = this.colors['X']; ctx.fillRect(px+5, py+10, 20, 15); ctx.fillStyle = "#ffd700"; ctx.fillRect(px+12, py+15, 6, 5); break;
         } 
-        ctx.globalAlpha = 1; 
     }
 });
