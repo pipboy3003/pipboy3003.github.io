@@ -1,4 +1,4 @@
-// [2026-02-16 23:00:00] game_world_gen.js - Winding Rivers & Branches Update
+// [2026-02-16 23:00:00] game_world_gen.js - Auto-Bridges & Trails Update
 
 const WorldGen = {
     _seed: 12345,
@@ -26,19 +26,12 @@ const WorldGen = {
         return corners + sides + center;
     },
     
-    // SPEZIAL-FUNKTION: Domain Warping für schlängelnde Flüsse
+    // SPEZIAL: Kurvige Flüsse durch Verzerrung
     getRiverValue: function(x, y, seed, scale) {
-        // 1. Verzerrung berechnen (Turbulenz)
-        // Wir nehmen Noise-Werte, um die Koordinaten zu verschieben
         const warpX = this.smoothNoise(x * 0.05, y * 0.05, seed + 100) * 4.0; 
         const warpY = this.smoothNoise(x * 0.05, y * 0.05, seed + 200) * 4.0;
-
-        // 2. Fluss auf den verzerrten Koordinaten berechnen
-        // Niedriger Scale (0.02) sorgt für lange, zusammenhängende Linien
         const nx = (x * scale) + warpX;
         const ny = (y * scale) + warpY;
-        
-        // Ridge Noise: Absolutwert von 0.5 erzeugt "Täler" (Linien)
         return Math.abs(this.smoothNoise(nx, ny, seed) - 0.5);
     },
 
@@ -54,84 +47,84 @@ const WorldGen = {
         let map = Array(height).fill().map(() => Array(width).fill('.'));
         const sectorSeed = this.rand() * 1000;
 
-        // Config
-        let riverThreshold = 0.025; // Kleiner Wert = Breiterer Fluss
+        let riverThreshold = 0.025; 
         let mountainThresh = 0.82; 
         let treeThresh = 0.70;     
         let ruinThresh = 0.88;
-        
         let terrainScale = 0.12; 
 
         if(biomeType === 'forest') { treeThresh = 0.50; terrainScale = 0.15; riverThreshold = 0.035; }
-        if(biomeType === 'swamp') { riverThreshold = 0.08; treeThresh = 0.60; } // Breite Flüsse (Sümpfe)
-        if(biomeType === 'desert') { riverThreshold = 0.005; treeThresh = 0.98; mountainThresh = 0.75; ruinThresh = 0.78; } // Wadis (selten Wasser)
+        if(biomeType === 'swamp') { riverThreshold = 0.08; treeThresh = 0.60; } 
+        if(biomeType === 'desert') { riverThreshold = 0.005; treeThresh = 0.98; mountainThresh = 0.75; ruinThresh = 0.78; } 
         if(biomeType === 'mountain') { mountainThresh = 0.55; treeThresh = 0.85; riverThreshold = 0.02; }
 
+        // 1. TERRAIN GENERIERUNG
         for(let y = 0; y < height; y++) {
             for(let x = 0; x < width; x++) {
-                
-                // --- FLUSS SYSTEM (Schlängelnd & Verzweigt) ---
-                // Hauptfluss
+                // Zwei Flüsse die sich kreuzen können
                 let river1 = this.getRiverValue(x, y, sectorSeed, 0.02);
-                // Nebenfluss (anderer Seed, andere Frequenz)
                 let river2 = this.getRiverValue(x, y, sectorSeed + 5000, 0.03);
-                
-                // Wir kombinieren beide. Wenn EINER der beiden Werte klein ist, ist hier Wasser.
-                // Das erzeugt Kreuzungen.
-                let isRiver = (river1 < riverThreshold) || (river2 < riverThreshold * 0.7); // Nebenfluss etwas dünner
+                let isRiver = (river1 < riverThreshold) || (river2 < riverThreshold * 0.7);
 
-                // --- TERRAIN ---
                 let nx = x * terrainScale;
                 let ny = y * terrainScale;
-                
                 let elevation = this.smoothNoise(nx, ny, sectorSeed + 100);
                 let moisture = this.smoothNoise(nx + 50, ny + 50, sectorSeed + 200);
                 let ruins = this.smoothNoise(nx * 4, ny * 4, sectorSeed + 800);
 
-                map[y][x] = '.'; // Boden
+                map[y][x] = '.'; 
 
-                // Prioritäten
-                if (isRiver) {
-                    map[y][x] = '~';
-                }
-                else if (elevation > mountainThresh) {
-                    map[y][x] = '^';
-                }
-                else if (ruins > ruinThresh) {
-                    map[y][x] = '#'; 
-                }
-                else if (moisture > treeThresh) {
-                    map[y][x] = 't';
-                }
+                if (isRiver) map[y][x] = '~';
+                else if (elevation > mountainThresh) map[y][x] = '^';
+                else if (ruins > ruinThresh) map[y][x] = '#'; 
+                else if (moisture > treeThresh) map[y][x] = 't';
                 
-                // Sicherheits-Korridor am Rand (immer begehbar)
+                // Ränder begehbar halten
                 if(x < 2 || x > width - 3 || y < 2 || y > height - 3) {
                     if(['^', 't', '#'].includes(map[y][x])) map[y][x] = '.';
                 }
             }
         }
 
-        // POI Platzierung & Rodung
+        // 2. POIs PLATZIEREN
         if(poiList) {
             poiList.forEach(poi => {
                 if(poi.x >= 0 && poi.x < width && poi.y >= 0 && poi.y < height) {
                     map[poi.y][poi.x] = poi.type;
-                    this.clearArea(map, poi.x, poi.y, 4); 
+                    this.clearArea(map, poi.x, poi.y, 4, true); // true = force clear water too
                 }
             });
         }
 
-        // Straßen & Brückenbau
+        // 3. STRASSEN ZWISCHEN POIs
         if(poiList && poiList.length > 1) {
             for(let i=0; i<poiList.length-1; i++) {
                 this.buildRoad(map, poiList[i], poiList[i+1]);
             }
         }
 
+        // 4. NEU: ZUFÄLLIGE "ALTE PFADE" & BRÜCKEN
+        // Erzeugt 3-5 Wege quer durch den Sektor, damit immer Brücken entstehen
+        const numTrails = Math.floor(this.rand() * 3) + 3;
+        for(let i=0; i<numTrails; i++) {
+            const p1 = this.getRandomEdgePoint(width, height);
+            const p2 = this.getRandomEdgePoint(width, height);
+            this.buildRoad(map, p1, p2);
+        }
+
         return map;
     },
 
-    clearArea: function(map, cx, cy, radius) {
+    getRandomEdgePoint: function(w, h) {
+        const side = Math.floor(this.rand() * 4);
+        // Etwas Abstand vom absoluten Rand (2 Felder)
+        if(side === 0) return {x: Math.floor(this.rand()*(w-4))+2, y: 0}; // Oben
+        if(side === 1) return {x: Math.floor(this.rand()*(w-4))+2, y: h-1}; // Unten
+        if(side === 2) return {x: 0, y: Math.floor(this.rand()*(h-4))+2}; // Links
+        return {x: w-1, y: Math.floor(this.rand()*(h-4))+2}; // Rechts
+    },
+
+    clearArea: function(map, cx, cy, radius, force = false) {
         const h = map.length;
         const w = map[0].length;
         for(let dy=-radius; dy<=radius; dy++) {
@@ -139,9 +132,14 @@ const WorldGen = {
                 const ny = cy+dy, nx = cx+dx;
                 if(ny>=0 && ny<h && nx>=0 && nx<w) {
                     const t = map[ny][nx];
-                    // POI Schutz: Alles weg
-                    if(['^', 't', '~', '#'].includes(t) && map[ny][nx] !== map[cy][cx]) {
-                        map[ny][nx] = '.';
+                    if(map[ny][nx] !== map[cy][cx]) {
+                        // force=true: Löscht auch Wasser (für Häuserbau wichtig)
+                        // force=false: Lässt Wasser da (für Straßenränder wichtig)
+                        if(force) {
+                             if(['^', 't', '~', '#'].includes(t)) map[ny][nx] = '.';
+                        } else {
+                             if(['^', 't', '#'].includes(t)) map[ny][nx] = '.';
+                        }
                     }
                 }
             }
@@ -190,24 +188,37 @@ const WorldGen = {
     buildRoad: function(map, start, end) {
         let x = start.x, y = start.y;
         while(x !== end.x || y !== end.y) {
-            if(this.rand() < 0.2) { const dir = this.rand() < 0.5 ? 0 : 1; if(dir === 0 && x !== end.x) x += (end.x > x ? 1 : -1); else if(y !== end.y) y += (end.y > y ? 1 : -1); } 
-            else { if(Math.abs(end.x - x) > Math.abs(end.y - y)) x += (end.x > x ? 1 : -1); else y += (end.y > y ? 1 : -1); }
+            // Zufällige Bewegung
+            if(this.rand() < 0.2) { 
+                const dir = this.rand() < 0.5 ? 0 : 1; 
+                if(dir === 0 && x !== end.x) x += (end.x > x ? 1 : -1); 
+                else if(y !== end.y) y += (end.y > y ? 1 : -1); 
+            } else { 
+                if(Math.abs(end.x - x) > Math.abs(end.y - y)) x += (end.x > x ? 1 : -1); 
+                else y += (end.y > y ? 1 : -1); 
+            }
+            
             if(x < 0 || x >= map[0].length || y < 0 || y >= map.length) continue;
             
-            const makeRoad = (cx, cy) => {
-                if (map[cy][cx] === '~' || map[cy][cx] === '+') {
-                    map[cy][cx] = '+'; 
+            // Straßenbau mit Brücken-Logik
+            const buildSpot = (cx, cy) => {
+                if(cx < 0 || cx >= map[0].length || cy < 0 || cy >= map.length) return;
+                
+                const current = map[cy][cx];
+                
+                if (current === '~' || current === '+') {
+                    map[cy][cx] = '+'; // Wasser -> Brücke
+                    // KEIN clearArea hier, sonst löschen wir das Wasser unter der Brücke!
                 } else {
-                    map[cy][cx] = '='; 
+                    map[cy][cx] = '='; // Land -> Straße
+                    // Bäume/Steine am Straßenrand entfernen, aber Wasser lassen
+                    this.clearArea(map, cx, cy, 1, false); 
                 }
-                this.clearArea(map, cx, cy, 1);
             };
-            makeRoad(x, y);
-            
-            if (x+1 < map[0].length) {
-                if(map[y][x+1] !== '~') map[y][x+1] = '=';
-                else map[y][x+1] = '+';
-            }
+
+            buildSpot(x, y);
+            // Breitere Straßen für bessere Optik
+            if(x+1 < map[0].length) buildSpot(x+1, y);
         }
     }
 };
