@@ -1,4 +1,4 @@
-// [2026-02-16 22:30:00] game_world_gen.js - Noise Math Fixed
+// [2026-02-16 23:00:00] game_world_gen.js - Winding Rivers & Branches Update
 
 const WorldGen = {
     _seed: 12345,
@@ -13,7 +13,7 @@ const WorldGen = {
         return (this._seed - 1) / 2147483646;
     },
 
-    // FIX: Liefert jetzt garantiert Werte zwischen 0.0 und 1.0
+    // Basis Noise (0.0 bis 1.0)
     noise: function(nx, ny) {
         const val = Math.sin(nx * 12.9898 + ny * 78.233) * 43758.5453;
         return val - Math.floor(val); 
@@ -26,6 +26,22 @@ const WorldGen = {
         return corners + sides + center;
     },
     
+    // SPEZIAL-FUNKTION: Domain Warping für schlängelnde Flüsse
+    getRiverValue: function(x, y, seed, scale) {
+        // 1. Verzerrung berechnen (Turbulenz)
+        // Wir nehmen Noise-Werte, um die Koordinaten zu verschieben
+        const warpX = this.smoothNoise(x * 0.05, y * 0.05, seed + 100) * 4.0; 
+        const warpY = this.smoothNoise(x * 0.05, y * 0.05, seed + 200) * 4.0;
+
+        // 2. Fluss auf den verzerrten Koordinaten berechnen
+        // Niedriger Scale (0.02) sorgt für lange, zusammenhängende Linien
+        const nx = (x * scale) + warpX;
+        const ny = (y * scale) + warpY;
+        
+        // Ridge Noise: Absolutwert von 0.5 erzeugt "Täler" (Linien)
+        return Math.abs(this.smoothNoise(nx, ny, seed) - 0.5);
+    },
+
     getSectorBiome: function(x, y) {
         if (x <= 2 && y <= 2) return 'forest';      
         if (x >= 7 && y >= 7) return 'desert';      
@@ -38,34 +54,44 @@ const WorldGen = {
         let map = Array(height).fill().map(() => Array(width).fill('.'));
         const sectorSeed = this.rand() * 1000;
 
-        // Config (Etwas toleranter eingestellt)
-        let riverWidth = 0.035; 
-        let mountainThresh = 0.80; // Ab 80% Höhe Berge
-        let treeThresh = 0.65;     // Ab 65% Feuchtigkeit Bäume
-        let ruinThresh = 0.85;     // Seltene Ruinen
+        // Config
+        let riverThreshold = 0.025; // Kleiner Wert = Breiterer Fluss
+        let mountainThresh = 0.82; 
+        let treeThresh = 0.70;     
+        let ruinThresh = 0.88;
         
-        let scale = 0.12; // Zoom Faktor
+        let terrainScale = 0.12; 
 
-        if(biomeType === 'forest') { treeThresh = 0.45; scale = 0.15; ruinThresh = 0.90; }
-        if(biomeType === 'swamp') { riverWidth = 0.12; treeThresh = 0.60; } 
-        if(biomeType === 'desert') { riverWidth = 0.005; treeThresh = 0.95; mountainThresh = 0.70; ruinThresh = 0.75; } 
-        if(biomeType === 'mountain') { mountainThresh = 0.55; treeThresh = 0.85; }
+        if(biomeType === 'forest') { treeThresh = 0.50; terrainScale = 0.15; riverThreshold = 0.035; }
+        if(biomeType === 'swamp') { riverThreshold = 0.08; treeThresh = 0.60; } // Breite Flüsse (Sümpfe)
+        if(biomeType === 'desert') { riverThreshold = 0.005; treeThresh = 0.98; mountainThresh = 0.75; ruinThresh = 0.78; } // Wadis (selten Wasser)
+        if(biomeType === 'mountain') { mountainThresh = 0.55; treeThresh = 0.85; riverThreshold = 0.02; }
 
         for(let y = 0; y < height; y++) {
             for(let x = 0; x < width; x++) {
-                let nx = x * scale;
-                let ny = y * scale;
                 
-                // Noise Layer
-                let riverVal = Math.abs(this.smoothNoise(nx * 0.5, ny * 0.5, sectorSeed + 500) - 0.5);
+                // --- FLUSS SYSTEM (Schlängelnd & Verzweigt) ---
+                // Hauptfluss
+                let river1 = this.getRiverValue(x, y, sectorSeed, 0.02);
+                // Nebenfluss (anderer Seed, andere Frequenz)
+                let river2 = this.getRiverValue(x, y, sectorSeed + 5000, 0.03);
+                
+                // Wir kombinieren beide. Wenn EINER der beiden Werte klein ist, ist hier Wasser.
+                // Das erzeugt Kreuzungen.
+                let isRiver = (river1 < riverThreshold) || (river2 < riverThreshold * 0.7); // Nebenfluss etwas dünner
+
+                // --- TERRAIN ---
+                let nx = x * terrainScale;
+                let ny = y * terrainScale;
+                
                 let elevation = this.smoothNoise(nx, ny, sectorSeed + 100);
                 let moisture = this.smoothNoise(nx + 50, ny + 50, sectorSeed + 200);
                 let ruins = this.smoothNoise(nx * 4, ny * 4, sectorSeed + 800);
 
-                map[y][x] = '.'; // Standard Boden
+                map[y][x] = '.'; // Boden
 
-                // Generierung
-                if (riverVal < riverWidth) {
+                // Prioritäten
+                if (isRiver) {
                     map[y][x] = '~';
                 }
                 else if (elevation > mountainThresh) {
@@ -78,13 +104,14 @@ const WorldGen = {
                     map[y][x] = 't';
                 }
                 
-                // Ränder: Mindestens 2 Felder breit frei lassen
+                // Sicherheits-Korridor am Rand (immer begehbar)
                 if(x < 2 || x > width - 3 || y < 2 || y > height - 3) {
                     if(['^', 't', '#'].includes(map[y][x])) map[y][x] = '.';
                 }
             }
         }
 
+        // POI Platzierung & Rodung
         if(poiList) {
             poiList.forEach(poi => {
                 if(poi.x >= 0 && poi.x < width && poi.y >= 0 && poi.y < height) {
@@ -94,6 +121,7 @@ const WorldGen = {
             });
         }
 
+        // Straßen & Brückenbau
         if(poiList && poiList.length > 1) {
             for(let i=0; i<poiList.length-1; i++) {
                 this.buildRoad(map, poiList[i], poiList[i+1]);
@@ -111,7 +139,7 @@ const WorldGen = {
                 const ny = cy+dy, nx = cx+dx;
                 if(ny>=0 && ny<h && nx>=0 && nx<w) {
                     const t = map[ny][nx];
-                    // POI Schutz: Alles weg außer dem POI selbst
+                    // POI Schutz: Alles weg
                     if(['^', 't', '~', '#'].includes(t) && map[ny][nx] !== map[cy][cx]) {
                         map[ny][nx] = '.';
                     }
