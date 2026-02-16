@@ -1,4 +1,4 @@
-// [2026-02-16 20:00:00] game_world_gen.js - River Update
+// [2026-02-16 21:00:00] game_world_gen.js - Walkable Worlds Fix
 
 const WorldGen = {
     _seed: 12345,
@@ -18,6 +18,7 @@ const WorldGen = {
     },
 
     smoothNoise: function(x, y, seed) {
+        // Starke Glättung für zusammenhängende Gebiete
         const corners = (this.noise(x-1 + seed, y-1 + seed) + this.noise(x+1 + seed, y-1 + seed) + this.noise(x-1 + seed, y+1 + seed) + this.noise(x+1 + seed, y+1 + seed)) / 16;
         const sides = (this.noise(x-1 + seed, y + seed) + this.noise(x+1 + seed, y + seed) + this.noise(x + seed, y-1 + seed) + this.noise(x + seed, y+1 + seed)) / 8;
         const center = this.noise(x + seed, y + seed) / 4;
@@ -36,66 +37,79 @@ const WorldGen = {
         let map = Array(height).fill().map(() => Array(width).fill('.'));
         const sectorSeed = this.rand() * 1000;
 
-        // Config für breitere, längere Flüsse
-        let riverWidth = 0.025; // Schmaler Threshold = Schärfere Flüsse
-        let mountainLevel = 0.82;
-        let treeDensity = 0.15;
-        let groundChar = '.';
+        // --- NEUE CONFIG: VIEL WENIGER HINDERNISSE ---
+        // Werte: Je höher Tree/Mountain Level, desto SELTENER sind sie (muss Noise überschreiten)
+        // River: Je kleiner Width, desto schmaler
         
-        // Frequenz (Zoom): Kleiner = Größere, längere Formen
-        let scale = 0.04; 
+        let riverWidth = 0.02; 
+        let mountainThresh = 0.85; // Nur die höchsten Spitzen 15%
+        let treeThresh = 0.75;     // Nur bei > 75% Feuchtigkeit Bäume (viel seltener)
+        
+        // Zoom: Größere Zahl = Mehr "Chaos/Krümel", Kleinere Zahl = Große Flächen
+        let scale = 0.08; 
 
-        if(biomeType === 'forest') { riverWidth = 0.04; treeDensity = 0.60; scale = 0.05; }
-        if(biomeType === 'swamp')  { riverWidth = 0.15; treeDensity = 0.30; scale = 0.08; } 
-        if(biomeType === 'desert') { riverWidth = 0.005; treeDensity = 0.01; mountainLevel = 0.7; }
-        if(biomeType === 'mountain') { riverWidth = 0.02; treeDensity = 0.1; mountainLevel = 0.55; }
+        if(biomeType === 'forest') { 
+            treeThresh = 0.55; // Wald ist dichter, aber immer noch begehbar
+            scale = 0.1; 
+        }
+        if(biomeType === 'swamp') { 
+            riverWidth = 0.10; // Breite Sumpflöcher
+            treeThresh = 0.65; 
+        } 
+        if(biomeType === 'desert') { 
+            riverWidth = 0.00; 
+            treeThresh = 0.95; // Fast keine Bäume
+            mountainThresh = 0.75; 
+        }
+        if(biomeType === 'mountain') { 
+            mountainThresh = 0.60; // Viele Berge
+            treeThresh = 0.80;
+        }
 
         for(let y = 0; y < height; y++) {
             for(let x = 0; x < width; x++) {
                 let nx = x * scale;
                 let ny = y * scale;
                 
-                // FLUSS: Ridge Noise (Tal-Bildung)
-                // Wir nutzen einen anderen Seed und Zoom für den Fluss, damit er unabhängig vom Berg ist
-                let riverRaw = this.smoothNoise(nx * 0.5, ny * 0.5, sectorSeed + 500);
-                let riverVal = Math.abs(riverRaw - 0.5); // 0 ist die Mitte des "Tals"
-
-                // BERGE & BÄUME
+                let riverVal = Math.abs(this.smoothNoise(nx * 0.5, ny * 0.5, sectorSeed + 500) - 0.5);
                 let elevation = this.smoothNoise(nx, ny, sectorSeed + 100);
                 let moisture = this.smoothNoise(nx + 50, ny + 50, sectorSeed + 200);
 
-                map[y][x] = groundChar;
+                map[y][x] = '.'; // Default ist immer begehbarer Boden
 
-                // Priorität: Fluss > Berg > Baum
+                // 1. Fluss (hat Priorität)
                 if (riverVal < riverWidth) {
-                    map[y][x] = '~'; // Wasser
+                    map[y][x] = '~';
                 }
-                else if (elevation > mountainLevel) {
-                    map[y][x] = '^'; // Berg
+                // 2. Berge
+                else if (elevation > mountainThresh) {
+                    map[y][x] = '^';
                 }
-                else if (moisture < treeDensity) {
-                    map[y][x] = 't'; // Baum
+                // 3. Bäume (nur wenn kein Berg/Wasser)
+                else if (moisture > treeThresh) {
+                    map[y][x] = 't';
+                }
+                
+                // RÄNDER FREI HALTEN (Sicherheits-Korridor am Kartenrand)
+                // Damit man immer in den nächsten Sektor laufen kann
+                if(x < 2 || x > width - 3 || y < 2 || y > height - 3) {
+                    // Nur Wasser darf am Rand sein (Brücken bauen wir später), aber keine Berge/Bäume
+                    if(map[y][x] === '^' || map[y][x] === 't') map[y][x] = '.';
                 }
             }
         }
 
+        // POIs platzieren und Umgebung planieren
         if(poiList) {
             poiList.forEach(poi => {
                 if(poi.x >= 0 && poi.x < width && poi.y >= 0 && poi.y < height) {
                     map[poi.y][poi.x] = poi.type;
-                    // Platz machen
-                    for(let dy=-2; dy<=2; dy++) {
-                        for(let dx=-2; dx<=2; dx++) {
-                            const ny = poi.y+dy, nx = poi.x+dx;
-                            if(ny>=0 && ny<height && nx>=0 && nx<width) {
-                                if(map[ny][nx] !== poi.type) map[ny][nx] = '.'; 
-                            }
-                        }
-                    }
+                    this.clearArea(map, poi.x, poi.y, 3); // Großflächig roden um POIs
                 }
             });
         }
 
+        // Straßen & Brücken
         if(poiList && poiList.length > 1) {
             for(let i=0; i<poiList.length-1; i++) {
                 this.buildRoad(map, poiList[i], poiList[i+1]);
@@ -103,6 +117,24 @@ const WorldGen = {
         }
 
         return map;
+    },
+
+    // Hilfsfunktion zum Roden
+    clearArea: function(map, cx, cy, radius) {
+        const h = map.length;
+        const w = map[0].length;
+        for(let dy=-radius; dy<=radius; dy++) {
+            for(let dx=-radius; dx<=radius; dx++) {
+                const ny = cy+dy, nx = cx+dx;
+                if(ny>=0 && ny<h && nx>=0 && nx<w) {
+                    const t = map[ny][nx];
+                    // Alles was blockiert wegmachen, außer dem POI selbst
+                    if(['^', 't', '~'].includes(t) && map[ny][nx] !== map[cy][cx]) {
+                        map[ny][nx] = '.';
+                    }
+                }
+            }
+        }
     },
 
     generateCityLayout: function(width, height) {
@@ -152,26 +184,21 @@ const WorldGen = {
             if(x < 0 || x >= map[0].length || y < 0 || y >= map.length) continue;
             
             const makeRoad = (cx, cy) => {
-                // Brücke bauen, wenn Wasser
-                if (map[cy][cx] === '~') {
-                    map[cy][cx] = '+'; // + ist jetzt explizit Brücke
+                if (map[cy][cx] === '~' || map[cy][cx] === '+') {
+                    map[cy][cx] = '+'; // Brücke
                 } else {
                     map[cy][cx] = '='; // Straße
                 }
-
-                // Breite Straße (3x3 grob putzen)
-                const neighbors = [[0,1],[0,-1],[1,0],[-1,0]];
-                neighbors.forEach(([dx, dy]) => {
-                    let nx = cx+dx, ny = cy+dy;
-                    if(nx>=0 && nx<map[0].length && ny>=0 && ny<map.length) {
-                        const t = map[ny][nx];
-                        if(['^','t'].includes(t)) map[ny][nx] = '.'; 
-                    }
-                });
+                // Straße rodet Umgebung (3x3)
+                this.clearArea(map, cx, cy, 1);
             };
             makeRoad(x, y);
-            if (x+1 < map[0].length && map[y][x+1] !== '~') map[y][x+1] = '=';
-            else if (x+1 < map[0].length) map[y][x+1] = '+';
+            
+            // Doppelte Breite für bessere Begehbarkeit
+            if (x+1 < map[0].length) {
+                if(map[y][x+1] !== '~') map[y][x+1] = '=';
+                else map[y][x+1] = '+';
+            }
         }
     }
 };
