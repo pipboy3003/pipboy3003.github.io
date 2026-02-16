@@ -1,4 +1,4 @@
-// [2026-02-16 22:00:00] game_world_gen.js - Ruins Update
+// [2026-02-16 22:30:00] game_world_gen.js - Noise Math Fixed
 
 const WorldGen = {
     _seed: 12345,
@@ -13,15 +13,17 @@ const WorldGen = {
         return (this._seed - 1) / 2147483646;
     },
 
+    // FIX: Liefert jetzt garantiert Werte zwischen 0.0 und 1.0
     noise: function(nx, ny) {
-        return Math.sin(nx * 12.9898 + ny * 78.233) * 43758.5453 % 1;
+        const val = Math.sin(nx * 12.9898 + ny * 78.233) * 43758.5453;
+        return val - Math.floor(val); 
     },
 
     smoothNoise: function(x, y, seed) {
         const corners = (this.noise(x-1 + seed, y-1 + seed) + this.noise(x+1 + seed, y-1 + seed) + this.noise(x-1 + seed, y+1 + seed) + this.noise(x+1 + seed, y+1 + seed)) / 16;
         const sides = (this.noise(x-1 + seed, y + seed) + this.noise(x+1 + seed, y + seed) + this.noise(x + seed, y-1 + seed) + this.noise(x + seed, y+1 + seed)) / 8;
         const center = this.noise(x + seed, y + seed) / 4;
-        return Math.abs(corners + sides + center);
+        return corners + sides + center;
     },
     
     getSectorBiome: function(x, y) {
@@ -36,51 +38,47 @@ const WorldGen = {
         let map = Array(height).fill().map(() => Array(width).fill('.'));
         const sectorSeed = this.rand() * 1000;
 
-        // Config
-        let riverWidth = 0.02; 
-        let mountainThresh = 0.85; 
-        let treeThresh = 0.75;     
-        let ruinThresh = 0.88; // Hoher Wert = Seltene Ruinen
+        // Config (Etwas toleranter eingestellt)
+        let riverWidth = 0.035; 
+        let mountainThresh = 0.80; // Ab 80% Höhe Berge
+        let treeThresh = 0.65;     // Ab 65% Feuchtigkeit Bäume
+        let ruinThresh = 0.85;     // Seltene Ruinen
         
-        let scale = 0.08; 
+        let scale = 0.12; // Zoom Faktor
 
-        if(biomeType === 'forest') { treeThresh = 0.55; scale = 0.1; ruinThresh = 0.92; } // Weniger Ruinen im Wald
-        if(biomeType === 'swamp') { riverWidth = 0.10; treeThresh = 0.65; } 
-        if(biomeType === 'desert') { riverWidth = 0.00; treeThresh = 0.95; mountainThresh = 0.75; ruinThresh = 0.80; } // Mehr Ruinen in der Wüste
-        if(biomeType === 'mountain') { mountainThresh = 0.60; treeThresh = 0.80; }
+        if(biomeType === 'forest') { treeThresh = 0.45; scale = 0.15; ruinThresh = 0.90; }
+        if(biomeType === 'swamp') { riverWidth = 0.12; treeThresh = 0.60; } 
+        if(biomeType === 'desert') { riverWidth = 0.005; treeThresh = 0.95; mountainThresh = 0.70; ruinThresh = 0.75; } 
+        if(biomeType === 'mountain') { mountainThresh = 0.55; treeThresh = 0.85; }
 
         for(let y = 0; y < height; y++) {
             for(let x = 0; x < width; x++) {
                 let nx = x * scale;
                 let ny = y * scale;
                 
+                // Noise Layer
                 let riverVal = Math.abs(this.smoothNoise(nx * 0.5, ny * 0.5, sectorSeed + 500) - 0.5);
                 let elevation = this.smoothNoise(nx, ny, sectorSeed + 100);
                 let moisture = this.smoothNoise(nx + 50, ny + 50, sectorSeed + 200);
-                
-                // Ruinen-Noise (höhere Frequenz für "Gebäude-artige" Cluster)
-                let ruins = this.smoothNoise(nx * 3, ny * 3, sectorSeed + 800);
+                let ruins = this.smoothNoise(nx * 4, ny * 4, sectorSeed + 800);
 
-                map[y][x] = '.'; 
+                map[y][x] = '.'; // Standard Boden
 
-                // 1. Fluss
+                // Generierung
                 if (riverVal < riverWidth) {
                     map[y][x] = '~';
                 }
-                // 2. Berge
                 else if (elevation > mountainThresh) {
                     map[y][x] = '^';
                 }
-                // 3. Ruinen (NEU) - Bevor Bäume kommen
                 else if (ruins > ruinThresh) {
-                    map[y][x] = '#'; // Alte Mauer
+                    map[y][x] = '#'; 
                 }
-                // 4. Bäume
                 else if (moisture > treeThresh) {
                     map[y][x] = 't';
                 }
                 
-                // RÄNDER FREI HALTEN
+                // Ränder: Mindestens 2 Felder breit frei lassen
                 if(x < 2 || x > width - 3 || y < 2 || y > height - 3) {
                     if(['^', 't', '#'].includes(map[y][x])) map[y][x] = '.';
                 }
@@ -91,7 +89,7 @@ const WorldGen = {
             poiList.forEach(poi => {
                 if(poi.x >= 0 && poi.x < width && poi.y >= 0 && poi.y < height) {
                     map[poi.y][poi.x] = poi.type;
-                    this.clearArea(map, poi.x, poi.y, 3); 
+                    this.clearArea(map, poi.x, poi.y, 4); 
                 }
             });
         }
@@ -113,6 +111,7 @@ const WorldGen = {
                 const ny = cy+dy, nx = cx+dx;
                 if(ny>=0 && ny<h && nx>=0 && nx<w) {
                     const t = map[ny][nx];
+                    // POI Schutz: Alles weg außer dem POI selbst
                     if(['^', 't', '~', '#'].includes(t) && map[ny][nx] !== map[cy][cx]) {
                         map[ny][nx] = '.';
                     }
@@ -168,7 +167,6 @@ const WorldGen = {
             if(x < 0 || x >= map[0].length || y < 0 || y >= map.length) continue;
             
             const makeRoad = (cx, cy) => {
-                // Brücken über Wasser, und auch über Ruinen hinwegbauen
                 if (map[cy][cx] === '~' || map[cy][cx] === '+') {
                     map[cy][cx] = '+'; 
                 } else {
