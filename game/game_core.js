@@ -1,4 +1,4 @@
-// [2026-02-17 14:10:00] game_core.js - Seed Logic Integration
+// [2026-02-17 09:05:00] game_core.js - Merged with Dynamic World Start
 
 window.Game = {
     TILE: 30, MAP_W: 40, MAP_H: 40,
@@ -33,26 +33,51 @@ window.Game = {
         const cvs = document.getElementById('game-canvas'); 
         if(!cvs) return; 
         const viewContainer = document.getElementById('view-container'); 
+        
         const dpr = window.devicePixelRatio || 1;
         const rect = viewContainer.getBoundingClientRect();
-        cvs.width = rect.width * dpr; cvs.height = rect.height * dpr; 
-        cvs.style.width = `${rect.width}px`; cvs.style.height = `${rect.height}px`;
-        this.ctx = cvs.getContext('2d'); this.ctx.scale(dpr, dpr); this.ctx.imageSmoothingEnabled = false; 
-        if(this.loopId) cancelAnimationFrame(this.loopId); this.drawLoop(); 
+
+        cvs.width = rect.width * dpr; 
+        cvs.height = rect.height * dpr; 
+
+        cvs.style.width = `${rect.width}px`;
+        cvs.style.height = `${rect.height}px`;
+
+        this.ctx = cvs.getContext('2d'); 
+        this.ctx.scale(dpr, dpr);
+        this.ctx.imageSmoothingEnabled = false; 
+        
+        if(this.loopId) cancelAnimationFrame(this.loopId); 
+        this.drawLoop(); 
     },
 
     drawText: function(ctx, text, x, y, size, color, align="center", shadow=false) {
         if(!ctx) return;
-        ctx.save(); ctx.translate(x, y); const scale = 0.25; ctx.scale(scale, scale); 
-        ctx.font = "bold " + (size / scale) + "px monospace"; ctx.fillStyle = color;
-        ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.imageSmoothingEnabled = true; 
-        if(shadow) { ctx.shadowColor = "black"; ctx.shadowBlur = 4 / scale; }
-        ctx.fillText(text, 0, 0); ctx.restore();
+        ctx.save();
+        ctx.translate(x, y);
+        
+        const scale = 0.25; 
+        ctx.scale(scale, scale); 
+        
+        ctx.font = "bold " + (size / scale) + "px monospace";
+        ctx.fillStyle = color;
+        ctx.textAlign = align;
+        ctx.textBaseline = "middle"; 
+        ctx.imageSmoothingEnabled = true; 
+        
+        if(shadow) {
+            ctx.shadowColor = "black";
+            ctx.shadowBlur = 4 / scale;
+        }
+        
+        ctx.fillText(text, 0, 0);
+        ctx.restore();
     },
 
     drawLoop: function() { 
         if(this.state && this.state.view === 'map' && !this.state.isGameOver) {
-            this.draw(); this.loopId = requestAnimationFrame(() => this.drawLoop());
+            this.draw(); 
+            this.loopId = requestAnimationFrame(() => this.drawLoop());
         }
     },
 
@@ -66,8 +91,15 @@ window.Game = {
     performSave: function() {
         if(this.saveTimer) { clearTimeout(this.saveTimer); this.saveTimer = null; }
         if(!this.isDirty || !this.state) return;
-        if(this.state.isGameOver || this.state.saveSlot === -1) return;
-        if(typeof Network !== 'undefined') { Network.save(this.state); if(!this.state.isGameOver) Network.updateHighscore(this.state); }
+
+        if(this.state.isGameOver || this.state.saveSlot === -1) {
+            return;
+        }
+
+        if(typeof Network !== 'undefined') { 
+            Network.save(this.state); 
+            if(!this.state.isGameOver) Network.updateHighscore(this.state); 
+        }
         try { localStorage.setItem('pipboy_save', JSON.stringify(this.state)); } catch(e){}
         this.isDirty = false;
     },
@@ -81,35 +113,111 @@ window.Game = {
 
     recalcStats: function() {
         if(!this.state) return;
+        
         let end = this.getStat('END');
         let baseHp = 50 + (end * 10) + (this.state.lvl * 5);
+        
         const toughnessLvl = this.getPerkLevel('toughness');
         baseHp += (toughnessLvl * 10);
+
         this.state.maxHp = baseHp;
         if(this.state.hp > this.state.maxHp) this.state.hp = this.state.maxHp;
+
         let luc = this.getStat('LUC');
         let strangerLvl = this.getPerkLevel('mysterious_stranger');
         this.state.critChance = (luc * 1) + (strangerLvl * 2);
+
         if(typeof UI !== 'undefined' && UI.update) UI.update();
     },
 
-    getUsedSlots: function() { if(!this.state || !this.state.inventory) return 0; return this.state.inventory.length; },
-    getStackLimit: function(itemId) { if(itemId==='ammo')return 100; if(itemId==='caps')return 99999; const i=this.items[itemId]; if(!i)return 1; if(i.type==='component'||i.type==='rare'||i.type==='consumable'||i.type==='junk')return 20; if(i.type==='ammo')return 100; return 1; },
-    syncAmmo: function() { if(!this.state)return; const t=this.state.inventory.reduce((s,i)=>i.id==='ammo'?s+i.count:s,0); this.state.ammo=t; if(typeof UI!=='undefined'&&UI.update)UI.update(); },
-    getStat: function(key) { if(!this.state)return 5; let v=this.state.stats[key]||5; ['weapon','body','head','legs','feet','arms','back'].forEach(s=>{const i=this.state.equip[s]; if(i){if(i.bonus&&i.bonus[key])v+=i.bonus[key]; if(i.props&&i.props.bonus&&i.props.bonus[key])v+=i.props.bonus[key];}}); return v; },
-    expToNextLevel: function(l) { return Math.floor(100 * Math.pow(l, 1.5)); },
-    gainExp: function(a) { const p=this.getPerkLevel('swift_learner'); let f=a; if(p>0)f=Math.floor(a*(1+p*0.05)); this.state.xp+=f; UI.log(`+${f} XP`, "text-yellow-400"); const n=this.expToNextLevel(this.state.lvl); if(this.state.xp>=n){this.state.lvl++;this.state.xp-=n;this.state.statPoints++;if(this.state.lvl%3===0){this.state.perkPoints++;UI.log("NEUER PERK!", "text-yellow-400 font-bold");}this.recalcStats();this.state.hp=this.state.maxHp;UI.log(`LEVEL UP! ${this.state.lvl}`, "text-yellow-400 font-bold");this.checkNewQuests();this.saveGame(true);}else{this.saveGame();} },
+    getUsedSlots: function() {
+        if(!this.state || !this.state.inventory) return 0;
+        return this.state.inventory.length;
+    },
+
+    getStackLimit: function(itemId) {
+        if(itemId === 'ammo') return 100; 
+        if(itemId === 'caps') return 99999;
+        const item = this.items[itemId];
+        if(!item) return 1;
+        if(item.type === 'component' || item.type === 'rare') return 20; 
+        if(item.type === 'consumable' || item.type === 'junk') return 20; 
+        if(item.type === 'ammo') return 100;
+        return 1;
+    },
+    
+    syncAmmo: function() {
+        if(!this.state) return;
+        const totalAmmo = this.state.inventory.reduce((sum, item) => {
+            return item.id === 'ammo' ? sum + item.count : sum;
+        }, 0);
+        this.state.ammo = totalAmmo;
+        if(typeof UI !== 'undefined' && UI.update) UI.update();
+    },
+
+    getStat: function(key) {
+        if(!this.state) return 5;
+        let val = this.state.stats[key] || 5;
+        const slots = ['weapon', 'body', 'head', 'legs', 'feet', 'arms', 'back'];
+        slots.forEach(slot => {
+            const item = this.state.equip[slot];
+            if(item) {
+                if(item.bonus && item.bonus[key]) val += item.bonus[key];
+                if(item.props && item.props.bonus && item.props.bonus[key]) val += item.props.bonus[key];
+            }
+        });
+        return val;
+    },
+
+    expToNextLevel: function(lvl) { return Math.floor(100 * Math.pow(lvl, 1.5)); },
+
+    gainExp: function(amount) {
+        const perkLvl = this.getPerkLevel('swift_learner');
+        let finalAmount = amount;
+        if (perkLvl > 0) {
+            const multi = 1 + (perkLvl * 0.05); 
+            finalAmount = Math.floor(amount * multi);
+        }
+        this.state.xp += finalAmount;
+        if(perkLvl > 0 && finalAmount > amount) {
+            UI.log(`+${finalAmount} XP (Bonus!)`, "text-yellow-400");
+        } else {
+            UI.log(`+${finalAmount} XP`, "text-yellow-400");
+        }
+
+        let next = this.expToNextLevel(this.state.lvl);
+        if(this.state.xp >= next) {
+            this.state.lvl++;
+            this.state.xp -= next;
+            this.state.statPoints++;
+            if(this.state.lvl % 3 === 0) {
+                this.state.perkPoints++;
+                UI.log("🌟 NEUER PERK PUNKT VERFÜGBAR! 🌟", "text-yellow-400 font-bold animate-pulse text-lg");
+            }
+            this.recalcStats(); 
+            this.state.hp = this.state.maxHp; 
+            UI.log(`LEVEL UP! Du bist jetzt Level ${this.state.lvl}`, "text-yellow-400 font-bold animate-pulse");
+            this.checkNewQuests(); 
+            this.saveGame(true);
+        } else {
+            this.saveGame();
+        }
+    },
 
     checkNewQuests: function() {
         if(!this.questDefs || !this.state) return;
         this.questDefs.forEach(def => {
             const lvlMet = this.state.lvl >= def.minLvl;
             const preReqMet = !def.preReq || this.state.completedQuests.includes(def.preReq);
+
             if(lvlMet && preReqMet) {
                 const active = this.state.activeQuests.find(q => q.id === def.id);
                 const completed = this.state.completedQuests.includes(def.id);
                 if(!active && !completed) {
-                    const newQuest = { id: def.id, progress: 0, max: def.amount || 0, type: def.type, target: def.target || null };
+                    const newQuest = {
+                        id: def.id, progress: 0, max: def.amount || 0, type: def.type, target: def.target || null
+                    };
+
                     if(def.type === 'collect_multi' && def.reqItems) {
                         newQuest.max = Object.values(def.reqItems).reduce((a, b) => a + b, 0);
                         let currentTotal = 0;
@@ -119,10 +227,19 @@ window.Game = {
                         }
                         newQuest.progress = currentTotal;
                     }
+
                     this.state.activeQuests.push(newQuest);
-                    UI.log(`QUEST: "${def.title}"`, "text-cyan-400 font-bold");
-                    if(this.state.activeQuests.length === 1 && !this.state.trackedQuestId) this.state.trackedQuestId = newQuest.id;
-                    if(newQuest.progress >= newQuest.max && newQuest.max > 0) this.completeQuest(this.state.activeQuests.findIndex(q => q.id === def.id));
+                    UI.log(`QUEST: "${def.title}" erhalten!`, "text-cyan-400 font-bold animate-pulse");
+                    
+                    if(this.state.activeQuests.length === 1 && !this.state.trackedQuestId) {
+                        this.state.trackedQuestId = newQuest.id;
+                        if(typeof UI !== 'undefined' && UI.updateQuestTracker) UI.updateQuestTracker();
+                    }
+
+                    if(newQuest.progress >= newQuest.max && newQuest.max > 0) {
+                        const idx = this.state.activeQuests.findIndex(q => q.id === def.id);
+                        if(idx !== -1) this.completeQuest(idx);
+                    }
                 }
             }
         });
@@ -135,6 +252,7 @@ window.Game = {
             const q = this.state.activeQuests[i];
             const def = this.questDefs.find(d => d.id === q.id);
             if(!def) continue;
+
             let match = false;
             if(q.type === type && q.target === target) match = true;
             if(q.type === 'collect_multi' && type === 'collect' && def.reqItems && def.reqItems[target]) {
@@ -143,122 +261,212 @@ window.Game = {
                     const countInInv = this.state.inventory.filter(item => item.id === itemId).reduce((sum, item) => sum + item.count, 0);
                     currentTotal += Math.min(countInInv, def.reqItems[itemId]);
                 }
-                q.progress = currentTotal; updated = true;
+                q.progress = currentTotal;
+                updated = true;
             }
-            if(match) { q.progress += value; updated = true; }
+
+            if(match) {
+                q.progress += value;
+                updated = true;
+            }
+
             if(q.progress >= q.max) this.completeQuest(i);
         }
+        
         this.checkNewQuests();
-        if(updated && typeof UI !== 'undefined') { UI.update(); if(UI.updateQuestTracker) UI.updateQuestTracker(); }
+        
+        if(updated && typeof UI !== 'undefined') {
+            UI.update();
+            if(UI.updateQuestTracker) UI.updateQuestTracker();
+        }
     },
 
     completeQuest: function(index) {
-        const q = this.state.activeQuests[index]; const def = this.questDefs.find(d => d.id === q.id);
+        const q = this.state.activeQuests[index];
+        const def = this.questDefs.find(d => d.id === q.id);
         if(def) {
             if(def.reward) {
                 if(def.reward.xp) this.gainExp(def.reward.xp);
-                if(def.reward.caps) this.state.caps += def.reward.caps;
-                if(def.reward.items) def.reward.items.forEach(item => { if(typeof Game.addItem === 'function') Game.addItem(item.id, item.c || 1); });
+                if(def.reward.caps) { this.state.caps += def.reward.caps; }
+                if(def.reward.items) {
+                    def.reward.items.forEach(item => {
+                        if(typeof Game.addItem === 'function') Game.addItem(item.id, item.c || 1);
+                    });
+                }
             }
             this.state.completedQuests.push(q.id);
             if(typeof UI !== 'undefined' && UI.showQuestComplete) UI.showQuestComplete(def);
         }
-        if(this.state.trackedQuestId === q.id) this.state.trackedQuestId = null;
+        
+        if(this.state.trackedQuestId === q.id) {
+            this.state.trackedQuestId = null;
+        }
+        
         this.state.activeQuests.splice(index, 1);
-        if(!this.state.trackedQuestId && this.state.activeQuests.length > 0) this.state.trackedQuestId = this.state.activeQuests[0].id;
-        this.saveGame(true); this.checkNewQuests(); if(typeof UI !== 'undefined' && UI.updateQuestTracker) UI.updateQuestTracker();
+        
+        if(!this.state.trackedQuestId && this.state.activeQuests.length > 0) {
+            this.state.trackedQuestId = this.state.activeQuests[0].id;
+        }
+
+        this.saveGame(true);
+        this.checkNewQuests();
+        if(typeof UI !== 'undefined' && UI.updateQuestTracker) UI.updateQuestTracker();
     },
     
     checkShopRestock: function() {
-        const now = Date.now(); if(!this.state.shop) this.state.shop = { nextRestock: 0, stock: {}, merchantCaps: 1000 };
+        const now = Date.now();
+        if(!this.state.shop) this.state.shop = { nextRestock: 0, stock: {}, merchantCaps: 1000 };
         if(now >= this.state.shop.nextRestock) {
-            const stock = {}; stock['stimpack'] = 2+Math.floor(Math.random()*4); stock['radaway']=1+Math.floor(Math.random()*3); stock['nuka_cola']=3+Math.floor(Math.random()*5);
-            this.state.shop.ammoStock=30+(Math.floor(Math.random()*9)*10); 
+            const stock = {};
+            stock['stimpack'] = 2 + Math.floor(Math.random() * 4);
+            stock['radaway'] = 1 + Math.floor(Math.random() * 3);
+            stock['nuka_cola'] = 3 + Math.floor(Math.random() * 5);
+            this.state.shop.ammoStock = 30 + (Math.floor(Math.random() * 9) * 10); 
+            const weapons = Object.keys(this.items).filter(k => this.items[k].type === 'weapon' && !k.includes('legendary') && !k.startsWith('rusty'));
+            const armor = Object.keys(this.items).filter(k => this.items[k].type === 'body');
+            for(let i=0; i<3; i++) {
+                const w = weapons[Math.floor(Math.random() * weapons.length)];
+                if(w) stock[w] = 1;
+            }
+            for(let i=0; i<3; i++) {
+                const a = armor[Math.floor(Math.random() * armor.length)];
+                if(a) stock[a] = 1;
+            }
+            
             stock['camp_kit'] = 1;
+            
             this.state.shop.merchantCaps = 500 + Math.floor(Math.random() * 1000);
-            this.state.shop.stock = stock; this.state.shop.nextRestock = now + 3600000;
-            if(typeof UI !== 'undefined') UI.log("Händler hat neue Ware.", "text-green-500");
+            this.state.shop.stock = stock;
+            this.state.shop.nextRestock = now + (60 * 60 * 1000); 
+            if(typeof UI !== 'undefined') UI.log("INFO: Der Händler hat neue Ware & Kronkorken.", "text-green-500 italic");
         }
     },
 
     generateLoot: function(baseId) {
-        const itemDef = this.items[baseId]; if(!itemDef || itemDef.type !== 'weapon') return { id: baseId, count: 1 };
-        const roll = Math.random(); let prefixKey = null;
-        if(roll < 0.3) prefixKey = 'rusty'; else if(roll < 0.45) prefixKey = 'precise'; else if(roll < 0.55) prefixKey = 'hardened'; else if(roll < 0.58) prefixKey = 'radiated'; else if(roll < 0.60) prefixKey = 'legendary';
-        if(!prefixKey) return { id: baseId, count: 1 };
-        const p = this.lootPrefixes[prefixKey];
-        return { id: baseId, count: 1, props: { prefix: prefixKey, name: `${p.name} ${itemDef.name}`, dmgMult: p.dmgMult||1, valMult: p.valMult||1, bonus: p.bonus||null, color: p.color } };
+        const itemDef = this.items[baseId];
+        if(!itemDef || itemDef.type !== 'weapon') return { id: baseId, count: 1 };
+        const roll = Math.random();
+        let prefixKey = null;
+        if(roll < 0.3) prefixKey = 'rusty';        
+        else if(roll < 0.45) prefixKey = 'precise'; 
+        else if(roll < 0.55) prefixKey = 'hardened';
+        else if(roll < 0.58) prefixKey = 'radiated';
+        else if(roll < 0.60) prefixKey = 'legendary';
+        if(!prefixKey) return { id: baseId, count: 1 }; 
+        const prefixDef = this.lootPrefixes[prefixKey];
+        return {
+            id: baseId, count: 1,
+            props: { prefix: prefixKey, name: `${prefixDef.name} ${itemDef.name}`, dmgMult: prefixDef.dmgMult || 1, valMult: prefixDef.valMult || 1, bonus: prefixDef.bonus || null, color: prefixDef.color }
+        };
     },
 
     init: function(saveData, spawnTarget=null, slotIndex=0, newName=null) {
-        this.worldData = {}; this.initCache();
+        this.worldData = {};
+        this.initCache();
         window.addEventListener('beforeunload', () => { if(this.isDirty) this.saveGame(true); });
-        if(this.items && Object.keys(this.items).length === 0) this.items.ammo = { name: "Munition", type: "ammo", cost: 2, icon: "bullet" };
+
+        if(this.items && Object.keys(this.items).length === 0) {
+            this.items.ammo = { name: "Munition", type: "ammo", cost: 2, icon: "bullet" };
+        }
 
         try {
             let isNewGame = false;
-            const defaultPOIs = [ {type: 'V', x: 4, y: 4}, {type: 'C', x: 3, y: 3} ];
+            // Default POIs falls WorldGen nicht da ist
+            const defaultPOIs = [ {type: 'V', x: 4, y: 4}, {type: 'C', x: 3, y: 3}, {type: 'A', x: 8, y: 1}, {type: 'R', x: 1, y: 8}, {type: 'K', x: 9, y: 9} ];
 
             if (saveData) {
                 this.state = saveData;
-                // FIX: World Seed nachrüsten
-                if (!this.state.worldSeed) { this.state.worldSeed = Date.now(); }
-                if (typeof WorldGen !== 'undefined') WorldGen.setSeed(this.state.worldSeed);
-                
                 if(!this.state.explored) this.state.explored = {};
                 if(!this.state.view) this.state.view = 'map';
                 if(typeof this.state.rads === 'undefined') this.state.rads = 0;
                 if(!this.state.activeQuests) this.state.activeQuests = [];
                 if(!this.state.completedQuests) this.state.completedQuests = [];
                 if(!this.state.quests) this.state.quests = [];
+                if(!this.state.camp) this.state.camp = null;
+                if(!this.state.trackedQuestId) this.state.trackedQuestId = null; 
+                
+                const newRecs = ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp', 
+                                 'craft_bp_frame', 'craft_bp_leather', 'craft_bp_metal', 'craft_bp_military', 'craft_bp_cargo'];
                 if(!this.state.knownRecipes) this.state.knownRecipes = [];
-                // User Rezepte
-                ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp', 'craft_bp_frame', 'craft_bp_leather', 'craft_bp_metal', 'craft_bp_military', 'craft_bp_cargo'].forEach(r=>{if(!this.state.knownRecipes.includes(r))this.state.knownRecipes.push(r)});
+                newRecs.forEach(r => {
+                    if(!this.state.knownRecipes.includes(r)) this.state.knownRecipes.push(r);
+                });
+
                 if(!this.state.perks) this.state.perks = {}; 
                 if(!this.state.shop) this.state.shop = { nextRestock: 0, stock: {}, merchantCaps: 1000 };
-                if(!this.state.equip) this.state.equip = { weapon: null, body: null };
                 
+                if(!this.state.equip.weapon) this.state.equip.weapon = { ...this.items['fists'] };
+                if(!this.state.equip.body) this.state.equip.body = { ...this.items['vault_suit'] };
+
                 this.state.saveSlot = slotIndex;
                 this.checkNewQuests();
-                this.syncAmmo(); this.recalcStats();
+                
+                if(this.state.ammo > 0 && !this.state.inventory.some(i => i.id === 'ammo')) {
+                   let ammoLeft = this.state.ammo;
+                   while(ammoLeft > 0) {
+                       const chunk = Math.min(100, ammoLeft);
+                       this.state.inventory.push({id: 'ammo', count: chunk, isNew: true});
+                       ammoLeft -= chunk;
+                   }
+                }
+                this.syncAmmo();
+                this.recalcStats();
                 if(typeof UI !== 'undefined') UI.log(">> Spielstand geladen.", "text-cyan-400");
             } else {
                 isNewGame = true;
+                
+                // UPDATE: Dynamischer Seed für neue Welt
                 const seed = Date.now();
                 if(typeof WorldGen !== 'undefined') WorldGen.setSeed(seed);
+                
+                // UPDATE: Dynamischer Startpunkt (Vault)
                 let startSector = {x: 4, y: 4};
-                if(typeof WorldGen !== 'undefined' && WorldGen.getStartSector) startSector = WorldGen.getStartSector();
+                if(typeof WorldGen !== 'undefined') startSector = WorldGen.getStartSector();
 
                 const startWeapon = this.items['fists'] ? { ...this.items['fists'] } : { id: 'fists', name: 'Fäuste', baseDmg: 2, type: 'weapon' };
                 const startBody = this.items['vault_suit'] ? { ...this.items['vault_suit'] } : { id: 'vault_suit', name: 'Vault-Anzug', def: 1, type: 'body' };
 
                 this.state = {
-                    saveSlot: slotIndex, worldSeed: seed, playerName: newName || "SURVIVOR",
-                    sector: startSector, startSector: startSector, worldPOIs: defaultPOIs,
+                    saveSlot: slotIndex,
+                    worldSeed: seed, // WICHTIG: Seed speichern
+                    playerName: newName || "SURVIVOR",
+                    sector: startSector, 
+                    startSector: startSector,
+                    worldPOIs: defaultPOIs, // Fallback, WorldGen macht das dynamisch
                     player: {x: 25, y: 25, rot: 0},
                     stats: { STR: 5, PER: 5, END: 5, INT: 5, AGI: 5, LUC: 5 }, 
-                    equip: { weapon: startWeapon, body: startBody }, 
+                    equip: { weapon: startWeapon, body: startBody, back: null, head: null, legs: null, feet: null, arms: null }, 
                     inventory: [], hp: 100, maxHp: 100, xp: 0, lvl: 1, caps: 50, ammo: 0, statPoints: 0, perkPoints: 0, perks: {}, 
                     camp: null, rads: 0, kills: 0, view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, 
-                    explored: {}, visitedSectors: [`${startSector.x},${startSector.y}`],
-                    activeQuests: [], completedQuests: [], knownRecipes: ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp', 'craft_bp_frame', 'craft_bp_leather', 'craft_bp_metal', 'craft_bp_military', 'craft_bp_cargo'], 
+                    explored: {}, visitedSectors: [`${startSector.x},${startSector.y}`], tutorialsShown: { hacking: false, lockpicking: false },
+                    activeQuests: [], completedQuests: [], quests: [], 
+                    trackedQuestId: null, 
+                    
+                    knownRecipes: ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp', 'craft_bp_frame', 'craft_bp_leather', 'craft_bp_metal', 'craft_bp_military', 'craft_bp_cargo'], 
+                    
                     hiddenItems: {}, shop: { nextRestock: 0, stock: {}, merchantCaps: 1000 }, startTime: Date.now()
                 };
+                
                 this.state.inventory.push({id: 'stimpack', count: 1, isNew: true});
                 this.state.inventory.push({id: 'ammo', count: 10, isNew: true});
-                this.syncAmmo(); this.recalcStats(); this.state.hp = this.state.maxHp;
+                this.syncAmmo();
+                this.recalcStats(); 
+                this.state.hp = this.state.maxHp;
                 this.checkNewQuests(); 
                 if(typeof UI !== 'undefined') UI.log(">> Neuer Charakter erstellt.", "text-green-400");
                 this.saveGame(true); 
             }
 
-            // Laden sicherstellen
-            if(typeof this.loadSector === 'function') this.loadSector(this.state.sector.x, this.state.sector.y); 
-            
+            if (isNewGame) { if(typeof this.loadSector === 'function') this.loadSector(this.state.sector.x, this.state.sector.y); } 
+            else { 
+                if(this.renderStaticMap) this.renderStaticMap(); 
+                if(this.reveal) this.reveal(this.state.player.x, this.state.player.y); 
+            }
             if(typeof UI !== 'undefined') {
                 UI.switchView('map').then(() => { 
                     if(UI.els.gameOver) UI.els.gameOver.classList.add('hidden'); 
-                    if(isNewGame) setTimeout(() => UI.showPermadeathWarning(), 500);
+                    if(isNewGame) { setTimeout(() => UI.showPermadeathWarning(), 500); }
+                    if(UI.updateQuestTracker) UI.updateQuestTracker(); 
                 });
             }
         } catch(e) { console.error(e); }
