@@ -1,100 +1,62 @@
-// [2026-02-17 10:10:00] game_map.js - Continuous River Fix
+// [2026-02-17 16:05:00] game_map.js - Updated Load Logic
 
 Object.assign(Game, {
-    reveal: function(px, py) { 
-        if(!this.state) return;
-        if(!this.state.explored) this.state.explored = {}; 
-        const r=2; const sk=`${this.state.sector.x},${this.state.sector.y}`; 
-        for(let y=py-r; y<=py+r; y++) for(let x=px-r; x<=px+r; x++) 
-            if(x>=0&&x<this.MAP_W&&y>=0&&y<this.MAP_H) this.state.explored[`${sk}_${x},${y}`]=true; 
-    },
+    reveal: function(px, py) { if(!this.state) return; if(!this.state.explored) this.state.explored = {}; const r=2; const sk=`${this.state.sector.x},${this.state.sector.y}`; for(let y=py-r; y<=py+r; y++) for(let x=px-r; x<=px+r; x++) if(x>=0&&x<this.MAP_W&&y>=0&&y<this.MAP_H) this.state.explored[`${sk}_${x},${y}`]=true; },
 
     move: function(dx, dy) {
         if(!this.state || this.state.isGameOver || this.state.view !== 'map' || this.state.inDialog) return;
-        
-        const nx = this.state.player.x + dx;
-        const ny = this.state.player.y + dy;
-        
-        // Sektorwechsel Check
-        if(nx < 0 || nx >= this.MAP_W || ny < 0 || ny >= this.MAP_H) {
-            this.changeSector(nx, ny);
-            return;
-        }
+        const nx = this.state.player.x + dx; const ny = this.state.player.y + dy;
+        if(nx < 0 || nx >= this.MAP_W || ny < 0 || ny >= this.MAP_H) { this.changeSector(nx, ny); return; }
 
-        const t = this.state.currentMap[ny][nx];
-        const pk = `${nx},${ny}`;
+        const t = this.state.currentMap[ny][nx]; const pk = `${nx},${ny}`;
 
-        // Hidden Items
         if(this.state.hiddenItems && this.state.hiddenItems[pk]) {
             this.addToInventory(this.state.hiddenItems[pk], 1);
-            UI.log(`Gefunden!`, "text-yellow-400 font-bold"); 
-            delete this.state.hiddenItems[pk];
+            UI.log(`Gefunden!`, "text-yellow-400 font-bold"); UI.shakeView(); delete this.state.hiddenItems[pk];
         }
 
         if (t === 'X') { this.openChest(nx, ny); return; } 
         if (t === 'v') { this.descendDungeon(); return; }
         if (t === '?') { this.testMinigames(); return; } 
 
-        // Kollision (Neue Biome sind OK)
-        // Blockierend: Wand(#), Berg(^), Wasser(~), Baum(t)
-        // Brücken (+) und Straßen (=) sind OK!
+        // KOLLISION UPDATE:
+        // Erlaubt: . (Erde), _ (Sand), " (Gras), ; (Sumpf), = (Straße), + (Brücke)
+        // Verboten: # (Wand), ^ (Berg), ~ (Wasser), t (Baum)
         if(['M', 'W', '#', 'U', 't', 'o', 'Y', '|', 'F', 'T', 'R', '^', '~'].includes(t) && t !== 'R' && t !== '+') { 
+            if(this.state.hiddenItems && this.state.hiddenItems[pk]) { this.addToInventory(this.state.hiddenItems[pk], 1); delete this.state.hiddenItems[pk]; return; }
             UI.shakeView();
-            // Partikel Effekte
+            // Partikel
             if(['#', '^', '|'].includes(t) && this.spawnParticle) this.spawnParticle(nx, ny, 'rubble', 4);
             if(['M', 'W'].includes(t) && this.spawnParticle) this.spawnParticle(nx, ny, 'blood', 6);
             return; 
         }
         
-        // Staub beim Laufen
         if(this.spawnParticle) this.spawnParticle(this.state.player.x, this.state.player.y, 'dust', 3);
 
-        this.state.player.x = nx; 
-        this.state.player.y = ny;
-        
-        if(dx===1) this.state.player.rot=Math.PI/2; 
-        if(dx===-1) this.state.player.rot=-Math.PI/2;
-        if(dy===1) this.state.player.rot=Math.PI; 
-        if(dy===-1) this.state.player.rot=0;
+        this.state.player.x = nx; this.state.player.y = ny;
+        if(dx===1) this.state.player.rot=Math.PI/2; if(dx===-1) this.state.player.rot=-Math.PI/2;
+        if(dy===1) this.state.player.rot=Math.PI; if(dy===-1) this.state.player.rot=0;
 
         this.reveal(nx, ny);
         if(typeof Network!=='undefined') Network.sendHeartbeat();
 
         if(t==='V') { UI.switchView('vault'); return; }
         if(t==='C') { this.enterCity(); return; } 
-        if(t==='S'||t==='H'||t==='A'||t==='R'||t==='K') { 
-            this.tryEnterDungeon(t==='S'?'market':(t==='H'?'cave':(t==='A'?'military':(t==='R'?'raider':'tower')))); 
-            return; 
-        }
+        if(t==='S'||t==='H'||t==='A'||t==='R'||t==='K') { this.tryEnterDungeon(t==='S'?'market':(t==='H'?'cave':(t==='A'?'military':(t==='R'?'raider':'tower')))); return; }
         
-        // Zufallskampf
-        if(Math.random() < 0.03 && !['=', '+', 'V', 'C'].includes(t)) { 
-            this.startCombat(); 
-            return; 
-        }
+        if(Math.random() < 0.03 && !['=', '+', 'V', 'C'].includes(t)) { this.startCombat(); return; }
         UI.update();
     },
 
     changeSector: function(px, py) { 
-        let sx=this.state.sector.x, sy=this.state.sector.y; 
-        let newPx=px, newPy=py;
-        
-        if(py<0){sy--;newPy=this.MAP_H-1;newPx=this.state.player.x;} 
-        else if(py>=this.MAP_H){sy++;newPy=0;newPx=this.state.player.x;}
-        if(px<0){sx--;newPx=this.MAP_W-1;newPy=this.state.player.y;} 
-        else if(px>=this.MAP_W){sx++;newPx=0;newPy=this.state.player.y;}
-
+        let sx=this.state.sector.x, sy=this.state.sector.y; let newPx=px, newPy=py;
+        if(py<0){sy--;newPy=this.MAP_H-1;newPx=this.state.player.x;} else if(py>=this.MAP_H){sy++;newPy=0;newPx=this.state.player.x;}
+        if(px<0){sx--;newPx=this.MAP_W-1;newPy=this.state.player.y;} else if(px>=this.MAP_W){sx++;newPx=0;newPy=this.state.player.y;}
         if(sx<0||sx>=this.WORLD_W||sy<0||sy>=this.WORLD_H){UI.log("Ende der Welt.", "text-red-500");return;}
         
-        this.state.sector = {x:sx, y:sy}; 
-        this.loadSector(sx, sy); 
-        this.state.player.x = newPx; 
-        this.state.player.y = newPy;
-        
-        this.ensureWalkableSpawn(); 
-        this.reveal(newPx, newPy); 
-        this.saveGame();
-        
+        this.state.sector = {x:sx, y:sy}; this.loadSector(sx, sy); 
+        this.state.player.x = newPx; this.state.player.y = newPy;
+        this.ensureWalkableSpawn(); this.reveal(newPx, newPy); this.saveGame();
         if(typeof this.updateQuestProgress === 'function') this.updateQuestProgress('visit', `${sx},${sy}`, 1);
         UI.log(`Sektor: ${sx},${sy}`, "text-blue-400"); 
     },
@@ -103,12 +65,12 @@ Object.assign(Game, {
         if(!this.state||!this.state.currentMap) return;
         const px=this.state.player.x; const py=this.state.player.y;
         
-        // 3x3 Bereich um Spawn prüfen
+        // 3x3 Check
         for(let dy=-1; dy<=1; dy++) for(let dx=-1; dx<=1; dx++) {
             const tx=px+dx, ty=py+dy;
             if(tx>=0&&tx<this.MAP_W&&ty>=0&&ty<this.MAP_H) {
                 const t=this.state.currentMap[ty][tx];
-                // Hindernisse löschen
+                // Wenn wir in einer Wand spawnen -> Boden machen
                 if(['^', 't', '~', '#'].includes(t)) this.state.currentMap[ty][tx] = '.';
             }
         }
@@ -118,30 +80,23 @@ Object.assign(Game, {
     },
 
     loadSector: function(sx_in, sy_in) { 
-        const sx=parseInt(sx_in), sy=parseInt(sy_in); 
-        const key=`${sx},${sy}`;
+        const sx=parseInt(sx_in), sy=parseInt(sy_in); const key=`${sx},${sy}`;
         
-        // Seed Sicherheit
+        // WICHTIG: Seed setzen bevor wir generieren!
         if(this.state.worldSeed && typeof WorldGen!=='undefined') {
             WorldGen.setSeed(this.state.worldSeed);
         }
         
         if(!this.worldData[key]) {
             let biome='wasteland', map;
-            
             if(typeof WorldGen!=='undefined') {
-                // Biome Name nur für Textanzeige
                 biome = WorldGen.getSectorBiome(sx, sy);
-                // WICHTIG: Hier übergeben wir jetzt sx und sy für globale Koordinaten!
+                // WICHTIG: sx und sy übergeben!
                 map = WorldGen.createSector(this.MAP_W, this.MAP_H, sx, sy);
-            } else {
-                map = Array(this.MAP_H).fill().map(()=>Array(this.MAP_W).fill('.'));
-            }
+            } else map=Array(this.MAP_H).fill().map(()=>Array(this.MAP_W).fill('.'));
             this.worldData[key]={layout:map, biome:biome};
         }
-        
         this.state.currentMap = this.worldData[key].layout;
-        
         if(!this.state.visitedSectors.includes(key)) this.state.visitedSectors.push(key);
         
         // Items verstecken
@@ -149,9 +104,7 @@ Object.assign(Game, {
         if(Math.random() < 0.3) {
              let hx = Math.floor(Math.random()*this.MAP_W);
              let hy = Math.floor(Math.random()*this.MAP_H);
-             if(['t','#'].includes(this.state.currentMap[hy][hx])) {
-                 this.state.hiddenItems[`${hx},${hy}`] = 'screws';
-             }
+             if(['t','#'].includes(this.state.currentMap[hy][hx])) this.state.hiddenItems[`${hx},${hy}`] = 'screws';
         }
 
         if(!this.state.explored) this.state.explored = {};
@@ -162,7 +115,6 @@ Object.assign(Game, {
         if(bd === 'swamp') zn = "Todes-Sümpfe";
         if(bd === 'desert') zn = "Die Glühende See";
         if(bd === 'mountain') zn = "Felsengebirge";
-        
         this.state.zone = `${zn} (${sx},${sy})`; 
         
         this.ensureWalkableSpawn(); 
@@ -170,6 +122,7 @@ Object.assign(Game, {
         this.reveal(this.state.player.x, this.state.player.y);
     },
     
+    // ... Rest unverändert lassen ...
     tryEnterDungeon: function(t){const k=`${this.state.sector.x},${this.state.sector.y}_${t}`;const c=this.state.cooldowns?this.state.cooldowns[k]:0;if(c&&Date.now()<c){UI.showDungeonLocked(Math.ceil((c-Date.now())/60000));return;}UI.showDungeonWarning(()=>this.enterDungeon(t));},
     enterDungeon: function(t,l=1){if(l===1){this.state.savedPosition={x:this.state.player.x,y:this.state.player.y};this.state.sectorExploredCache=JSON.parse(JSON.stringify(this.state.explored));}this.state.dungeonLevel=l;this.state.dungeonType=t;if(typeof WorldGen!=='undefined'){WorldGen.setSeed((this.state.sector.x+1)*(this.state.sector.y+1)*Date.now()+l);const d=WorldGen.generateDungeonLayout(this.MAP_W,this.MAP_H);this.state.currentMap=d.map;this.state.player.x=d.startX;this.state.player.y=d.startY;if(l<3)for(let y=0;y<this.MAP_H;y++)for(let x=0;x<this.MAP_W;x++)if(this.state.currentMap[y][x]==='X')this.state.currentMap[y][x]='v';}this.state.zone="Dungeon";this.state.explored={};this.reveal(this.state.player.x,this.state.player.y);if(this.renderStaticMap)this.renderStaticMap();UI.update();},
     descendDungeon: function(){this.enterDungeon(this.state.dungeonType,this.state.dungeonLevel+1);UI.shakeView();UI.log("Tiefer...","text-purple-400");},
