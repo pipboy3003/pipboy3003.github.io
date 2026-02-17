@@ -1,8 +1,8 @@
-// [2026-02-17 18:00:00] game_world_gen.js - More Trees Update
+// [2026-02-17 19:00:00] game_world_gen.js - Structural Ruins & Ghost Towns
 
 const WorldGen = {
     _seed: 12345,
-    locations: { vault: {x:4, y:4}, city: {x:7, y:7} }, 
+    locations: { vault: {x:4, y:4}, city: {x:7, y:7}, ghostTown: {x:2, y:8} }, 
     sectorRoads: {}, 
 
     setSeed: function(val) {
@@ -22,14 +22,29 @@ const WorldGen = {
             tempSeed = (tempSeed * 16807) % 2147483647;
             return (tempSeed - 1) / 2147483646;
         };
+        // POIs setzen (Randabstand beachten)
         this.locations.vault = { x: Math.floor(pseudoRand() * 8) + 1, y: Math.floor(pseudoRand() * 8) + 1 };
+        
         do {
             this.locations.city = { x: Math.floor(pseudoRand() * 8) + 1, y: Math.floor(pseudoRand() * 8) + 1 };
         } while (this.locations.city.x === this.locations.vault.x && this.locations.city.y === this.locations.vault.y);
 
+        // Ghost Town (Darf nicht auf Vault oder City liegen)
+        do {
+            this.locations.ghostTown = { x: Math.floor(pseudoRand() * 8) + 1, y: Math.floor(pseudoRand() * 8) + 1 };
+        } while (
+            (this.locations.ghostTown.x === this.locations.vault.x && this.locations.ghostTown.y === this.locations.vault.y) ||
+            (this.locations.ghostTown.x === this.locations.city.x && this.locations.ghostTown.y === this.locations.city.y)
+        );
+
+        // Straßennetz
         this.sectorRoads = {}; 
         this.generateGlobalPath(this.locations.vault, this.locations.city, pseudoRand);
-        for(let i=0; i<2; i++) {
+        // Ghost Town ans Netz anschließen
+        this.generateGlobalPath(this.locations.city, this.locations.ghostTown, pseudoRand); 
+        
+        // Zufallspfade
+        for(let i=0; i<1; i++) {
             const start = { x: Math.floor(pseudoRand() * 10), y: Math.floor(pseudoRand() * 10) };
             const end = { x: Math.floor(pseudoRand() * 10), y: Math.floor(pseudoRand() * 10) };
             this.generateGlobalPath(start, end, pseudoRand);
@@ -103,6 +118,7 @@ const WorldGen = {
         let map = Array(height).fill().map(() => Array(width).fill('.'));
         const worldSeed = this._seed;
 
+        // 1. Terrain & Biome
         for(let y = 0; y < height; y++) {
             for(let x = 0; x < width; x++) {
                 let gx = (sx * width) + x;
@@ -110,44 +126,64 @@ const WorldGen = {
                 let moisture = this.smoothNoise(gx * 0.003, gy * 0.003, worldSeed + 200); 
                 let heat = this.smoothNoise(gx * 0.003 + 500, gy * 0.003 + 500, worldSeed + 500);
                 let elevation = this.smoothNoise(gx * 0.006, gy * 0.006, worldSeed + 100); 
-                let ruins = this.smoothNoise(gx * 0.04, gy * 0.04, worldSeed + 800); 
                 let isRiver = this.isGlobalRiver(gx, gy);
 
                 let ground = '.'; 
-                // UPDATE: Hier mehr Bäume!
-                let treeThresh = 0.15; // Ödland: 15% Vegetation
+                let treeThresh = 0.15; 
                 
-                if(heat > 0.7 && moisture < 0.4) { ground = '_'; treeThresh = 0.02; } // Wüste: 2%
-                else if(moisture > 0.65 && heat > 0.5) { ground = ';'; treeThresh = 0.35; } // Sumpf: 35%
-                else if(moisture > 0.6 && heat < 0.5) { ground = '"'; treeThresh = 0.55; } // Wald: 55%
+                if(heat > 0.7 && moisture < 0.4) { ground = '_'; treeThresh = 0.02; } 
+                else if(moisture > 0.65 && heat > 0.5) { ground = ';'; treeThresh = 0.35; } 
+                else if(moisture > 0.6 && heat < 0.5) { ground = '"'; treeThresh = 0.55; } 
                 
                 let detail = this.smoothNoise(gx * 0.15, gy * 0.15, worldSeed + 300);
                 map[y][x] = ground; 
 
                 if (isRiver) map[y][x] = '~';
                 else if (elevation > 0.85) map[y][x] = '^';
-                else if (ruins > 0.88) map[y][x] = '#';
-                else if (detail < treeThresh) map[y][x] = 't'; // Mehr Bäume
+                else if (detail < treeThresh) map[y][x] = 't'; 
                 
+                // Ränder passierbar machen
                 if(x < 2 || x > width - 3 || y < 2 || y > height - 3) {
                     if(['^', 't', '#'].includes(map[y][x])) map[y][x] = ground;
                 }
             }
         }
 
+        // 2. Ruinen-Generator (Häuser statt Noise)
+        // Wir machen das NACH dem Terrain, aber VOR den POIs
+        // Wir scannen das Grid nach "Ruinen-Noise" und setzen dort Gebäude
+        for(let y = 3; y < height - 3; y+=5) { // Grid-Steps für Hausgröße
+            for(let x = 3; x < width - 3; x+=5) {
+                let gx = (sx * width) + x;
+                let gy = (sy * height) + y;
+                let ruinVal = this.smoothNoise(gx * 0.04, gy * 0.04, worldSeed + 800);
+                
+                if(ruinVal > 0.82) { // Cluster gefunden
+                    this.placeHouseRuin(map, x, y);
+                }
+            }
+        }
+
+        // 3. POIs
         if(sx === this.locations.vault.x && sy === this.locations.vault.y) {
             this.placePOI(map, 25, 25, 'V', 4);
         }
         if(sx === this.locations.city.x && sy === this.locations.city.y) {
             this.placePOI(map, 25, 25, 'C', 6);
-            for(let i=0; i<15; i++) {
-                let rx = 20 + Math.floor(this.rand()*10); let ry = 20 + Math.floor(this.rand()*10);
-                if(!['~', 'C'].includes(map[ry][rx])) map[ry][rx] = '#';
+            for(let i=0; i<15; i++) { // Stadt Siedlung
+                let rx = 15 + Math.floor(this.rand()*20); let ry = 15 + Math.floor(this.rand()*20);
+                if(map[ry][rx] === '.') this.placeHouseRuin(map, rx, ry);
             }
         }
+        
+        // NEU: GHOST TOWN
+        if(sx === this.locations.ghostTown.x && sy === this.locations.ghostTown.y) {
+            this.placeGhostTown(map, width, height);
+        }
 
+        // Random Dungeons
         let sectorRNG = (sx * 17 + sy * 23 + this._seed) % 100;
-        if(map[25][25] !== 'V' && map[25][25] !== 'C' && sectorRNG < 15) { 
+        if(map[25][25] !== 'V' && map[25][25] !== 'C' && map[25][25] !== 'G' && sectorRNG < 15) { 
             let type = 'S';
             if(sectorRNG < 5) type = 'H'; else if(sectorRNG < 8) type = 'A'; else if(sectorRNG < 12) type = 'R';
             let dx = 10 + (sectorRNG * 3) % 30; let dy = 10 + (sectorRNG * 7) % 30;
@@ -155,6 +191,7 @@ const WorldGen = {
             this.buildRoad(map, this.getRandomEdgePoint(width, height), {x:dx, y:dy});
         }
 
+        // 4. Globale Straßen
         const connections = this.sectorRoads[`${sx},${sy}`] || [];
         let gates = [];
         connections.forEach(dir => {
@@ -172,6 +209,63 @@ const WorldGen = {
         }
 
         return map;
+    },
+
+    // NEU: Erstellt ein kleines Haus-Fundament (3x3 oder 4x4)
+    placeHouseRuin: function(map, x, y) {
+        const w = 3 + Math.floor(this.rand() * 2); // 3 oder 4 breit
+        const h = 3 + Math.floor(this.rand() * 2);
+        
+        // Bounds check
+        if(x+w >= map[0].length || y+h >= map.length) return;
+
+        // Prüfen ob Platz frei (kein Wasser/Berg)
+        for(let dy=0; dy<h; dy++) for(let dx=0; dx<w; dx++) {
+            if(['~', '^', 'V', 'C', 'G'].includes(map[y+dy][x+dx])) return;
+        }
+
+        // Haus bauen
+        for(let dy=0; dy<h; dy++) {
+            for(let dx=0; dx<w; dx++) {
+                // Außenwände
+                if(dy===0 || dy===h-1 || dx===0 || dx===w-1) {
+                    // Lücken lassen (eingefallen)
+                    if(this.rand() > 0.2) map[y+dy][x+dx] = '#'; 
+                } else {
+                    map[y+dy][x+dx] = '.'; // Boden innen
+                }
+            }
+        }
+        // Loot Chance im Haus
+        if(this.rand() < 0.3) map[y+Math.floor(h/2)][x+Math.floor(w/2)] = 'X';
+    },
+
+    // NEU: Erstellt eine Geisterstadt (Straßenraster + Häuser)
+    placeGhostTown: function(map, w, h) {
+        // Alles roden in der Mitte
+        this.clearArea(map, 25, 25, 18);
+        
+        // Grid Straßen (Kreuzung)
+        for(let i=10; i<40; i++) {
+            map[25][i] = '='; // Horizontal
+            map[i][25] = '='; // Vertikal
+        }
+        
+        // Häuserblöcke in den Quadranten
+        const blocks = [
+            {x: 12, y: 12}, {x: 30, y: 12},
+            {x: 12, y: 30}, {x: 30, y: 30}
+        ];
+        
+        blocks.forEach(b => {
+            // Ein Haus pro Block
+            this.placeHouseRuin(map, b.x, b.y);
+            // Vielleicht noch eins daneben
+            if(this.rand() < 0.7) this.placeHouseRuin(map, b.x+5, b.y);
+            if(this.rand() < 0.7) this.placeHouseRuin(map, b.x, b.y+5);
+        });
+
+        map[25][25] = 'G'; // Marker für Ghost Town Center
     },
 
     seededRand: function(seed) {
