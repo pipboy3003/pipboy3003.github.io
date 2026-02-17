@@ -1,4 +1,4 @@
-// [2026-02-17 16:05:00] game_map.js - Updated Load Logic
+// [2026-02-17 12:20:00] game_map.js - Coordinates Safe Fix
 
 Object.assign(Game, {
     reveal: function(px, py) { if(!this.state) return; if(!this.state.explored) this.state.explored = {}; const r=2; const sk=`${this.state.sector.x},${this.state.sector.y}`; for(let y=py-r; y<=py+r; y++) for(let x=px-r; x<=px+r; x++) if(x>=0&&x<this.MAP_W&&y>=0&&y<this.MAP_H) this.state.explored[`${sk}_${x},${y}`]=true; },
@@ -19,13 +19,9 @@ Object.assign(Game, {
         if (t === 'v') { this.descendDungeon(); return; }
         if (t === '?') { this.testMinigames(); return; } 
 
-        // KOLLISION UPDATE:
-        // Erlaubt: . (Erde), _ (Sand), " (Gras), ; (Sumpf), = (Straße), + (Brücke)
-        // Verboten: # (Wand), ^ (Berg), ~ (Wasser), t (Baum)
         if(['M', 'W', '#', 'U', 't', 'o', 'Y', '|', 'F', 'T', 'R', '^', '~'].includes(t) && t !== 'R' && t !== '+') { 
             if(this.state.hiddenItems && this.state.hiddenItems[pk]) { this.addToInventory(this.state.hiddenItems[pk], 1); delete this.state.hiddenItems[pk]; return; }
             UI.shakeView();
-            // Partikel
             if(['#', '^', '|'].includes(t) && this.spawnParticle) this.spawnParticle(nx, ny, 'rubble', 4);
             if(['M', 'W'].includes(t) && this.spawnParticle) this.spawnParticle(nx, ny, 'blood', 6);
             return; 
@@ -63,35 +59,35 @@ Object.assign(Game, {
 
     ensureWalkableSpawn: function() {
         if(!this.state||!this.state.currentMap) return;
-        const px=this.state.player.x; const py=this.state.player.y;
         
-        // 3x3 Check
+        // FIX: Koordinaten Clampen! (Rettet korrupte Savegames)
+        if(this.state.player.x < 0 || this.state.player.x >= this.MAP_W || 
+           this.state.player.y < 0 || this.state.player.y >= this.MAP_H) {
+            console.log("Player out of bounds, resetting to 25,25");
+            this.state.player.x = 25;
+            this.state.player.y = 25;
+        }
+
+        const px=this.state.player.x; const py=this.state.player.y;
         for(let dy=-1; dy<=1; dy++) for(let dx=-1; dx<=1; dx++) {
             const tx=px+dx, ty=py+dy;
             if(tx>=0&&tx<this.MAP_W&&ty>=0&&ty<this.MAP_H) {
                 const t=this.state.currentMap[ty][tx];
-                // Wenn wir in einer Wand spawnen -> Boden machen
                 if(['^', 't', '~', '#'].includes(t)) this.state.currentMap[ty][tx] = '.';
             }
         }
-        // Falls wir direkt auf Wasser stehen -> Brücke!
         const ct = this.state.currentMap[py][px];
         if(ct === '~') this.state.currentMap[py][px] = '+';
     },
 
     loadSector: function(sx_in, sy_in) { 
         const sx=parseInt(sx_in), sy=parseInt(sy_in); const key=`${sx},${sy}`;
-        
-        // WICHTIG: Seed setzen bevor wir generieren!
-        if(this.state.worldSeed && typeof WorldGen!=='undefined') {
-            WorldGen.setSeed(this.state.worldSeed);
-        }
+        if(this.state.worldSeed && typeof WorldGen!=='undefined') WorldGen.setSeed(this.state.worldSeed);
         
         if(!this.worldData[key]) {
             let biome='wasteland', map;
             if(typeof WorldGen!=='undefined') {
                 biome = WorldGen.getSectorBiome(sx, sy);
-                // WICHTIG: sx und sy übergeben!
                 map = WorldGen.createSector(this.MAP_W, this.MAP_H, sx, sy);
             } else map=Array(this.MAP_H).fill().map(()=>Array(this.MAP_W).fill('.'));
             this.worldData[key]={layout:map, biome:biome};
@@ -99,7 +95,6 @@ Object.assign(Game, {
         this.state.currentMap = this.worldData[key].layout;
         if(!this.state.visitedSectors.includes(key)) this.state.visitedSectors.push(key);
         
-        // Items verstecken
         this.state.hiddenItems = {};
         if(Math.random() < 0.3) {
              let hx = Math.floor(Math.random()*this.MAP_W);
@@ -108,7 +103,6 @@ Object.assign(Game, {
         }
 
         if(!this.state.explored) this.state.explored = {};
-        
         let zn = "Ödland";
         const bd = this.worldData[key].biome;
         if(bd === 'forest') zn = "Verstrahlter Wald";
@@ -122,7 +116,6 @@ Object.assign(Game, {
         this.reveal(this.state.player.x, this.state.player.y);
     },
     
-    // ... Rest unverändert lassen ...
     tryEnterDungeon: function(t){const k=`${this.state.sector.x},${this.state.sector.y}_${t}`;const c=this.state.cooldowns?this.state.cooldowns[k]:0;if(c&&Date.now()<c){UI.showDungeonLocked(Math.ceil((c-Date.now())/60000));return;}UI.showDungeonWarning(()=>this.enterDungeon(t));},
     enterDungeon: function(t,l=1){if(l===1){this.state.savedPosition={x:this.state.player.x,y:this.state.player.y};this.state.sectorExploredCache=JSON.parse(JSON.stringify(this.state.explored));}this.state.dungeonLevel=l;this.state.dungeonType=t;if(typeof WorldGen!=='undefined'){WorldGen.setSeed((this.state.sector.x+1)*(this.state.sector.y+1)*Date.now()+l);const d=WorldGen.generateDungeonLayout(this.MAP_W,this.MAP_H);this.state.currentMap=d.map;this.state.player.x=d.startX;this.state.player.y=d.startY;if(l<3)for(let y=0;y<this.MAP_H;y++)for(let x=0;x<this.MAP_W;x++)if(this.state.currentMap[y][x]==='X')this.state.currentMap[y][x]='v';}this.state.zone="Dungeon";this.state.explored={};this.reveal(this.state.player.x,this.state.player.y);if(this.renderStaticMap)this.renderStaticMap();UI.update();},
     descendDungeon: function(){this.enterDungeon(this.state.dungeonType,this.state.dungeonLevel+1);UI.shakeView();UI.log("Tiefer...","text-purple-400");},
