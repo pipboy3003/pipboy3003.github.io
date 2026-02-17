@@ -1,29 +1,37 @@
-// [2026-02-17 18:05:00] ui_view_world.js - Scrollable 1:1 Map
+// [2026-02-17 18:30:00] ui_view_world.js - Zoomable & Scrollable Map
 
 Object.assign(UI, {
     mapState: {
-        offsetX: 0,
-        offsetY: 0,
-        scale: 3, // Zoom-Faktor (1 Tile = 3 Pixel)
-        isDragging: false,
-        lastX: 0,
-        lastY: 0
+        offsetX: 0, offsetY: 0,
+        scale: 3, minScale: 0.5, maxScale: 12, // Zoom Limits
+        isDragging: false, isPinching: false,
+        lastX: 0, lastY: 0,
+        pinchStartDist: 0, pinchStartScale: 3
+    },
+
+    // Hilfsfunktion für Touch-Abstand
+    getTouchDistance: function(t1, t2) {
+        const dx = t1.clientX - t2.clientX;
+        const dy = t1.clientY - t2.clientY;
+        return Math.sqrt(dx*dx + dy*dy);
     },
 
     initWorldMapInteraction: function() {
         const cvs = document.getElementById('world-map-canvas');
         if(!cvs) return;
 
-        // Reset Camera to Player
+        // Reset Camera to Player on open
         if(Game.state && Game.state.player) {
+            this.mapState.scale = 3; // Default Zoom
             const globalX = Game.state.sector.x * Game.MAP_W + Game.state.player.x;
             const globalY = Game.state.sector.y * Game.MAP_H + Game.state.player.y;
             this.mapState.offsetX = (cvs.width / 2) - (globalX * this.mapState.scale);
             this.mapState.offsetY = (cvs.height / 2) - (globalY * this.mapState.scale);
         }
 
-        // Mouse Events
+        // --- MOUSE EVENTS (Pan & Zoom) ---
         cvs.onmousedown = (e) => {
+            if(e.button !== 0) return; // Nur Linksklick
             this.mapState.isDragging = true;
             this.mapState.lastX = e.clientX;
             this.mapState.lastY = e.clientY;
@@ -43,26 +51,77 @@ Object.assign(UI, {
         cvs.onmouseup = () => { this.mapState.isDragging = false; };
         cvs.onmouseleave = () => { this.mapState.isDragging = false; };
 
-        // Touch Events
+        // Mausrad Zoom (Zentriert auf Mauszeiger)
+        cvs.onwheel = (e) => {
+            e.preventDefault();
+            const zoomFactor = 1.1;
+            const dir = e.deltaY < 0 ? 1 : -1;
+            let newScale = this.mapState.scale * (dir > 0 ? zoomFactor : (1 / zoomFactor));
+            newScale = Math.max(this.mapState.minScale, Math.min(this.mapState.maxScale, newScale));
+
+            // Mathe-Magie für Zoom zum Mauszeiger hin
+            const rect = cvs.getBoundingClientRect();
+            const mx = e.clientX - rect.left; 
+            const my = e.clientY - rect.top;
+            
+            // Offset anpassen basierend auf der Skalierungsänderung relativ zum Mauspunkt
+            this.mapState.offsetX = mx - ((mx - this.mapState.offsetX) / this.mapState.scale) * newScale;
+            this.mapState.offsetY = my - ((my - this.mapState.offsetY) / this.mapState.scale) * newScale;
+            
+            this.mapState.scale = newScale;
+        };
+
+        // --- TOUCH EVENTS (Pan & Pinch Zoom) ---
         cvs.ontouchstart = (e) => {
-            this.mapState.isDragging = true;
-            this.mapState.lastX = e.touches[0].clientX;
-            this.mapState.lastY = e.touches[0].clientY;
+            if(e.touches.length === 1) {
+                this.mapState.isDragging = true;
+                this.mapState.isPinching = false;
+                this.mapState.lastX = e.touches[0].clientX;
+                this.mapState.lastY = e.touches[0].clientY;
+            } else if (e.touches.length === 2) {
+                this.mapState.isDragging = false;
+                this.mapState.isPinching = true;
+                this.mapState.pinchStartDist = this.getTouchDistance(e.touches[0], e.touches[1]);
+                this.mapState.pinchStartScale = this.mapState.scale;
+            }
         };
 
         cvs.ontouchmove = (e) => {
-            if(this.mapState.isDragging) {
-                e.preventDefault(); // Kein Scrollen der Seite
+            e.preventDefault();
+            if(this.mapState.isDragging && e.touches.length === 1) {
                 const dx = e.touches[0].clientX - this.mapState.lastX;
                 const dy = e.touches[0].clientY - this.mapState.lastY;
                 this.mapState.offsetX += dx;
                 this.mapState.offsetY += dy;
                 this.mapState.lastX = e.touches[0].clientX;
                 this.mapState.lastY = e.touches[0].clientY;
+            } else if(this.mapState.isPinching && e.touches.length === 2) {
+                const newDist = this.getTouchDistance(e.touches[0], e.touches[1]);
+                const scaleRatio = newDist / this.mapState.pinchStartDist;
+                let newScale = this.mapState.pinchStartScale * scaleRatio;
+                newScale = Math.max(this.mapState.minScale, Math.min(this.mapState.maxScale, newScale));
+
+                // Mittelpunkt zwischen den Fingern finden
+                const rect = cvs.getBoundingClientRect();
+                const mx = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
+                const my = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
+
+                // Offset anpassen (ähnlich wie Mausrad)
+                this.mapState.offsetX = mx - ((mx - this.mapState.offsetX) / this.mapState.scale) * newScale;
+                this.mapState.offsetY = my - ((my - this.mapState.offsetY) / this.mapState.scale) * newScale;
+
+                this.mapState.scale = newScale;
             }
         };
         
-        cvs.ontouchend = () => { this.mapState.isDragging = false; };
+        cvs.ontouchend = (e) => { 
+            this.mapState.isDragging = false;
+            if(e.touches.length < 2) this.mapState.isPinching = false;
+        };
+        cvs.ontouchcancel = (e) => {
+            this.mapState.isDragging = false;
+            this.mapState.isPinching = false;
+        };
     },
 
     renderWorldMap: function() {
@@ -86,71 +145,63 @@ Object.assign(UI, {
         const ox = this.mapState.offsetX;
         const oy = this.mapState.offsetY;
 
-        // RENDER EXPLORED TILES
-        // Wir iterieren über das explored Objekt: "sx,sy_px,py"
-        // Das ist effizienter als 500x500 Loops
-        
         // Pixel-Farben
         const colors = {
             '.': '#4a4036', '_': '#8b5a2b', '"': '#1a3300', ';': '#1e1e11',
-            '~': '#2244aa', '^': '#555', '#': '#333', '=': '#222', '+': '#654321',
+            '~': '#2244aa', '^': '#555', '#': '#333', '=': '#666', '+': '#654321',
             't': '#0f2405', 'V': '#ffcc00', 'C': '#ff4400'
         };
-
-        // Cache für die aktuelle Map (damit wir wissen was an der aktuellen Pos ist)
-        // Für besuchte Sektoren haben wir keine gespeicherten Tile-Daten im RAM (nur currentMap),
-        // daher können wir für "explored" nur grob schätzen oder wir müssten alles speichern.
-        // TRICK: Wir speichern im explored-Key auch den Typ? Nein, zu groß.
-        // Workaround: Wir nutzen WorldGen für besuchte Sektoren um die Farbe zu raten,
-        // oder wir malen besuchte Sektoren einfach als "Block" in Biom-Farbe, wenn wir die Tiles nicht haben.
         
-        // HIER: Wir rendern nur den aktuellen Sektor "scharf", den Rest grob (Fog of War Style)
-        
-        // 1. Besuchte Sektoren (Grob)
+        // 1. Besuchte Sektoren (Grob - Fog of War)
         if (Game.state.visitedSectors) {
             Game.state.visitedSectors.forEach(secKey => {
                 const [sx, sy] = secKey.split(',').map(Number);
-                let color = '#222';
-                if(typeof WorldGen !== 'undefined' && WorldGen.getSectorBiome) {
-                    const b = WorldGen.getSectorBiome(sx, sy);
-                    if(b==='forest') color='#112200';
-                    if(b==='desert') color='#443311';
-                    if(b==='swamp') color='#111105';
-                    if(b==='mountain') color='#222222';
-                }
-                
-                const drawX = (sx * 50 * s) + ox;
-                const drawY = (sy * 50 * s) + oy;
-                
-                // Nur zeichnen wenn im Bild
-                if(drawX + 50*s > 0 && drawX < cvs.width && drawY + 50*s > 0 && drawY < cvs.height) {
-                    ctx.fillStyle = color;
-                    ctx.fillRect(drawX, drawY, 50*s, 50*s);
+                // Wenn es NICHT der aktuelle Sektor ist
+                if(sx !== Game.state.sector.x || sy !== Game.state.sector.y) {
+                    let color = '#222'; // Default 'erkundet aber alt'
+                    if(typeof WorldGen !== 'undefined' && WorldGen.getSectorBiome) {
+                        const b = WorldGen.getSectorBiome(sx, sy);
+                        if(b==='forest') color='#112200';
+                        if(b==='desert') color='#443311';
+                        if(b==='swamp') color='#111105';
+                        if(b==='mountain') color='#222222';
+                    }
                     
-                    // Grid Lines
-                    ctx.strokeStyle = '#333';
-                    ctx.lineWidth = 1;
-                    ctx.strokeRect(drawX, drawY, 50*s, 50*s);
+                    const drawX = (sx * 50 * s) + ox;
+                    const drawY = (sy * 50 * s) + oy;
+                    
+                    // Culling: Nur zeichnen wenn im Bild
+                    if(drawX + 50*s > 0 && drawX < cvs.width && drawY + 50*s > 0 && drawY < cvs.height) {
+                        ctx.fillStyle = color;
+                        // Leicht transparent damit das Grid durchscheint
+                        ctx.globalAlpha = 0.8;
+                        ctx.fillRect(drawX, drawY, 50*s, 50*s);
+                        ctx.globalAlpha = 1.0;
+
+                        // Grid Lines für Sektoren
+                        ctx.strokeStyle = '#444';
+                        ctx.lineWidth = Math.max(1, s * 0.1); // Dicke basierend auf Zoom
+                        ctx.strokeRect(drawX, drawY, 50*s, 50*s);
+                    }
                 }
             });
         }
 
-        // 2. Aktueller Sektor (Scharf) & Explored Details
-        // Wir gehen durch die 'explored' Liste. Diese enthält Koordinaten von Tiles die wir GESEHEN haben.
-        // Da wir die Map-Daten alter Sektoren nicht speichern (zu viel RAM),
-        // können wir nur für den AKTUELLEN Sektor die echten Tiles malen.
-        // Für alte Sektoren malen wir einfach "heller", um "erkundet" anzuzeigen.
-
+        // 2. Aktueller Sektor & Explored Details (Scharf)
         const currSX = Game.state.sector.x;
         const currSY = Game.state.sector.y;
 
-        // Current Map Tiles Drawing
         if (Game.state.currentMap) {
             const startDrawX = (currSX * 50 * s) + ox;
             const startDrawY = (currSY * 50 * s) + oy;
 
-            // Nur zeichnen wenn sichtbar
+            // Culling
             if (startDrawX + 50*s > 0 && startDrawX < cvs.width && startDrawY + 50*s > 0 && startDrawY < cvs.height) {
+                // Sektor Grid
+                ctx.strokeStyle = '#666';
+                ctx.lineWidth = Math.max(1, s * 0.2);
+                ctx.strokeRect(startDrawX, startDrawY, 50*s, 50*s);
+
                 for(let y=0; y<50; y++) {
                     for(let x=0; x<50; x++) {
                         // Prüfen ob Tile explored ist
@@ -158,6 +209,8 @@ Object.assign(UI, {
                         if(Game.state.explored[key]) {
                             const t = Game.state.currentMap[y][x];
                             ctx.fillStyle = colors[t] || '#4a4036';
+                            // Um Lücken bei hohem Zoom zu vermeiden, nutzen wir ceil oder +0.5 Hack
+                            // Besser:fillRect akzeptiert Floats, Browser macht Anti-Aliasing.
                             ctx.fillRect(startDrawX + x*s, startDrawY + y*s, s, s);
                         }
                     }
@@ -171,16 +224,15 @@ Object.assign(UI, {
         const pDrawX = (pGlobalX * s) + ox + (s/2);
         const pDrawY = (pGlobalY * s) + oy + (s/2);
 
-        // Pulsierender Marker
-        const pulse = 10 + Math.sin(Date.now() / 200) * 3;
+        const pulseSize = (10 * (s/3)) + Math.sin(Date.now() / 200) * (3 * (s/3)); // Puls skaliert mit Zoom
         ctx.fillStyle = "rgba(0, 255, 0, 0.3)";
         ctx.beginPath();
-        ctx.arc(pDrawX, pDrawY, pulse, 0, Math.PI*2);
+        ctx.arc(pDrawX, pDrawY, Math.max(5, pulseSize), 0, Math.PI*2);
         ctx.fill();
 
         ctx.fillStyle = "#39ff14";
         ctx.beginPath();
-        ctx.arc(pDrawX, pDrawY, 4, 0, Math.PI*2);
+        ctx.arc(pDrawX, pDrawY, Math.max(2, 4 * (s/3)), 0, Math.PI*2); // Kern skaliert auch
         ctx.fill();
 
         // 4. POIs (Global)
@@ -189,15 +241,18 @@ Object.assign(UI, {
                 const px = (poi.x * 50 + 25) * s + ox;
                 const py = (poi.y * 50 + 25) * s + oy;
                 
-                // Nur wenn besucht/bekannt? Sagen wir bekannt.
-                if(px > 0 && px < cvs.width && py > 0 && py < cvs.height) {
-                    ctx.font = "bold 20px monospace";
+                if(px > -50 && px < cvs.width+50 && py > -50 && py < cvs.height+50) {
+                    const fontSize = Math.max(12, 20 * (s/3));
+                    ctx.font = `bold ${fontSize}px monospace`;
                     ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
                     let icon = "❓";
                     if(poi.type === 'V') icon = "⚙️";
                     if(poi.type === 'C') icon = "🏙️";
                     
+                    ctx.shadowColor = 'black'; ctx.shadowBlur = 5;
                     ctx.fillText(icon, px, py);
+                    ctx.shadowBlur = 0;
                 }
             });
         }
