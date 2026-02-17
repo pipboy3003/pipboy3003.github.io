@@ -1,10 +1,15 @@
-// [2026-02-17 12:15:00] game_core.js - Map Size Update
+// [2026-02-17 12:30:00] game_core.js - Safe Definition Fix
 
-Object.assign(Game, {
-    // UPDATE: Größe auf 50 setzen für bessere Flüsse
-    TILE: 30, MAP_W: 50, MAP_H: 50,
-    WORLD_W: 10, WORLD_H: 10, 
+// WICHTIG: Wir definieren Game hier neu, falls es noch nicht existiert.
+window.Game = {
+    // Globale Konstanten (Auf 50 erhöht für die neuen Flüsse)
+    TILE: 30, 
+    MAP_W: 50, 
+    MAP_H: 50,
+    WORLD_W: 10, 
+    WORLD_H: 10, 
     
+    // Daten-Container (Fallback falls Data-Files fehlen)
     colors: (typeof window.GameData !== 'undefined') ? window.GameData.colors : {},
     items: (typeof window.GameData !== 'undefined') ? window.GameData.items : {},
     monsters: (typeof window.GameData !== 'undefined') ? window.GameData.monsters : {},
@@ -20,8 +25,15 @@ Object.assign(Game, {
         'legendary': { name: 'Legendäre', dmgMult: 1.5, valMult: 3.0, bonus: {LUC: 2}, color: 'text-yellow-400 font-bold' }
     },
 
-    state: null, worldData: {}, ctx: null, loopId: null, camera: { x: 0, y: 0 }, cacheCanvas: null, cacheCtx: null,
-    saveTimer: null, isDirty: false,
+    state: null, 
+    worldData: {}, 
+    ctx: null, 
+    loopId: null, 
+    camera: { x: 0, y: 0 }, 
+    cacheCanvas: null, 
+    cacheCtx: null,
+    saveTimer: null, 
+    isDirty: false,
 
     initCache: function() { 
         this.cacheCanvas = document.createElement('canvas'); 
@@ -34,26 +46,47 @@ Object.assign(Game, {
         const cvs = document.getElementById('game-canvas'); 
         if(!cvs) return; 
         const viewContainer = document.getElementById('view-container'); 
+        
         const dpr = window.devicePixelRatio || 1;
         const rect = viewContainer.getBoundingClientRect();
-        cvs.width = rect.width * dpr; cvs.height = rect.height * dpr; 
-        cvs.style.width = `${rect.width}px`; cvs.style.height = `${rect.height}px`;
-        this.ctx = cvs.getContext('2d'); this.ctx.scale(dpr, dpr); this.ctx.imageSmoothingEnabled = false; 
-        if(this.loopId) cancelAnimationFrame(this.loopId); this.drawLoop(); 
+
+        cvs.width = rect.width * dpr; 
+        cvs.height = rect.height * dpr; 
+
+        cvs.style.width = `${rect.width}px`;
+        cvs.style.height = `${rect.height}px`;
+
+        this.ctx = cvs.getContext('2d'); 
+        this.ctx.scale(dpr, dpr);
+        this.ctx.imageSmoothingEnabled = false; 
+        
+        if(this.loopId) cancelAnimationFrame(this.loopId); 
+        this.drawLoop(); 
     },
 
     drawText: function(ctx, text, x, y, size, color, align="center", shadow=false) {
         if(!ctx) return;
-        ctx.save(); ctx.translate(x, y); const scale = 0.25; ctx.scale(scale, scale); 
-        ctx.font = "bold " + (size / scale) + "px monospace"; ctx.fillStyle = color;
-        ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.imageSmoothingEnabled = true; 
-        if(shadow) { ctx.shadowColor = "black"; ctx.shadowBlur = 4 / scale; }
-        ctx.fillText(text, 0, 0); ctx.restore();
+        ctx.save();
+        ctx.translate(x, y);
+        const scale = 0.25; 
+        ctx.scale(scale, scale); 
+        ctx.font = "bold " + (size / scale) + "px monospace";
+        ctx.fillStyle = color;
+        ctx.textAlign = align;
+        ctx.textBaseline = "middle"; 
+        ctx.imageSmoothingEnabled = true; 
+        if(shadow) {
+            ctx.shadowColor = "black";
+            ctx.shadowBlur = 4 / scale;
+        }
+        ctx.fillText(text, 0, 0);
+        ctx.restore();
     },
 
     drawLoop: function() { 
         if(this.state && this.state.view === 'map' && !this.state.isGameOver) {
-            this.draw(); this.loopId = requestAnimationFrame(() => this.drawLoop());
+            this.draw(); 
+            this.loopId = requestAnimationFrame(() => this.drawLoop());
         }
     },
 
@@ -67,8 +100,15 @@ Object.assign(Game, {
     performSave: function() {
         if(this.saveTimer) { clearTimeout(this.saveTimer); this.saveTimer = null; }
         if(!this.isDirty || !this.state) return;
-        if(this.state.isGameOver || this.state.saveSlot === -1) return;
-        if(typeof Network !== 'undefined') { Network.save(this.state); if(!this.state.isGameOver) Network.updateHighscore(this.state); }
+
+        if(this.state.isGameOver || this.state.saveSlot === -1) {
+            return;
+        }
+
+        if(typeof Network !== 'undefined') { 
+            Network.save(this.state); 
+            if(!this.state.isGameOver) Network.updateHighscore(this.state); 
+        }
         try { localStorage.setItem('pipboy_save', JSON.stringify(this.state)); } catch(e){}
         this.isDirty = false;
     },
@@ -99,7 +139,39 @@ Object.assign(Game, {
     syncAmmo: function() { if(!this.state)return; const t=this.state.inventory.reduce((s,i)=>i.id==='ammo'?s+i.count:s,0); this.state.ammo=t; if(typeof UI!=='undefined'&&UI.update)UI.update(); },
     getStat: function(key) { if(!this.state)return 5; let v=this.state.stats[key]||5; ['weapon','body','head','legs','feet','arms','back'].forEach(s=>{const i=this.state.equip[s]; if(i){if(i.bonus&&i.bonus[key])v+=i.bonus[key]; if(i.props&&i.props.bonus&&i.props.bonus[key])v+=i.props.bonus[key];}}); return v; },
     expToNextLevel: function(l) { return Math.floor(100 * Math.pow(l, 1.5)); },
-    gainExp: function(a) { const p=this.getPerkLevel('swift_learner'); let f=a; if(p>0)f=Math.floor(a*(1+p*0.05)); this.state.xp+=f; UI.log(`+${f} XP`, "text-yellow-400"); const n=this.expToNextLevel(this.state.lvl); if(this.state.xp>=n){this.state.lvl++;this.state.xp-=n;this.state.statPoints++;if(this.state.lvl%3===0){this.state.perkPoints++;UI.log("NEUER PERK!", "text-yellow-400 font-bold");}this.recalcStats();this.state.hp=this.state.maxHp;UI.log(`LEVEL UP! ${this.state.lvl}`, "text-yellow-400 font-bold");this.checkNewQuests();this.saveGame(true);}else{this.saveGame();} },
+    
+    gainExp: function(amount) {
+        const perkLvl = this.getPerkLevel('swift_learner');
+        let finalAmount = amount;
+        if (perkLvl > 0) {
+            const multi = 1 + (perkLvl * 0.05); 
+            finalAmount = Math.floor(amount * multi);
+        }
+        this.state.xp += finalAmount;
+        if(perkLvl > 0 && finalAmount > amount) {
+            UI.log(`+${finalAmount} XP (Bonus!)`, "text-yellow-400");
+        } else {
+            UI.log(`+${finalAmount} XP`, "text-yellow-400");
+        }
+
+        let next = this.expToNextLevel(this.state.lvl);
+        if(this.state.xp >= next) {
+            this.state.lvl++;
+            this.state.xp -= next;
+            this.state.statPoints++;
+            if(this.state.lvl % 3 === 0) {
+                this.state.perkPoints++;
+                UI.log("🌟 NEUER PERK PUNKT VERFÜGBAR! 🌟", "text-yellow-400 font-bold animate-pulse text-lg");
+            }
+            this.recalcStats(); 
+            this.state.hp = this.state.maxHp; 
+            UI.log(`LEVEL UP! Du bist jetzt Level ${this.state.lvl}`, "text-yellow-400 font-bold animate-pulse");
+            this.checkNewQuests(); 
+            this.saveGame(true);
+        } else {
+            this.saveGame();
+        }
+    },
 
     checkNewQuests: function() {
         if(!this.questDefs || !this.state) return;
@@ -121,9 +193,15 @@ Object.assign(Game, {
                         newQuest.progress = currentTotal;
                     }
                     this.state.activeQuests.push(newQuest);
-                    UI.log(`QUEST: "${def.title}"`, "text-cyan-400 font-bold");
-                    if(this.state.activeQuests.length === 1 && !this.state.trackedQuestId) this.state.trackedQuestId = newQuest.id;
-                    if(newQuest.progress >= newQuest.max && newQuest.max > 0) this.completeQuest(this.state.activeQuests.findIndex(q => q.id === def.id));
+                    UI.log(`QUEST: "${def.title}" erhalten!`, "text-cyan-400 font-bold animate-pulse");
+                    if(this.state.activeQuests.length === 1 && !this.state.trackedQuestId) {
+                        this.state.trackedQuestId = newQuest.id;
+                        if(typeof UI !== 'undefined' && UI.updateQuestTracker) UI.updateQuestTracker();
+                    }
+                    if(newQuest.progress >= newQuest.max && newQuest.max > 0) {
+                        const idx = this.state.activeQuests.findIndex(q => q.id === def.id);
+                        if(idx !== -1) this.completeQuest(idx);
+                    }
                 }
             }
         });
@@ -202,6 +280,7 @@ Object.assign(Game, {
 
             if (saveData) {
                 this.state = saveData;
+                // FIX: Seed Sicherheit für alte Spielstände
                 if (!this.state.worldSeed) { this.state.worldSeed = Date.now(); }
                 if (typeof WorldGen !== 'undefined') WorldGen.setSeed(this.state.worldSeed);
                 
@@ -263,4 +342,4 @@ Object.assign(Game, {
             }
         } catch(e) { console.error(e); }
     }
-});
+};
