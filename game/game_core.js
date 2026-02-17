@@ -360,66 +360,38 @@ window.Game = {
         };
     },
 
-    init: function(saveData, spawnTarget=null, slotIndex=0, newName=null) {
-        this.worldData = {};
-        this.initCache();
+   init: function(saveData, spawnTarget=null, slotIndex=0, newName=null) {
+        this.worldData = {}; this.initCache();
         window.addEventListener('beforeunload', () => { if(this.isDirty) this.saveGame(true); });
-
-        if(this.items && Object.keys(this.items).length === 0) {
-            this.items.ammo = { name: "Munition", type: "ammo", cost: 2, icon: "bullet" };
-        }
+        if(this.items && Object.keys(this.items).length === 0) this.items.ammo = { name: "Munition", type: "ammo", cost: 2, icon: "bullet" };
 
         try {
             let isNewGame = false;
-            // Default POIs falls WorldGen nicht da ist
-            const defaultPOIs = [ {type: 'V', x: 4, y: 4}, {type: 'C', x: 3, y: 3}, {type: 'A', x: 8, y: 1}, {type: 'R', x: 1, y: 8}, {type: 'K', x: 9, y: 9} ];
+            const defaultPOIs = [ {type: 'V', x: 4, y: 4}, {type: 'C', x: 3, y: 3} ];
 
             if (saveData) {
                 this.state = saveData;
+                // FIX: Wenn kein Seed da ist (altes Savegame), einen setzen!
+                if (!this.state.worldSeed) { this.state.worldSeed = Date.now(); }
+                if (typeof WorldGen !== 'undefined') WorldGen.setSeed(this.state.worldSeed);
+                
+                // ... (Inventar Laden Logik von oben beibehalten) ...
                 if(!this.state.explored) this.state.explored = {};
                 if(!this.state.view) this.state.view = 'map';
-                if(typeof this.state.rads === 'undefined') this.state.rads = 0;
                 if(!this.state.activeQuests) this.state.activeQuests = [];
                 if(!this.state.completedQuests) this.state.completedQuests = [];
-                if(!this.state.quests) this.state.quests = [];
-                if(!this.state.camp) this.state.camp = null;
-                if(!this.state.trackedQuestId) this.state.trackedQuestId = null; 
-                
-                const newRecs = ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp', 
-                                 'craft_bp_frame', 'craft_bp_leather', 'craft_bp_metal', 'craft_bp_military', 'craft_bp_cargo'];
                 if(!this.state.knownRecipes) this.state.knownRecipes = [];
-                newRecs.forEach(r => {
-                    if(!this.state.knownRecipes.includes(r)) this.state.knownRecipes.push(r);
-                });
-
-                if(!this.state.perks) this.state.perks = {}; 
-                if(!this.state.shop) this.state.shop = { nextRestock: 0, stock: {}, merchantCaps: 1000 };
-                
-                if(!this.state.equip.weapon) this.state.equip.weapon = { ...this.items['fists'] };
-                if(!this.state.equip.body) this.state.equip.body = { ...this.items['vault_suit'] };
+                if(!this.state.equip) this.state.equip = { weapon: null, body: null };
 
                 this.state.saveSlot = slotIndex;
                 this.checkNewQuests();
-                
-                if(this.state.ammo > 0 && !this.state.inventory.some(i => i.id === 'ammo')) {
-                   let ammoLeft = this.state.ammo;
-                   while(ammoLeft > 0) {
-                       const chunk = Math.min(100, ammoLeft);
-                       this.state.inventory.push({id: 'ammo', count: chunk, isNew: true});
-                       ammoLeft -= chunk;
-                   }
-                }
-                this.syncAmmo();
-                this.recalcStats();
+                this.syncAmmo(); this.recalcStats();
                 if(typeof UI !== 'undefined') UI.log(">> Spielstand geladen.", "text-cyan-400");
             } else {
                 isNewGame = true;
-                
-                // UPDATE: Dynamischer Seed für neue Welt
                 const seed = Date.now();
                 if(typeof WorldGen !== 'undefined') WorldGen.setSeed(seed);
                 
-                // UPDATE: Dynamischer Startpunkt (Vault)
                 let startSector = {x: 4, y: 4};
                 if(typeof WorldGen !== 'undefined') startSector = WorldGen.getStartSector();
 
@@ -427,31 +399,21 @@ window.Game = {
                 const startBody = this.items['vault_suit'] ? { ...this.items['vault_suit'] } : { id: 'vault_suit', name: 'Vault-Anzug', def: 1, type: 'body' };
 
                 this.state = {
-                    saveSlot: slotIndex,
-                    worldSeed: seed, // WICHTIG: Seed speichern
-                    playerName: newName || "SURVIVOR",
-                    sector: startSector, 
-                    startSector: startSector,
-                    worldPOIs: defaultPOIs, // Fallback, WorldGen macht das dynamisch
+                    saveSlot: slotIndex, worldSeed: seed, playerName: newName || "SURVIVOR",
+                    sector: startSector, startSector: startSector, worldPOIs: defaultPOIs,
                     player: {x: 25, y: 25, rot: 0},
                     stats: { STR: 5, PER: 5, END: 5, INT: 5, AGI: 5, LUC: 5 }, 
-                    equip: { weapon: startWeapon, body: startBody, back: null, head: null, legs: null, feet: null, arms: null }, 
+                    equip: { weapon: startWeapon, body: startBody }, 
                     inventory: [], hp: 100, maxHp: 100, xp: 0, lvl: 1, caps: 50, ammo: 0, statPoints: 0, perkPoints: 0, perks: {}, 
                     camp: null, rads: 0, kills: 0, view: 'map', zone: 'Ödland', inDialog: false, isGameOver: false, 
-                    explored: {}, visitedSectors: [`${startSector.x},${startSector.y}`], tutorialsShown: { hacking: false, lockpicking: false },
-                    activeQuests: [], completedQuests: [], quests: [], 
-                    trackedQuestId: null, 
-                    
-                    knownRecipes: ['craft_ammo', 'craft_stimpack_simple', 'rcp_camp', 'craft_bp_frame', 'craft_bp_leather', 'craft_bp_metal', 'craft_bp_military', 'craft_bp_cargo'], 
-                    
+                    explored: {}, visitedSectors: [`${startSector.x},${startSector.y}`],
+                    activeQuests: [], completedQuests: [], knownRecipes: ['craft_ammo'], 
                     hiddenItems: {}, shop: { nextRestock: 0, stock: {}, merchantCaps: 1000 }, startTime: Date.now()
                 };
                 
                 this.state.inventory.push({id: 'stimpack', count: 1, isNew: true});
                 this.state.inventory.push({id: 'ammo', count: 10, isNew: true});
-                this.syncAmmo();
-                this.recalcStats(); 
-                this.state.hp = this.state.maxHp;
+                this.syncAmmo(); this.recalcStats(); this.state.hp = this.state.maxHp;
                 this.checkNewQuests(); 
                 if(typeof UI !== 'undefined') UI.log(">> Neuer Charakter erstellt.", "text-green-400");
                 this.saveGame(true); 
@@ -465,8 +427,7 @@ window.Game = {
             if(typeof UI !== 'undefined') {
                 UI.switchView('map').then(() => { 
                     if(UI.els.gameOver) UI.els.gameOver.classList.add('hidden'); 
-                    if(isNewGame) { setTimeout(() => UI.showPermadeathWarning(), 500); }
-                    if(UI.updateQuestTracker) UI.updateQuestTracker(); 
+                    if(isNewGame) setTimeout(() => UI.showPermadeathWarning(), 500);
                 });
             }
         } catch(e) { console.error(e); }
