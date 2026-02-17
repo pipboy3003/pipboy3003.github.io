@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real World Map Renderer</title>
+    <title>Wasteland Map Renderer 2.0</title>
     <style>
         body {
             background-color: #121212;
@@ -16,7 +16,7 @@
             margin: 0;
         }
 
-        h1 { margin-bottom: 10px; font-weight: 300; letter-spacing: 1px; }
+        h1 { margin-bottom: 10px; font-weight: 300; letter-spacing: 1px; color: #39ff14; text-shadow: 0 0 10px rgba(57, 255, 20, 0.5); }
         
         .controls {
             margin-bottom: 20px;
@@ -55,8 +55,8 @@
         }
         
         #canvas-wrapper {
-            border: 2px solid #555;
-            box-shadow: 0 0 30px rgba(0,0,0,0.7);
+            border: 4px solid #333;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
             overflow: auto;
             max-width: 95vw;
             max-height: 80vh;
@@ -71,10 +71,10 @@
 </head>
 <body>
 
-    <h1>Wasteland: Full World Map Generator</h1>
+    <h1>PIP-BOY 3003: WORLD MAP RENDERER</h1>
     
     <div class="controls">
-        <button onclick="renderFullMap()">Karte generieren</button>
+        <button onclick="renderFullMap()">Karte generieren (Neu)</button>
         <button class="secondary" onclick="downloadMap()">Download PNG</button>
         <span id="status">Bereit (Lade Skripte...)</span>
     </div>
@@ -87,7 +87,7 @@
 
     <script>
     /**
-     * KONFIGURATION & GLOBALE VARIABLEN
+     * KONFIGURATION
      */
     const CONFIG = {
         sectorsX: 10,
@@ -96,101 +96,87 @@
         pixelSize: 4    // Pixel pro Tile im Bild
     };
 
-    // Mapping deiner Zeichen zu Farben
-    // Diese müssen exakt mit den Zeichen übereinstimmen, die game_world_gen.js produziert
+    // Mapping Zeichen -> Farben
     const COLOR_MAP = {
-        '.': '#8B4513', // Boden/Erde (SaddleBrown)
-        '#': '#696969', // Wand/Ruine (DimGray)
-        't': '#006400', // Wald (DarkGreen)
-        '^': '#808080', // Berg (Gray)
-        '~': '#4169E1', // Wasser (RoyalBlue)
-        '=': '#2F4F4F', // Straße (DarkSlateGray)
-        '+': '#DAA520', // Brücke (GoldenRod)
-        'V': '#FFD700', // Vault Eingang (Gold)
-        'C': '#FF4500', // Stadt (OrangeRed)
-        'S': '#800080', // Shrine/Special (Purple)
-        'default': '#000000' // Fehlerfall (Schwarz)
+        '.': '#3e3e3e', // Boden (Dunkles Grau/Braun)
+        '#': '#111111', // Ruine (Fast Schwarz)
+        't': '#2e5a2e', // Wald (Dunkelgrün)
+        '^': '#555555', // Berg (Grau)
+        '~': '#1e3c72', // Wasser (Tiefblau)
+        '=': '#1a1a1a', // Straße (Asphalt)
+        '+': '#8B4513', // Brücke (Holz)
+        
+        // POIs
+        'V': '#FFD700', // Vault (Gold)
+        'C': '#FF4500', // Stadt (Rot-Orange)
+        'S': '#9370DB', // Shrine (Lila)
+        
+        // Dungeons (Neu)
+        'H': '#000000', // Höhle (Schwarz)
+        'A': '#556B2F', // Militär (Oliv)
+        'R': '#8B0000', // Raider (Dunkelrot)
+        'K': '#4682B4', // Funkturm (Stahlblau)
+        
+        'default': '#ff00ff' // Fehler (Magenta)
     };
 
-    // Canvas Setup
     const canvas = document.getElementById('worldCanvas');
     const ctx = canvas.getContext('2d');
     const statusEl = document.getElementById('status');
 
-    // Initialisierung der Canvas Größe (500x500 Tiles * 4px = 2000x2000px)
+    // Init Canvas Größe
     const totalWidth = CONFIG.sectorsX * CONFIG.sectorSize * CONFIG.pixelSize;
     const totalHeight = CONFIG.sectorsY * CONFIG.sectorSize * CONFIG.pixelSize;
     canvas.width = totalWidth;
     canvas.height = totalHeight;
 
     /**
-     * HILFSFUNKTION: Biom Bestimmung
-     * Diese Logik existiert oft nur implizit im Game-Loop oder hardcoded.
-     * Wir replizieren sie hier für das Rendering-Grid.
-     */
-    function getBiomeForSector(sx, sy) {
-        // Logik basierend auf deiner Dokumentation
-        if (sx <= 2 && sy <= 2) return 'forest';
-        if (sx >= 7 && sy <= 2) return 'swamp';
-        if (sx <= 2 && sy >= 7) return 'mountain'; 
-        if (sx >= 7 && sy >= 7) return 'desert';
-        return 'wasteland'; // Der ganze Rest in der Mitte
-    }
-
-    /**
-     * HAUPTFUNKTION: RENDERING
+     * RENDER LOGIK
      */
     async function renderFullMap() {
-        // Sicherheitscheck: Wurde das externe Skript geladen?
         if (typeof WorldGen === 'undefined') {
-            statusEl.textContent = "FEHLER: WorldGen Klasse nicht gefunden!";
+            statusEl.textContent = "FEHLER: game_world_gen.js nicht geladen!";
             statusEl.style.color = "red";
-            alert("Fehler: Konnte '../game/game_world_gen.js' nicht laden oder 'WorldGen' ist nicht definiert.");
             return;
         }
 
-        statusEl.textContent = "Berechne 100 Sektoren...";
-        statusEl.style.color = "#FFA500"; // Orange
+        statusEl.textContent = "Generiere Welt...";
+        statusEl.style.color = "#FFA500";
 
-        // Timeout nutzen, damit der Browser den UI-Text rendern kann, bevor er einfriert
+        // Neuen Seed setzen für eine frische Welt
+        const seed = Date.now();
+        WorldGen.setSeed(seed);
+        console.log("Rendering World Seed:", seed);
+
         setTimeout(() => {
             const startTime = performance.now();
             let tilesCount = 0;
 
-            // --- HAUPTSCHLEIFE ÜBER ALLE SEKTOREN ---
+            // --- HAUPTSCHLEIFE ---
             for (let sy = 0; sy < CONFIG.sectorsY; sy++) {
                 for (let sx = 0; sx < CONFIG.sectorsX; sx++) {
                     
-                    // 1. Biom bestimmen
-                    const biome = getBiomeForSector(sx, sy);
-                    
-                    // 2. SEKTOR GENERIEREN (Aufruf der echten Game-Logik)
                     let sectorMap;
                     try {
-                        // Wir rufen WorldGen.createSector auf.
-                        // Falls deine Funktion andere Parameter erwartet, hier anpassen!
-                        // Erwartet: createSector(width, height, biomeType)
-                        sectorMap = WorldGen.createSector(CONFIG.sectorSize, CONFIG.sectorSize, biome);
+                        // FIX: Wir übergeben jetzt SX und SY statt Biome!
+                        // Dadurch funktionieren die globalen Flüsse.
+                        sectorMap = WorldGen.createSector(CONFIG.sectorSize, CONFIG.sectorSize, sx, sy);
                     } catch (e) {
                         console.error(`Fehler in Sektor ${sx},${sy}:`, e);
-                        // Fallback: Leerer Sektor damit das Bild nicht kaputt geht
                         sectorMap = Array(CONFIG.sectorSize).fill(Array(CONFIG.sectorSize).fill('.'));
                     }
 
-                    // 3. SEKTOR AUF CANVAS ZEICHNEN
+                    // Zeichnen
                     for (let ly = 0; ly < CONFIG.sectorSize; ly++) {
                         for (let lx = 0; lx < CONFIG.sectorSize; lx++) {
-                            // Zeichen aus dem Array holen (z.B. 't', '.', '#')
                             const tileChar = sectorMap[ly][lx];
                             
-                            // Farbe aus Map holen
                             ctx.fillStyle = COLOR_MAP[tileChar] || COLOR_MAP['default'];
                             
-                            // Absolute Position im Gesamtbild berechnen
+                            // Globale Pixel Position
                             const globalX = (sx * CONFIG.sectorSize) + lx;
                             const globalY = (sy * CONFIG.sectorSize) + ly;
                             
-                            // Pixel zeichnen
                             ctx.fillRect(
                                 globalX * CONFIG.pixelSize, 
                                 globalY * CONFIG.pixelSize, 
@@ -203,51 +189,45 @@
                 }
             }
             
-            // Grid Overlay zeichnen (Sektorgrenzen)
+            // Grid Overlay (Optional: Sektorgrenzen)
             drawGrid();
 
             const duration = ((performance.now() - startTime) / 1000).toFixed(2);
-            statusEl.textContent = `Fertig! (${tilesCount} Tiles in ${duration}s)`;
-            statusEl.style.color = "#4CAF50"; // Grün
+            statusEl.textContent = `Fertig! Seed: ${seed} (${duration}s)`;
+            statusEl.style.color = "#39ff14";
 
         }, 50);
     }
 
-    /**
-     * Zeichnet ein Gitter über die Sektorgrenzen zur Orientierung
-     */
     function drawGrid() {
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(0, 255, 0, 0.2)";
+        ctx.lineWidth = 1;
         
-        // Vertikale Linien (Sektoren)
+        // Vertikal
         for (let x = 0; x <= CONFIG.sectorsX; x++) {
             const px = x * CONFIG.sectorSize * CONFIG.pixelSize;
-            ctx.beginPath();
-            ctx.moveTo(px, 0);
-            ctx.lineTo(px, canvas.height);
-            ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, canvas.height); ctx.stroke();
         }
-
-        // Horizontale Linien (Sektoren)
+        // Horizontal
         for (let y = 0; y <= CONFIG.sectorsY; y++) {
             const py = y * CONFIG.sectorSize * CONFIG.pixelSize;
-            ctx.beginPath();
-            ctx.moveTo(0, py);
-            ctx.lineTo(canvas.width, py);
-            ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(canvas.width, py); ctx.stroke();
         }
     }
 
-    /**
-     * Canvas als Bild herunterladen
-     */
     function downloadMap() {
         const link = document.createElement('a');
         link.download = `wasteland_map_${Date.now()}.png`;
         link.href = canvas.toDataURL("image/png");
         link.click();
     }
+    
+    // Auto-Start beim Laden
+    window.onload = function() {
+        if(typeof WorldGen !== 'undefined') {
+            statusEl.textContent = "Bereit. Klicke Generieren.";
+        }
+    };
     </script>
 </body>
 </html>
