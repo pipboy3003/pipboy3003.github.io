@@ -62,38 +62,29 @@ Object.assign(Game, {
         }
     },
 
-    drawFloorDetail: function(ctx, x, y, type) {
-        const ts = this.TILE;
-        const px = x * ts;
-        const py = y * ts;
+   drawFloorDetail: function(ctx, x, y, type) {
+        const ts = this.TILE; const px = x * ts; const py = y * ts;
         const rand = this.pseudoRand(x, y);
 
-        let color = "#1a1a1a"; // Default Wasteland (.)
+        let color = "#1a1a1a"; // Default Wasteland
         
-        // BIOME FARBEN
-        if(type === '"') color = "#1e2e1e"; // Wald (Dunkelgrün)
-        if(type === '_') color = "#3e3a2a"; // Wüste (Sandig)
-        if(type === ';') color = "#26221c"; // Sumpf (Schlammig)
+        // HIER SIND DIE BIOME FARBEN:
+        if(type === '"') color = "#1b331b"; // Wald (Dunkelgrün)
+        if(type === '_') color = "#3b3626"; // Wüste (Sand)
+        if(type === ';') color = "#241f1a"; // Sumpf (Braun)
         
-        // Objekte
-        if(type === 't') color = "#1e2e1e"; // Waldboden unter Baum
-        if(type === '^') color = "#2a2a2a"; 
+        if(type === 't') color = "#1b331b"; // Unter Baum
+        if(type === '^') color = "#222"; 
         if(type === '~') return; 
 
         ctx.fillStyle = color;
         ctx.fillRect(px, py, ts, ts);
 
-        // Details je nach Boden
-        if(type === '"' && rand > 0.6) { // Gras
-            ctx.fillStyle = "#2e4e2e"; ctx.fillRect(px + rand*ts, py + (1-rand)*ts, 2, 2);
-        }
-        if(type === '_' && rand > 0.8) { // Sandkörner
-            ctx.fillStyle = "#5e5a4a"; ctx.fillRect(px + rand*ts, py + (1-rand)*ts, 2, 2);
-        }
-        if(type === '.' && rand > 0.7) { // Steine
-            ctx.fillStyle = "#333"; ctx.fillRect(px + rand*ts, py + (1-rand)*ts, 2, 2);
-        }
-    },
+        // Details
+        if(type === '"' && rand > 0.6) { ctx.fillStyle = "#2e4e2e"; ctx.fillRect(px+rand*ts, py+(1-rand)*ts, 2, 2); }
+        if(type === '_' && rand > 0.8) { ctx.fillStyle = "#5e5a4a"; ctx.fillRect(px+rand*ts, py+(1-rand)*ts, 2, 2); }
+        if(type === '.' && rand > 0.7) { ctx.fillStyle = "#333"; ctx.fillRect(px+rand*ts, py+(1-rand)*ts, 2, 2); }
+    }
 
     drawRoad: function(ctx, x, y) {
         const ts = this.TILE; const px = x * ts; const py = y * ts;
