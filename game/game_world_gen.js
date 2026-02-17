@@ -1,4 +1,4 @@
-// [2026-02-17 17:30:00] game_world_gen.js - Tree Density Fix
+// [2026-02-17 18:00:00] game_world_gen.js - More Trees Update
 
 const WorldGen = {
     _seed: 12345,
@@ -114,23 +114,20 @@ const WorldGen = {
                 let isRiver = this.isGlobalRiver(gx, gy);
 
                 let ground = '.'; 
-                // UPDATE: Viel niedrigere Schwellenwerte für Bäume
-                let treeThresh = 0.02; // Standard: Nur 2% Bäume (tote Stämme)
+                // UPDATE: Hier mehr Bäume!
+                let treeThresh = 0.15; // Ödland: 15% Vegetation
                 
-                if(heat > 0.7 && moisture < 0.4) { ground = '_'; treeThresh = 0.0; } // Wüste: 0% Bäume
-                else if(moisture > 0.65 && heat > 0.5) { ground = ';'; treeThresh = 0.15; } // Sumpf: 15%
-                else if(moisture > 0.6 && heat < 0.5) { ground = '"'; treeThresh = 0.30; } // Wald: 30%
+                if(heat > 0.7 && moisture < 0.4) { ground = '_'; treeThresh = 0.02; } // Wüste: 2%
+                else if(moisture > 0.65 && heat > 0.5) { ground = ';'; treeThresh = 0.35; } // Sumpf: 35%
+                else if(moisture > 0.6 && heat < 0.5) { ground = '"'; treeThresh = 0.55; } // Wald: 55%
                 
-                // Wir nutzen Detail-Noise (0..1)
-                // Wenn Detail < Threshold, dann Baum.
                 let detail = this.smoothNoise(gx * 0.15, gy * 0.15, worldSeed + 300);
-                
                 map[y][x] = ground; 
 
                 if (isRiver) map[y][x] = '~';
                 else if (elevation > 0.85) map[y][x] = '^';
                 else if (ruins > 0.88) map[y][x] = '#';
-                else if (detail < treeThresh) map[y][x] = 't'; // Hier greift der neue Wert
+                else if (detail < treeThresh) map[y][x] = 't'; // Mehr Bäume
                 
                 if(x < 2 || x > width - 3 || y < 2 || y > height - 3) {
                     if(['^', 't', '#'].includes(map[y][x])) map[y][x] = ground;
@@ -138,7 +135,6 @@ const WorldGen = {
             }
         }
 
-        // POIs
         if(sx === this.locations.vault.x && sy === this.locations.vault.y) {
             this.placePOI(map, 25, 25, 'V', 4);
         }
@@ -159,7 +155,6 @@ const WorldGen = {
             this.buildRoad(map, this.getRandomEdgePoint(width, height), {x:dx, y:dy});
         }
 
-        // Globale Straßen
         const connections = this.sectorRoads[`${sx},${sy}`] || [];
         let gates = [];
         connections.forEach(dir => {
@@ -210,9 +205,7 @@ const WorldGen = {
             steps++;
             let dx = end.x - x; let dy = end.y - y;
             if (Math.abs(dx) > Math.abs(dy)) x += dx > 0 ? 1 : -1; else y += dy > 0 ? 1 : -1;
-            
             if(x < 0 || x >= map[0].length || y < 0 || y >= map.length) continue;
-            
             const setRoad = (tx, ty) => {
                 if(tx<0||tx>=map[0].length||ty<0||ty>=map.length) return;
                 const t = map[ty][tx];
@@ -234,7 +227,6 @@ const WorldGen = {
             if(ny>=0 && ny<h && nx>=0 && nx<w) { if(['^', 't', '#'].includes(map[ny][nx])) map[ny][nx] = '.'; }
         }
     },
-    
     generateCityLayout: function(w, h) { return this._genBox(w,h,'='); },
     generateDungeonLayout: function(w, h) { return this._genBox(w,h,'#'); },
     _genBox: function(w, h, fill) {
