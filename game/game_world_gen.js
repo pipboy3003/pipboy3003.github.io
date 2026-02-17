@@ -1,9 +1,9 @@
-// [2026-02-17 17:00:00] game_world_gen.js - Global Connected Roads
+// [2026-02-17 17:30:00] game_world_gen.js - Tree Density Fix
 
 const WorldGen = {
     _seed: 12345,
     locations: { vault: {x:4, y:4}, city: {x:7, y:7} }, 
-    sectorRoads: {}, // Speichert, welche Straßen durch welchen Sektor laufen
+    sectorRoads: {}, 
 
     setSeed: function(val) {
         this._seed = val % 2147483647;
@@ -16,27 +16,19 @@ const WorldGen = {
         return (this._seed - 1) / 2147483646;
     },
 
-    // 1. Initialisierung: Orte & Straßennetz berechnen
     calculateLocations: function() {
         let tempSeed = this._seed;
         const pseudoRand = () => {
             tempSeed = (tempSeed * 16807) % 2147483647;
             return (tempSeed - 1) / 2147483646;
         };
-
-        // POIs setzen
         this.locations.vault = { x: Math.floor(pseudoRand() * 8) + 1, y: Math.floor(pseudoRand() * 8) + 1 };
         do {
             this.locations.city = { x: Math.floor(pseudoRand() * 8) + 1, y: Math.floor(pseudoRand() * 8) + 1 };
         } while (this.locations.city.x === this.locations.vault.x && this.locations.city.y === this.locations.vault.y);
 
-        // Straßennetz berechnen
-        this.sectorRoads = {}; // Reset
-        
-        // Hauptstraße: Vault -> Stadt
+        this.sectorRoads = {}; 
         this.generateGlobalPath(this.locations.vault, this.locations.city, pseudoRand);
-
-        // Nebenstraßen: 2 Zufällige Punkte verbinden
         for(let i=0; i<2; i++) {
             const start = { x: Math.floor(pseudoRand() * 10), y: Math.floor(pseudoRand() * 10) };
             const end = { x: Math.floor(pseudoRand() * 10), y: Math.floor(pseudoRand() * 10) };
@@ -44,63 +36,40 @@ const WorldGen = {
         }
     },
 
-    // Verbindet zwei Sektoren auf der 10x10 Weltkarte
     generateGlobalPath: function(start, end, rng) {
         let curr = { x: start.x, y: start.y };
         const target = { x: end.x, y: end.y };
-        
-        // Einfacher "Dogleg" Pfad (Erst X, dann Y oder gemischt)
-        // Wir speichern für jeden Sektor "Eingang" und "Ausgang"
-        
         let steps = 0;
         while ((curr.x !== target.x || curr.y !== target.y) && steps < 30) {
             let next = { x: curr.x, y: curr.y };
-            
-            // Richtung wählen
             if (curr.x !== target.x && (curr.y === target.y || rng() > 0.5)) {
                 next.x += (target.x > curr.x) ? 1 : -1;
             } else {
                 next.y += (target.y > curr.y) ? 1 : -1;
             }
-
-            // Verbindung speichern: Current -> Next
             this.addRoadSegment(curr, next);
-            
             curr = next;
             steps++;
         }
     },
 
     addRoadSegment: function(s1, s2) {
-        // Ermittelt Richtung: N, S, E, W
         let dirFromS1 = '';
-        if (s2.y < s1.y) dirFromS1 = 'N';
-        if (s2.y > s1.y) dirFromS1 = 'S';
-        if (s2.x > s1.x) dirFromS1 = 'E';
-        if (s2.x < s1.x) dirFromS1 = 'W';
-
-        const s1Key = `${s1.x},${s1.y}`;
-        const s2Key = `${s2.x},${s2.y}`;
-
-        // In S1 speichern: "Geht nach [Richtung]"
+        if (s2.y < s1.y) dirFromS1 = 'N'; if (s2.y > s1.y) dirFromS1 = 'S';
+        if (s2.x > s1.x) dirFromS1 = 'E'; if (s2.x < s1.x) dirFromS1 = 'W';
+        const s1Key = `${s1.x},${s1.y}`; const s2Key = `${s2.x},${s2.y}`;
         if (!this.sectorRoads[s1Key]) this.sectorRoads[s1Key] = [];
-        // Vermeide Duplikate
         if (!this.sectorRoads[s1Key].includes(dirFromS1)) this.sectorRoads[s1Key].push(dirFromS1);
-
-        // In S2 speichern: "Kommt von [Gegen-Richtung]"
+        
         let dirFromS2 = '';
-        if (dirFromS1 === 'N') dirFromS2 = 'S';
-        if (dirFromS1 === 'S') dirFromS2 = 'N';
-        if (dirFromS1 === 'E') dirFromS2 = 'W';
-        if (dirFromS1 === 'W') dirFromS2 = 'E';
-
+        if (dirFromS1 === 'N') dirFromS2 = 'S'; if (dirFromS1 === 'S') dirFromS2 = 'N';
+        if (dirFromS1 === 'E') dirFromS2 = 'W'; if (dirFromS1 === 'W') dirFromS2 = 'E';
         if (!this.sectorRoads[s2Key]) this.sectorRoads[s2Key] = [];
         if (!this.sectorRoads[s2Key].includes(dirFromS2)) this.sectorRoads[s2Key].push(dirFromS2);
     },
 
     getStartSector: function() { return this.locations.vault; },
 
-    // Noise & Flüsse (beibehalten)
     noise: function(nx, ny) {
         const val = Math.sin(nx * 12.9898 + ny * 78.233) * 43758.5453;
         return val - Math.floor(val); 
@@ -130,12 +99,10 @@ const WorldGen = {
         return 'wasteland';
     },
 
-    // --- SEKTOR ERSTELLUNG ---
     createSector: function(width, height, sx, sy) {
         let map = Array(height).fill().map(() => Array(width).fill('.'));
         const worldSeed = this._seed;
 
-        // 1. Terrain & Flüsse
         for(let y = 0; y < height; y++) {
             for(let x = 0; x < width; x++) {
                 let gx = (sx * width) + x;
@@ -147,28 +114,31 @@ const WorldGen = {
                 let isRiver = this.isGlobalRiver(gx, gy);
 
                 let ground = '.'; 
-                let treeThresh = 0.99;
+                // UPDATE: Viel niedrigere Schwellenwerte für Bäume
+                let treeThresh = 0.02; // Standard: Nur 2% Bäume (tote Stämme)
                 
-                if(heat > 0.7 && moisture < 0.4) { ground = '_'; }
-                else if(moisture > 0.65 && heat > 0.5) { ground = ';'; treeThresh = 0.65; }
-                else if(moisture > 0.6 && heat < 0.5) { ground = '"'; treeThresh = 0.45; }
+                if(heat > 0.7 && moisture < 0.4) { ground = '_'; treeThresh = 0.0; } // Wüste: 0% Bäume
+                else if(moisture > 0.65 && heat > 0.5) { ground = ';'; treeThresh = 0.15; } // Sumpf: 15%
+                else if(moisture > 0.6 && heat < 0.5) { ground = '"'; treeThresh = 0.30; } // Wald: 30%
                 
+                // Wir nutzen Detail-Noise (0..1)
+                // Wenn Detail < Threshold, dann Baum.
                 let detail = this.smoothNoise(gx * 0.15, gy * 0.15, worldSeed + 300);
+                
                 map[y][x] = ground; 
 
                 if (isRiver) map[y][x] = '~';
                 else if (elevation > 0.85) map[y][x] = '^';
                 else if (ruins > 0.88) map[y][x] = '#';
-                else if (detail < treeThresh) map[y][x] = 't';
+                else if (detail < treeThresh) map[y][x] = 't'; // Hier greift der neue Wert
                 
-                // Ränder passierbar machen
                 if(x < 2 || x > width - 3 || y < 2 || y > height - 3) {
                     if(['^', 't', '#'].includes(map[y][x])) map[y][x] = ground;
                 }
             }
         }
 
-        // 2. POIs
+        // POIs
         if(sx === this.locations.vault.x && sy === this.locations.vault.y) {
             this.placePOI(map, 25, 25, 'V', 4);
         }
@@ -180,73 +150,38 @@ const WorldGen = {
             }
         }
 
-        // Random Dungeons (klein)
         let sectorRNG = (sx * 17 + sy * 23 + this._seed) % 100;
         if(map[25][25] !== 'V' && map[25][25] !== 'C' && sectorRNG < 15) { 
             let type = 'S';
             if(sectorRNG < 5) type = 'H'; else if(sectorRNG < 8) type = 'A'; else if(sectorRNG < 12) type = 'R';
             let dx = 10 + (sectorRNG * 3) % 30; let dy = 10 + (sectorRNG * 7) % 30;
             this.placePOI(map, dx, dy, type, 3);
-            // Dungeons binden sich an das Straßennetz an, wenn möglich (hier vereinfacht lokale Zufallsstraße)
             this.buildRoad(map, this.getRandomEdgePoint(width, height), {x:dx, y:dy});
         }
 
-        // 3. GLOBALE STRASSEN (Das Herzstück!)
+        // Globale Straßen
         const connections = this.sectorRoads[`${sx},${sy}`] || [];
-        // Wir sammeln alle "Tore" (Ein-/Ausgänge an den Rändern)
         let gates = [];
-
         connections.forEach(dir => {
-            let gate = {x: 25, y: 25}; // Default Center
-            // Deterministische Position am Rand (Seed basiert auf Kante, nicht Sektor!)
-            // Beispiel: Nord-Kante von Sektor (4,4) muss identisch sein mit Süd-Kante von (4,3)
-            
-            if(dir === 'N') {
-                let seed = sx * 1000 + sy; // Kanten-Seed (Y)
-                let pos = Math.floor(this.seededRand(seed) * (width - 4)) + 2;
-                gate = { x: pos, y: 0 };
-            }
-            if(dir === 'S') {
-                let seed = sx * 1000 + (sy + 1); // Kanten-Seed (Y+1)
-                let pos = Math.floor(this.seededRand(seed) * (width - 4)) + 2;
-                gate = { x: pos, y: height - 1 };
-            }
-            if(dir === 'W') {
-                let seed = sx * 1000 + sy + 5000; // Kanten-Seed (X)
-                let pos = Math.floor(this.seededRand(seed) * (height - 4)) + 2;
-                gate = { x: 0, y: pos };
-            }
-            if(dir === 'E') {
-                let seed = (sx + 1) * 1000 + sy + 5000; // Kanten-Seed (X+1)
-                let pos = Math.floor(this.seededRand(seed) * (height - 4)) + 2;
-                gate = { x: width - 1, y: pos };
-            }
+            let seed = 0; let gate = {x:25,y:25};
+            if(dir === 'N') { seed = sx * 1000 + sy; gate = { x: Math.floor(this.seededRand(seed)*(width-4))+2, y: 0 }; }
+            if(dir === 'S') { seed = sx * 1000 + (sy+1); gate = { x: Math.floor(this.seededRand(seed)*(width-4))+2, y: height-1 }; }
+            if(dir === 'W') { seed = sx * 1000 + sy + 5000; gate = { x: 0, y: Math.floor(this.seededRand(seed)*(height-4))+2 }; }
+            if(dir === 'E') { seed = (sx+1) * 1000 + sy + 5000; gate = { x: width-1, y: Math.floor(this.seededRand(seed)*(height-4))+2 }; }
             gates.push(gate);
         });
 
-        // Alle Tore mit der Mitte (oder untereinander) verbinden
-        // Damit entsteht ein durchgehendes Netz
         if(gates.length > 0) {
-            // Wenn es ein POI Sektor ist, verbinden wir alle Tore mit dem POI (Mitte)
-            if(map[25][25] === 'V' || map[25][25] === 'C') {
-                gates.forEach(g => this.buildRoad(map, g, {x:25, y:25}));
-            } else {
-                // Sonst verbinden wir die Tore direkt (Durchgangsstraße)
-                // Einfachheit: Alle Tore zur Mitte, von Mitte zu anderen Toren -> Sternförmig
-                let center = {x: 25, y: 25};
-                gates.forEach(g => this.buildRoad(map, g, center));
-            }
+            let center = {x: 25, y: 25};
+            gates.forEach(g => this.buildRoad(map, g, center));
         }
 
         return map;
     },
 
-    // Hilfsfunktion für deterministische Zufallszahlen an Kanten
     seededRand: function(seed) {
-        let t = seed % 2147483647;
-        if (t <= 0) t += 2147483646;
-        t = (t * 16807) % 2147483647;
-        return (t - 1) / 2147483646;
+        let t = seed % 2147483647; if (t <= 0) t += 2147483646;
+        t = (t * 16807) % 2147483647; return (t - 1) / 2147483646;
     },
 
     placePOI: function(map, cx, cy, type, radius) {
@@ -254,15 +189,13 @@ const WorldGen = {
         for(let dy=-radius; dy<=radius; dy++) for(let dx=-radius; dx<=radius; dx++) {
             const ny = cy+dy, nx = cx+dx;
             if(ny>=0 && ny<h && nx>=0 && nx<w) {
-                const t = map[ny][nx];
-                if(['^', 't', '~', '#'].includes(t)) map[ny][nx] = '.';
+                const t = map[ny][nx]; if(['^', 't', '~', '#'].includes(t)) map[ny][nx] = '.';
             }
         }
         map[cy][cx] = type;
     },
 
     getRandomEdgePoint: function(w, h) {
-        // Fallback für lokale Dungeons
         const side = Math.floor(this.rand() * 4);
         if(side === 0) return {x: Math.floor(this.rand()*(w-4))+2, y: 0}; 
         if(side === 1) return {x: Math.floor(this.rand()*(w-4))+2, y: h-1}; 
@@ -273,19 +206,10 @@ const WorldGen = {
     buildRoad: function(map, start, end) {
         let x = start.x, y = start.y;
         let steps = 0;
-        
         while((x !== end.x || y !== end.y) && steps < 200) {
             steps++;
-            // Deterministischer Weg (kein Random mehr hier, damit es reproduzierbar ist!)
-            // Simple Manhatten-like movement with wiggle
-            let dx = end.x - x;
-            let dy = end.y - y;
-            
-            if (Math.abs(dx) > Math.abs(dy)) {
-                x += dx > 0 ? 1 : -1;
-            } else {
-                y += dy > 0 ? 1 : -1;
-            }
+            let dx = end.x - x; let dy = end.y - y;
+            if (Math.abs(dx) > Math.abs(dy)) x += dx > 0 ? 1 : -1; else y += dy > 0 ? 1 : -1;
             
             if(x < 0 || x >= map[0].length || y < 0 || y >= map.length) continue;
             
@@ -294,9 +218,7 @@ const WorldGen = {
                 const t = map[ty][tx];
                 if(t === '~' || t === '+') map[ty][tx] = '+'; 
                 else {
-                    if(['^', 't', '#'].includes(t)) map[ty][tx] = '='; 
-                    else map[ty][tx] = '='; 
-                    // Rodung
+                    if(['^', 't', '#'].includes(t)) map[ty][tx] = '='; else map[ty][tx] = '='; 
                     this.clearArea(map, tx, ty, 1);
                 }
             };
@@ -309,9 +231,7 @@ const WorldGen = {
         const h = map.length; const w = map[0].length;
         for(let dy=-radius; dy<=radius; dy++) for(let dx=-radius; dx<=radius; dx++) {
             const ny = cy+dy, nx = cx+dx;
-            if(ny>=0 && ny<h && nx>=0 && nx<w) {
-                if(['^', 't', '#'].includes(map[ny][nx])) map[ny][nx] = '.';
-            }
+            if(ny>=0 && ny<h && nx>=0 && nx<w) { if(['^', 't', '#'].includes(map[ny][nx])) map[ny][nx] = '.'; }
         }
     },
     
