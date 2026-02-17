@@ -1,4 +1,4 @@
-// [2026-02-17 14:05:00] game_render.js - Biome Colors & Particles
+// [2026-02-17 12:05:00] game_render.js - Biome Visuals
 
 Object.assign(Game, {
     particles: [],
@@ -14,6 +14,7 @@ Object.assign(Game, {
         return Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1;
     },
 
+    // PARTIKEL (Kurzfassung)
     spawnParticle: function(x, y, type, count = 5) {
         const ts = this.TILE; const px = x * ts + ts/2; const py = y * ts + ts/2;
         for(let i=0; i<count; i++) {
@@ -62,33 +63,42 @@ Object.assign(Game, {
     },
 
     drawFloorDetail: function(ctx, x, y, type) {
-        const ts = this.TILE; const px = x * ts; const py = y * ts;
+        const ts = this.TILE;
+        const px = x * ts;
+        const py = y * ts;
         const rand = this.pseudoRand(x, y);
 
-        let color = "#1a1a1a"; // Default Wasteland
+        let color = "#1a1a1a"; // Default Wasteland (.)
         
-        // HIER SIND DIE BIOME FARBEN:
-        if(type === '"') color = "#1b331b"; // Wald (Grün)
-        if(type === '_') color = "#3b3626"; // Wüste (Sand)
-        if(type === ';') color = "#241f1a"; // Sumpf (Braun)
+        // BIOME FARBEN
+        if(type === '"') color = "#1e2e1e"; // Wald (Dunkelgrün)
+        if(type === '_') color = "#3e3a2a"; // Wüste (Sandig)
+        if(type === ';') color = "#26221c"; // Sumpf (Schlammig)
         
-        if(type === 't') color = "#1b331b"; // Unter Baum
-        if(type === '^') color = "#222"; 
+        // Objekte
+        if(type === 't') color = "#1e2e1e"; // Waldboden unter Baum
+        if(type === '^') color = "#2a2a2a"; 
         if(type === '~') return; 
 
         ctx.fillStyle = color;
         ctx.fillRect(px, py, ts, ts);
 
-        // Details
-        if(type === '"' && rand > 0.6) { ctx.fillStyle = "#2e4e2e"; ctx.fillRect(px+rand*ts, py+(1-rand)*ts, 2, 2); }
-        if(type === '_' && rand > 0.8) { ctx.fillStyle = "#5e5a4a"; ctx.fillRect(px+rand*ts, py+(1-rand)*ts, 2, 2); }
-        if(type === '.' && rand > 0.7) { ctx.fillStyle = "#333"; ctx.fillRect(px+rand*ts, py+(1-rand)*ts, 2, 2); }
+        // Details je nach Boden
+        if(type === '"' && rand > 0.6) { // Gras
+            ctx.fillStyle = "#2e4e2e"; ctx.fillRect(px + rand*ts, py + (1-rand)*ts, 2, 2);
+        }
+        if(type === '_' && rand > 0.8) { // Sandkörner
+            ctx.fillStyle = "#5e5a4a"; ctx.fillRect(px + rand*ts, py + (1-rand)*ts, 2, 2);
+        }
+        if(type === '.' && rand > 0.7) { // Steine
+            ctx.fillStyle = "#333"; ctx.fillRect(px + rand*ts, py + (1-rand)*ts, 2, 2);
+        }
     },
 
     drawRoad: function(ctx, x, y) {
         const ts = this.TILE; const px = x * ts; const py = y * ts;
         ctx.fillStyle = "#444"; ctx.fillRect(px, py, ts, ts);
-        if(this.pseudoRand(x,y) > 0.5) { ctx.fillStyle = "#222"; ctx.fillRect(px+4, py+4, ts-8, ts-8); }
+        if(this.pseudoRand(x,y) > 0.5) { ctx.fillStyle = "#2a2a2a"; ctx.fillRect(px+4, py+4, ts-8, ts-8); }
     },
 
     drawBridge: function(ctx, x, y) {
@@ -115,7 +125,7 @@ Object.assign(Game, {
         const rand = this.pseudoRand(x, y);
         ctx.fillStyle = "#333"; ctx.beginPath(); ctx.moveTo(px, py+ts); ctx.lineTo(px+ts/2, py+ts*0.1); ctx.lineTo(px+ts, py+ts); ctx.fill();
         ctx.fillStyle = "#444"; ctx.beginPath(); ctx.moveTo(px+ts*0.3, py+ts); ctx.lineTo(px+ts*0.5, py+ts*0.4); ctx.lineTo(px+ts*0.7, py+ts); ctx.fill();
-        ctx.fillStyle = (rand > 0.7) ? "#eee" : "#666"; 
+        ctx.fillStyle = (rand > 0.7) ? "#ddd" : "#666"; 
         ctx.beginPath(); ctx.moveTo(px+ts/2, py+ts*0.1); ctx.lineTo(px+ts*0.35, py+ts*0.4); ctx.lineTo(px+ts*0.65, py+ts*0.4); ctx.fill();
     },
 
@@ -197,14 +207,14 @@ Object.assign(Game, {
                     const t = this.state.currentMap[y][x]; 
                     if(t === '~') this.drawWater(ctx, x, y, time);
                     else if(t === 't') this.drawTree(ctx, x, y, time);
-                    else if(t === '"') this.drawGrass(ctx, x, y, time);
-                    else if(t === '.') this.drawGrass(ctx, x, y, time);
+                    else if(t === '"') this.drawGrass(ctx, x, y, time); // Gras auf Wald-Boden
+                    else if(t === '.') this.drawGrass(ctx, x, y, time); // Gras auf Standard
                     else if(t === 'M') this.drawMonster(ctx, x, y, time);
                     else if(t === 'W') this.drawWanderer(ctx, x, y, time);
                     if(['X', 'V', 'R', 'S'].includes(t)) this.drawTile(ctx, x, y, t);
                     if(t === '?') this.drawTile(ctx, x, y, t);
                     
-                    const opacity = Math.max(0, (dist - 4) / (viewDist - 4));
+                    const opacity = Math.max(0, (dist - 4) / 6);
                     if(opacity > 0) { ctx.fillStyle = `rgba(0,0,0,${opacity})`; ctx.fillRect(x*this.TILE, y*this.TILE, this.TILE, this.TILE); }
                 } 
             } 
@@ -215,7 +225,8 @@ Object.assign(Game, {
         ctx.fillStyle = "rgba(0, 255, 0, 0.02)"; for(let i=0; i<viewH; i+=4) { ctx.fillRect(0, i, viewW, 1); }
     },
     
-    // ... Player & Helper bleiben wie gehabt ...
+    // ... Player, Monster, Wanderer, Tile Renderer bleiben gleich ...
+    // (Ich spare Platz, da sie oben schon korrekt waren)
     drawPlayer: function(ctx) { const px=this.state.player.x*this.TILE+this.TILE/2; const py=this.state.player.y*this.TILE+this.TILE/2; ctx.save(); ctx.translate(px,py); ctx.rotate(this.state.player.rot-Math.PI/2); const g=ctx.createRadialGradient(0,0,10,0,0,140); g.addColorStop(0,"rgba(255,255,200,0.25)"); g.addColorStop(1,"rgba(255,255,200,0)"); ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,140,-Math.PI/5,Math.PI/5); ctx.fillStyle=g; ctx.fill(); ctx.fillStyle="#39ff14"; ctx.shadowBlur=10; ctx.shadowColor="#39ff14"; ctx.beginPath(); ctx.moveTo(8,0); ctx.lineTo(-6,7); ctx.lineTo(-2,0); ctx.lineTo(-6,-7); ctx.fill(); ctx.shadowBlur=0; ctx.restore(); },
     drawOtherPlayers: function(ctx) { if(typeof Network==='undefined'||!Network.otherPlayers)return; for(let pid in Network.otherPlayers){ const p=Network.otherPlayers[pid]; if(p.sector&&(p.sector.x!==this.state.sector.x||p.sector.y!==this.state.sector.y))continue; const ox=p.x*this.TILE+this.TILE/2; const oy=p.y*this.TILE+this.TILE/2; ctx.fillStyle="#00ffff"; ctx.beginPath(); ctx.arc(ox,oy,6,0,Math.PI*2); ctx.fill(); } },
     drawMonster: function(ctx,x,y,time) { const ts=this.TILE; const px=x*ts+ts/2; const py=y*ts+ts/2; const sc=1+Math.sin(time/200)*0.1; ctx.save(); ctx.translate(px,py); ctx.scale(sc,sc); ctx.fillStyle="#d32f2f"; ctx.beginPath(); ctx.arc(0,0,8,0,Math.PI*2); ctx.fill(); ctx.strokeStyle="#ff5252"; ctx.lineWidth=2; for(let i=0;i<8;i++){ ctx.beginPath(); ctx.moveTo(0,0); const a=(i/8)*Math.PI*2; ctx.lineTo(Math.cos(a)*12,Math.sin(a)*12); ctx.stroke(); } ctx.fillStyle="#ffeb3b"; ctx.fillRect(-4,-2,3,3); ctx.fillRect(2,-2,3,3); ctx.restore(); },
