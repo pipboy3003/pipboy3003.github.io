@@ -1,66 +1,127 @@
-// [2026-01-18 14:00:00] ui_render_views.js - Fix Scroll Position & Stat Cap UI
+// [2026-02-18 11:00:00] ui_render_views.js - Fullscreen World Map Integration
 
 Object.assign(UI, {
 
-    // [FIX] Fehlende Funktion für Equipment-Slot Klicks ergänzt
+    // Helper für Equipment Klicks
     openEquipMenu: function(slot) {
         if(!Game.state) return;
         const item = Game.state.equip ? Game.state.equip[slot] : null;
-        
         if(item) {
-            // Wenn Item existiert -> Dialog öffnen (in ui_render_overlays.js definiert)
-            if(typeof this.showEquippedDialog === 'function') {
-                this.showEquippedDialog(slot);
-            }
+            if(typeof this.showEquippedDialog === 'function') this.showEquippedDialog(slot);
         } else {
-            // Wenn leer -> Hinweis anzeigen
-            if(typeof this.showInfoDialog === 'function') {
-                this.showInfoDialog("SLOT LEER", "Gehe ins Inventar, um Ausrüstung anzulegen.");
-            }
+            if(typeof this.showInfoDialog === 'function') this.showInfoDialog("SLOT LEER", "Gehe ins Inventar, um Ausrüstung anzulegen.");
         }
     },
 
-    // [FIX] Robuste Klick-Logik mit Debugging und Typ-Sicherheit
     handleHeaderClick: function() {
-        if(!Game.state) {
-            console.warn("UI: HandleHeaderClick - Kein Game State!");
-            return;
-        }
-        
-        // Sicherstellen, dass es Zahlen sind (falls mal "1" als String kommt)
+        if(!Game.state) return;
         const sPoints = Number(Game.state.statPoints || 0);
         const pPoints = Number(Game.state.perkPoints || 0);
+        if (sPoints > 0) this.renderStats('special'); 
+        else if (pPoints > 0) this.renderStats('perks');    
+        else this.renderStats('special'); 
+    },
 
-        console.log(`UI: Header Clicked. Stats: ${sPoints}, Perks: ${pPoints}`);
+    // --- HAUPT RENDER FUNKTION ---
+    renderView: function() {
+        const container = document.getElementById('view-container');
+        if(!container || !Game.state) return;
 
-        // Logik gemäß Anforderung: Prio Special > Prio Perks > Fallback Special
-        if (sPoints > 0) {
-            console.log("-> Gehe zu SPECIAL (Prio 1)");
-            this.renderStats('special'); 
-        } 
-        else if (pPoints > 0) {
-            console.log("-> Gehe zu PERKS (Prio 2)");
-            this.renderStats('perks');   
-        } 
-        else {
-            console.log("-> Gehe zu SPECIAL (Fallback/Details)");
-            this.renderStats('special'); 
+        // Clean up
+        container.innerHTML = '';
+
+        switch(Game.state.view) {
+            case 'map':
+                this.renderMapScanline(container);
+                break;
+            case 'inv':
+                if(this.renderInventory) this.renderInventory(container);
+                break;
+            case 'char':
+                this.renderStats(Game.state.charTab || 'stats'); // Fix: Direkt renderStats aufrufen
+                break;
+            case 'journal':
+                if(this.renderJournal) this.renderJournal(container);
+                break;
+            case 'camp':
+                if(this.renderCamp) this.renderCamp(container);
+                break;
+            case 'city':
+                if(this.renderCity) this.renderCity(container);
+                break;
+            case 'worldmap':
+                // NEU: Vollbild Weltkarte
+                this.renderFullscreenWorldMap(container);
+                break;
+            default:
+                container.innerHTML = `<div class="text-center p-10 text-red-500">ERROR: Unknown View ${Game.state.view}</div>`;
         }
+    },
+
+    // Standard Spielansicht
+    renderMapScanline: function(container) {
+        container.innerHTML = `
+            <div class="relative w-full h-full bg-black overflow-hidden">
+                <canvas id="game-canvas" class="block w-full h-full object-cover"></canvas>
+                <div id="scanline" class="pointer-events-none absolute inset-0 bg-repeat-y opacity-10"></div>
+                <div id="vignette" class="pointer-events-none absolute inset-0 radial-gradient"></div>
+                <div class="absolute bottom-4 left-4 text-green-400 font-mono text-sm bg-black/50 px-2 py-1 border border-green-900">
+                    DIAGNOSE: ${Game.state.zone || 'Unbekannt'}
+                </div>
+                <div class="absolute bottom-20 right-4 flex flex-col gap-2 md:hidden">
+                    <button onclick="Game.move(0, -1)" class="p-4 bg-green-900/30 border border-green-500 rounded active:bg-green-500">⬆️</button>
+                    <div class="flex gap-2">
+                        <button onclick="Game.move(-1, 0)" class="p-4 bg-green-900/30 border border-green-500 rounded active:bg-green-500">⬅️</button>
+                        <button onclick="Game.move(1, 0)" class="p-4 bg-green-900/30 border border-green-500 rounded active:bg-green-500">➡️</button>
+                    </div>
+                    <button onclick="Game.move(0, 1)" class="p-4 bg-green-900/30 border border-green-500 rounded active:bg-green-500">⬇️</button>
+                </div>
+            </div>
+        `;
+        if(Game.initCanvas) Game.initCanvas();
+    },
+
+    // NEU: Das Layout für die Weltkarte
+    renderFullscreenWorldMap: function(container) {
+        container.innerHTML = `
+            <div class="relative w-full h-full bg-black overflow-hidden flex flex-col">
+                <div class="flex-grow relative overflow-hidden">
+                    <canvas id="world-map-canvas" class="absolute inset-0 w-full h-full block cursor-move"></canvas>
+                    <div class="pointer-events-none absolute inset-0 border-2 border-green-900/30 m-2 rounded-lg"></div>
+                </div>
+
+                <div class="absolute top-4 left-0 w-full flex justify-center items-center pointer-events-none z-20">
+                    <div class="bg-black/80 border-t-2 border-b-2 border-green-500 px-8 py-2 flex items-center gap-4 shadow-[0_0_15px_rgba(0,255,0,0.2)] backdrop-blur-sm pointer-events-auto">
+                        <h2 class="text-xl font-bold text-green-400 tracking-[0.2em] uppercase text-shadow-glow">WELTKARTE</h2>
+                        <button onclick="if(UI.showTutorial) UI.showTutorial('map')" class="border border-green-500 text-green-500 hover:bg-green-900 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all">?</button>
+                    </div>
+                </div>
+
+                <div class="absolute bottom-6 left-0 w-full flex justify-center pointer-events-none z-20">
+                    <div class="bg-black/90 border border-green-600 px-6 py-3 rounded-lg shadow-lg text-center backdrop-blur pointer-events-auto max-w-[90%]">
+                        <div class="text-[10px] text-green-700 tracking-widest uppercase mb-1 border-b border-green-900/50 pb-1">PIP-OS V7.1.0 // GPS MODULE</div>
+                        <div id="world-location-text" class="text-green-400 font-mono font-bold text-lg animate-pulse">
+                            SYSTEM: STANDORT WIRD BERECHNET...
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="UI.switchView('map')" class="absolute top-4 right-4 z-30 bg-red-900/20 border border-red-500/50 text-red-500 w-10 h-10 flex items-center justify-center hover:bg-red-900 hover:text-white transition-colors">✕</button>
+            </div>
+        `;
+        
+        // Render Loop starten (in ui_view_world.js definiert)
+        if(UI.renderWorldMap) UI.renderWorldMap();
     },
 
     renderStats: function(tab = 'stats', event = null) {
-        if (event) {
-            event.stopPropagation();
-            event.preventDefault();
-        }
-
+        if (event) { event.stopPropagation(); event.preventDefault(); }
         Game.state.view = 'char';
         Game.state.charTab = tab;
         
         const view = document.getElementById('view-container');
         if(!view) return;
 
-        // [FIX] Scroll-Position merken
         const scrollId = 'char-scroll-content';
         const existingScroll = document.getElementById(scrollId);
         let savedScrollTop = 0;
@@ -68,21 +129,18 @@ Object.assign(UI, {
 
         view.innerHTML = ''; 
 
-        // Haupt-Wrapper
         const wrapper = document.createElement('div');
         wrapper.className = "absolute inset-0 w-full h-full flex flex-col bg-black z-20 overflow-hidden";
         wrapper.onclick = (e) => e.stopPropagation();
 
-        // Scrollbarer Bereich
         const scrollContainer = document.createElement('div');
-        scrollContainer.id = scrollId; // ID für Wiedererkennung setzen
+        scrollContainer.id = scrollId; 
         scrollContainer.className = "flex-1 w-full overflow-y-auto pb-24 bg-black";
 
         const getTabClass = (t) => (tab === t) 
             ? "bg-green-500 text-black border-b-4 border-green-700 font-bold" 
             : "bg-[#001100] text-green-600 border-b border-green-900";
 
-        // Sticky Header (Tabs)
         const header = document.createElement('div');
         header.className = "flex w-full border-b-2 border-green-900 bg-black sticky top-0 z-30"; 
         header.innerHTML = `
@@ -92,7 +150,6 @@ Object.assign(UI, {
         `;
         scrollContainer.appendChild(header);
 
-        // Content Area
         const content = document.createElement('div');
         content.className = "w-full p-4";
         
@@ -103,7 +160,6 @@ Object.assign(UI, {
         scrollContainer.appendChild(content);
         wrapper.appendChild(scrollContainer);
 
-        // Footer (Zurück)
         const footer = document.createElement('div');
         footer.className = "absolute bottom-0 left-0 w-full p-3 bg-black border-t-2 border-green-900 z-50 shadow-[0_-5px_15px_rgba(0,0,0,0.9)]";
         footer.innerHTML = `<button class="action-button w-full border-2 border-green-600 text-green-500 py-3 font-bold text-xl uppercase" onclick="UI.switchView('map')">ZURÜCK</button>`;
@@ -111,7 +167,6 @@ Object.assign(UI, {
 
         view.appendChild(wrapper);
 
-        // [FIX] Scroll-Position wiederherstellen
         if(savedScrollTop > 0) {
             requestAnimationFrame(() => {
                 const el = document.getElementById(scrollId);
@@ -123,9 +178,7 @@ Object.assign(UI, {
     },
 
     renderCharacterVisuals: function(container) {
-        const p = Game.state;
-        const eq = p.equip || {};
-
+        const p = Game.state; const eq = p.equip || {};
         const renderSlot = (slotName, item, iconFallback) => {
             const hasItem = !!item;
             const name = hasItem ? (item.props?.name || item.name) : "LEER";
@@ -140,8 +193,6 @@ Object.assign(UI, {
         
         let actionText = '<span class="ml-2 text-xs uppercase border border-green-700 px-1 rounded text-green-500 opacity-50">Details ▶</span>';
         let highlightClass = "";
-        
-        // Prüfung erzwingen für Visualisierung
         if ((p.statPoints || 0) > 0 || (p.perkPoints || 0) > 0) {
             actionText = '<span class="ml-2 text-xs uppercase border border-yellow-500 bg-yellow-900/40 px-1 rounded text-yellow-400 font-bold animate-pulse">LEVEL UP! ▶</span>';
             highlightClass = "border-yellow-500/50 bg-yellow-900/10 shadow-[0_0_15px_rgba(255,255,0,0.1)]"; 
@@ -149,16 +200,13 @@ Object.assign(UI, {
 
         container.innerHTML = `
             <div class="flex flex-col items-center gap-4 max-w-md mx-auto">
-                <div class="text-center w-full border-b border-green-900 pb-2 cursor-pointer hover:bg-green-900/20 transition-all group rounded p-2 relative z-50 ${highlightClass}" 
-                     onclick="UI.handleHeaderClick(event)">
-                    
+                <div class="text-center w-full border-b border-green-900 pb-2 cursor-pointer hover:bg-green-900/20 transition-all group rounded p-2 relative z-50 ${highlightClass}" onclick="UI.handleHeaderClick(event)">
                     <div class="text-4xl font-bold text-green-400 group-hover:text-yellow-400 transition-colors text-shadow-md pointer-events-none">${p.playerName}</div>
                     <div class="text-xs font-mono text-green-600 group-hover:text-green-300 mt-1 pointer-events-none">
                         LVL ${p.lvl} | XP: ${p.xp} / ${Game.expToNextLevel(p.lvl)}
                         ${actionText}
                     </div>
                 </div>
-                
                 <div class="grid grid-cols-3 grid-rows-4 gap-2 w-full relative mt-2 z-10">
                     <div class="col-start-2 row-start-1">${renderSlot('head', eq.head, '🧢')}</div>
                     <div class="col-start-1 row-start-2">${renderSlot('weapon', eq.weapon, '👊')}</div>
@@ -185,30 +233,21 @@ Object.assign(UI, {
         const stats = Game.state.stats || { STR:5, PER:5, END:5, INT:5, AGI:5, LUC:5 };
         const points = Game.state.statPoints || 0;
         const labels = window.GameData.statLabels || { STR: "STÄRKE", PER: "WAHRNEHMUNG", END: "AUSDAUER", INT: "INTELLIGENZ", AGI: "BEWEGLICHKEIT", LUC: "GLÜCK" };
-        
         let html = `<div class="text-center mb-6"><div class="text-xs text-green-600 mb-2">VERFÜGBARE PUNKTE</div><div class="text-5xl font-bold ${points > 0 ? 'text-yellow-400' : 'text-gray-600'}">${points}</div></div><div class="space-y-3">`;
-        
         for (let key in labels) {
             const val = stats[key] || 1;
-            
-            // [FIX] Neue Logic: Soft-Cap Kosten & Max 20
             const cost = (val >= 10) ? 2 : 1;
             const canAfford = points >= cost;
             const isMaxed = val >= 20;
-
             let btnHtml = '';
             if (!isMaxed && canAfford) {
-                 const btnLabel = (cost > 1) ? '+' : '+'; // Optional: '+2P' anzeigen wenn man will
-                 btnHtml = `<button onclick="Game.upgradeStat('${key}', event)" class="w-10 h-10 bg-green-900 text-green-400 border border-green-500 font-bold text-xl rounded hover:bg-green-500 hover:text-black">${btnLabel}</button>`;
+                 btnHtml = `<button onclick="Game.upgradeStat('${key}', event)" class="w-10 h-10 bg-green-900 text-green-400 border border-green-500 font-bold text-xl rounded hover:bg-green-500 hover:text-black">+</button>`;
             } else if (!isMaxed && !canAfford && points > 0) {
-                 // Anzeigen aber ausgegraut wenn Punkte da sind aber nicht genug für Softcap
                  btnHtml = `<div class="w-10 h-10 flex items-center justify-center border border-red-900 text-red-700 font-bold bg-black opacity-50 cursor-not-allowed" title="Benötigt ${cost} Punkte">+</div>`;
             }
-
             html += `<div class="flex items-center justify-between bg-black/40 p-3 border border-green-900">
                 <div class="flex flex-col"><span class="text-2xl font-bold text-green-400 font-vt323">${key}</span><span class="text-[10px] text-green-700">${labels[key]}</span></div>
-                <div class="flex items-center gap-4"><span class="text-3xl font-bold text-white">${val}</span>
-                ${btnHtml}</div>
+                <div class="flex items-center gap-4"><span class="text-3xl font-bold text-white">${val}</span>${btnHtml}</div>
             </div>`;
         }
         container.innerHTML = html + '</div>';
@@ -218,22 +257,18 @@ Object.assign(UI, {
         const perks = window.GameData.perks || [];
         const myPerks = Game.state.perks || {};
         const points = Game.state.perkPoints || 0;
-        
         let html = `<div class="text-center mb-6"><div class="text-xs text-green-600 mb-2">PERK-PUNKTE</div><div class="text-5xl font-bold ${points > 0 ? 'text-yellow-400' : 'text-gray-600'}">${points}</div></div><div class="space-y-3">`;
-        
         perks.forEach(p => {
             const cur = myPerks[p.id] || 0;
             const maxLvl = p.max || 5;
             const canBuy = points > 0 && cur < maxLvl && Game.state.lvl >= (p.minLvl || 1);
-            
             html += `<div class="p-3 border ${cur > 0 ? 'border-green-600 bg-green-900/10' : 'border-green-900/30'}">
                 <div class="flex justify-between items-start">
                     <div>
                         <div class="font-bold text-green-300 text-lg">${p.icon || ''} ${p.name}</div>
                         <div class="text-xs text-green-700">Rang: ${cur}/${maxLvl}</div>
                     </div>
-                    <button class="px-3 py-1 border text-xs font-bold ${canBuy ? 'border-yellow-500 text-yellow-400 hover:bg-yellow-600 hover:text-black' : 'border-gray-800 text-gray-600'}" 
-                        ${canBuy ? `onclick="Game.choosePerk('${p.id}')"` : ''}>
+                    <button class="px-3 py-1 border text-xs font-bold ${canBuy ? 'border-yellow-500 text-yellow-400 hover:bg-yellow-600 hover:text-black' : 'border-gray-800 text-gray-600'}" ${canBuy ? `onclick="Game.choosePerk('${p.id}')"` : ''}>
                         ${cur >= maxLvl ? 'MAX' : 'LERNEN'}
                     </button>
                 </div>
@@ -306,10 +341,7 @@ Object.assign(UI, {
              Combat.bodyParts.forEach((part, index) => {
                  const btn = document.getElementById(`btn-vats-${index}`);
                  if(btn) {
-                     const chance = (typeof Combat.calculateHitChance === 'function') 
-                        ? Combat.calculateHitChance(index) 
-                        : 0;
-                     
+                     const chance = (typeof Combat.calculateHitChance === 'function') ? Combat.calculateHitChance(index) : 0;
                      btn.innerHTML = `
                         <div class="pointer-events-none w-full h-full flex items-center justify-between px-4">
                             <span class="text-5xl font-bold text-gray-400 uppercase tracking-tighter drop-shadow-md">${part.name}</span>
