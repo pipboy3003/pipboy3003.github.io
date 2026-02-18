@@ -1,4 +1,4 @@
-// [2026-02-17 12:00:00] game_render.js - Fixed Syntax Error
+// [2026-02-18 09:00:00] game_render.js - Syntax Fix
 
 Object.assign(Game, {
     particles: [],
@@ -85,11 +85,11 @@ Object.assign(Game, {
         const py = y * ts;
         const rand = this.pseudoRand(x, y);
 
-        let color = "#1a1a1a"; // Default Wasteland
+        let color = "#1a1a1a"; 
         
-        if(type === '"') color = "#1b331b"; // Wald
-        if(type === '_') color = "#3b3626"; // Wüste
-        if(type === ';') color = "#241f1a"; // Sumpf
+        if(type === '"') color = "#1b331b"; 
+        if(type === '_') color = "#3b3626"; 
+        if(type === ';') color = "#241f1a"; 
         
         if(type === 't') color = "#1b331b"; 
         if(type === '^') color = "#222"; 
@@ -101,7 +101,7 @@ Object.assign(Game, {
         if(type === '"' && rand > 0.6) { ctx.fillStyle = "#2e4e2e"; ctx.fillRect(px+rand*ts, py+(1-rand)*ts, 2, 2); }
         if(type === '_' && rand > 0.8) { ctx.fillStyle = "#5e5a4a"; ctx.fillRect(px+rand*ts, py+(1-rand)*ts, 2, 2); }
         if(type === '.' && rand > 0.7) { ctx.fillStyle = "#333"; ctx.fillRect(px+rand*ts, py+(1-rand)*ts, 2, 2); }
-    }, // <--- HIER HAT DAS KOMMA GEFEHLT!
+    },
 
     drawRoad: function(ctx, x, y) {
         const ts = this.TILE; 
@@ -307,6 +307,8 @@ Object.assign(Game, {
                     else if(t === 'W') this.drawWanderer(ctx, x, y, time);
                     
                     if(['X', 'V', 'R', 'S'].includes(t)) this.drawTile(ctx, x, y, t);
+                    // NEU: GHOST TOWN
+                    if(t === 'G') this.drawTile(ctx, x, y, t); 
                     if(t === '?') this.drawTile(ctx, x, y, t);
                     
                     const opacity = Math.max(0, (dist - 4) / (10 - 4));
@@ -419,7 +421,8 @@ Object.assign(Game, {
         const ts=this.TILE; 
         const cx=x*ts+ts/2; 
         const cy=y*ts+ts/2; 
-        const dI=(c,cl,s=20)=>{
+        
+        const dI = (c, cl, s=20) => {
             ctx.font=`bold ${s}px monospace`;
             ctx.fillStyle=cl;
             ctx.textAlign="center";
@@ -429,9 +432,11 @@ Object.assign(Game, {
             ctx.fillText(c,cx,cy);
             ctx.shadowBlur=0;
         }; 
+
         switch(type){ 
             case 'V':dI("⚙️","#ffff00",24);break; 
             case 'R':dI("💰","#ff3333",22);break; 
+            case 'G':dI("👻","#cccccc",22);break;
             case 'X':
                 ctx.fillStyle="#8B4513";
                 ctx.fillRect(cx-8,cy-6,16,12);
