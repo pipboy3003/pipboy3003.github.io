@@ -1,4 +1,4 @@
-// [2026-02-18 14:05:00] ui_view_world.js - Auto-Center Fix
+// [2026-02-18 14:35:00] ui_view_world.js - Black Screen Fix COMPLETE
 
 Object.assign(UI, {
     mapState: {
@@ -142,9 +142,9 @@ Object.assign(UI, {
         const dpr = window.devicePixelRatio || 1;
         const rect = cvs.parentElement.getBoundingClientRect();
         
-        // CHECK: Ist der Container bereit?
+        // FIX: Prüfen ob der Container schon eine Größe hat
+        // Wenn width 0 ist, ist der View noch nicht gerendert -> Warten
         if(rect.width === 0 || rect.height === 0) {
-            // Noch nicht bereit, versuche es im nächsten Frame
             requestAnimationFrame(() => this.renderWorldMap());
             return;
         }
