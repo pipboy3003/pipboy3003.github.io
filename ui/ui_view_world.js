@@ -1,4 +1,4 @@
-// [2026-02-18 11:35:00] ui_view_world.js - Full Logic - COMPLETE
+// [2026-02-18 14:05:00] ui_view_world.js - Auto-Center Fix
 
 Object.assign(UI, {
     mapState: {
@@ -7,7 +7,8 @@ Object.assign(UI, {
         isDragging: false, isPinching: false,
         lastX: 0, lastY: 0,
         pinchStartDist: 0, pinchStartScale: 3,
-        needsRender: true // Performance Trigger
+        needsRender: true,
+        centeredOnce: false // Flag für initiale Zentrierung
     },
 
     getTouchDistance: function(t1, t2) {
@@ -20,13 +21,16 @@ Object.assign(UI, {
         const cvs = document.getElementById('world-map-canvas');
         if(!cvs) return;
 
-        // Initiale Zentrierung
-        if(Game.state && Game.state.player) {
-            // Wir brauchen hier noch nicht zeichnen, aber Werte setzen
-            this.mapState.needsRender = true;
+        // Force Center beim ersten Klick/Touch/Init
+        if(Game.state && Game.state.player && !this.mapState.centeredOnce) {
+            const rect = cvs.getBoundingClientRect();
+            // Nur zentrieren wenn das Rect valide ist
+            if(rect.width > 0 && rect.height > 0) {
+                this.centerMapOnPlayer(cvs, rect);
+                this.mapState.centeredOnce = true;
+            }
         }
 
-        // --- EVENTS (Maus & Touch) ---
         cvs.onmousedown = (e) => {
             if(e.button !== 0) return;
             this.mapState.isDragging = true;
@@ -47,10 +51,7 @@ Object.assign(UI, {
             }
         };
 
-        const stopDrag = () => { 
-            this.mapState.isDragging = false; 
-            cvs.style.cursor = "move"; 
-        };
+        const stopDrag = () => { this.mapState.isDragging = false; cvs.style.cursor = "move"; };
         cvs.onmouseup = stopDrag;
         cvs.onmouseleave = stopDrag;
 
@@ -72,7 +73,6 @@ Object.assign(UI, {
             this.mapState.needsRender = true;
         };
 
-        // Touch
         cvs.ontouchstart = (e) => {
             if(e.touches.length === 1) {
                 this.mapState.isDragging = true;
@@ -142,6 +142,13 @@ Object.assign(UI, {
         const dpr = window.devicePixelRatio || 1;
         const rect = cvs.parentElement.getBoundingClientRect();
         
+        // CHECK: Ist der Container bereit?
+        if(rect.width === 0 || rect.height === 0) {
+            // Noch nicht bereit, versuche es im nächsten Frame
+            requestAnimationFrame(() => this.renderWorldMap());
+            return;
+        }
+
         const targetWidth = Math.floor(rect.width * dpr);
         const targetHeight = Math.floor(rect.height * dpr);
 
@@ -151,26 +158,22 @@ Object.assign(UI, {
             ctx.scale(dpr, dpr);
             ctx.imageSmoothingEnabled = false;
             
-            if(!cvs.dataset.sized) { 
-                this.centerMapOnPlayer(cvs, rect); 
-                cvs.dataset.sized = "true"; 
-            }
+            // Re-Center on resize (e.g. rotate)
+            this.centerMapOnPlayer(cvs, rect); 
             this.mapState.needsRender = true;
         }
 
         if(!cvs.dataset.init) { 
             this.initWorldMapInteraction(); 
             cvs.dataset.init = "true"; 
+            // Trigger initial center manually if not happened
+            if(!this.mapState.centeredOnce) {
+                this.centerMapOnPlayer(cvs, rect);
+                this.mapState.centeredOnce = true;
+            }
         }
 
-        // Render nur bei Bedarf oder Bewegung (spart CPU)
-        // (Deaktiviert für Debugging, kann später aktiviert werden)
-        // if(!this.mapState.needsRender) {
-        //    if(Game.state.view === 'worldmap') requestAnimationFrame(() => this.renderWorldMap());
-        //    return;
-        // }
-
-        // Clear (Logical Dimensions)
+        // Background
         ctx.fillStyle = "#050a05"; 
         ctx.fillRect(0, 0, rect.width, rect.height);
 
@@ -181,14 +184,14 @@ Object.assign(UI, {
         const ox = this.mapState.offsetX;
         const oy = this.mapState.offsetY;
 
-        // Farben
+        // Colors
         const colors = {
             '.': '#4a4036', '_': '#8b5a2b', '"': '#1a3300', ';': '#1e1e11',
             '~': '#2244aa', '^': '#555', '#': '#333', '=': '#555', '+': '#654321',
-            't': '#0f2405', 'V': '#ffcc00', 'C': '#ff4400'
+            't': '#0f2405', 'V': '#ffcc00', 'C': '#ff4400', 'G': '#cccccc'
         };
         
-        // 1. Besuchte Sektoren (Fog of War)
+        // 1. Visited Sectors
         if (Game.state.visitedSectors) {
             Game.state.visitedSectors.forEach(secKey => {
                 const [sx, sy] = secKey.split(',').map(Number);
@@ -201,7 +204,6 @@ Object.assign(UI, {
                     const drawX = (sx * 50 * s) + ox;
                     const drawY = (sy * 50 * s) + oy;
                     
-                    // Culling Check
                     if(drawX + 50*s > 0 && drawX < rect.width && drawY + 50*s > 0 && drawY < rect.height) {
                         ctx.fillStyle = color;
                         ctx.globalAlpha = 0.8;
@@ -215,7 +217,7 @@ Object.assign(UI, {
             });
         }
 
-        // 2. Aktueller Sektor (Scharf)
+        // 2. Current Sector
         const currSX = Game.state.sector.x;
         const currSY = Game.state.sector.y;
 
@@ -224,7 +226,6 @@ Object.assign(UI, {
             const startDrawY = (currSY * 50 * s) + oy;
 
             if (startDrawX + 50*s > 0 && startDrawX < rect.width && startDrawY + 50*s > 0 && startDrawY < rect.height) {
-                // Grid Border
                 ctx.strokeStyle = '#666';
                 ctx.lineWidth = Math.max(1, s * 0.1);
                 ctx.strokeRect(startDrawX, startDrawY, 50*s, 50*s);
@@ -234,7 +235,6 @@ Object.assign(UI, {
                     if(Game.state.explored[key]) {
                         const t = Game.state.currentMap[y][x];
                         ctx.fillStyle = colors[t] || '#4a4036';
-                        // +0.5 Trick gegen Lücken
                         ctx.fillRect(startDrawX + x*s, startDrawY + y*s, s+0.5, s+0.5);
                     }
                 }
@@ -280,6 +280,14 @@ Object.assign(UI, {
         if(Game.state.view === 'worldmap') requestAnimationFrame(() => this.renderWorldMap());
     },
 
+    drawBackgroundGrid: function(ctx, w, h) {
+        ctx.strokeStyle = "rgba(0, 50, 0, 0.15)";
+        ctx.lineWidth = 1;
+        const step = 50;
+        for(let x=0; x<w; x+=step) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+        for(let y=0; y<h; y+=step) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+    },
+
     drawCompass: function(ctx, w, h) {
         const cx = w - 60; const cy = h - 60; const r = 30;
         ctx.fillStyle = "rgba(0, 20, 0, 0.8)"; ctx.strokeStyle = "#00ff00"; ctx.lineWidth = 2;
@@ -304,13 +312,5 @@ Object.assign(UI, {
             el.innerText = txt;
             this._lastLocUpdate = Date.now();
         }
-    },
-
-    drawBackgroundGrid: function(ctx, w, h) {
-        ctx.strokeStyle = "rgba(0, 50, 0, 0.15)";
-        ctx.lineWidth = 1;
-        const step = 50;
-        for(let x=0; x<w; x+=step) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
-        for(let y=0; y<h; y+=step) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
     }
 });
