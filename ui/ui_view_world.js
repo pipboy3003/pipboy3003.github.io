@@ -1,4 +1,4 @@
-// [2026-02-18 15:00:00] ui_view_world.js - Persistent Fog of War & Buffer
+// [2026-02-18 16:05:00] ui_view_world.js - Pixel Perfect Rendering
 
 Object.assign(UI, {
     mapState: {
@@ -9,9 +9,8 @@ Object.assign(UI, {
         pinchStartDist: 0, pinchStartScale: 3,
         needsRender: true,
         centeredOnce: false,
-        // Buffer speichert die bereits aufgedeckte Karte als Bild
         worldBuffer: null, 
-        renderedSectors: [] // Liste der Sektoren, die schon im Buffer sind
+        lastExploredCount: 0 // Zum Prüfen auf Änderungen
     },
 
     getTouchDistance: function(t1, t2) {
@@ -24,7 +23,6 @@ Object.assign(UI, {
         const cvs = document.getElementById('world-map-canvas');
         if(!cvs) return;
 
-        // Force Center beim Start
         if(Game.state && Game.state.player && !this.mapState.centeredOnce) {
             const rect = cvs.getBoundingClientRect();
             if(rect.width > 0) {
@@ -33,7 +31,7 @@ Object.assign(UI, {
             }
         }
 
-        // Buffer initialisieren (falls Spiel neu geladen wurde)
+        // Buffer Init
         this.updateWorldBuffer();
 
         cvs.onmousedown = (e) => {
@@ -70,10 +68,8 @@ Object.assign(UI, {
             const rect = cvs.getBoundingClientRect();
             const mx = e.clientX - rect.left; 
             const my = e.clientY - rect.top;
-            
             this.mapState.offsetX = mx - ((mx - this.mapState.offsetX) / this.mapState.scale) * newScale;
             this.mapState.offsetY = my - ((my - this.mapState.offsetY) / this.mapState.scale) * newScale;
-            
             this.mapState.scale = newScale;
             this.mapState.needsRender = true;
         };
@@ -107,26 +103,23 @@ Object.assign(UI, {
                 const scaleRatio = newDist / this.mapState.pinchStartDist;
                 let newScale = this.mapState.pinchStartScale * scaleRatio;
                 newScale = Math.max(this.mapState.minScale, Math.min(this.mapState.maxScale, newScale));
-
                 const rect = cvs.getBoundingClientRect();
                 const mx = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
                 const my = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
-
                 this.mapState.offsetX = mx - ((mx - this.mapState.offsetX) / this.mapState.scale) * newScale;
                 this.mapState.offsetY = my - ((my - this.mapState.offsetY) / this.mapState.scale) * newScale;
-
                 this.mapState.scale = newScale;
                 this.mapState.needsRender = true;
             }
         };
+        
         cvs.ontouchend = (e) => { this.mapState.isDragging = false; if(e.touches.length < 2) this.mapState.isPinching = false; };
     },
 
-    // --- NEU: Erstellt und aktualisiert den statischen Hintergrund ---
     updateWorldBuffer: function() {
-        if(!Game.state || !Game.state.visitedSectors) return;
+        if(!Game.state || !Game.state.explored) return;
 
-        // 1. Buffer erstellen falls nicht vorhanden (10x10 Sektoren a 50px = 500x500px)
+        // Gesamtgröße der Welt
         const totalW = Game.WORLD_W * Game.MAP_W; 
         const totalH = Game.WORLD_H * Game.MAP_H;
 
@@ -134,60 +127,54 @@ Object.assign(UI, {
             this.mapState.worldBuffer = document.createElement('canvas');
             this.mapState.worldBuffer.width = totalW;
             this.mapState.worldBuffer.height = totalH;
-            // Initial schwarz füllen
+            // Schwarz initialisieren
             const ctx = this.mapState.worldBuffer.getContext('2d');
             ctx.fillStyle = "#000000"; 
             ctx.fillRect(0, 0, totalW, totalH);
-            this.mapState.renderedSectors = [];
+            this.mapState.lastExploredCount = 0;
         }
 
         const ctx = this.mapState.worldBuffer.getContext('2d');
+        const keys = Object.keys(Game.state.explored);
+        
+        // Optimierung: Nur rendern wenn neue Tiles dazu kamen
+        // Oder wenn wir beim ersten Load sind
+        if (keys.length === this.mapState.lastExploredCount) return;
+
+        // Farben
         const colors = {
             '.': '#4a4036', '_': '#8b5a2b', '"': '#1a3300', ';': '#1e1e11',
             '~': '#2244aa', '^': '#555', '#': '#333', '=': '#555', '+': '#654321',
             't': '#0f2405', 'V': '#ffcc00', 'C': '#ff4400', 'G': '#cccccc', 'X': '#8B4513'
         };
 
-        // 2. Neue Sektoren zeichnen
-        Game.state.visitedSectors.forEach(secKey => {
-            // Wenn Sektor schon im Buffer ist, überspringen (Performance!)
-            // Ausnahme: Der aktuelle Sektor wird immer neu gemalt, da er sich ändert? 
-            // Nein, für die Worldmap reicht der statische Snapshot.
-            if(this.mapState.renderedSectors.includes(secKey)) return;
-
-            const [sx, sy] = secKey.split(',').map(Number);
-            let mapData = null;
-
-            // Ist es der aktuelle Sektor? Dann nimm die Live-Daten
-            if (sx === Game.state.sector.x && sy === Game.state.sector.y) {
-                mapData = Game.state.currentMap;
-            } else {
-                // Ist es ein alter Sektor? Regeneriere ihn deterministisch!
-                if(typeof WorldGen !== 'undefined') {
-                    // Seed setzen, damit es exakt gleich aussieht wie beim ersten Besuch
-                    if(Game.state.worldSeed) WorldGen.setSeed(Game.state.worldSeed);
-                    mapData = WorldGen.createSector(Game.MAP_W, Game.MAP_H, sx, sy);
-                }
-            }
-
-            if(mapData) {
-                // Pixel für Pixel auf den Buffer malen
-                const startX = sx * Game.MAP_W;
-                const startY = sy * Game.MAP_H;
-                
-                for(let y=0; y<Game.MAP_H; y++) {
-                    for(let x=0; x<Game.MAP_W; x++) {
-                        const t = mapData[y][x];
-                        ctx.fillStyle = colors[t] || '#4a4036';
-                        ctx.fillRect(startX + x, startY + y, 1, 1);
-                    }
-                }
-                
-                // Markieren als "erledigt"
-                this.mapState.renderedSectors.push(secKey);
-            }
-        });
+        // Wir gehen durch ALLE erkundeten Tiles
+        // (Bei sehr vielen Tiles könnte man das optimieren, aber für 50k ist es okay)
+        // Besser: Wir sollten nur die NEUEN zeichnen, aber wir wissen nicht welche neu sind.
+        // Einfachheitshalber: Alles neu malen (Canvas ist schnell).
+        // Um Flackern zu vermeiden, könnte man das inkrementell machen, aber wir lassen es so.
         
+        // WICHTIG: Das hier ist der "Pixel-Genau" Teil.
+        keys.forEach(key => {
+            // Key Format: "SX,SY_LX,LY"
+            // Wir müssen das parsen.
+            const parts = key.split('_');
+            if(parts.length !== 2) return;
+            
+            const [sx, sy] = parts[0].split(',').map(Number);
+            const [lx, ly] = parts[1].split(',').map(Number);
+            
+            const tileChar = Game.state.explored[key];
+            
+            // Globale Position berechnen
+            const gx = sx * Game.MAP_W + lx;
+            const gy = sy * Game.MAP_H + ly;
+            
+            ctx.fillStyle = colors[tileChar] || '#4a4036'; // Default Boden
+            ctx.fillRect(gx, gy, 1, 1);
+        });
+
+        this.mapState.lastExploredCount = keys.length;
         this.mapState.needsRender = true;
     },
 
@@ -208,7 +195,6 @@ Object.assign(UI, {
         if(!cvs) return;
         const ctx = cvs.getContext('2d');
 
-        // --- RESIZE & DPI ---
         const dpr = window.devicePixelRatio || 1;
         const rect = cvs.parentElement.getBoundingClientRect();
         
@@ -224,8 +210,7 @@ Object.assign(UI, {
             cvs.width = targetWidth;
             cvs.height = targetHeight;
             ctx.scale(dpr, dpr);
-            ctx.imageSmoothingEnabled = false; 
-            
+            ctx.imageSmoothingEnabled = false;
             this.centerMapOnPlayer(cvs, rect); 
             this.mapState.needsRender = true;
         }
@@ -239,19 +224,10 @@ Object.assign(UI, {
             }
         }
 
-        // --- UPDATE BUFFER ---
-        // Prüfen ob wir neue Sektoren kennen, die noch nicht im Bild sind
-        // Trick: Wir entfernen den aktuellen Sektor aus "rendered", damit er updates bekommt, 
-        // oder wir lassen ihn statisch. Für "Fog of War" reicht statisch.
-        // Wir rufen updateWorldBuffer bei jedem Frame auf? Nein, zu teuer.
-        // Wir rufen es nur auf, wenn die Anzahl der visitedSectors sich geändert hat.
-        if (Game.state.visitedSectors.length > this.mapState.renderedSectors.length) {
-            this.updateWorldBuffer();
-        }
+        // Buffer aktualisieren (Prüfen auf neue Tiles)
+        this.updateWorldBuffer();
 
-        // --- DRAW ---
-        
-        // 1. Background (Schwarz)
+        // 1. Background
         ctx.fillStyle = "#050a05"; 
         ctx.fillRect(0, 0, rect.width, rect.height);
 
@@ -259,11 +235,10 @@ Object.assign(UI, {
         const ox = this.mapState.offsetX;
         const oy = this.mapState.offsetY;
 
-        // 2. Draw World Buffer (Das ist die Karte!)
+        // 2. Buffer zeichnen
         if (this.mapState.worldBuffer) {
-            // Zeichne das vorbereitete Bild skaliert
-            // drawImage(image, dx, dy, dWidth, dHeight)
-            // Wir zeichnen ALLES. Browser culling übernimmt den Rest.
+            // Anti-Aliasing ausmachen für scharfe Pixel
+            ctx.imageSmoothingEnabled = false;
             ctx.drawImage(
                 this.mapState.worldBuffer, 
                 ox, oy, 
@@ -272,29 +247,21 @@ Object.assign(UI, {
             );
         }
 
-        // 3. Grid Overlay (Optional, für Style)
+        // 3. Grid
         ctx.strokeStyle = "rgba(0, 255, 0, 0.1)";
         ctx.lineWidth = 1;
-        // Zeichne Sektor-Grenzen (alle 50 Tiles)
         const gridSize = 50 * s;
-        // Optimierung: Nur sichtbare Linien zeichnen
         const startGridX = Math.floor(-ox / gridSize);
         const endGridX = Math.ceil((rect.width - ox) / gridSize);
         const startGridY = Math.floor(-oy / gridSize);
         const endGridY = Math.ceil((rect.height - oy) / gridSize);
 
         ctx.beginPath();
-        for(let x=startGridX; x<=endGridX; x++) {
-            const pos = ox + x * gridSize;
-            ctx.moveTo(pos, 0); ctx.lineTo(pos, rect.height);
-        }
-        for(let y=startGridY; y<=endGridY; y++) {
-            const pos = oy + y * gridSize;
-            ctx.moveTo(0, pos); ctx.lineTo(rect.width, pos);
-        }
+        for(let x=startGridX; x<=endGridX; x++) { const pos = ox + x * gridSize; ctx.moveTo(pos, 0); ctx.lineTo(pos, rect.height); }
+        for(let y=startGridY; y<=endGridY; y++) { const pos = oy + y * gridSize; ctx.moveTo(0, pos); ctx.lineTo(rect.width, pos); }
         ctx.stroke();
 
-        // 4. Player Marker
+        // 4. Player
         const currSX = Game.state.sector.x; const currSY = Game.state.sector.y;
         const pGlobalX = (currSX * Game.MAP_W) + Game.state.player.x;
         const pGlobalY = (currSY * Game.MAP_H) + Game.state.player.y;
@@ -334,9 +301,7 @@ Object.assign(UI, {
         if(Game.state.view === 'worldmap') requestAnimationFrame(() => this.renderWorldMap());
     },
 
-    drawBackgroundGrid: function(ctx, w, h) {
-        // Leere Funktion, da Grid jetzt dynamisch in renderWorldMap passiert
-    },
+    drawBackgroundGrid: function(ctx, w, h) { }, // Deaktiviert (benutzen dynamisches Grid)
 
     drawCompass: function(ctx, w, h) {
         const cx = w - 60; const cy = h - 60; const r = 30;
