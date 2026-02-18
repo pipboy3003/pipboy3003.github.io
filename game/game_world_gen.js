@@ -1,4 +1,4 @@
-// [2026-02-18 17:00:00] game_world_gen.js - High Mountains & Stones Update
+// [2026-02-18 18:35:00] game_world_gen.js - Stones, Peaks & Smart Bridges
 
 const WorldGen = {
     _seed: 12345,
@@ -22,14 +22,11 @@ const WorldGen = {
             tempSeed = (tempSeed * 16807) % 2147483647;
             return (tempSeed - 1) / 2147483646;
         };
-        // POIs setzen
         this.locations.vault = { x: Math.floor(pseudoRand() * 8) + 1, y: Math.floor(pseudoRand() * 8) + 1 };
-        
         do {
             this.locations.city = { x: Math.floor(pseudoRand() * 8) + 1, y: Math.floor(pseudoRand() * 8) + 1 };
         } while (this.locations.city.x === this.locations.vault.x && this.locations.city.y === this.locations.vault.y);
 
-        // Ghost Town
         do {
             this.locations.ghostTown = { x: Math.floor(pseudoRand() * 8) + 1, y: Math.floor(pseudoRand() * 8) + 1 };
         } while (
@@ -37,12 +34,10 @@ const WorldGen = {
             (this.locations.ghostTown.x === this.locations.city.x && this.locations.ghostTown.y === this.locations.city.y)
         );
 
-        // Straßennetz
         this.sectorRoads = {}; 
         this.generateGlobalPath(this.locations.vault, this.locations.city, pseudoRand);
         this.generateGlobalPath(this.locations.city, this.locations.ghostTown, pseudoRand); 
         
-        // Zufallspfade
         for(let i=0; i<1; i++) {
             const start = { x: Math.floor(pseudoRand() * 10), y: Math.floor(pseudoRand() * 10) };
             const end = { x: Math.floor(pseudoRand() * 10), y: Math.floor(pseudoRand() * 10) };
@@ -117,7 +112,6 @@ const WorldGen = {
         let map = Array(height).fill().map(() => Array(width).fill('.'));
         const worldSeed = this._seed;
 
-        // 1. Terrain & Biome
         for(let y = 0; y < height; y++) {
             for(let x = 0; x < width; x++) {
                 let gx = (sx * width) + x;
@@ -136,26 +130,23 @@ const WorldGen = {
                 
                 // NEU: Steine streuen (nur auf normalem Boden oder Wüste)
                 if (ground === '.' || ground === '_') {
-                    // Einfacher Random Noise für Steine
-                    if (this.rand() > 0.92) ground = ','; // 8% Chance auf Steinchen
+                    if (this.rand() > 0.92) ground = ','; 
                 }
 
                 let detail = this.smoothNoise(gx * 0.15, gy * 0.15, worldSeed + 300);
                 map[y][x] = ground; 
 
                 if (isRiver) map[y][x] = '~';
-                else if (elevation > 0.94) map[y][x] = 'M'; // NEU: Hohe Gipfel
-                else if (elevation > 0.85) map[y][x] = '^'; // Normale Hügel
+                else if (elevation > 0.94) map[y][x] = 'Y'; // Hohe Gipfel (Y)
+                else if (elevation > 0.85) map[y][x] = '^'; 
                 else if (detail < treeThresh) map[y][x] = 't'; 
                 
-                // Ränder passierbar machen
                 if(x < 2 || x > width - 3 || y < 2 || y > height - 3) {
-                    if(['^', 'M', 't', '#'].includes(map[y][x])) map[y][x] = ground;
+                    if(['^', 'Y', 't', '#'].includes(map[y][x])) map[y][x] = ground;
                 }
             }
         }
 
-        // 2. Ruinen-Generator
         for(let y = 3; y < height - 3; y+=5) {
             for(let x = 3; x < width - 3; x+=5) {
                 let gx = (sx * width) + x;
@@ -165,7 +156,6 @@ const WorldGen = {
             }
         }
 
-        // 3. POIs
         if(sx === this.locations.vault.x && sy === this.locations.vault.y) {
             this.placePOI(map, 25, 25, 'V', 4);
         }
@@ -177,12 +167,10 @@ const WorldGen = {
             }
         }
         
-        // Ghost Town
         if(sx === this.locations.ghostTown.x && sy === this.locations.ghostTown.y) {
             this.placeGhostTown(map, width, height);
         }
 
-        // Random Dungeons
         let sectorRNG = (sx * 17 + sy * 23 + this._seed) % 100;
         if(map[25][25] !== 'V' && map[25][25] !== 'C' && map[25][25] !== 'G' && sectorRNG < 15) { 
             let type = 'S';
@@ -192,7 +180,6 @@ const WorldGen = {
             this.buildRoad(map, this.getRandomEdgePoint(width, height), {x:dx, y:dy});
         }
 
-        // 4. Globale Straßen
         const connections = this.sectorRoads[`${sx},${sy}`] || [];
         let gates = [];
         connections.forEach(dir => {
@@ -213,11 +200,11 @@ const WorldGen = {
     },
 
     placeHouseRuin: function(map, x, y) {
-        const w = 3 + Math.floor(this.rand() * 2);
+        const w = 3 + Math.floor(this.rand() * 2); 
         const h = 3 + Math.floor(this.rand() * 2);
         if(x+w >= map[0].length || y+h >= map.length) return;
         for(let dy=0; dy<h; dy++) for(let dx=0; dx<w; dx++) {
-            if(['~', '^', 'M', 'V', 'C', 'G'].includes(map[y+dy][x+dx])) return; // Auch M checken
+            if(['~', '^', 'Y', 'V', 'C', 'G'].includes(map[y+dy][x+dx])) return; 
         }
         for(let dy=0; dy<h; dy++) {
             for(let dx=0; dx<w; dx++) {
@@ -253,7 +240,7 @@ const WorldGen = {
         for(let dy=-radius; dy<=radius; dy++) for(let dx=-radius; dx<=radius; dx++) {
             const ny = cy+dy, nx = cx+dx;
             if(ny>=0 && ny<h && nx>=0 && nx<w) {
-                const t = map[ny][nx]; if(['^', 'M', 't', '~', '#'].includes(t)) map[ny][nx] = '.';
+                const t = map[ny][nx]; if(['^', 'Y', 't', '~', '#'].includes(t)) map[ny][nx] = '.';
             }
         }
         map[cy][cx] = type;
@@ -267,20 +254,52 @@ const WorldGen = {
         return {x: w-1, y: Math.floor(this.rand()*(h-4))+2}; 
     },
 
+    // NEU: Smarte Brücken-Logik
     buildRoad: function(map, start, end) {
         let x = start.x, y = start.y;
         let steps = 0;
+        
+        const isWater = (tx, ty) => {
+            if(tx<0||tx>=map[0].length||ty<0||ty>=map.length) return false;
+            return map[ty][tx] === '~' || map[ty][tx] === '+';
+        };
+
         while((x !== end.x || y !== end.y) && steps < 200) {
             steps++;
-            let dx = end.x - x; let dy = end.y - y;
-            if (Math.abs(dx) > Math.abs(dy)) x += dx > 0 ? 1 : -1; else y += dy > 0 ? 1 : -1;
+            let dx = end.x - x; 
+            let dy = end.y - y;
+            
+            // Standard Richtung
+            let moveX = Math.abs(dx) > Math.abs(dy);
+            
+            // Vorschau
+            let nextX = x + (moveX ? (dx > 0 ? 1 : -1) : 0);
+            let nextY = y + (!moveX ? (dy > 0 ? 1 : -1) : 0);
+            
+            // Wenn wir ins Wasser laufen...
+            if (isWater(nextX, nextY)) {
+                // ...prüfe ob wir seitlich ausweichen können (Landausweg)
+                let altX = x + (!moveX ? (dx > 0 ? 1 : -1) : 0);
+                let altY = y + (moveX ? (dy > 0 ? 1 : -1) : 0);
+                
+                // Wenn Alternative Land ist -> Geh dort lang!
+                // (Prüfe auch, ob wir in der anderen Achse überhaupt noch Weg haben)
+                if (!isWater(altX, altY) && (moveX ? dy !== 0 : dx !== 0)) {
+                    moveX = !moveX; 
+                }
+                // Sonst: Keine Wahl, wir müssen Brücke bauen.
+            }
+
+            if (moveX) x += dx > 0 ? 1 : -1; else y += dy > 0 ? 1 : -1;
+            
             if(x < 0 || x >= map[0].length || y < 0 || y >= map.length) continue;
+            
             const setRoad = (tx, ty) => {
                 if(tx<0||tx>=map[0].length||ty<0||ty>=map.length) return;
                 const t = map[ty][tx];
                 if(t === '~' || t === '+') map[ty][tx] = '+'; 
                 else {
-                    if(['^', 'M', 't', '#'].includes(t)) map[ty][tx] = '='; else map[ty][tx] = '='; 
+                    if(['^', 'Y', 't', '#'].includes(t)) map[ty][tx] = '='; else map[ty][tx] = '='; 
                     this.clearArea(map, tx, ty, 1);
                 }
             };
@@ -293,7 +312,7 @@ const WorldGen = {
         const h = map.length; const w = map[0].length;
         for(let dy=-radius; dy<=radius; dy++) for(let dx=-radius; dx<=radius; dx++) {
             const ny = cy+dy, nx = cx+dx;
-            if(ny>=0 && ny<h && nx>=0 && nx<w) { if(['^', 'M', 't', '#'].includes(map[ny][nx])) map[ny][nx] = '.'; }
+            if(ny>=0 && ny<h && nx>=0 && nx<w) { if(['^', 'Y', 't', '#'].includes(map[ny][nx])) map[ny][nx] = '.'; }
         }
     },
     generateCityLayout: function(w, h) { return this._genBox(w,h,'='); },
