@@ -1,27 +1,59 @@
-// [2026-02-17 12:20:00] game_map.js - Coordinates Safe Fix
+// [2026-02-18 16:00:00] game_map.js - Pixel Perfect Discovery
 
 Object.assign(Game, {
-    reveal: function(px, py) { if(!this.state) return; if(!this.state.explored) this.state.explored = {}; const r=2; const sk=`${this.state.sector.x},${this.state.sector.y}`; for(let y=py-r; y<=py+r; y++) for(let x=px-r; x<=px+r; x++) if(x>=0&&x<this.MAP_W&&y>=0&&y<this.MAP_H) this.state.explored[`${sk}_${x},${y}`]=true; },
+    reveal: function(px, py) { 
+        if(!this.state) return; 
+        if(!this.state.explored) this.state.explored = {}; 
+        
+        const r = 3; // Sichtradius (etwas erhöht für besseres Mapping)
+        const sx = this.state.sector.x;
+        const sy = this.state.sector.y;
+        const sk = `${sx},${sy}`; // Sektor Key
+
+        // Wir scannen das Umfeld
+        for(let y = py - r; y <= py + r; y++) {
+            for(let x = px - r; x <= px + r; x++) {
+                // Prüfen ob innerhalb des Sektors
+                if(x >= 0 && x < this.MAP_W && y >= 0 && y < this.MAP_H) {
+                    // Line of Sight Check (optional, hier einfach Radius)
+                    // Wir speichern: Sektor_X_Y = TYP (z.B. "t" für Baum)
+                    const key = `${sk}_${x},${y}`;
+                    
+                    // Nur speichern wenn noch nicht bekannt (Spart Speicher)
+                    if (!this.state.explored[key]) {
+                        const tile = this.state.currentMap[y][x];
+                        // Wir speichern das Zeichen des Tiles!
+                        this.state.explored[key] = tile;
+                    }
+                }
+            }
+        }
+    },
 
     move: function(dx, dy) {
         if(!this.state || this.state.isGameOver || this.state.view !== 'map' || this.state.inDialog) return;
         const nx = this.state.player.x + dx; const ny = this.state.player.y + dy;
+        
+        // Sektor Wechsel Check
         if(nx < 0 || nx >= this.MAP_W || ny < 0 || ny >= this.MAP_H) { this.changeSector(nx, ny); return; }
 
         const t = this.state.currentMap[ny][nx]; const pk = `${nx},${ny}`;
 
         if(this.state.hiddenItems && this.state.hiddenItems[pk]) {
             this.addToInventory(this.state.hiddenItems[pk], 1);
-            UI.log(`Gefunden!`, "text-yellow-400 font-bold"); UI.shakeView(); delete this.state.hiddenItems[pk];
+            if(typeof UI !== 'undefined') UI.log(`Gefunden!`, "text-yellow-400 font-bold"); 
+            if(typeof UI !== 'undefined' && UI.shakeView) UI.shakeView(); 
+            delete this.state.hiddenItems[pk];
         }
 
         if (t === 'X') { this.openChest(nx, ny); return; } 
         if (t === 'v') { this.descendDungeon(); return; }
         if (t === '?') { this.testMinigames(); return; } 
 
+        // Kollision
         if(['M', 'W', '#', 'U', 't', 'o', 'Y', '|', 'F', 'T', 'R', '^', '~'].includes(t) && t !== 'R' && t !== '+') { 
             if(this.state.hiddenItems && this.state.hiddenItems[pk]) { this.addToInventory(this.state.hiddenItems[pk], 1); delete this.state.hiddenItems[pk]; return; }
-            UI.shakeView();
+            if(typeof UI !== 'undefined' && UI.shakeView) UI.shakeView();
             if(['#', '^', '|'].includes(t) && this.spawnParticle) this.spawnParticle(nx, ny, 'rubble', 4);
             if(['M', 'W'].includes(t) && this.spawnParticle) this.spawnParticle(nx, ny, 'blood', 6);
             return; 
@@ -30,10 +62,14 @@ Object.assign(Game, {
         if(this.spawnParticle) this.spawnParticle(this.state.player.x, this.state.player.y, 'dust', 3);
 
         this.state.player.x = nx; this.state.player.y = ny;
+        
+        // Rotation update
         if(dx===1) this.state.player.rot=Math.PI/2; if(dx===-1) this.state.player.rot=-Math.PI/2;
         if(dy===1) this.state.player.rot=Math.PI; if(dy===-1) this.state.player.rot=0;
 
+        // WICHTIG: Erst bewegen, dann aufdecken!
         this.reveal(nx, ny);
+        
         if(typeof Network!=='undefined') Network.sendHeartbeat();
 
         if(t==='V') { UI.switchView('vault'); return; }
@@ -41,26 +77,35 @@ Object.assign(Game, {
         if(t==='S'||t==='H'||t==='A'||t==='R'||t==='K') { this.tryEnterDungeon(t==='S'?'market':(t==='H'?'cave':(t==='A'?'military':(t==='R'?'raider':'tower')))); return; }
         
         if(Math.random() < 0.03 && !['=', '+', 'V', 'C'].includes(t)) { this.startCombat(); return; }
-        UI.update();
+        if(typeof UI !== 'undefined' && UI.update) UI.update();
     },
 
     changeSector: function(px, py) { 
         let sx=this.state.sector.x, sy=this.state.sector.y; let newPx=px, newPy=py;
         if(py<0){sy--;newPy=this.MAP_H-1;newPx=this.state.player.x;} else if(py>=this.MAP_H){sy++;newPy=0;newPx=this.state.player.x;}
         if(px<0){sx--;newPx=this.MAP_W-1;newPy=this.state.player.y;} else if(px>=this.MAP_W){sx++;newPx=0;newPy=this.state.player.y;}
-        if(sx<0||sx>=this.WORLD_W||sy<0||sy>=this.WORLD_H){UI.log("Ende der Welt.", "text-red-500");return;}
         
-        this.state.sector = {x:sx, y:sy}; this.loadSector(sx, sy); 
-        this.state.player.x = newPx; this.state.player.y = newPy;
-        this.ensureWalkableSpawn(); this.reveal(newPx, newPy); this.saveGame();
+        if(sx<0||sx>=this.WORLD_W||sy<0||sy>=this.WORLD_H){
+            if(typeof UI !== 'undefined') UI.log("Ende der Welt.", "text-red-500");
+            return;
+        }
+        
+        this.state.sector = {x:sx, y:sy}; 
+        this.loadSector(sx, sy); 
+        this.state.player.x = newPx; 
+        this.state.player.y = newPy;
+        
+        this.ensureWalkableSpawn(); 
+        this.reveal(newPx, newPy); 
+        this.saveGame();
+        
         if(typeof this.updateQuestProgress === 'function') this.updateQuestProgress('visit', `${sx},${sy}`, 1);
-        UI.log(`Sektor: ${sx},${sy}`, "text-blue-400"); 
+        if(typeof UI !== 'undefined') UI.log(`Sektor: ${sx},${sy}`, "text-blue-400"); 
     },
 
     ensureWalkableSpawn: function() {
         if(!this.state||!this.state.currentMap) return;
         
-        // FIX: Koordinaten Clampen! (Rettet korrupte Savegames)
         if(this.state.player.x < 0 || this.state.player.x >= this.MAP_W || 
            this.state.player.y < 0 || this.state.player.y >= this.MAP_H) {
             console.log("Player out of bounds, resetting to 25,25");
@@ -102,7 +147,7 @@ Object.assign(Game, {
              if(['t','#'].includes(this.state.currentMap[hy][hx])) this.state.hiddenItems[`${hx},${hy}`] = 'screws';
         }
 
-        if(!this.state.explored) this.state.explored = {};
+        // Zone Name Update
         let zn = "Ödland";
         const bd = this.worldData[key].biome;
         if(bd === 'forest') zn = "Verstrahlter Wald";
@@ -116,12 +161,13 @@ Object.assign(Game, {
         this.reveal(this.state.player.x, this.state.player.y);
     },
     
-    tryEnterDungeon: function(t){const k=`${this.state.sector.x},${this.state.sector.y}_${t}`;const c=this.state.cooldowns?this.state.cooldowns[k]:0;if(c&&Date.now()<c){UI.showDungeonLocked(Math.ceil((c-Date.now())/60000));return;}UI.showDungeonWarning(()=>this.enterDungeon(t));},
-    enterDungeon: function(t,l=1){if(l===1){this.state.savedPosition={x:this.state.player.x,y:this.state.player.y};this.state.sectorExploredCache=JSON.parse(JSON.stringify(this.state.explored));}this.state.dungeonLevel=l;this.state.dungeonType=t;if(typeof WorldGen!=='undefined'){WorldGen.setSeed((this.state.sector.x+1)*(this.state.sector.y+1)*Date.now()+l);const d=WorldGen.generateDungeonLayout(this.MAP_W,this.MAP_H);this.state.currentMap=d.map;this.state.player.x=d.startX;this.state.player.y=d.startY;if(l<3)for(let y=0;y<this.MAP_H;y++)for(let x=0;x<this.MAP_W;x++)if(this.state.currentMap[y][x]==='X')this.state.currentMap[y][x]='v';}this.state.zone="Dungeon";this.state.explored={};this.reveal(this.state.player.x,this.state.player.y);if(this.renderStaticMap)this.renderStaticMap();UI.update();},
-    descendDungeon: function(){this.enterDungeon(this.state.dungeonType,this.state.dungeonLevel+1);UI.shakeView();UI.log("Tiefer...","text-purple-400");},
-    openChest: function(x,y){if(this.state.dungeonLevel>=3){UI.startMinigame('memory',()=>this.forceOpenChest(x,y));return;}this.forceOpenChest(x,y);},
-    forceOpenChest: function(x,y){this.state.currentMap[y][x]='B';if(this.renderStaticMap)this.renderStaticMap();const m=this.state.dungeonLevel||1;this.state.caps+=(100*m);this.addToInventory('legendary_part',1);if(Math.random()<0.5)this.addToInventory('stimpack',1);UI.showDungeonVictory(100*m,m);setTimeout(()=>this.leaveCity(),4000);},
-    leaveCity: function(){this.state.view='map';this.state.dungeonLevel=0;if(this.state.savedPosition){this.state.player.x=this.state.savedPosition.x;this.state.player.y=this.state.savedPosition.y;this.state.savedPosition=null;}UI.switchView('map').then(()=>{if(this.renderStaticMap)this.renderStaticMap();});},
-    enterCity: function(){this.state.savedPosition={x:this.state.player.x,y:this.state.player.y};this.state.view='city';this.saveGame();UI.switchView('city').then(()=>{if(UI.renderCity)UI.renderCity();});},
+    // Dungeon Methoden bleiben gleich
+    tryEnterDungeon: function(t){const k=`${this.state.sector.x},${this.state.sector.y}_${t}`;const c=this.state.cooldowns?this.state.cooldowns[k]:0;if(c&&Date.now()<c){if(typeof UI!=='undefined')UI.showDungeonLocked(Math.ceil((c-Date.now())/60000));return;}if(typeof UI!=='undefined')UI.showDungeonWarning(()=>this.enterDungeon(t));},
+    enterDungeon: function(t,l=1){if(l===1){this.state.savedPosition={x:this.state.player.x,y:this.state.player.y};this.state.sectorExploredCache=JSON.parse(JSON.stringify(this.state.explored));}this.state.dungeonLevel=l;this.state.dungeonType=t;if(typeof WorldGen!=='undefined'){WorldGen.setSeed((this.state.sector.x+1)*(this.state.sector.y+1)*Date.now()+l);const d=WorldGen.generateDungeonLayout(this.MAP_W,this.MAP_H);this.state.currentMap=d.map;this.state.player.x=d.startX;this.state.player.y=d.startY;if(l<3)for(let y=0;y<this.MAP_H;y++)for(let x=0;x<this.MAP_W;x++)if(this.state.currentMap[y][x]==='X')this.state.currentMap[y][x]='v';}this.state.zone="Dungeon";this.state.explored={};this.reveal(this.state.player.x,this.state.player.y);if(this.renderStaticMap)this.renderStaticMap();if(typeof UI!=='undefined')UI.update();},
+    descendDungeon: function(){this.enterDungeon(this.state.dungeonType,this.state.dungeonLevel+1);if(typeof UI!=='undefined'){UI.shakeView();UI.log("Tiefer...","text-purple-400");}},
+    openChest: function(x,y){if(this.state.dungeonLevel>=3){if(typeof UI!=='undefined')UI.startMinigame('memory',()=>this.forceOpenChest(x,y));return;}this.forceOpenChest(x,y);},
+    forceOpenChest: function(x,y){this.state.currentMap[y][x]='B';if(this.renderStaticMap)this.renderStaticMap();const m=this.state.dungeonLevel||1;this.state.caps+=(100*m);this.addToInventory('legendary_part',1);if(Math.random()<0.5)this.addToInventory('stimpack',1);if(typeof UI!=='undefined')UI.showDungeonVictory(100*m,m);setTimeout(()=>this.leaveCity(),4000);},
+    leaveCity: function(){this.state.view='map';this.state.dungeonLevel=0;if(this.state.savedPosition){this.state.player.x=this.state.savedPosition.x;this.state.player.y=this.state.savedPosition.y;this.state.savedPosition=null;}if(typeof UI!=='undefined')UI.switchView('map').then(()=>{if(this.renderStaticMap)this.renderStaticMap();});},
+    enterCity: function(){this.state.savedPosition={x:this.state.player.x,y:this.state.player.y};this.state.view='city';this.saveGame();if(typeof UI!=='undefined')UI.switchView('city').then(()=>{if(UI.renderCity)UI.renderCity();});},
     testMinigames: function(){if(UI.els.dialog){UI.els.dialog.style.display='flex';UI.els.dialog.innerHTML='<div class="bg-black text-white p-4 border border-green-500"><button onclick="UI.startMinigame(\'hacking\')">HACK</button><button onclick="UI.els.dialog.style.display=\'none\'">X</button></div>';}}
 });
