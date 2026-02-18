@@ -1,4 +1,4 @@
-// [2026-02-18 11:00:00] ui_render_views.js - Fullscreen World Map Integration
+// [2026-02-18 11:30:00] ui_render_views.js - Fullscreen Map Layout - COMPLETE
 
 Object.assign(UI, {
 
@@ -38,7 +38,7 @@ Object.assign(UI, {
                 if(this.renderInventory) this.renderInventory(container);
                 break;
             case 'char':
-                this.renderStats(Game.state.charTab || 'stats'); // Fix: Direkt renderStats aufrufen
+                this.renderStats(Game.state.charTab || 'stats');
                 break;
             case 'journal':
                 if(this.renderJournal) this.renderJournal(container);
@@ -50,7 +50,7 @@ Object.assign(UI, {
                 if(this.renderCity) this.renderCity(container);
                 break;
             case 'worldmap':
-                // NEU: Vollbild Weltkarte
+                // NEU: Vollbild Weltkarte (Ersetzt die alte Box-Ansicht)
                 this.renderFullscreenWorldMap(container);
                 break;
             default:
@@ -81,15 +81,12 @@ Object.assign(UI, {
         if(Game.initCanvas) Game.initCanvas();
     },
 
-    // NEU: Das Layout für die Weltkarte
+    // NEU: Das Layout für die Weltkarte (Vollbild)
     renderFullscreenWorldMap: function(container) {
         container.innerHTML = `
-            <div class="relative w-full h-full bg-black overflow-hidden flex flex-col">
-                <div class="flex-grow relative overflow-hidden">
-                    <canvas id="world-map-canvas" class="absolute inset-0 w-full h-full block cursor-move"></canvas>
-                    <div class="pointer-events-none absolute inset-0 border-2 border-green-900/30 m-2 rounded-lg"></div>
-                </div>
-
+            <div class="relative w-full h-full bg-[#050a05] overflow-hidden flex flex-col select-none">
+                <canvas id="world-map-canvas" class="absolute inset-0 block cursor-move w-full h-full"></canvas>
+                
                 <div class="absolute top-4 left-0 w-full flex justify-center items-center pointer-events-none z-20">
                     <div class="bg-black/80 border-t-2 border-b-2 border-green-500 px-8 py-2 flex items-center gap-4 shadow-[0_0_15px_rgba(0,255,0,0.2)] backdrop-blur-sm pointer-events-auto">
                         <h2 class="text-xl font-bold text-green-400 tracking-[0.2em] uppercase text-shadow-glow">WELTKARTE</h2>
@@ -101,16 +98,17 @@ Object.assign(UI, {
                     <div class="bg-black/90 border border-green-600 px-6 py-3 rounded-lg shadow-lg text-center backdrop-blur pointer-events-auto max-w-[90%]">
                         <div class="text-[10px] text-green-700 tracking-widest uppercase mb-1 border-b border-green-900/50 pb-1">PIP-OS V7.1.0 // GPS MODULE</div>
                         <div id="world-location-text" class="text-green-400 font-mono font-bold text-lg animate-pulse">
-                            SYSTEM: STANDORT WIRD BERECHNET...
+                            STANDORT WIRD BERECHNET...
                         </div>
                     </div>
                 </div>
 
-                <button onclick="UI.switchView('map')" class="absolute top-4 right-4 z-30 bg-red-900/20 border border-red-500/50 text-red-500 w-10 h-10 flex items-center justify-center hover:bg-red-900 hover:text-white transition-colors">✕</button>
+                <button onclick="UI.switchView('map')" class="absolute top-4 right-4 z-30 bg-red-900/20 border border-red-500/50 text-red-500 w-10 h-10 flex items-center justify-center hover:bg-red-900 hover:text-white transition-colors text-xl font-bold shadow-lg">✕</button>
             </div>
         `;
         
-        // Render Loop starten (in ui_view_world.js definiert)
+        // Renderer sofort starten
+        if(UI.initWorldMapInteraction) UI.initWorldMapInteraction();
         if(UI.renderWorldMap) UI.renderWorldMap();
     },
 
