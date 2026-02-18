@@ -1,7 +1,8 @@
-// [2026-02-18 13:00:00] ui_render_views.js - Hybrid Layout Support
+// [2026-02-18 14:30:00] ui_render_views.js - Fullscreen Fix COMPLETE
 
 Object.assign(UI, {
 
+    // Helper für Equipment Klicks
     openEquipMenu: function(slot) {
         if(!Game.state) return;
         const item = Game.state.equip ? Game.state.equip[slot] : null;
@@ -21,30 +22,42 @@ Object.assign(UI, {
         else this.renderStats('special'); 
     },
 
+    // --- HAUPT RENDER FUNKTION ---
     renderView: function() {
         const container = document.getElementById('view-container');
         if(!container || !Game.state) return;
 
-        // Container leeren, AUSSER bei Views, die extern geladen werden könnten
-        // Wir leeren hier sicherheitshalber, aber der worldmap-Fallback greift unten
+        // Container komplett leeren
         container.innerHTML = '';
 
         switch(Game.state.view) {
-            case 'map': this.renderMapScanline(container); break;
-            case 'inv': if(this.renderInventory) this.renderInventory(container); break;
-            case 'char': this.renderStats(Game.state.charTab || 'stats'); break;
-            case 'journal': if(this.renderJournal) this.renderJournal(container); break;
-            case 'camp': if(this.renderCamp) this.renderCamp(container); break;
-            case 'city': if(this.renderCity) this.renderCity(container); break;
-            
+            case 'map':
+                this.renderMapScanline(container);
+                break;
+            case 'inv':
+                if(this.renderInventory) this.renderInventory(container);
+                break;
+            case 'char':
+                this.renderStats(Game.state.charTab || 'stats');
+                break;
+            case 'journal':
+                if(this.renderJournal) this.renderJournal(container);
+                break;
+            case 'camp':
+                if(this.renderCamp) this.renderCamp(container);
+                break;
+            case 'city':
+                if(this.renderCity) this.renderCity(container);
+                break;
             case 'worldmap':
                 this.renderFullscreenWorldMap(container);
                 break;
-                
-            default: container.innerHTML = `<div class="text-center p-10 text-red-500">ERROR: Unknown View ${Game.state.view}</div>`;
+            default:
+                container.innerHTML = `<div class="text-center p-10 text-red-500">ERROR: Unknown View ${Game.state.view}</div>`;
         }
     },
 
+    // Standard Spielansicht
     renderMapScanline: function(container) {
         container.innerHTML = `
             <div class="relative w-full h-full bg-black overflow-hidden">
@@ -67,45 +80,44 @@ Object.assign(UI, {
         if(Game.initCanvas) Game.initCanvas();
     },
 
+    // NEU: Das Layout für die Weltkarte (Vollbild)
     renderFullscreenWorldMap: function(container) {
-        // 1. Prüfen: Hat der Datei-Lader das HTML schon in den Container gepackt?
-        // Wir geben dem Browser kurz Zeit (via setTimeout 0 oder requestAnimationFrame wäre ideal),
-        // aber hier erzwingen wir ein Fallback.
-        
-        // Da 'renderView' oft aufgerufen wird *nachdem* der Lader fertig ist, 
-        // oder *um* den Lader zu triggern, gehen wir auf Nummer sicher:
-        
-        // Wir injecten das HTML NUR, wenn der Canvas noch NICHT da ist.
-        if (!document.getElementById('world-map-canvas')) {
-            container.innerHTML = `
-                <div class="relative w-full h-full bg-[#050a05] overflow-hidden flex flex-col select-none">
-                    <div class="flex-grow relative overflow-hidden w-full h-full">
-                        <canvas id="world-map-canvas" class="absolute inset-0 w-full h-full block cursor-move"></canvas>
-                        <div class="pointer-events-none absolute inset-0 border-2 border-green-900/30 m-2 rounded-lg z-10"></div>
-                    </div>
-                    <div class="absolute top-4 left-0 w-full flex justify-center items-center pointer-events-none z-20">
-                        <div class="bg-black/80 border-t-2 border-b-2 border-green-500 px-8 py-2 flex items-center gap-4 shadow-[0_0_15px_rgba(0,255,0,0.2)] backdrop-blur-sm pointer-events-auto">
-                            <h2 class="text-xl font-bold text-green-400 tracking-[0.2em] uppercase text-shadow-glow">WELTKARTE</h2>
-                            <button onclick="if(typeof UI.showTutorial === 'function') UI.showTutorial('map')" class="border border-green-500 text-green-500 hover:bg-green-900 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all">?</button>
-                        </div>
-                    </div>
-                    <div class="absolute bottom-6 left-0 w-full flex justify-center pointer-events-none z-20">
-                        <div class="bg-black/90 border border-green-600 px-6 py-3 rounded-lg shadow-lg text-center backdrop-blur pointer-events-auto max-w-[90%]">
-                            <div class="text-[10px] text-green-700 tracking-widest uppercase mb-1 border-b border-green-900/50 pb-1">PIP-OS V7.1.0 // GPS MODULE</div>
-                            <div id="world-location-text" class="text-green-400 font-mono font-bold text-lg animate-pulse">SYSTEM: STANDORT WIRD BERECHNET...</div>
-                        </div>
-                    </div>
-                    <button onclick="UI.switchView('map')" class="absolute top-4 right-4 z-30 bg-red-900/20 border border-red-500/50 text-red-500 w-10 h-10 flex items-center justify-center hover:bg-red-900 hover:text-white transition-colors text-xl font-bold shadow-lg">✕</button>
+        // Wir erzwingen das HTML-Layout per JS, damit wir sicher sind, dass es existiert.
+        container.innerHTML = `
+            <div class="relative w-full h-full bg-[#050a05] overflow-hidden flex flex-col select-none">
+                <div class="flex-grow relative overflow-hidden w-full h-full">
+                    <canvas id="world-map-canvas" class="absolute inset-0 w-full h-full block cursor-move"></canvas>
+                    <div class="pointer-events-none absolute inset-0 border-2 border-green-900/30 m-2 rounded-lg z-10"></div>
                 </div>
-            `;
-        }
+                
+                <div class="absolute top-4 left-0 w-full flex justify-center items-center pointer-events-none z-20">
+                    <div class="bg-black/80 border-t-2 border-b-2 border-green-500 px-8 py-2 flex items-center gap-4 shadow-[0_0_15px_rgba(0,255,0,0.2)] backdrop-blur-sm pointer-events-auto">
+                        <h2 class="text-xl font-bold text-green-400 tracking-[0.2em] uppercase text-shadow-glow">WELTKARTE</h2>
+                        <button onclick="if(typeof UI.showTutorial === 'function') UI.showTutorial('map')" class="border border-green-500 text-green-500 hover:bg-green-900 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all">?</button>
+                    </div>
+                </div>
 
-        // 2. Renderer starten
-        // Wir nutzen setTimeout, um sicherzugehen, dass das DOM (egal ob von Datei oder JS) bereit ist.
+                <div class="absolute bottom-6 left-0 w-full flex justify-center pointer-events-none z-20">
+                    <div class="bg-black/90 border border-green-600 px-6 py-3 rounded-lg shadow-lg text-center backdrop-blur pointer-events-auto max-w-[90%]">
+                        <div class="text-[10px] text-green-700 tracking-widest uppercase mb-1 border-b border-green-900/50 pb-1">PIP-OS V7.1.0 // GPS MODULE</div>
+                        <div id="world-location-text" class="text-green-400 font-mono font-bold text-lg animate-pulse">
+                            STANDORT WIRD BERECHNET...
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="UI.switchView('map')" class="absolute top-4 right-4 z-30 bg-red-900/20 border border-red-500/50 text-red-500 w-10 h-10 flex items-center justify-center hover:bg-red-900 hover:text-white transition-colors text-xl font-bold shadow-lg">✕</button>
+            </div>
+        `;
+        
+        // Reset Center Flag beim Öffnen, damit die Kamera neu springt
+        if(UI.mapState) UI.mapState.centeredOnce = false;
+
+        // Renderer starten (Verzögert, damit DOM sicher da ist)
         setTimeout(() => {
             if(UI.initWorldMapInteraction) UI.initWorldMapInteraction();
             if(UI.renderWorldMap) UI.renderWorldMap();
-        }, 10);
+        }, 50);
     },
 
     renderStats: function(tab = 'stats', event = null) {
@@ -133,10 +145,13 @@ Object.assign(UI, {
         `;
         scrollContainer.appendChild(header);
 
-        const content = document.createElement('div'); content.className = "w-full p-4";
+        const content = document.createElement('div');
+        content.className = "w-full p-4";
+        
         if (tab === 'stats') UI.renderCharacterVisuals(content);
         else if (tab === 'special') UI.renderSpecialStats(content);
         else if (tab === 'perks') UI.renderPerksList(content);
+
         scrollContainer.appendChild(content);
         wrapper.appendChild(scrollContainer);
 
