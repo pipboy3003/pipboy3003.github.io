@@ -1,4 +1,4 @@
-// [2026-02-18 16:05:00] ui_view_world.js - Pixel Perfect Rendering
+// [2026-02-18 16:30:00] ui_view_world.js - Enhanced Pixel Colors
 
 Object.assign(UI, {
     mapState: {
@@ -138,26 +138,33 @@ Object.assign(UI, {
         const keys = Object.keys(Game.state.explored);
         
         // Optimierung: Nur rendern wenn neue Tiles dazu kamen
-        // Oder wenn wir beim ersten Load sind
         if (keys.length === this.mapState.lastExploredCount) return;
 
-        // Farben
+        // --- ERWEITERTE FARBPALETTE ---
         const colors = {
-            '.': '#4a4036', '_': '#8b5a2b', '"': '#1a3300', ';': '#1e1e11',
-            '~': '#2244aa', '^': '#555', '#': '#333', '=': '#555', '+': '#654321',
-            't': '#0f2405', 'V': '#ffcc00', 'C': '#ff4400', 'G': '#cccccc', 'X': '#8B4513'
+            '.': '#4a4036', // Standard Boden (dunkelbraun)
+            ',': '#6e6259', // NEU: Kleine Steine/Kies (helleres grau-braun)
+            '_': '#8b5a2b', // Pfad
+            '"': '#1a3300', // Gras
+            ';': '#1e1e11', // Sumpf
+            '~': '#2244aa', // Wasser
+            
+            '^': '#6b5b45', // Hügel (erdiges braun)
+            'M': '#333333', // NEU: Richtige Berge/Gipfel (dunkles Fels-Grau)
+            
+            '#': '#222222', // Ruinen/Wände (fast schwarz)
+            '=': '#555555', // Straße (Asphalt grau)
+            '+': '#654321', // Bodenvariante
+            
+            't': '#0f2405', // Baum (sehr dunkles Grün)
+            
+            // POIs (leuchtend)
+            'V': '#ffcc00', 'C': '#ff4400', 'G': '#cccccc', 'X': '#8B4513'
         };
 
-        // Wir gehen durch ALLE erkundeten Tiles
-        // (Bei sehr vielen Tiles könnte man das optimieren, aber für 50k ist es okay)
-        // Besser: Wir sollten nur die NEUEN zeichnen, aber wir wissen nicht welche neu sind.
-        // Einfachheitshalber: Alles neu malen (Canvas ist schnell).
-        // Um Flackern zu vermeiden, könnte man das inkrementell machen, aber wir lassen es so.
-        
         // WICHTIG: Das hier ist der "Pixel-Genau" Teil.
         keys.forEach(key => {
             // Key Format: "SX,SY_LX,LY"
-            // Wir müssen das parsen.
             const parts = key.split('_');
             if(parts.length !== 2) return;
             
@@ -170,7 +177,8 @@ Object.assign(UI, {
             const gx = sx * Game.MAP_W + lx;
             const gy = sy * Game.MAP_H + ly;
             
-            ctx.fillStyle = colors[tileChar] || '#4a4036'; // Default Boden
+            // Farbe wählen oder Fallback auf Boden, wenn unbekannt
+            ctx.fillStyle = colors[tileChar] || '#4a4036'; 
             ctx.fillRect(gx, gy, 1, 1);
         });
 
@@ -247,7 +255,7 @@ Object.assign(UI, {
             );
         }
 
-        // 3. Grid
+        // 3. Grid (Dynamisch)
         ctx.strokeStyle = "rgba(0, 255, 0, 0.1)";
         ctx.lineWidth = 1;
         const gridSize = 50 * s;
@@ -301,7 +309,7 @@ Object.assign(UI, {
         if(Game.state.view === 'worldmap') requestAnimationFrame(() => this.renderWorldMap());
     },
 
-    drawBackgroundGrid: function(ctx, w, h) { }, // Deaktiviert (benutzen dynamisches Grid)
+    drawBackgroundGrid: function(ctx, w, h) { },
 
     drawCompass: function(ctx, w, h) {
         const cx = w - 60; const cy = h - 60; const r = 30;
