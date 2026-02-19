@@ -1,4 +1,4 @@
-// [2026-02-18 14:30:00] ui_render_views.js - Fullscreen Fix COMPLETE
+// [2026-02-19 06:15:00] ui_render_views.js - Quest Tracker in Map Container
 
 Object.assign(UI, {
 
@@ -64,6 +64,9 @@ Object.assign(UI, {
                 <canvas id="game-canvas" class="block w-full h-full object-cover"></canvas>
                 <div id="scanline" class="pointer-events-none absolute inset-0 bg-repeat-y opacity-10"></div>
                 <div id="vignette" class="pointer-events-none absolute inset-0 radial-gradient"></div>
+                
+                <div id="map-quest-tracker" class="absolute top-2 right-2 z-20 pointer-events-none max-w-[200px]"></div>
+
                 <div class="absolute bottom-4 left-4 text-green-400 font-mono text-sm bg-black/50 px-2 py-1 border border-green-900">
                     DIAGNOSE: ${Game.state.zone || 'Unbekannt'}
                 </div>
@@ -78,11 +81,15 @@ Object.assign(UI, {
             </div>
         `;
         if(Game.initCanvas) Game.initCanvas();
+        
+        // Nach dem Zeichnen der Map direkt das Quest-Overlay aktualisieren
+        if(typeof UI.updateQuestTracker === 'function') {
+            UI.updateQuestTracker();
+        }
     },
 
-    // NEU: Das Layout für die Weltkarte (Vollbild)
+    // Das Layout für die Weltkarte (Vollbild)
     renderFullscreenWorldMap: function(container) {
-        // Wir erzwingen das HTML-Layout per JS, damit wir sicher sind, dass es existiert.
         container.innerHTML = `
             <div class="relative w-full h-full bg-[#050a05] overflow-hidden flex flex-col select-none">
                 <div class="flex-grow relative overflow-hidden w-full h-full">
@@ -110,10 +117,8 @@ Object.assign(UI, {
             </div>
         `;
         
-        // Reset Center Flag beim Öffnen, damit die Kamera neu springt
         if(UI.mapState) UI.mapState.centeredOnce = false;
 
-        // Renderer starten (Verzögert, damit DOM sicher da ist)
         setTimeout(() => {
             if(UI.initWorldMapInteraction) UI.initWorldMapInteraction();
             if(UI.renderWorldMap) UI.renderWorldMap();
@@ -131,8 +136,9 @@ Object.assign(UI, {
         wrapper.className = "absolute inset-0 w-full h-full flex flex-col bg-black z-20 overflow-hidden";
         wrapper.onclick = (e) => e.stopPropagation();
 
+        const scrollId = 'char-scroll-content';
         const scrollContainer = document.createElement('div');
-        scrollContainer.id = 'char-scroll-content'; 
+        scrollContainer.id = scrollId; 
         scrollContainer.className = "flex-1 w-full overflow-y-auto pb-24 bg-black";
 
         const getTabClass = (t) => (tab === t) ? "bg-green-500 text-black border-b-4 border-green-700 font-bold" : "bg-[#001100] text-green-600 border-b border-green-900";
@@ -161,13 +167,6 @@ Object.assign(UI, {
         wrapper.appendChild(footer);
 
         view.appendChild(wrapper);
-
-        if(savedScrollTop > 0) {
-            requestAnimationFrame(() => {
-                const el = document.getElementById(scrollId);
-                if(el) el.scrollTop = savedScrollTop;
-            });
-        }
 
         if (tab === 'stats') setTimeout(() => UI.drawVaultBoy('char-silhouette-canvas'), 100);
     },
