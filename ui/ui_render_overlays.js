@@ -1,4 +1,4 @@
-// [2026-02-19 06:45:00] ui_render_overlays.js - Quest Tracker Placement Fix
+// [2026-02-19 06:45:00] ui_render_overlays.js - Reliable Quest Tracker
 
 Object.assign(UI, {
     
@@ -309,21 +309,20 @@ Object.assign(UI, {
         }, 4500);
     },
 
-    // [GEÄNDERT] QUEST TRACKER HUD - Jetzt fest oben LINKS im Map-Container
+    // [GEFIXT] QUEST TRACKER HUD - Stabiler globaler Container
     updateQuestTracker: function() {
-        // Sucht den Container, der in ui_render_views.js in der Map definiert wurde
-        let mapContainer = document.getElementById('map-quest-tracker');
+        let hud = document.getElementById('quest-tracker-hud');
         
-        if(!mapContainer) {
-            // Versteckt das alte globale HUD falls es rumgeistert
-            let oldHud = document.getElementById('quest-tracker-hud');
-            if(oldHud) oldHud.style.display = 'none';
-            return;
+        if(!hud) {
+            const screen = document.getElementById('game-screen') || document.body;
+            hud = document.createElement('div');
+            hud.id = 'quest-tracker-hud';
+            screen.appendChild(hud);
         }
 
-        if(!Game.state || !Game.state.trackedQuestId) {
-            mapContainer.innerHTML = '';
-            mapContainer.style.opacity = '0';
+        // NUR anzeigen, wenn eine Quest aktiv ist UND wir uns auf der Spielkarte ('map') befinden!
+        if(!Game.state || !Game.state.trackedQuestId || Game.state.view !== 'map') {
+            hud.style.display = 'none';
             return;
         }
 
@@ -332,14 +331,15 @@ Object.assign(UI, {
         const def = Game.questDefs.find(d => d.id === qId);
 
         if(!qData || !def) {
-            mapContainer.innerHTML = '';
-            mapContainer.style.opacity = '0';
+            hud.style.display = 'none';
             return;
         }
 
-        // Sichtbar machen und positionieren (oben links)
-        mapContainer.style.opacity = '1';
-        mapContainer.className = "absolute top-2 left-2 z-30 bg-black/80 border-l-4 border-yellow-500 p-2 max-w-[250px] shadow-lg pointer-events-none transition-opacity duration-300 text-left";
+        // Sichtbar schalten
+        hud.style.display = 'block';
+        
+        // Position: top-20 (80px von oben = sicher unterm Header), left-2 (8px von links = direkt unterm Lager-Button)
+        hud.className = `absolute top-20 left-2 z-40 bg-black/80 border-l-4 border-yellow-500 p-2 max-w-[250px] shadow-[0_0_15px_rgba(0,0,0,0.8)] pointer-events-none text-left`;
 
         let objectives = "";
         
@@ -349,7 +349,7 @@ Object.assign(UI, {
                 const iName = Game.items[id]?.name || id;
                 const done = inInv >= amt;
                 const icon = done ? "✔" : "☐";
-                return `<div class="${done ? 'text-green-500 line-through' : 'text-yellow-100'} text-xs font-mono ml-2">
+                return `<div class="${done ? 'text-green-500 line-through' : 'text-yellow-100'} text-[10px] font-mono ml-2">
                     ${icon} ${inInv}/${amt} ${iName}
                 </div>`;
             }).join('');
@@ -361,7 +361,7 @@ Object.assign(UI, {
             if(def.type === 'collect') verb = "Sammle";
             if(def.type === 'visit') verb = "Reise nach";
             
-            objectives = `<div class="text-yellow-100 text-xs font-mono ml-2">
+            objectives = `<div class="text-yellow-100 text-[10px] font-mono ml-2">
                 [${current}/${max}] ${verb} ${def.target}
             </div>`;
         }
@@ -374,29 +374,25 @@ Object.assign(UI, {
                 const cx = Game.state.sector.x; const cy = Game.state.sector.y;
                 
                 if(tx === cx && ty === cy) {
-                    directionHint = `<div class="text-green-400 text-[10px] mt-1 animate-pulse">📍 ZIEL IM AKTUELLEN SEKTOR!</div>`;
+                    directionHint = `<div class="text-green-400 text-[9px] mt-1 animate-pulse font-bold">📍 ZIEL IM AKTUELLEN SEKTOR!</div>`;
                 } else {
                     let dir = "";
                     if(ty < cy) dir += "Nord";
                     if(ty > cy) dir += "Süd";
                     if(tx > cx) dir += "ost";
                     if(tx < cx) dir += "west";
-                    if(dir) directionHint = `<div class="text-gray-400 text-[10px] mt-1 italic">📡 Ziel liegt im ${dir}</div>`;
+                    if(dir) directionHint = `<div class="text-gray-400 text-[9px] mt-1 italic">📡 Sektor liegt im ${dir}</div>`;
                 }
             }
         }
 
-        mapContainer.innerHTML = `
-            <div class="text-yellow-500 font-bold text-xs uppercase tracking-widest mb-1 shadow-black">◉ ${def.title}</div>
-            <div class="flex flex-col gap-1 mb-1 items-start">
+        hud.innerHTML = `
+            <div class="text-yellow-500 font-bold text-[10px] uppercase tracking-widest mb-1 shadow-black">◉ ${def.title}</div>
+            <div class="flex flex-col mb-1 items-start">
                 ${objectives}
             </div>
             ${directionHint}
         `;
-        
-        // Entfernt das alte HUD, falls vorhanden (Aufräumen)
-        let oldHud = document.getElementById('quest-tracker-hud');
-        if(oldHud) oldHud.remove();
     },
 
     showMapLegend: function() {
