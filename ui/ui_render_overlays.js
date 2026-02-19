@@ -1,4 +1,4 @@
-// [2026-02-19 06:45:00] ui_render_overlays.js - Reliable Quest Tracker
+// [2026-02-19 07:05:00] ui_render_overlays.js - Bulletproof Quest Tracker
 
 Object.assign(UI, {
     
@@ -309,37 +309,49 @@ Object.assign(UI, {
         }, 4500);
     },
 
-    // [GEFIXT] QUEST TRACKER HUD - Stabiler globaler Container
+    // [BULLETPROOF] QUEST TRACKER HUD
     updateQuestTracker: function() {
-        let hud = document.getElementById('quest-tracker-hud');
+        // Wir holen uns das Div, das in renderMapScanline direkt eingebaut wurde
+        const hud = document.getElementById('map-quest-tracker');
         
-        if(!hud) {
-            const screen = document.getElementById('game-screen') || document.body;
-            hud = document.createElement('div');
-            hud.id = 'quest-tracker-hud';
-            screen.appendChild(hud);
-        }
+        // Wenn es nicht da ist (weil wir im Menü sind), brechen wir sauber ab.
+        if(!hud) return;
 
-        // NUR anzeigen, wenn eine Quest aktiv ist UND wir uns auf der Spielkarte ('map') befinden!
+        // Wenn keine Quest aktiv ist oder wir nicht auf der Map sind -> verstecken
         if(!Game.state || !Game.state.trackedQuestId || Game.state.view !== 'map') {
             hud.style.display = 'none';
             return;
         }
 
         const qId = Game.state.trackedQuestId;
-        const qData = Game.state.activeQuests.find(q => q.id === qId);
-        const def = Game.questDefs.find(d => d.id === qId);
+        
+        // Sicherheitssuche nach den Quest-Daten
+        let qData = null;
+        if (Array.isArray(Game.state.activeQuests)) {
+            qData = Game.state.activeQuests.find(q => q.id === qId);
+        } else if (Game.state.activeQuests) {
+            // Fallback, falls activeQuests ein Objekt sein sollte
+            qData = Game.state.activeQuests[qId];
+        }
 
+        // Sicherheitssuche nach den Quest-Definitionen
+        let def = null;
+        if (window.GameData && window.GameData.quests) {
+            if (Array.isArray(window.GameData.quests)) {
+                def = window.GameData.quests.find(d => d.id === qId);
+            } else {
+                def = window.GameData.quests[qId];
+            }
+        }
+
+        // Wenn Daten fehlen -> Fehler vermeiden, einfach verstecken
         if(!qData || !def) {
             hud.style.display = 'none';
             return;
         }
 
-        // Sichtbar schalten
+        // Quest anzeigen!
         hud.style.display = 'block';
-        
-        // Position: top-20 (80px von oben = sicher unterm Header), left-2 (8px von links = direkt unterm Lager-Button)
-        hud.className = `absolute top-20 left-2 z-40 bg-black/80 border-l-4 border-yellow-500 p-2 max-w-[250px] shadow-[0_0_15px_rgba(0,0,0,0.8)] pointer-events-none text-left`;
 
         let objectives = "";
         
@@ -349,20 +361,20 @@ Object.assign(UI, {
                 const iName = Game.items[id]?.name || id;
                 const done = inInv >= amt;
                 const icon = done ? "✔" : "☐";
-                return `<div class="${done ? 'text-green-500 line-through' : 'text-yellow-100'} text-[10px] font-mono ml-2">
+                return `<div class="${done ? 'text-green-500 line-through' : 'text-yellow-100'} text-[11px] font-mono mt-1">
                     ${icon} ${inInv}/${amt} ${iName}
                 </div>`;
             }).join('');
         } else {
-            const current = qData.progress;
-            const max = qData.max;
-            let verb = "Ziel";
-            if(def.type === 'kill') verb = "Eliminiere";
-            if(def.type === 'collect') verb = "Sammle";
-            if(def.type === 'visit') verb = "Reise nach";
+            const current = qData.progress || 0;
+            const max = qData.max || 1;
+            let verb = "Ziel:";
+            if(def.type === 'kill') verb = "Eliminiere:";
+            if(def.type === 'collect') verb = "Sammle:";
+            if(def.type === 'visit') verb = "Finde:";
             
-            objectives = `<div class="text-yellow-100 text-[10px] font-mono ml-2">
-                [${current}/${max}] ${verb} ${def.target}
+            objectives = `<div class="text-yellow-100 text-[11px] font-mono mt-1">
+                ${verb} ${def.target}<br><span class="text-yellow-500">[${current}/${max}]</span>
             </div>`;
         }
 
@@ -374,21 +386,21 @@ Object.assign(UI, {
                 const cx = Game.state.sector.x; const cy = Game.state.sector.y;
                 
                 if(tx === cx && ty === cy) {
-                    directionHint = `<div class="text-green-400 text-[9px] mt-1 animate-pulse font-bold">📍 ZIEL IM AKTUELLEN SEKTOR!</div>`;
+                    directionHint = `<div class="text-green-400 text-[10px] mt-2 animate-pulse font-bold">📍 ZIEL IM AKTUELLEN SEKTOR!</div>`;
                 } else {
                     let dir = "";
                     if(ty < cy) dir += "Nord";
                     if(ty > cy) dir += "Süd";
                     if(tx > cx) dir += "ost";
                     if(tx < cx) dir += "west";
-                    if(dir) directionHint = `<div class="text-gray-400 text-[9px] mt-1 italic">📡 Sektor liegt im ${dir}</div>`;
+                    if(dir) directionHint = `<div class="text-gray-400 text-[10px] mt-2 italic">📡 Zielrichtung: ${dir}</div>`;
                 }
             }
         }
 
         hud.innerHTML = `
-            <div class="text-yellow-500 font-bold text-[10px] uppercase tracking-widest mb-1 shadow-black">◉ ${def.title}</div>
-            <div class="flex flex-col mb-1 items-start">
+            <div class="text-yellow-500 font-bold text-[11px] uppercase tracking-widest border-b border-yellow-900 pb-1 mb-1 shadow-black">◉ ${def.title}</div>
+            <div class="flex flex-col items-start text-left">
                 ${objectives}
             </div>
             ${directionHint}
