@@ -1,4 +1,4 @@
-// [2026-01-29 09:00:00] ui_render_overlays.js - Corrected HUD Position (Left/Top aligned)
+// [2026-02-19 06:30:00] ui_render_overlays.js - Quest Tracker Placement Fix
 
 Object.assign(UI, {
     
@@ -320,21 +320,22 @@ Object.assign(UI, {
         }, 4500);
     },
 
-    // [NEU & KORRIGIERT] QUEST TRACKER HUD
+    // [GEÄNDERT] QUEST TRACKER HUD - Jetzt an Map Container gebunden
     updateQuestTracker: function() {
-        // 1. Container prüfen
-        let hud = document.getElementById('quest-tracker-hud');
-        if(!hud) {
-            const view = document.getElementById('game-screen');
-            if(!view) return;
-            hud = document.createElement('div');
-            hud.id = 'quest-tracker-hud';
-            // Initiale Position (wird unten überschrieben)
-            hud.className = "absolute top-14 left-2 z-40 bg-black/80 border-l-4 border-yellow-500 p-2 max-w-xs shadow-lg pointer-events-none transition-all duration-500";
-            view.appendChild(hud);
+        // Wir suchen den Container, der in ui_render_views.js definiert wurde
+        let mapContainer = document.getElementById('map-quest-tracker');
+        
+        if(!mapContainer) {
+            // Wenn wir nicht auf der Map sind (z.B. im Inventar), 
+            // blenden wir das globale (alte) HUD aus, falls es existiert.
+            let oldHud = document.getElementById('quest-tracker-hud');
+            if(oldHud) oldHud.style.opacity = '0';
+            return;
         }
 
-        // 2. Daten laden
+        // Wir nutzen den Map Container selbst als HUD
+        let hud = mapContainer;
+
         if(!Game.state || !Game.state.trackedQuestId) {
             hud.style.opacity = '0';
             return;
@@ -351,15 +352,9 @@ Object.assign(UI, {
 
         hud.style.opacity = '1';
         
-        // 3. Positionierung
-        // top-14 = 3.5rem (ca. 56px). Sollte unter der Topbar sitzen.
-        // Camp Button Check:
-        const hasCamp = (Game.state.camp !== null);
-        const leftClass = hasCamp ? 'left-36' : 'left-16'; // 36 = 9rem, 16 = 4rem
-        
-        hud.className = `absolute top-14 ${leftClass} z-40 bg-black/80 border-l-4 border-yellow-500 p-2 max-w-xs shadow-lg pointer-events-none transition-all duration-500`;
+        // Neues Styling (keine top-14 / left-16 mehr, da er in der Map relativ positioniert ist)
+        hud.className = `absolute top-2 right-2 z-20 bg-black/80 border-r-4 border-yellow-500 p-2 max-w-[200px] shadow-lg pointer-events-none transition-opacity duration-500 text-right`;
 
-        // 4. Inhalt rendern
         let objectives = "";
         
         if(def.type === 'collect_multi') {
@@ -368,8 +363,8 @@ Object.assign(UI, {
                 const iName = Game.items[id]?.name || id;
                 const done = inInv >= amt;
                 const icon = done ? "✔" : "☐";
-                return `<div class="${done ? 'text-green-500 line-through' : 'text-yellow-100'} text-xs font-mono ml-2">
-                    ${icon} ${inInv}/${amt} ${iName}
+                return `<div class="${done ? 'text-green-500 line-through' : 'text-yellow-100'} text-xs font-mono">
+                    ${inInv}/${amt} ${iName} ${icon}
                 </div>`;
             }).join('');
         } else {
@@ -380,8 +375,8 @@ Object.assign(UI, {
             if(def.type === 'collect') verb = "Sammle";
             if(def.type === 'visit') verb = "Reise nach";
             
-            objectives = `<div class="text-yellow-100 text-xs font-mono ml-2">
-                [${current}/${max}] ${verb} ${def.target}
+            objectives = `<div class="text-yellow-100 text-xs font-mono">
+                ${verb} ${def.target} [${current}/${max}]
             </div>`;
         }
 
@@ -393,25 +388,30 @@ Object.assign(UI, {
                 const cx = Game.state.sector.x; const cy = Game.state.sector.y;
                 
                 if(tx === cx && ty === cy) {
-                    directionHint = `<div class="text-green-400 text-[10px] mt-1 animate-pulse">📍 ZIEL IM AKTUELLEN SEKTOR!</div>`;
+                    directionHint = `<div class="text-green-400 text-[10px] mt-1 animate-pulse">📍 ZIEL HIER!</div>`;
                 } else {
                     let dir = "";
-                    if(ty < cy) dir += "Nord";
-                    if(ty > cy) dir += "Süd";
-                    if(tx > cx) dir += "ost";
-                    if(tx < cx) dir += "west";
-                    if(dir) directionHint = `<div class="text-gray-400 text-[10px] mt-1 italic">📡 Ziel liegt im ${dir}</div>`;
+                    if(ty < cy) dir += "N";
+                    if(ty > cy) dir += "S";
+                    if(tx > cx) dir += "O";
+                    if(tx < cx) dir += "W";
+                    if(dir) directionHint = `<div class="text-gray-400 text-[10px] mt-1 font-bold">Richtung: ${dir}</div>`;
                 }
             }
         }
 
+        // Layout leicht angepasst (rechtsbündig)
         hud.innerHTML = `
-            <div class="text-yellow-500 font-bold text-xs uppercase tracking-widest mb-1 shadow-black">◉ ${def.title}</div>
-            <div class="flex flex-col gap-1 mb-1">
+            <div class="text-yellow-500 font-bold text-xs uppercase tracking-widest mb-1 shadow-black">${def.title} ◉</div>
+            <div class="flex flex-col gap-1 mb-1 items-end">
                 ${objectives}
             </div>
             ${directionHint}
         `;
+        
+        // Entfernt das alte HUD, falls vorhanden (Aufräumen)
+        let oldHud = document.getElementById('quest-tracker-hud');
+        if(oldHud) oldHud.remove();
     },
 
     showMapLegend: function() {
@@ -436,6 +436,7 @@ Object.assign(UI, {
                 ${item('🟢', 'DEINE POSITION', '#39ff14')}
                 ${item('⚙️', 'VAULT 101 (SICHER)', '#ffff00')}
                 ${item('🏙️', 'RUSTY SPRINGS (STADT)', '#00ffff')}
+                ${item('👻', 'GHOST TOWN (VERLASSEN)', '#cccccc')}
                 ${item('🏰', 'MILITÄRBASIS (LVL 10+)', '#ff5555')}
                 ${item('☠️', 'RAIDER FESTUNG (LVL 5+)', '#ffaa00')}
                 ${item('📡', 'FUNKTURM (THE PITT)', '#55ff55')}
