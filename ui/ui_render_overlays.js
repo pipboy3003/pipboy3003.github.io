@@ -1,4 +1,4 @@
-// [2026-02-19 06:30:00] ui_render_overlays.js - Quest Tracker Placement Fix
+// [2026-02-19 06:45:00] ui_render_overlays.js - Quest Tracker Placement Fix
 
 Object.assign(UI, {
     
@@ -8,13 +8,11 @@ Object.assign(UI, {
         if(!overlay) {
             overlay = document.createElement('div');
             overlay.id = 'ui-dialog-overlay';
-            // Z-Index 60 für Hauptdialoge
             overlay.className = "absolute inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm hidden pointer-events-auto";
             document.body.appendChild(overlay);
             this.els.dialog = overlay;
         }
         
-        // Click-Handler: Schließen bei Klick auf Hintergrund
         overlay.onclick = (e) => {
             if(e.target === overlay) {
                 e.preventDefault();
@@ -26,7 +24,6 @@ Object.assign(UI, {
         return overlay;
     },
 
-    // Schließt Layer 1 (Hauptdialoge)
     leaveDialog: function() {
         if(Game.state) Game.state.inDialog = false;
         
@@ -61,7 +58,6 @@ Object.assign(UI, {
         document.addEventListener('keydown', this._activeEscHandler);
     },
 
-    // [NEU] GENERISCHER CONFIRM DIALOG
     showConfirm: function(title, htmlContent, onConfirm) {
         if(Game.state) Game.state.inDialog = true;
 
@@ -95,7 +91,6 @@ Object.assign(UI, {
         };
     },
 
-    // INFO POPUP
     showInfoDialog: function(title, htmlContent) {
         if(Game.state) Game.state.inDialog = true;
 
@@ -135,7 +130,6 @@ Object.assign(UI, {
         document.body.appendChild(infoOverlay);
     },
 
-    // ITEM ACTION DIALOG
     showItemConfirm: function(invIndex) {
         const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
@@ -153,7 +147,6 @@ Object.assign(UI, {
         box.className = "bg-black border-2 border-green-500 p-4 shadow-[0_0_15px_green] max-w-sm text-center mb-4 w-full pointer-events-auto";
         box.onclick = (e) => e.stopPropagation();
 
-        // Stimpack Spezialbehandlung
         const isStimpack = (invItem.id && invItem.id.toLowerCase().includes('stimpack')) || (item.name && item.name.toLowerCase().includes('stimpack'));
 
         if (isStimpack) {
@@ -169,12 +162,10 @@ Object.assign(UI, {
                         <span>1x BENUTZEN</span>
                         <span class="text-xs mt-1 text-green-300">+${item.val} HP</span>
                     </button>
-                    
                     <button id="btn-use-max" class="action-button border-blue-500 text-blue-400 hover:bg-blue-900 py-3 font-bold flex justify-between px-4">
                         <span>AUTO-HEAL (MAX)</span>
                         <span class="text-xs mt-1 text-blue-200">Bis voll</span>
                     </button>
-                    
                     <button id="btn-cancel" class="action-button border-red-500 text-red-500 hover:bg-red-900 py-2 font-bold mt-2">
                         ABBRUCH
                     </button>
@@ -242,7 +233,6 @@ Object.assign(UI, {
         overlay.appendChild(box);
     },
 
-    // EQUIPPED ITEM DIALOG
     showEquippedDialog: function(slot) {
         const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
@@ -276,7 +266,6 @@ Object.assign(UI, {
         document.getElementById('btn-cancel-eq').onclick = () => { UI.leaveDialog(); };
     },
 
-    // QUEST COMPLETION OVERLAY
     showQuestComplete: function(questDef) {
         let container = document.getElementById('hud-quest-overlay');
         if(!container) {
@@ -320,24 +309,21 @@ Object.assign(UI, {
         }, 4500);
     },
 
-    // [GEÄNDERT] QUEST TRACKER HUD - Jetzt an Map Container gebunden
+    // [GEÄNDERT] QUEST TRACKER HUD - Jetzt fest oben LINKS im Map-Container
     updateQuestTracker: function() {
-        // Wir suchen den Container, der in ui_render_views.js definiert wurde
+        // Sucht den Container, der in ui_render_views.js in der Map definiert wurde
         let mapContainer = document.getElementById('map-quest-tracker');
         
         if(!mapContainer) {
-            // Wenn wir nicht auf der Map sind (z.B. im Inventar), 
-            // blenden wir das globale (alte) HUD aus, falls es existiert.
+            // Versteckt das alte globale HUD falls es rumgeistert
             let oldHud = document.getElementById('quest-tracker-hud');
-            if(oldHud) oldHud.style.opacity = '0';
+            if(oldHud) oldHud.style.display = 'none';
             return;
         }
 
-        // Wir nutzen den Map Container selbst als HUD
-        let hud = mapContainer;
-
         if(!Game.state || !Game.state.trackedQuestId) {
-            hud.style.opacity = '0';
+            mapContainer.innerHTML = '';
+            mapContainer.style.opacity = '0';
             return;
         }
 
@@ -346,14 +332,14 @@ Object.assign(UI, {
         const def = Game.questDefs.find(d => d.id === qId);
 
         if(!qData || !def) {
-            hud.style.opacity = '0';
+            mapContainer.innerHTML = '';
+            mapContainer.style.opacity = '0';
             return;
         }
 
-        hud.style.opacity = '1';
-        
-        // Neues Styling (keine top-14 / left-16 mehr, da er in der Map relativ positioniert ist)
-        hud.className = `absolute top-2 right-2 z-20 bg-black/80 border-r-4 border-yellow-500 p-2 max-w-[200px] shadow-lg pointer-events-none transition-opacity duration-500 text-right`;
+        // Sichtbar machen und positionieren (oben links)
+        mapContainer.style.opacity = '1';
+        mapContainer.className = "absolute top-2 left-2 z-30 bg-black/80 border-l-4 border-yellow-500 p-2 max-w-[250px] shadow-lg pointer-events-none transition-opacity duration-300 text-left";
 
         let objectives = "";
         
@@ -363,8 +349,8 @@ Object.assign(UI, {
                 const iName = Game.items[id]?.name || id;
                 const done = inInv >= amt;
                 const icon = done ? "✔" : "☐";
-                return `<div class="${done ? 'text-green-500 line-through' : 'text-yellow-100'} text-xs font-mono">
-                    ${inInv}/${amt} ${iName} ${icon}
+                return `<div class="${done ? 'text-green-500 line-through' : 'text-yellow-100'} text-xs font-mono ml-2">
+                    ${icon} ${inInv}/${amt} ${iName}
                 </div>`;
             }).join('');
         } else {
@@ -375,8 +361,8 @@ Object.assign(UI, {
             if(def.type === 'collect') verb = "Sammle";
             if(def.type === 'visit') verb = "Reise nach";
             
-            objectives = `<div class="text-yellow-100 text-xs font-mono">
-                ${verb} ${def.target} [${current}/${max}]
+            objectives = `<div class="text-yellow-100 text-xs font-mono ml-2">
+                [${current}/${max}] ${verb} ${def.target}
             </div>`;
         }
 
@@ -388,22 +374,21 @@ Object.assign(UI, {
                 const cx = Game.state.sector.x; const cy = Game.state.sector.y;
                 
                 if(tx === cx && ty === cy) {
-                    directionHint = `<div class="text-green-400 text-[10px] mt-1 animate-pulse">📍 ZIEL HIER!</div>`;
+                    directionHint = `<div class="text-green-400 text-[10px] mt-1 animate-pulse">📍 ZIEL IM AKTUELLEN SEKTOR!</div>`;
                 } else {
                     let dir = "";
-                    if(ty < cy) dir += "N";
-                    if(ty > cy) dir += "S";
-                    if(tx > cx) dir += "O";
-                    if(tx < cx) dir += "W";
-                    if(dir) directionHint = `<div class="text-gray-400 text-[10px] mt-1 font-bold">Richtung: ${dir}</div>`;
+                    if(ty < cy) dir += "Nord";
+                    if(ty > cy) dir += "Süd";
+                    if(tx > cx) dir += "ost";
+                    if(tx < cx) dir += "west";
+                    if(dir) directionHint = `<div class="text-gray-400 text-[10px] mt-1 italic">📡 Ziel liegt im ${dir}</div>`;
                 }
             }
         }
 
-        // Layout leicht angepasst (rechtsbündig)
-        hud.innerHTML = `
-            <div class="text-yellow-500 font-bold text-xs uppercase tracking-widest mb-1 shadow-black">${def.title} ◉</div>
-            <div class="flex flex-col gap-1 mb-1 items-end">
+        mapContainer.innerHTML = `
+            <div class="text-yellow-500 font-bold text-xs uppercase tracking-widest mb-1 shadow-black">◉ ${def.title}</div>
+            <div class="flex flex-col gap-1 mb-1 items-start">
                 ${objectives}
             </div>
             ${directionHint}
