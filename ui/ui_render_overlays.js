@@ -1,4 +1,4 @@
-// [2026-02-19 07:05:00] ui_render_overlays.js - Bulletproof Quest Tracker
+// [2026-02-19 12:45:00] ui_render_overlays.js - Fixed Quest Target ID Call
 
 Object.assign(UI, {
     
@@ -309,15 +309,13 @@ Object.assign(UI, {
         }, 4500);
     },
 
-    // [BULLETPROOF] QUEST TRACKER HUD
+    // BUGFIX: Zielt jetzt exakt auf das 'map-quest-tracker' Div aus der renderMapScanline ab.
     updateQuestTracker: function() {
-        // Wir holen uns das Div, das in renderMapScanline direkt eingebaut wurde
         const hud = document.getElementById('map-quest-tracker');
         
-        // Wenn es nicht da ist (weil wir im Menü sind), brechen wir sauber ab.
-        if(!hud) return;
+        if(!hud) return; // Wenn Element nicht im DOM existiert -> Abbruch (zB im Menü)
 
-        // Wenn keine Quest aktiv ist oder wir nicht auf der Map sind -> verstecken
+        // Verstecken, wenn keine Quest aktiv oder wir nicht auf der Map sind
         if(!Game.state || !Game.state.trackedQuestId || Game.state.view !== 'map') {
             hud.style.display = 'none';
             return;
@@ -325,16 +323,15 @@ Object.assign(UI, {
 
         const qId = Game.state.trackedQuestId;
         
-        // Sicherheitssuche nach den Quest-Daten
+        // Sicherer Zugriff auf aktive Quest (Array oder Objekt)
         let qData = null;
         if (Array.isArray(Game.state.activeQuests)) {
             qData = Game.state.activeQuests.find(q => q.id === qId);
         } else if (Game.state.activeQuests) {
-            // Fallback, falls activeQuests ein Objekt sein sollte
             qData = Game.state.activeQuests[qId];
         }
 
-        // Sicherheitssuche nach den Quest-Definitionen
+        // Sicherer Zugriff auf Quest-Daten (Array oder Objekt)
         let def = null;
         if (window.GameData && window.GameData.quests) {
             if (Array.isArray(window.GameData.quests)) {
@@ -344,17 +341,16 @@ Object.assign(UI, {
             }
         }
 
-        // Wenn Daten fehlen -> Fehler vermeiden, einfach verstecken
+        // Wenn etwas schiefgeht -> ausblenden
         if(!qData || !def) {
             hud.style.display = 'none';
             return;
         }
 
-        // Quest anzeigen!
+        // Jetzt können wir es sicher anzeigen
         hud.style.display = 'block';
 
         let objectives = "";
-        
         if(def.type === 'collect_multi') {
             objectives = Object.entries(def.reqItems).map(([id, amt]) => {
                 const inInv = Game.state.inventory.filter(i => i.id === id).reduce((s, i) => s + i.count, 0);
@@ -393,7 +389,7 @@ Object.assign(UI, {
                     if(ty > cy) dir += "Süd";
                     if(tx > cx) dir += "ost";
                     if(tx < cx) dir += "west";
-                    if(dir) directionHint = `<div class="text-gray-400 text-[10px] mt-2 italic">📡 Zielrichtung: ${dir}</div>`;
+                    if(dir) directionHint = `<div class="text-gray-400 text-[10px] mt-2 italic">📡 Richtung: ${dir}</div>`;
                 }
             }
         }
