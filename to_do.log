@@ -1,3 +1,7 @@
+? Bei Weltkarte ohne Funktion, soll die POI's aufrufen als kleines fenster. Fenster soll sich durch esc drücken oder X schließen lassen.
+Wichtig nur dieses Fenster schließen dann nicht die Weltkarte.
+
+
 🐛 Aktuelle Bugs & Anpassungen:
 - Lock Picking auf Truhen in Dungeons legen (fertig?)
 - Sobald ein Menü geöffnet wird jeglicher art, oder sonstiges Popup tutorial what ever soll die Bewegung in der Spielmap komplett verboten werden. Ich möchte das Allgemein irgendwie einbauen
