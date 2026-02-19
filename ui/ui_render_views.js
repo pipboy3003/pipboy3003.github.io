@@ -1,4 +1,4 @@
-// [2026-02-19 07:00:00] ui_render_views.js - Bulletproof Quest HUD Container
+// [2026-02-19 12:40:00] ui_render_views.js - Fixed Quest HUD Container ID
 
 Object.assign(UI, {
 
@@ -66,7 +66,7 @@ Object.assign(UI, {
                 <div id="scanline" class="pointer-events-none absolute inset-0 bg-repeat-y opacity-10"></div>
                 <div id="vignette" class="pointer-events-none absolute inset-0 radial-gradient"></div>
 
-                <div id="map-quest-tracker" style="display:none; position:absolute; top:10px; left:10px; z-index:40; background:rgba(0,0,0,0.85); border-left:4px solid #eab308; padding:10px; box-shadow:0 0 15px rgba(0,0,0,0.8); max-width:250px; pointer-events:none; border-radius: 0 4px 4px 0;"></div>
+                <div id="map-quest-tracker" style="display:none; position:absolute; top:80px; left:10px; z-index:40; background:rgba(0,0,0,0.85); border-left:4px solid #eab308; padding:10px; box-shadow:0 0 15px rgba(0,0,0,0.8); max-width:250px; pointer-events:none; border-radius: 0 4px 4px 0;"></div>
 
                 <div class="absolute bottom-4 left-4 text-green-400 font-mono text-sm bg-black/50 px-2 py-1 border border-green-900">
                     DIAGNOSE: ${Game.state.zone || 'Unbekannt'}
