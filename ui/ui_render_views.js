@@ -1,8 +1,7 @@
-// [2026-02-19 06:15:00] ui_render_views.js - Quest Tracker in Map Container
+// [2026-02-19 06:40:00] ui_render_views.js - Quest Tracker Left Aligned
 
 Object.assign(UI, {
 
-    // Helper für Equipment Klicks
     openEquipMenu: function(slot) {
         if(!Game.state) return;
         const item = Game.state.equip ? Game.state.equip[slot] : null;
@@ -22,12 +21,10 @@ Object.assign(UI, {
         else this.renderStats('special'); 
     },
 
-    // --- HAUPT RENDER FUNKTION ---
     renderView: function() {
         const container = document.getElementById('view-container');
         if(!container || !Game.state) return;
 
-        // Container komplett leeren
         container.innerHTML = '';
 
         switch(Game.state.view) {
@@ -57,7 +54,6 @@ Object.assign(UI, {
         }
     },
 
-    // Standard Spielansicht
     renderMapScanline: function(container) {
         container.innerHTML = `
             <div class="relative w-full h-full bg-black overflow-hidden">
@@ -65,7 +61,7 @@ Object.assign(UI, {
                 <div id="scanline" class="pointer-events-none absolute inset-0 bg-repeat-y opacity-10"></div>
                 <div id="vignette" class="pointer-events-none absolute inset-0 radial-gradient"></div>
                 
-                <div id="map-quest-tracker" class="absolute top-2 right-2 z-20 pointer-events-none max-w-[200px]"></div>
+                <div id="map-quest-tracker" class="absolute top-2 left-2 z-30 pointer-events-none transition-opacity duration-300 opacity-0"></div>
 
                 <div class="absolute bottom-4 left-4 text-green-400 font-mono text-sm bg-black/50 px-2 py-1 border border-green-900">
                     DIAGNOSE: ${Game.state.zone || 'Unbekannt'}
@@ -82,13 +78,10 @@ Object.assign(UI, {
         `;
         if(Game.initCanvas) Game.initCanvas();
         
-        // Nach dem Zeichnen der Map direkt das Quest-Overlay aktualisieren
-        if(typeof UI.updateQuestTracker === 'function') {
-            UI.updateQuestTracker();
-        }
+        // Trigger Quest Update nach dem Zeichnen
+        if(typeof UI.updateQuestTracker === 'function') UI.updateQuestTracker();
     },
 
-    // Das Layout für die Weltkarte (Vollbild)
     renderFullscreenWorldMap: function(container) {
         container.innerHTML = `
             <div class="relative w-full h-full bg-[#050a05] overflow-hidden flex flex-col select-none">
