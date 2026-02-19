@@ -1,4 +1,4 @@
-// [2026-02-19 06:40:00] ui_render_views.js - Quest Tracker Left Aligned
+// [2026-02-19 06:40:00] ui_render_views.js - Cleaned up Map Layout
 
 Object.assign(UI, {
 
@@ -52,6 +52,11 @@ Object.assign(UI, {
             default:
                 container.innerHTML = `<div class="text-center p-10 text-red-500">ERROR: Unknown View ${Game.state.view}</div>`;
         }
+        
+        // Immer checken ob der Quest Tracker an/ausgeschaltet werden muss
+        if(typeof UI.updateQuestTracker === 'function') {
+            UI.updateQuestTracker();
+        }
     },
 
     renderMapScanline: function(container) {
@@ -60,8 +65,6 @@ Object.assign(UI, {
                 <canvas id="game-canvas" class="block w-full h-full object-cover"></canvas>
                 <div id="scanline" class="pointer-events-none absolute inset-0 bg-repeat-y opacity-10"></div>
                 <div id="vignette" class="pointer-events-none absolute inset-0 radial-gradient"></div>
-                
-                <div id="map-quest-tracker" class="absolute top-2 left-2 z-30 pointer-events-none transition-opacity duration-300 opacity-0"></div>
 
                 <div class="absolute bottom-4 left-4 text-green-400 font-mono text-sm bg-black/50 px-2 py-1 border border-green-900">
                     DIAGNOSE: ${Game.state.zone || 'Unbekannt'}
@@ -77,9 +80,6 @@ Object.assign(UI, {
             </div>
         `;
         if(Game.initCanvas) Game.initCanvas();
-        
-        // Trigger Quest Update nach dem Zeichnen
-        if(typeof UI.updateQuestTracker === 'function') UI.updateQuestTracker();
     },
 
     renderFullscreenWorldMap: function(container) {
