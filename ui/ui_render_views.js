@@ -1,4 +1,4 @@
-// [2026-02-20 06:10:00] ui_render_views.js - Missing Functions Restored & Quest HUD Fix
+// [2026-02-20 06:25:00] ui_render_views.js - Quest Button Integration
 
 Object.assign(UI, {
 
@@ -52,11 +52,6 @@ Object.assign(UI, {
             default:
                 container.innerHTML = `<div class="text-center p-10 text-red-500">ERROR: Unknown View ${Game.state.view}</div>`;
         }
-        
-        // Nach jedem View-Wechsel Quest-Tracker updaten
-        if(typeof UI.updateQuestTracker === 'function') {
-            setTimeout(() => UI.updateQuestTracker(), 10);
-        }
     },
 
     renderMapScanline: function(container) {
@@ -66,7 +61,9 @@ Object.assign(UI, {
                 <div id="scanline" class="pointer-events-none absolute inset-0 bg-repeat-y opacity-10"></div>
                 <div id="vignette" class="pointer-events-none absolute inset-0 radial-gradient"></div>
 
-                <div id="map-quest-tracker" style="display:none; position:absolute; top:80px; left:10px; z-index:40; background:rgba(0,0,0,0.85); border-left:4px solid #eab308; padding:10px; box-shadow:0 0 15px rgba(0,0,0,0.8); max-width:250px; pointer-events:none; border-radius: 0 4px 4px 0;"></div>
+                <button onclick="UI.showActiveQuestDialog()" class="absolute top-4 right-4 z-40 bg-black/80 border-2 border-yellow-500 text-yellow-500 w-12 h-12 rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(234,179,8,0.4)] hover:bg-yellow-900 transition-colors text-2xl" title="Aktuelle Quest">
+                    📜
+                </button>
 
                 <div class="absolute bottom-4 left-4 text-green-400 font-mono text-sm bg-black/50 px-2 py-1 border border-green-900">
                     DIAGNOSE: ${Game.state.zone || 'Unbekannt'}
@@ -286,7 +283,6 @@ Object.assign(UI, {
         ctx.beginPath(); ctx.arc(cx, cy - 60, 15, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
     },
 
-    // FEHLENDE FUNKTIONEN WIEDERHERGESTELLT:
     renderCharacterSelection: function(saves) {
         this.charSelectMode = true; this.currentSaves = saves;
         if(this.els.loginScreen) this.els.loginScreen.style.display = 'none';
