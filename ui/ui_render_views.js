@@ -1,4 +1,4 @@
-// [2026-02-19 14:10:00] ui_render_views.js - Cleaned Up
+// [2026-02-20 06:10:00] ui_render_views.js - Missing Functions Restored & Quest HUD Fix
 
 Object.assign(UI, {
 
@@ -65,6 +65,8 @@ Object.assign(UI, {
                 <canvas id="game-canvas" class="block w-full h-full object-cover"></canvas>
                 <div id="scanline" class="pointer-events-none absolute inset-0 bg-repeat-y opacity-10"></div>
                 <div id="vignette" class="pointer-events-none absolute inset-0 radial-gradient"></div>
+
+                <div id="map-quest-tracker" style="display:none; position:absolute; top:80px; left:10px; z-index:40; background:rgba(0,0,0,0.85); border-left:4px solid #eab308; padding:10px; box-shadow:0 0 15px rgba(0,0,0,0.8); max-width:250px; pointer-events:none; border-radius: 0 4px 4px 0;"></div>
 
                 <div class="absolute bottom-4 left-4 text-green-400 font-mono text-sm bg-black/50 px-2 py-1 border border-green-900">
                     DIAGNOSE: ${Game.state.zone || 'Unbekannt'}
@@ -263,5 +265,81 @@ Object.assign(UI, {
             </div>`;
         });
         container.innerHTML = html + '</div>';
+    },
+
+    drawVaultBoy: function(canvasId) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = "#1aff1a"; ctx.fillStyle = "#1aff1a"; ctx.lineWidth = 2.5;
+        const cx = canvas.width / 2; const cy = canvas.height / 2;
+        ctx.beginPath(); ctx.arc(cx, cy - 60, 30, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx - 10, cy - 85, 12, Math.PI, 0); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx-18, cy-30); ctx.lineTo(cx+18, cy-30); ctx.lineTo(cx+22, cy+30); ctx.lineTo(cx-22, cy+30); ctx.closePath(); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx+18, cy-20); ctx.lineTo(cx+50, cy-40); ctx.stroke(); 
+        ctx.beginPath(); ctx.moveTo(cx-18, cy-20); ctx.lineTo(cx-40, cy); ctx.stroke(); 
+        ctx.beginPath(); ctx.moveTo(cx-12, cy+30); ctx.lineTo(cx-18, cy+85); ctx.stroke(); 
+        ctx.beginPath(); ctx.moveTo(cx+12, cy+30); ctx.lineTo(cx+18, cy+85); ctx.stroke(); 
+        ctx.beginPath(); ctx.arc(cx - 10, cy - 65, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + 10, cy - 65, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx, cy - 60, 15, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
+    },
+
+    // FEHLENDE FUNKTIONEN WIEDERHERGESTELLT:
+    renderCharacterSelection: function(saves) {
+        this.charSelectMode = true; this.currentSaves = saves;
+        if(this.els.loginScreen) this.els.loginScreen.style.display = 'none';
+        if(this.els.charSelectScreen) this.els.charSelectScreen.style.display = 'flex';
+        if(this.els.charSlotsList) this.els.charSlotsList.innerHTML = '';
+        for (let i = 0; i < 5; i++) {
+            const slot = document.createElement('div');
+            slot.className = "char-slot border-2 border-green-900 bg-black/80 p-4 mb-2 cursor-pointer hover:border-yellow-400 flex justify-between items-center group relative";
+            const save = saves[i];
+            if (save) {
+                const isDead = (save.hp !== undefined && save.hp <= 0);
+                slot.innerHTML = `<div class="flex flex-col z-10"><span class="text-xl ${isDead ? 'text-red-500' : 'text-yellow-400'} font-bold">${isDead ? '💀' : '👤'} ${save.playerName}</span><span class="text-xs text-green-300 font-mono">Level ${save.lvl}</span></div><button class="bg-green-700 text-black font-bold px-4 py-1 text-xs rounded group-hover:bg-[#39ff14]">START ▶</button>`;
+            } else {
+                slot.innerHTML = `<div class="text-gray-500 font-bold">+ NEUEN CHARAKTER</div>`;
+            }
+            slot.onclick = () => { if(typeof this.selectSlot === 'function') this.selectSlot(i); };
+            if(this.els.charSlotsList) this.els.charSlotsList.appendChild(slot);
+        }
+        if(typeof this.selectSlot === 'function') this.selectSlot(0);
+    },
+
+    renderSpawnList: function(players) {
+        if(!this.els.spawnList) return;
+        this.els.spawnList.innerHTML = '';
+        for(let pid in players) {
+            const p = players[pid];
+            const btn = document.createElement('button');
+            btn.className = "action-button w-full mb-2 text-left text-xs border-green-800 text-green-400 p-2";
+            btn.innerHTML = `SIGNAL: ${p.name}`;
+            btn.onclick = () => { if(this.els.spawnScreen) this.els.spawnScreen.style.display = 'none'; this.startGame(null, this.selectedSlot, null); };
+            this.els.spawnList.appendChild(btn);
+        }
+    },
+
+    renderCombat: function() {
+        const enemy = Game.state.enemy; if(!enemy) return;
+        const nameEl = document.getElementById('enemy-name'); if(nameEl) nameEl.textContent = enemy.name;
+        const hpText = document.getElementById('enemy-hp-text'); if(hpText) hpText.textContent = `${Math.max(0, enemy.hp)}/${enemy.maxHp} TP`;
+        const hpBar = document.getElementById('enemy-hp-bar'); if(hpBar) hpBar.style.width = `${Math.max(0, (enemy.hp/enemy.maxHp)*100)}%`;
+
+        if(typeof Combat !== 'undefined' && Combat.bodyParts) {
+             Combat.bodyParts.forEach((part, index) => {
+                 const btn = document.getElementById(`btn-vats-${index}`);
+                 if(btn) {
+                     const chance = (typeof Combat.calculateHitChance === 'function') ? Combat.calculateHitChance(index) : 0;
+                     btn.innerHTML = `
+                        <div class="pointer-events-none w-full h-full flex items-center justify-between px-4">
+                            <span class="text-5xl font-bold text-gray-400 uppercase tracking-tighter drop-shadow-md">${part.name}</span>
+                            <span class="font-bold ${chance > 50 ? 'text-green-400' : 'text-red-400'} text-6xl shadow-black drop-shadow-md">${chance}<span class="text-3xl align-top">%</span></span>
+                        </div>
+                     `;
+                 }
+             });
+        }
     }
 });
