@@ -1,4 +1,4 @@
-// [2026-02-21 10:50:00] game_render.js - Awesome Vault 101 Door Animation
+// [2026-02-21 12:10:00] game_render.js - Vault Z-Order Fix
 
 Object.assign(Game, {
     particles: [],
@@ -205,7 +205,6 @@ Object.assign(Game, {
         ctx.beginPath(); ctx.moveTo(px+10, py+ts); ctx.lineTo(px+10+sway, py+ts-8); ctx.stroke();
     },
 
-    // NEU: Die riesige Vault-Tür Animation
     drawVault: function(ctx, x, y, time) {
         const ts = this.TILE;
         const px = x * ts + ts / 2;
@@ -214,13 +213,13 @@ Object.assign(Game, {
         ctx.save();
         ctx.translate(px, py);
 
-        // Bodenplatte (etwas größer als 1 Tile)
+        // Bodenplatte (massiv, um alles darunter zu verdecken)
         ctx.fillStyle = "#111";
         ctx.beginPath();
-        ctx.arc(0, 0, ts * 0.9, 0, Math.PI*2);
+        ctx.arc(0, 0, ts * 0.95, 0, Math.PI*2);
         ctx.fill();
         
-        // Warnstreifen (Gelb/Schwarz)
+        // Warnstreifen
         ctx.lineWidth = 3;
         for(let i=0; i<12; i++) {
             ctx.strokeStyle = (i%2 === 0) ? "#eab308" : "#000";
@@ -229,16 +228,16 @@ Object.assign(Game, {
             ctx.stroke();
         }
 
-        // Das Vault-Zahnrad (dreht sich ganz langsam)
+        // Rotierendes Zahnrad
         const rot = Math.sin(time / 2000) * 0.5; 
         ctx.rotate(rot);
 
-        ctx.fillStyle = "#4a5568"; // Metall
+        ctx.fillStyle = "#4a5568";
         ctx.beginPath();
         ctx.arc(0, 0, ts * 0.7, 0, Math.PI * 2);
         ctx.fill();
         
-        // Zahnrad-Zähne
+        // Zähne
         ctx.fillStyle = "#4a5568";
         for(let i=0; i<8; i++) {
             ctx.save();
@@ -247,13 +246,12 @@ Object.assign(Game, {
             ctx.restore();
         }
 
-        // Innerer Kreis
+        // Innerer Kreis & Text
         ctx.fillStyle = "#2d3748";
         ctx.beginPath();
         ctx.arc(0, 0, ts * 0.5, 0, Math.PI * 2);
         ctx.fill();
 
-        // Pulsierende Zahlen "101"
         const pulse = (Math.sin(time / 300) + 1) / 2; 
         ctx.shadowBlur = 10 + pulse * 15;
         ctx.shadowColor = "#eab308";
@@ -318,18 +316,22 @@ Object.assign(Game, {
                     
                     const t = this.state.currentMap[y][x]; 
                     
+                    // 1. Terrain-Details (Gras, Wasser, Bäume)
                     if(t === '~') this.drawWater(ctx, x, y, time);
                     else if(t === 't') this.drawTree(ctx, x, y, time);
                     else if(t === '"') this.drawGrass(ctx, x, y, time);
                     else if(t === '.') this.drawGrass(ctx, x, y, time);
                     
-                    // NEU: Rufe die Vault-Animation auf!
-                    else if(t === 'V') this.drawVault(ctx, x, y, time);
-                    
+                    // 'V' (Vault) wurde hier entfernt!
+
+                    // 2. Objekte & Kreaturen (werden ÜBER Terrain gezeichnet)
                     if(t === 'M') this.drawMonster(ctx, x, y, time); 
                     else if(t === 'W') this.drawWanderer(ctx, x, y, time);
                     
-                    // V wurde hier entfernt, damit es nicht als normales Emoji gemalt wird
+                    // FIX: Vault wird jetzt HIER gezeichnet, über Gras und Wegen!
+                    if(t === 'V') this.drawVault(ctx, x, y, time);
+                    
+                    // 3. Items & Ausgänge
                     if(['X', 'R', 'S'].includes(t)) this.drawTile(ctx, x, y, t);
                     if(t === 'G') this.drawTile(ctx, x, y, t);
                     if(t === '?') this.drawTile(ctx, x, y, t);
