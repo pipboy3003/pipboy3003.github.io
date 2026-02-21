@@ -1,4 +1,4 @@
-// [2026-02-21 12:30:00] game_render.js - City & Ghost Town Animations
+// [2026-02-21 13:00:00] game_render.js - Z-Order Fix & New POI Animations
 
 Object.assign(Game, {
     particles: [],
@@ -109,7 +109,6 @@ Object.assign(Game, {
                 ctx.fillRect(px + ts*0.6, py + ts*0.6, ts*0.25, ts*0.25); 
             }
         }
-        
         if(type === '.' && rand > 0.8) { ctx.fillStyle = "#333"; ctx.fillRect(px+rand*ts, py+(1-rand)*ts, 2, 2); }
     },
 
@@ -122,13 +121,11 @@ Object.assign(Game, {
     drawBridge: function(ctx, x, y) {
         const ts = this.TILE; const px = x * ts; const py = y * ts;
         ctx.fillStyle = "#0d47a1"; ctx.fillRect(px, py, ts, ts); 
-        ctx.fillStyle = "#5d4037"; 
-        ctx.fillRect(px + 4, py, ts - 8, ts); 
+        ctx.fillStyle = "#5d4037"; ctx.fillRect(px + 4, py, ts - 8, ts); 
         ctx.fillStyle = "#3e2723"; 
         for(let i=0; i<ts; i+=5) ctx.fillRect(px+4, py+i, ts-8, 1);
         ctx.fillStyle = "#8d6e63"; 
-        ctx.fillRect(px+2, py, 2, ts); 
-        ctx.fillRect(px+ts-4, py, 2, ts); 
+        ctx.fillRect(px+2, py, 2, ts); ctx.fillRect(px+ts-4, py, 2, ts); 
     },
 
     drawConnectedWall: function(ctx, x, y, map) {
@@ -146,25 +143,9 @@ Object.assign(Game, {
 
     drawHighMountain: function(ctx, x, y) {
         const ts = this.TILE; const px = x * ts; const py = y * ts;
-        ctx.fillStyle = "#2c2c2c"; 
-        ctx.beginPath(); 
-        ctx.moveTo(px, py+ts); 
-        ctx.lineTo(px+ts/2, py-ts*0.2); 
-        ctx.lineTo(px+ts, py+ts); 
-        ctx.fill();
-        ctx.fillStyle = "#444"; 
-        ctx.beginPath(); 
-        ctx.moveTo(px+ts*0.2, py+ts); 
-        ctx.lineTo(px+ts/2, py-ts*0.2); 
-        ctx.lineTo(px+ts/2, py+ts); 
-        ctx.fill();
-        ctx.fillStyle = "#fff";
-        ctx.beginPath();
-        ctx.moveTo(px+ts*0.4, py+ts*0.2);
-        ctx.lineTo(px+ts/2, py-ts*0.2);
-        ctx.lineTo(px+ts*0.6, py+ts*0.2);
-        ctx.lineTo(px+ts/2, py+ts*0.3);
-        ctx.fill();
+        ctx.fillStyle = "#2c2c2c"; ctx.beginPath(); ctx.moveTo(px, py+ts); ctx.lineTo(px+ts/2, py-ts*0.2); ctx.lineTo(px+ts, py+ts); ctx.fill();
+        ctx.fillStyle = "#444"; ctx.beginPath(); ctx.moveTo(px+ts*0.2, py+ts); ctx.lineTo(px+ts/2, py-ts*0.2); ctx.lineTo(px+ts/2, py+ts); ctx.fill();
+        ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.moveTo(px+ts*0.4, py+ts*0.2); ctx.lineTo(px+ts/2, py-ts*0.2); ctx.lineTo(px+ts*0.6, py+ts*0.2); ctx.lineTo(px+ts/2, py+ts*0.3); ctx.fill();
     },
 
     drawMountain: function(ctx, x, y) {
@@ -172,8 +153,7 @@ Object.assign(Game, {
         const rand = this.pseudoRand(x, y);
         ctx.fillStyle = "#333"; ctx.beginPath(); ctx.moveTo(px, py+ts); ctx.lineTo(px+ts/2, py+ts*0.1); ctx.lineTo(px+ts, py+ts); ctx.fill();
         ctx.fillStyle = "#444"; ctx.beginPath(); ctx.moveTo(px+ts*0.3, py+ts); ctx.lineTo(px+ts*0.5, py+ts*0.4); ctx.lineTo(px+ts*0.7, py+ts); ctx.fill();
-        ctx.fillStyle = (rand > 0.7) ? "#666" : "#555"; 
-        ctx.beginPath(); ctx.moveTo(px+ts/2, py+ts*0.1); ctx.lineTo(px+ts*0.35, py+ts*0.4); ctx.lineTo(px+ts*0.65, py+ts*0.4); ctx.fill();
+        ctx.fillStyle = (rand > 0.7) ? "#666" : "#555"; ctx.beginPath(); ctx.moveTo(px+ts/2, py+ts*0.1); ctx.lineTo(px+ts*0.35, py+ts*0.4); ctx.lineTo(px+ts*0.65, py+ts*0.4); ctx.fill();
     },
 
     drawTree: function(ctx, x, y, time) {
@@ -184,8 +164,7 @@ Object.assign(Game, {
         ctx.fillStyle = "#5d4037"; ctx.fillRect(px+ts/2-3, py+ts/2, 6, ts/2);
         const green = (rand > 0.5) ? "#388e3c" : "#2e7d32"; 
         ctx.fillStyle = green; ctx.beginPath(); ctx.arc(px+ts/2+sway, py+ts/2, ts/2.5, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = (rand > 0.5) ? "#66bb6a" : "#4caf50";
-        ctx.beginPath(); ctx.arc(px+ts/2+(sway*1.5), py+ts/3, ts/3, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = (rand > 0.5) ? "#66bb6a" : "#4caf50"; ctx.beginPath(); ctx.arc(px+ts/2+(sway*1.5), py+ts/3, ts/3, 0, Math.PI*2); ctx.fill();
     },
 
     drawWater: function(ctx, x, y, time) {
@@ -205,60 +184,92 @@ Object.assign(Game, {
         ctx.beginPath(); ctx.moveTo(px+10, py+ts); ctx.lineTo(px+10+sway, py+ts-8); ctx.stroke();
     },
 
-    // NEU: Rusty Springs (City) Animation
+    // NEU: City Animation (Rusty Springs Tor)
     drawCity: function(ctx, x, y, time) {
-        const ts = this.TILE; const px = x*ts; const py = y*ts;
-        ctx.save(); ctx.translate(px, py);
+        const ts = this.TILE;
+        const px = x * ts + ts / 2;
+        const py = y * ts + ts / 2;
 
-        // Rostiger Untergrund
-        ctx.fillStyle = "#3e2723"; ctx.fillRect(2, 2, ts-4, ts-4);
+        ctx.save();
+        ctx.translate(px, py);
 
-        // Gebäude 1 (Links, größer, rostiges Wellblech)
-        ctx.fillStyle = "#8d6e63"; ctx.fillRect(4, ts-18, 14, 16);
-        ctx.strokeStyle = "#5d4037"; ctx.lineWidth = 1;
-        for(let i=4; i<18; i+=3) { ctx.beginPath(); ctx.moveTo(i, ts-18); ctx.lineTo(i, ts-2); ctx.stroke(); }
+        // Bodenplatte (Schrott/Asphalt)
+        ctx.fillStyle = "#1a1a1a";
+        ctx.beginPath(); ctx.ellipse(0, 0, ts*1.3, ts*0.9, 0, 0, Math.PI*2); ctx.fill();
 
-        // Gebäude 2 (Rechts, kleiner)
-        ctx.fillStyle = "#6d4c41"; ctx.fillRect(ts-14, ts-14, 12, 12);
+        // Zwei rostige Pfeiler
+        ctx.fillStyle = "#3e2723"; 
+        ctx.fillRect(-ts*1.1, -ts*1.5, ts*0.4, ts*1.8); 
+        ctx.fillRect(ts*0.7, -ts*1.5, ts*0.4, ts*1.8);  
 
-        // Flackerndes Fenster
-        const flicker = Math.sin(time/100) * 0.2 + 0.8;
-        ctx.fillStyle = `rgba(255, 200, 50, ${flicker})`;
-        ctx.fillRect(8, ts-10, 4, 4);
+        // Flackernde Neonlichter
+        const flicker = Math.sin(time/150)*0.2 + 0.8;
+        ctx.fillStyle = `rgba(0, 255, 255, ${flicker})`;
+        ctx.beginPath(); ctx.arc(-ts*0.9, -ts*1.5, 6, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(ts*0.9, -ts*1.5, 6, 0, Math.PI*2); ctx.fill();
 
-        // Rauch aus Schornstein
-        const smokeY = (time / 60) % 15;
-        const smokeX = Math.sin(time/250) * 3;
-        ctx.fillStyle = `rgba(150,150,150,${1 - smokeY/15})`;
-        ctx.beginPath(); ctx.arc(10 + smokeX, ts-20 - smokeY, 2 + smokeY/5, 0, Math.PI*2); ctx.fill();
+        // Rostiges Schild
+        ctx.fillStyle = "#2d1a11";
+        ctx.fillRect(-ts*1.3, -ts*1.2, ts*2.6, ts*0.6);
+
+        // Schriftzug
+        ctx.fillStyle = "#ffaa00";
+        ctx.shadowBlur = 10; ctx.shadowColor = "#ff5500";
+        ctx.font = `bold ${ts*0.3}px monospace`;
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("RUSTY SPRINGS", 0, -ts*0.9);
+        ctx.shadowBlur = 0;
 
         ctx.restore();
     },
 
-    // NEU: Ghost Town Animation
+    // NEU: Ghost Town Animation (Hopeless Saloon)
     drawGhostTown: function(ctx, x, y, time) {
-        const ts = this.TILE; const px = x*ts; const py = y*ts;
-        ctx.save(); ctx.translate(px, py);
+        const ts = this.TILE;
+        const px = x * ts + ts / 2;
+        const py = y * ts + ts / 2;
+
+        ctx.save();
+        ctx.translate(px, py);
 
         // Staubiger Boden
-        ctx.fillStyle = "#795548"; ctx.fillRect(2, 2, ts-4, ts-4);
+        ctx.fillStyle = "#3e3a35";
+        ctx.beginPath(); ctx.ellipse(0, 0, ts*1.2, ts*0.8, 0, 0, Math.PI*2); ctx.fill();
 
-        // Verfallene Hütte (schief)
-        ctx.save(); ctx.translate(8, ts-4); ctx.rotate(-0.15);
-        ctx.fillStyle = "#4e342e"; ctx.fillRect(-4, -12, 10, 12);
-        ctx.fillStyle = "#3e2723"; ctx.fillRect(-3, -10, 3, 4); // Leeres Fenster
+        // Verfallene Holzfassade
+        ctx.fillStyle = "#2a1e18";
+        ctx.fillRect(-ts*0.9, -ts*1.3, ts*1.8, ts*1.5);
+        
+        // Kaputtes Dach
+        ctx.fillStyle = "#1a120e";
+        ctx.beginPath(); ctx.moveTo(-ts*1.1, -ts*1.3); ctx.lineTo(0, -ts*1.9); ctx.lineTo(ts*1.1, -ts*1.3); ctx.fill();
+
+        // Leere Fenster & Tür
+        ctx.fillStyle = "#000";
+        ctx.fillRect(-ts*0.6, -ts*0.7, ts*0.3, ts*0.4); 
+        ctx.fillRect(ts*0.3, -ts*0.7, ts*0.3, ts*0.4);  
+        ctx.fillRect(-ts*0.25, -ts*0.3, ts*0.5, ts*0.7); 
+
+        // Schiefes Schild
+        ctx.save();
+        ctx.rotate(0.15);
+        ctx.fillStyle = "#111";
+        ctx.fillRect(-ts*0.7, -ts*1.2, ts*1.4, ts*0.4);
+        ctx.fillStyle = "#555";
+        ctx.font = `bold ${ts*0.25}px monospace`;
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("HOPELESS", 0, -ts*1.0);
         ctx.restore();
 
-        // Kaputter Zaunpfahl
-        ctx.fillStyle = "#3e2723"; ctx.fillRect(ts-8, ts-10, 2, 8);
-
-        // Animierter Tumbleweed (Steppenläufer)
-        const tumbleX = (time / 25) % (ts + 30) - 15;
-        ctx.save(); ctx.translate(tumbleX, ts-6);
-        ctx.rotate(time / 80);
-        ctx.strokeStyle = "#a1887f"; ctx.lineWidth = 1.5;
+        // Rollender Tumbleweed (Busch)
+        const tX = ((time / 30) % (ts * 5)) - ts * 2.5;
+        const bounce = Math.abs(Math.sin(time / 200)) * 12;
+        ctx.save();
+        ctx.translate(tX, ts*0.3 - bounce);
+        ctx.rotate(time / 100);
+        ctx.strokeStyle = "#8b7355"; ctx.lineWidth = 2;
         ctx.beginPath();
-        for(let i=0; i<6; i++) { ctx.rotate(Math.PI*2/6); ctx.ellipse(0, 0, 4, 2.5, 0, 0, Math.PI*2); ctx.stroke(); }
+        for(let i=0; i<4; i++) { ctx.rotate(Math.PI/2); ctx.ellipse(0,0, ts*0.2, ts*0.15, 0,0, Math.PI*2); ctx.stroke(); }
         ctx.restore();
 
         ctx.restore();
@@ -272,7 +283,7 @@ Object.assign(Game, {
         ctx.save();
         ctx.translate(px, py);
 
-        // Bodenplatte (massiv)
+        // Bodenplatte (massiv, um alles darunter zu verdecken)
         ctx.fillStyle = "#111";
         ctx.beginPath();
         ctx.arc(0, 0, ts * 0.95, 0, Math.PI*2);
@@ -316,8 +327,7 @@ Object.assign(Game, {
         ctx.shadowColor = "#eab308";
         ctx.fillStyle = "#facc15";
         ctx.font = `bold ${ts*0.35}px monospace`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText("101", 0, 0);
 
         ctx.restore();
@@ -364,6 +374,10 @@ Object.assign(Game, {
         const endX = startX + Math.ceil(viewW / this.TILE) + 1; 
         const endY = startY + Math.ceil(viewH / this.TILE) + 1; 
 
+        // ARRAY FÜR Z-ORDER SORTIERUNG
+        const visibleTiles = [];
+
+        // LAYER 1: Nur Terrain erfassen
         for(let y=startY; y<endY; y++) { 
             for(let x=startX; x<endX; x++) { 
                 if(y>=0 && y<this.MAP_H && x>=0 && x<this.MAP_W) { 
@@ -371,40 +385,51 @@ Object.assign(Game, {
                     if(dist > 10) continue;
                     if(!this.checkLineOfSight(this.state.player.x, this.state.player.y, x, y)) continue;
 
+                    visibleTiles.push({x, y, dist, t: this.state.currentMap[y][x]});
+
+                    // Statischer Hintergrund
                     ctx.drawImage(this.cacheCanvas, x*this.TILE, y*this.TILE, this.TILE, this.TILE, x*this.TILE, y*this.TILE, this.TILE, this.TILE);
                     
                     const t = this.state.currentMap[y][x]; 
                     
-                    // 1. Terrain-Details (liegen unten)
+                    // Wasser, Bäume, Gras liegen ganz unten
                     if(t === '~') this.drawWater(ctx, x, y, time);
                     else if(t === 't') this.drawTree(ctx, x, y, time);
                     else if(t === '"') this.drawGrass(ctx, x, y, time);
                     else if(t === '.') this.drawGrass(ctx, x, y, time);
-                    
-                    // 2. Objekte & Kreaturen (liegen OBEN drauf)
-                    if(t === 'M') this.drawMonster(ctx, x, y, time); 
-                    else if(t === 'W') this.drawWanderer(ctx, x, y, time);
-                    
-                    // POIs: Vault, City, Ghost Town
-                    if(t === 'V') this.drawVault(ctx, x, y, time);
-                    if(t === 'C') this.drawCity(ctx, x, y, time);       // NEU
-                    if(t === 'G') this.drawGhostTown(ctx, x, y, time);  // NEU
-                    
-                    // 3. Items & Ausgänge
-                    if(['X', 'R', 'S'].includes(t)) this.drawTile(ctx, x, y, t);
-                    // 'G' entfernt, da es jetzt eine eigene Funktion hat
-                    if(t === '?') this.drawTile(ctx, x, y, t);
-                    
-                    const opacity = Math.max(0, (dist - 4) / (10 - 4));
-                    if(opacity > 0) { ctx.fillStyle = `rgba(0,0,0,${opacity})`; ctx.fillRect(x*this.TILE, y*this.TILE, this.TILE, this.TILE); }
                 } 
             } 
         } 
-        
+
+        // LAYER 2: Große Gebäude (Vault, Stadt, Ghost Town)
+        // Werden jetzt NACH allen Gräsern gezeichnet, überlappen sie also perfekt!
+        visibleTiles.forEach(tile => {
+            if(tile.t === 'V') this.drawVault(ctx, tile.x, tile.y, time);
+            if(tile.t === 'C') this.drawCity(ctx, tile.x, tile.y, time);
+            if(tile.t === 'G') this.drawGhostTown(ctx, tile.x, tile.y, time);
+            if(['X', 'R', 'S', '?'].includes(tile.t)) this.drawTile(ctx, tile.x, tile.y, tile.t);
+        });
+
+        // LAYER 3: Charaktere und Monster
+        visibleTiles.forEach(tile => {
+            if(tile.t === 'M') this.drawMonster(ctx, tile.x, tile.y, time); 
+            if(tile.t === 'W') this.drawWanderer(ctx, tile.x, tile.y, time);
+        });
+
         this.drawPlayer(ctx); 
         this.drawOtherPlayers(ctx);
+
+        // LAYER 4: Effekte & Schatten
         this.updateParticles(); 
         this.drawParticles(ctx);
+
+        visibleTiles.forEach(tile => {
+            const opacity = Math.max(0, (tile.dist - 4) / (10 - 4));
+            if(opacity > 0) { 
+                ctx.fillStyle = `rgba(0,0,0,${opacity})`; 
+                ctx.fillRect(tile.x*this.TILE, tile.y*this.TILE, this.TILE, this.TILE); 
+            }
+        });
 
         ctx.restore(); 
         ctx.fillStyle = "rgba(0, 255, 0, 0.02)"; 
