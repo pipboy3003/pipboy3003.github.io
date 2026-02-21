@@ -1,4 +1,4 @@
-// [2026-02-21 21:10:00] ui_render_overlays.js - Ticker Content Writer
+// [2026-02-21 21:35:00] ui_render_overlays.js - Global Quest Ticker Injector
 
 Object.assign(UI, {
     
@@ -57,14 +57,38 @@ Object.assign(UI, {
         document.addEventListener('keydown', this._activeEscHandler);
     },
 
-    // Füllt das Ticker-Div, das jetzt fest in der Karte verbaut ist
+    // --- NEU: ABSOLUTE BRECHSTANGE FÜR DEN TICKER ---
     updateQuestTracker: function() { 
-        const ticker = document.getElementById('quest-tracker-ticker');
+        let ticker = document.getElementById('quest-tracker-ticker');
         
-        // Failsafe: Wenn der Ticker Container auf der Map nicht da ist, abbrechen.
-        if(!ticker) return; 
+        // 1. Wenn er nicht existiert, direkt an den BODY hängen!
+        if(!ticker) {
+            ticker = document.createElement('div');
+            ticker.id = 'quest-tracker-ticker';
+            document.body.appendChild(ticker); 
+        }
 
-        // Wenn nicht auf Map, im Dialog, oder nichts gepinnt -> Verstecken
+        // 2. CSS Styles hart erzwingen, damit nichts überschrieben wird
+        Object.assign(ticker.style, {
+            position: 'fixed',
+            top: '100px', // Genau unter deinem Sektor-Button
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            border: '2px solid #facc15',
+            color: '#facc15',
+            padding: '6px 20px',
+            borderRadius: '8px',
+            fontFamily: 'monospace',
+            fontSize: '14px',
+            zIndex: '99999', // Höher geht nicht
+            pointerEvents: 'none',
+            boxShadow: '0 0 15px rgba(234, 179, 8, 0.5)',
+            whiteSpace: 'nowrap',
+            display: 'none' // Standard: Versteckt
+        });
+
+        // 3. Sichtbarkeit prüfen
         if(!Game.state || Game.state.view !== 'map' || Game.state.inDialog || !Game.state.trackedQuestId) {
             ticker.style.display = 'none';
             return;
@@ -82,11 +106,12 @@ Object.assign(UI, {
             else def = Game.questDefs[qId];
         }
 
-        if(!qData || !def) {
+        if(!qData && !def) {
             ticker.style.display = 'none';
             return;
         }
-        
+
+        // Falls qData fehlt (z.b. abgeschlossen), nehmen wir 0
         let progressText = "";
         if(def.type === 'collect_multi') {
             let totalDone = 0;
@@ -99,18 +124,13 @@ Object.assign(UI, {
             }
             progressText = `[${totalDone}/${totalReq}]`;
         } else {
-            const current = qData.progress || 0;
-            const max = qData.max || 1;
+            const current = qData ? (qData.progress || 0) : 0;
+            const max = qData ? (qData.max || 1) : 1;
             progressText = `[${current}/${max}]`;
         }
 
-        // Ticker mit Inhalt füllen, nach Sektor positionieren und anzeigen
-        ticker.style.position = 'fixed';
-        ticker.style.top = '110px';
-        ticker.style.left = '50%';
-        ticker.style.transform = 'translateX(-50%)';
-
-        ticker.innerHTML = `<span style="opacity: 0.7;">↳ MISSION:</span> <b class="tracking-widest ml-1">${def.title.toUpperCase()}</b> <span class="ml-2 font-bold">${progressText}</span>`;
+        // 4. Inhalt schreiben und sichtbar machen
+        ticker.innerHTML = `<span style="opacity: 0.7;">📍 MISSION:</span> <b style="letter-spacing: 1px; margin-left: 4px;">${def.title.toUpperCase()}</b> <span style="margin-left: 8px; font-weight: bold;">${progressText}</span>`;
         ticker.style.display = 'block';
     },
 
