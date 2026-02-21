@@ -1,4 +1,4 @@
-// [2026-02-21 11:30:00] game_world_gen.js - Cinematic Vault Spawn
+// [2026-02-21 13:05:00] game_world_gen.js - POI Offset Spawns
 
 const WorldGen = {
     _seed: 12345,
@@ -155,19 +155,17 @@ const WorldGen = {
             }
         }
 
-        // --- CINETMATIC VAULT SPAWN ---
+        // --- CINETMATIC SPAWNS ---
+        
         if(sx === this.locations.vault.x && sy === this.locations.vault.y) {
-            // Wir schieben die Vault auf Y: 21 (Player spawnt standardmäßig auf 25, 25)
             this.placePOI(map, 25, 21, 'V', 4);
-            
-            // Wir bauen eine kleine Zufahrtsstraße direkt vor deine Füße
-            for(let py=22; py<=25; py++) {
-                map[py][25] = '=';
-            }
+            for(let py=22; py<=25; py++) map[py][25] = '=';
         }
         
         if(sx === this.locations.city.x && sy === this.locations.city.y) {
-            this.placePOI(map, 25, 25, 'C', 6);
+            this.placePOI(map, 25, 21, 'C', 6);
+            for(let py=22; py<=25; py++) map[py][25] = '='; // Zufahrtstraße
+            
             for(let i=0; i<15; i++) { 
                 let rx = 15 + Math.floor(this.rand()*20); let ry = 15 + Math.floor(this.rand()*20);
                 if(map[ry][rx] === '.') this.placeHouseRuin(map, rx, ry);
@@ -175,11 +173,12 @@ const WorldGen = {
         }
         
         if(sx === this.locations.ghostTown.x && sy === this.locations.ghostTown.y) {
+            // Geisterstadt-Platzierung (wird auf 25,21 gesetzt)
             this.placeGhostTown(map, width, height);
         }
 
         let sectorRNG = (sx * 17 + sy * 23 + this._seed) % 100;
-        if(map[25][25] !== 'V' && map[25][25] !== 'C' && map[25][25] !== 'G' && sectorRNG < 15) { 
+        if(map[21][25] !== 'V' && map[21][25] !== 'C' && map[21][25] !== 'G' && sectorRNG < 15) { 
             let type = 'S';
             if(sectorRNG < 5) type = 'H'; else if(sectorRNG < 8) type = 'A'; else if(sectorRNG < 12) type = 'R';
             let dx = 10 + (sectorRNG * 3) % 30; let dy = 10 + (sectorRNG * 7) % 30;
@@ -234,7 +233,9 @@ const WorldGen = {
             if(this.rand() < 0.7) this.placeHouseRuin(map, b.x+5, b.y);
             if(this.rand() < 0.7) this.placeHouseRuin(map, b.x, b.y+5);
         });
-        map[25][25] = 'G'; 
+        
+        // Verschiebt die Ghost Town nach oben (auf Y: 21 statt 25)
+        map[21][25] = 'G'; 
     },
 
     seededRand: function(seed) {
