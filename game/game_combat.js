@@ -1,4 +1,4 @@
-// [2026-02-21 09:10:00] game_combat.js - Bulletproof Enemy Loader & UI Fix
+// [2026-02-21 10:15:00] game_combat.js - Bulletproof Win Logic
 
 window.Combat = {
     enemy: null,
@@ -15,21 +15,17 @@ window.Combat = {
     start: function(enemyInput) {
         let enemyData = enemyInput;
         
-        // FIX: Wenn nur eine ID (Text) übergeben wurde, lade das echte Monster aus der DB!
         if (typeof enemyInput === 'string') {
             if (Game.monsters && Game.monsters[enemyInput]) {
                 enemyData = Game.monsters[enemyInput];
-                enemyData.id = enemyInput; // ID sichern für Quests
+                enemyData.id = enemyInput; 
             } else {
-                // Fallback, falls das Monster in der DB fehlt
                 enemyData = { id: enemyInput, name: "Mutierte Kreatur", hp: 20, dmg: 2, xp: 5 };
             }
         }
         
-        // Tiefenkopie, damit das Original unangetastet bleibt
         Game.state.enemy = JSON.parse(JSON.stringify(enemyData || {})); 
         
-        // BULLETPROOF FALLBACKS: Falls irgendein Wert fehlt, füllen wir ihn auf!
         Game.state.enemy.name = Game.state.enemy.name || "Unbekanntes Monster";
         Game.state.enemy.hp = Game.state.enemy.hp || 20;
         Game.state.enemy.maxHp = Game.state.enemy.maxHp || Game.state.enemy.hp;
@@ -341,50 +337,75 @@ window.Combat = {
     },
 
     win: function() {
-        const enemyName = this.enemy.name || "Kreatur";
-        this.log(`${enemyName} besiegt!`, 'text-yellow-400 font-bold');
-        
-        const xpBase = Array.isArray(this.enemy.xp) ? (this.enemy.xp[0] + Math.floor(Math.random()*(this.enemy.xp[1]-this.enemy.xp[0]))) : (this.enemy.xp || 5);
-        Game.gainExp(xpBase);
-        
-        if(this.enemy.loot > 0) {
-            let caps = Math.floor(Math.random() * this.enemy.loot) + 1;
-            Game.state.caps += caps;
-            this.log(`Gefunden: ${caps} Kronkorken`, 'text-yellow-200');
-        }
-        
-        if(this.enemy.drops) {
-            this.enemy.drops.forEach(d => {
-                if(Math.random() < d.c) {
-                    Game.addToInventory(d.id, 1);
-                }
-            });
-        }
-
-        // FIX: Ausfallsicheres Ermitteln der ID für die Quests!
-        let mobId = this.enemy.id || null;
-        if(!mobId && Game.monsters && typeof enemyName === 'string') {
-            const cleanName = enemyName.replace('Legendäre ', '');
-            for(let k in Game.monsters) {
-                if(Game.monsters[k].name === cleanName) {
-                    mobId = k;
-                    break;
+        try {
+            const enemyName = (this.enemy && this.enemy.name) ? String(this.enemy.name) : "Kreatur";
+            this.log(`${enemyName} besiegt!`, 'text-yellow-400 font-bold');
+            
+            // 1. XP berechnen (Ausfallsicher)
+            let xpBase = 5;
+            if (this.enemy && this.enemy.xp !== undefined) {
+                if (Array.isArray(this.enemy.xp) && this.enemy.xp.length >= 2) {
+                    xpBase = this.enemy.xp[0] + Math.floor(Math.random()*(this.enemy.xp[1]-this.enemy.xp[0]));
+                } else {
+                    xpBase = Number(this.enemy.xp) || 5;
                 }
             }
-        }
-        
-        if(mobId && typeof Game.updateQuestProgress === 'function') {
-            Game.updateQuestProgress('kill', mobId, 1);
-        }
+            if(typeof Game.gainExp === 'function') Game.gainExp(xpBase);
+            
+            // 2. Kronkorken (Loot) (Ausfallsicher)
+            if(this.enemy && this.enemy.loot !== undefined) {
+                let maxLoot = Number(this.enemy.loot);
+                if (!isNaN(maxLoot) && maxLoot > 0) {
+                    let caps = Math.floor(Math.random() * maxLoot) + 1;
+                    if(Game.state) Game.state.caps = (Game.state.caps || 0) + caps;
+                    this.log(`Gefunden: ${caps} Kronkorken`, 'text-yellow-200');
+                }
+            }
+            
+            // 3. Drops (Ausfallsicher prüfen ob Array)
+            if(this.enemy && this.enemy.drops) {
+                let dropsArr = Array.isArray(this.enemy.drops) ? this.enemy.drops : [this.enemy.drops];
+                dropsArr.forEach(d => {
+                    if (d && d.id && typeof Game.addToInventory === 'function') {
+                        let chance = (d.c !== undefined) ? Number(d.c) : 1;
+                        if(Math.random() < chance) Game.addToInventory(d.id, 1);
+                    }
+                });
+            }
 
-        if(Game.state.kills === undefined) Game.state.kills = 0;
-        Game.state.kills++;
-        Game.saveGame();
+            // 4. Quest Kills abgleichen (Ausfallsicherer String Check)
+            let mobId = (this.enemy && this.enemy.id) ? this.enemy.id : null;
+            if(!mobId && typeof Game.monsters === 'object' && Game.monsters !== null) {
+                const cleanName = enemyName.replace(/Legendäre /g, '').replace(/Legendärer /g, '');
+                for(let k in Game.monsters) {
+                    if(Game.monsters[k] && Game.monsters[k].name === cleanName) {
+                        mobId = k;
+                        break;
+                    }
+                }
+            }
+            
+            if(mobId && typeof Game.updateQuestProgress === 'function') {
+                Game.updateQuestProgress('kill', mobId, 1);
+            }
 
-        setTimeout(() => {
-            Game.state.enemy = null;
-            UI.switchView('map');
-        }, 1500);
+            // 5. Stat-Pflege
+            if(Game.state) {
+                if(Game.state.kills === undefined) Game.state.kills = 0;
+                Game.state.kills++;
+            }
+            if(typeof Game.saveGame === 'function') Game.saveGame();
+
+        } catch (err) {
+            console.error("Combat Win Error gesichert:", err);
+            this.log("Systemfehler beim Looten behoben.", "text-gray-500");
+        } finally {
+            // 6. IMMER den Kampf beenden, egal was passiert
+            setTimeout(() => {
+                if(Game.state) Game.state.enemy = null;
+                if(typeof UI.switchView === 'function') UI.switchView('map');
+            }, 1500);
+        }
     },
 
     flee: function() {
