@@ -1,4 +1,4 @@
-// [2026-02-21 18:45:00] ui_render_views.js - Cleaned up (No Quest Tracker)
+// [2026-02-21 21:05:00] ui_render_views.js - Safe HTML Ticker Inject
 
 Object.assign(UI, {
 
@@ -56,25 +56,31 @@ Object.assign(UI, {
 
     renderMapScanline: function(container) {
         container.innerHTML = `
-            <div class="relative w-full h-full bg-black overflow-hidden">
-                <canvas id="game-canvas" class="block w-full h-full object-cover"></canvas>
+            <div class="relative w-full h-full bg-black overflow-hidden flex flex-col">
+                <canvas id="game-canvas" class="block w-full h-full object-cover absolute inset-0"></canvas>
                 <div id="scanline" class="pointer-events-none absolute inset-0 bg-repeat-y opacity-10"></div>
                 <div id="vignette" class="pointer-events-none absolute inset-0 radial-gradient"></div>
+
+                <div class="absolute w-full flex justify-center pointer-events-none" style="top: 15px; z-index: 50;">
+                    <div id="quest-tracker-ticker" style="display:none;" class="bg-black/90 border border-yellow-500 text-yellow-400 px-4 py-1.5 rounded font-mono text-xs shadow-[0_0_15px_rgba(234,179,8,0.5)] backdrop-blur-sm">
+                        </div>
+                </div>
 
                 <div class="absolute bottom-4 left-4 text-green-400 font-mono text-sm bg-black/50 px-2 py-1 border border-green-900 z-40 pointer-events-none">
                     DIAGNOSE: ${Game.state.zone || 'Unbekannt'}
                 </div>
                 <div class="absolute bottom-20 right-4 flex flex-col gap-2 md:hidden z-40">
-                    <button onclick="Game.move(0, -1)" class="p-4 bg-green-900/30 border border-green-500 rounded active:bg-green-500">⬆️</button>
+                    <button onclick="Game.move(0, -1)" class="p-4 bg-green-900/30 border border-green-500 rounded active:bg-green-500 pointer-events-auto">⬆️</button>
                     <div class="flex gap-2">
-                        <button onclick="Game.move(-1, 0)" class="p-4 bg-green-900/30 border border-green-500 rounded active:bg-green-500">⬅️</button>
-                        <button onclick="Game.move(1, 0)" class="p-4 bg-green-900/30 border border-green-500 rounded active:bg-green-500">➡️</button>
+                        <button onclick="Game.move(-1, 0)" class="p-4 bg-green-900/30 border border-green-500 rounded active:bg-green-500 pointer-events-auto">⬅️</button>
+                        <button onclick="Game.move(1, 0)" class="p-4 bg-green-900/30 border border-green-500 rounded active:bg-green-500 pointer-events-auto">➡️</button>
                     </div>
-                    <button onclick="Game.move(0, 1)" class="p-4 bg-green-900/30 border border-green-500 rounded active:bg-green-500">⬇️</button>
+                    <button onclick="Game.move(0, 1)" class="p-4 bg-green-900/30 border border-green-500 rounded active:bg-green-500 pointer-events-auto">⬇️</button>
                 </div>
             </div>
         `;
         if(Game.initCanvas) Game.initCanvas();
+        if(typeof UI.updateQuestTracker === 'function') setTimeout(() => UI.updateQuestTracker(), 50);
     },
 
     renderFullscreenWorldMap: function(container) {
