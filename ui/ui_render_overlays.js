@@ -1,4 +1,4 @@
-// [2026-02-21 14:50:00] ui_render_overlays.js - Safe Vault Resting (No Rads)
+// [2026-02-21 16:20:00] ui_render_overlays.js - Rusty Springs Animation
 
 Object.assign(UI, {
     
@@ -796,7 +796,6 @@ Object.assign(UI, {
 
     enterVault: function() { 
         if(Game.state) Game.state.inDialog = true; 
-        
         if(typeof UI !== 'undefined' && UI.log) UI.log("Das schwere Vault-Tor knirscht...", "text-blue-400 font-bold");
 
         const animLayer = document.createElement('div');
@@ -840,13 +839,10 @@ Object.assign(UI, {
                         animLayer.remove();
                     }, 1000);
                 }, 300);
-
             }, 2000);
-
         }, 100);
     },
 
-    // CUSTOM VAULT REST: Heilt HP voll und löscht Rads!
     _showVaultMenuInternal: function() {
         const overlay = this.restoreOverlay(); 
         overlay.style.display = 'flex';
@@ -868,18 +864,13 @@ Object.assign(UI, {
         restBtn.className = "action-button w-full border-blue-500 text-blue-400 hover:bg-blue-900 py-4 font-bold text-xl"; 
         restBtn.innerHTML = "🛏️ AUSRUHEN (GRATIS)"; 
         restBtn.onclick = () => { 
-            // WICHTIG: Statt Game.rest() machen wir hier eine "Clean Healing"
             if(Game.state) {
                 Game.state.hp = Game.state.maxHp || 20; 
-                
-                // Dekontamination!
                 if(Game.state.rad !== undefined) Game.state.rad = 0; 
                 if(Game.state.rads !== undefined) Game.state.rads = 0; 
-                
                 if(typeof Game.saveGame === 'function') Game.saveGame();
                 if(typeof UI.update === 'function') UI.update();
             }
-            
             this.showInfoDialog("DEKONTAMINIERT & AUSGERUHT", "Du hast sicher in der Vault geschlafen. Deine TP sind vollständig regeneriert und die Dekontaminationsduschen haben jegliche Verstrahlung abgewaschen!");
         }; 
         
@@ -892,5 +883,70 @@ Object.assign(UI, {
         box.appendChild(restBtn); 
         box.appendChild(leaveBtn);
         overlay.appendChild(box);
+    },
+
+    // --- NEU: CITY CINEMATIC ANIMATION ---
+    enterCityCinematic: function(onComplete) {
+        if(Game.state) Game.state.inDialog = true;
+        if(typeof UI !== 'undefined' && UI.log) UI.log("Die rostigen Tore öffnen sich...", "text-yellow-400 font-bold");
+
+        const animLayer = document.createElement('div');
+        animLayer.id = 'city-anim-layer';
+        animLayer.className = "fixed inset-0 z-[3000] bg-black overflow-hidden transition-opacity duration-1000 pointer-events-auto flex items-center justify-center";
+
+        animLayer.innerHTML = `
+            <div id="rs-door-left" class="absolute top-0 bottom-0 left-0 w-1/2 bg-[repeating-linear-gradient(90deg,#3e2723,#3e2723_10px,#2d1a11_10px,#2d1a11_20px)] border-r-[12px] border-[#1a110b] transition-transform duration-[2500ms] ease-in-out flex items-center justify-end overflow-hidden shadow-[10px_0_30px_rgba(0,0,0,0.8)] z-10">
+                <div class="absolute w-full h-12 bg-[repeating-linear-gradient(45deg,#000,#000_20px,#eab308_20px,#eab308_40px)] opacity-60 top-1/4"></div>
+                <div class="absolute w-full h-12 bg-[repeating-linear-gradient(-45deg,#000,#000_20px,#eab308_20px,#eab308_40px)] opacity-60 bottom-1/4"></div>
+            </div>
+            <div id="rs-door-right" class="absolute top-0 bottom-0 right-0 w-1/2 bg-[repeating-linear-gradient(90deg,#3e2723,#3e2723_10px,#2d1a11_10px,#2d1a11_20px)] border-l-[12px] border-[#1a110b] transition-transform duration-[2500ms] ease-in-out flex items-center justify-start overflow-hidden shadow-[-10px_0_30px_rgba(0,0,0,0.8)] z-10">
+                <div class="absolute w-full h-12 bg-[repeating-linear-gradient(45deg,#000,#000_20px,#eab308_20px,#eab308_40px)] opacity-60 top-1/4"></div>
+                <div class="absolute w-full h-12 bg-[repeating-linear-gradient(-45deg,#000,#000_20px,#eab308_20px,#eab308_40px)] opacity-60 bottom-1/4"></div>
+            </div>
+
+            <div id="rs-sign" class="absolute z-20 flex flex-col items-center transition-opacity duration-700">
+                <div class="bg-[#1a110b] border-8 border-[#3e2723] p-6 shadow-[0_0_40px_rgba(0,0,0,0.9)] rounded-lg relative overflow-hidden">
+                    <div class="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,0,0,0.2)_2px,rgba(0,0,0,0.2)_4px)] pointer-events-none"></div>
+                    <h1 class="text-4xl md:text-6xl font-bold text-orange-500 tracking-[0.2em] font-mono drop-shadow-[0_0_15px_rgba(255,165,0,0.9)] animate-pulse">RUSTY SPRINGS</h1>
+                    <div class="text-cyan-400 text-center tracking-[0.6em] text-xs md:text-sm mt-3 animate-pulse drop-shadow-[0_0_10px_rgba(0,255,255,0.9)]">EST. 2077 // TRADE HUB</div>
+                </div>
+            </div>
+
+            <div id="rs-flash" class="absolute inset-0 bg-yellow-600 opacity-0 transition-opacity duration-500 pointer-events-none z-30 mix-blend-overlay"></div>
+        `;
+
+        document.body.appendChild(animLayer);
+
+        setTimeout(() => {
+            const doorL = document.getElementById('rs-door-left');
+            const doorR = document.getElementById('rs-door-right');
+            const sign = document.getElementById('rs-sign');
+            const flash = document.getElementById('rs-flash');
+
+            // 1. Schild geht aus / blendet aus
+            if(sign) sign.style.opacity = "0";
+
+            setTimeout(() => {
+                // 2. Tore fahren auf
+                if(doorL) doorL.style.transform = "translateX(-100%)";
+                if(doorR) doorR.style.transform = "translateX(100%)";
+                
+                setTimeout(() => {
+                    // 3. Kurzer Blitz, dann ins Stadtmenü
+                    if(flash) flash.style.opacity = "0.8";
+                    
+                    setTimeout(() => {
+                        if (onComplete) onComplete();
+                        if(flash) flash.style.opacity = "0";
+                        animLayer.style.opacity = "0";
+                        if(Game.state) Game.state.inDialog = false;
+                        
+                        setTimeout(() => {
+                            animLayer.remove();
+                        }, 1000);
+                    }, 400);
+                }, 1800);
+            }, 500); 
+        }, 100);
     }
 });
