@@ -1,4 +1,4 @@
-// [2026-02-21 10:55:00] game_map.js - Vault Entry Fix
+// [2026-02-21 16:15:00] game_map.js - Cinematic City Entry Hook
 
 Object.assign(Game, {
     reveal: function(px, py) { 
@@ -42,7 +42,6 @@ Object.assign(Game, {
         if (t === 'v') { this.descendDungeon(); return; }
         if (t === '?') { this.testMinigames(); return; } 
 
-        // Kollision (V wurde entfernt, da man drauftreten soll!)
         if(['M', 'W', '#', 'U', 't', 'o', 'Y', '|', 'F', 'T', 'R', '^', '~'].includes(t) && t !== 'R' && t !== '+') { 
             if(this.state.hiddenItems && this.state.hiddenItems[pk]) { this.addToInventory(this.state.hiddenItems[pk], 1); delete this.state.hiddenItems[pk]; return; }
             if(typeof UI !== 'undefined' && UI.shakeView) UI.shakeView();
@@ -62,7 +61,6 @@ Object.assign(Game, {
         
         if(typeof Network!=='undefined') Network.sendHeartbeat();
 
-        // FIX: Betreten der Vault 101 öffnet das korrekte Menü
         if(t==='V') { 
             if(typeof UI !== 'undefined' && typeof UI.enterVault === 'function') {
                 UI.enterVault(); 
@@ -107,7 +105,6 @@ Object.assign(Game, {
         
         if(this.state.player.x < 0 || this.state.player.x >= this.MAP_W || 
            this.state.player.y < 0 || this.state.player.y >= this.MAP_H) {
-            console.log("Player out of bounds, resetting to 25,25");
             this.state.player.x = 25;
             this.state.player.y = 25;
         }
@@ -117,7 +114,6 @@ Object.assign(Game, {
             const tx=px+dx, ty=py+dy;
             if(tx>=0&&tx<this.MAP_W&&ty>=0&&ty<this.MAP_H) {
                 const t=this.state.currentMap[ty][tx];
-                // Wichtig: 'V' nicht entfernen, sonst löscht man die Vault weg, wenn man daneben spawnt!
                 if(['^', 'Y', 't', '~', '#'].includes(t)) this.state.currentMap[ty][tx] = '.';
             }
         }
@@ -166,6 +162,23 @@ Object.assign(Game, {
     openChest: function(x,y){if(this.state.dungeonLevel>=3){if(typeof UI!=='undefined')UI.startMinigame('memory',()=>this.forceOpenChest(x,y));return;}this.forceOpenChest(x,y);},
     forceOpenChest: function(x,y){this.state.currentMap[y][x]='B';if(this.renderStaticMap)this.renderStaticMap();const m=this.state.dungeonLevel||1;this.state.caps+=(100*m);this.addToInventory('legendary_part',1);if(Math.random()<0.5)this.addToInventory('stimpack',1);if(typeof UI!=='undefined')UI.showDungeonVictory(100*m,m);setTimeout(()=>this.leaveCity(),4000);},
     leaveCity: function(){this.state.view='map';this.state.dungeonLevel=0;if(this.state.savedPosition){this.state.player.x=this.state.savedPosition.x;this.state.player.y=this.state.savedPosition.y;this.state.savedPosition=null;}if(typeof UI!=='undefined')UI.switchView('map').then(()=>{if(this.renderStaticMap)this.renderStaticMap();});},
-    enterCity: function(){this.state.savedPosition={x:this.state.player.x,y:this.state.player.y};this.state.view='city';this.saveGame();if(typeof UI!=='undefined')UI.switchView('city').then(()=>{if(UI.renderCity)UI.renderCity();});},
+    
+    // NEU: Ruft die Animation aus UI auf, falls vorhanden
+    enterCity: function() {
+        this.state.savedPosition = { x: this.state.player.x, y: this.state.player.y };
+        
+        if (typeof UI !== 'undefined' && typeof UI.enterCityCinematic === 'function') {
+            UI.enterCityCinematic(() => {
+                this.state.view = 'city';
+                this.saveGame();
+                UI.switchView('city').then(() => { if(UI.renderCity) UI.renderCity(); });
+            });
+        } else {
+            this.state.view = 'city';
+            this.saveGame();
+            if(typeof UI !== 'undefined') UI.switchView('city').then(() => { if(UI.renderCity) UI.renderCity(); });
+        }
+    },
+    
     testMinigames: function(){if(UI.els.dialog){UI.els.dialog.style.display='flex';UI.els.dialog.innerHTML='<div class="bg-black text-white p-4 border border-green-500"><button onclick="UI.startMinigame(\'hacking\')">HACK</button><button onclick="UI.els.dialog.style.display=\'none\'">X</button></div>';}}
 });
