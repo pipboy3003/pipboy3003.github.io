@@ -1,4 +1,4 @@
-// [2026-02-18 18:35:00] game_world_gen.js - Stones, Peaks & Smart Bridges
+// [2026-02-21 11:30:00] game_world_gen.js - Cinematic Vault Spawn
 
 const WorldGen = {
     _seed: 12345,
@@ -128,7 +128,6 @@ const WorldGen = {
                 else if(moisture > 0.65 && heat > 0.5) { ground = ';'; treeThresh = 0.35; } 
                 else if(moisture > 0.6 && heat < 0.5) { ground = '"'; treeThresh = 0.55; } 
                 
-                // NEU: Steine streuen (nur auf normalem Boden oder Wüste)
                 if (ground === '.' || ground === '_') {
                     if (this.rand() > 0.92) ground = ','; 
                 }
@@ -137,7 +136,7 @@ const WorldGen = {
                 map[y][x] = ground; 
 
                 if (isRiver) map[y][x] = '~';
-                else if (elevation > 0.94) map[y][x] = 'Y'; // Hohe Gipfel (Y)
+                else if (elevation > 0.94) map[y][x] = 'Y'; 
                 else if (elevation > 0.85) map[y][x] = '^'; 
                 else if (detail < treeThresh) map[y][x] = 't'; 
                 
@@ -156,9 +155,17 @@ const WorldGen = {
             }
         }
 
+        // --- CINETMATIC VAULT SPAWN ---
         if(sx === this.locations.vault.x && sy === this.locations.vault.y) {
-            this.placePOI(map, 25, 25, 'V', 4);
+            // Wir schieben die Vault auf Y: 21 (Player spawnt standardmäßig auf 25, 25)
+            this.placePOI(map, 25, 21, 'V', 4);
+            
+            // Wir bauen eine kleine Zufahrtsstraße direkt vor deine Füße
+            for(let py=22; py<=25; py++) {
+                map[py][25] = '=';
+            }
         }
+        
         if(sx === this.locations.city.x && sy === this.locations.city.y) {
             this.placePOI(map, 25, 25, 'C', 6);
             for(let i=0; i<15; i++) { 
@@ -254,7 +261,6 @@ const WorldGen = {
         return {x: w-1, y: Math.floor(this.rand()*(h-4))+2}; 
     },
 
-    // NEU: Smarte Brücken-Logik
     buildRoad: function(map, start, end) {
         let x = start.x, y = start.y;
         let steps = 0;
@@ -269,25 +275,18 @@ const WorldGen = {
             let dx = end.x - x; 
             let dy = end.y - y;
             
-            // Standard Richtung
             let moveX = Math.abs(dx) > Math.abs(dy);
             
-            // Vorschau
             let nextX = x + (moveX ? (dx > 0 ? 1 : -1) : 0);
             let nextY = y + (!moveX ? (dy > 0 ? 1 : -1) : 0);
             
-            // Wenn wir ins Wasser laufen...
             if (isWater(nextX, nextY)) {
-                // ...prüfe ob wir seitlich ausweichen können (Landausweg)
                 let altX = x + (!moveX ? (dx > 0 ? 1 : -1) : 0);
                 let altY = y + (moveX ? (dy > 0 ? 1 : -1) : 0);
                 
-                // Wenn Alternative Land ist -> Geh dort lang!
-                // (Prüfe auch, ob wir in der anderen Achse überhaupt noch Weg haben)
                 if (!isWater(altX, altY) && (moveX ? dy !== 0 : dx !== 0)) {
                     moveX = !moveX; 
                 }
-                // Sonst: Keine Wahl, wir müssen Brücke bauen.
             }
 
             if (moveX) x += dx > 0 ? 1 : -1; else y += dy > 0 ? 1 : -1;
