@@ -1,4 +1,4 @@
-// [2026-01-19 12:30:00] game_combat.js - VATS Logic + Legendary Stats Fix
+// [2026-02-21 09:00:00] game_combat.js - Win function bugfix (undefined name)
 
 window.Combat = {
     enemy: null,
@@ -15,8 +15,13 @@ window.Combat = {
     start: function(enemyEntity) {
         Game.state.enemy = JSON.parse(JSON.stringify(enemyEntity)); 
         Game.state.enemy.maxHp = Game.state.enemy.hp; 
+        
+        // SICHERHEITS-FALLBACK: Wenn ein Gegner keinen Namen hat, geben wir ihm einen
+        if (!Game.state.enemy.name) {
+            Game.state.enemy.name = "Unbekannte Kreatur";
+        }
+        
         this.enemy = Game.state.enemy;
-
         Game.state.view = 'combat';
         
         this.logData = [];
@@ -130,16 +135,10 @@ window.Combat = {
         return wpn;
     },
 
-    // [NEU] Helper: Stats priorisieren (Instanz > DB)
     getWeaponStats: function(item) {
         const dbItem = Game.items[item.id] || {};
-        
-        // Werte priorisieren: Item-Instanz > Datenbank > Default
-        // WICHTIG: item.baseDmg aus alten Versionen wird auch berücksichtigt
         const dmg = (item.dmg !== undefined) ? item.dmg : (item.baseDmg || dbItem.dmg || 2);
-        
         const ammoType = item.ammoType || dbItem.ammoType || null;
-        // Munitionskosten: Standard 1, außer es steht anders im Item
         const ammoCost = (item.ammoCost !== undefined) ? item.ammoCost : (dbItem.ammoCost || 1);
         
         return { dmg, ammoType, ammoCost };
@@ -171,10 +170,9 @@ window.Combat = {
         const hitChance = this.calculateHitChance(partIndex);
         
         let wpn = this.getSafeWeapon();
-        const stats = this.getWeaponStats(wpn); // [NEU] Stats laden
+        const stats = this.getWeaponStats(wpn);
         const wId = wpn.id.toLowerCase();
 
-        // Munitions-Check mit neuen Stats
         if(stats.ammoType && wId !== 'alien_blaster') { 
              const hasAmmo = Game.removeFromInventory(stats.ammoType, stats.ammoCost);
              if(!hasAmmo) {
@@ -202,11 +200,10 @@ window.Combat = {
         }
 
         if(roll <= hitChance) {
-            // [NEU] Schaden basierend auf getWeaponStats
             let dmg = stats.dmg;
             if(wpn.props && wpn.props.dmgMult) dmg *= wpn.props.dmgMult;
 
-            const isRanged = stats.ammoType !== null; // Wenn Munition, dann Range
+            const isRanged = stats.ammoType !== null; 
 
             if(!isRanged || wpn.id === 'rifle_butt') {
                 dmg += Math.floor(Game.getStat('STR') / 2);
@@ -236,7 +233,6 @@ window.Combat = {
             dmg = Math.floor(dmg);
             this.enemy.hp -= dmg;
             
-            // Effekte (Vampir, etc)
             if(wpn.effectHeal) {
                 Game.state.hp = Math.min(Game.getMaxHp(), Game.state.hp + wpn.effectHeal);
                 this.log(`Vampir: +${wpn.effectHeal} HP`, "text-green-400");
@@ -330,9 +326,12 @@ window.Combat = {
     },
 
     win: function() {
-        this.log(`${this.enemy.name} besiegt!`, 'text-yellow-400 font-bold');
+        // Sicherer Fallback für den Namen
+        const enemyName = this.enemy.name || "Unbekannte Kreatur";
         
-        const xpBase = Array.isArray(this.enemy.xp) ? (this.enemy.xp[0] + Math.floor(Math.random()*(this.enemy.xp[1]-this.enemy.xp[0]))) : this.enemy.xp;
+        this.log(`${enemyName} besiegt!`, 'text-yellow-400 font-bold');
+        
+        const xpBase = Array.isArray(this.enemy.xp) ? (this.enemy.xp[0] + Math.floor(Math.random()*(this.enemy.xp[1]-this.enemy.xp[0]))) : (this.enemy.xp || 5);
         Game.gainExp(xpBase);
         
         if(this.enemy.loot > 0) {
@@ -349,15 +348,18 @@ window.Combat = {
             });
         }
 
+        // BUGFIX: Nur replace anwenden, wenn enemyName ein String ist.
         let mobId = null;
-        if(Game.monsters) {
+        if(Game.monsters && typeof enemyName === 'string') {
+            const cleanName = enemyName.replace('Legendäre ', '');
             for(let k in Game.monsters) {
-                if(Game.monsters[k].name === this.enemy.name.replace('Legendäre ', '')) {
+                if(Game.monsters[k].name === cleanName) {
                     mobId = k;
                     break;
                 }
             }
         }
+        
         if(mobId && typeof Game.updateQuestProgress === 'function') {
             Game.updateQuestProgress('kill', mobId, 1);
         }
