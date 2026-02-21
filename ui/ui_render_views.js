@@ -1,4 +1,4 @@
-// [2026-02-21 21:05:00] ui_render_views.js - Safe HTML Ticker Inject
+// [2026-02-21 21:30:00] ui_render_views.js - Cleaned up Map Container
 
 Object.assign(UI, {
 
@@ -52,6 +52,11 @@ Object.assign(UI, {
             default:
                 container.innerHTML = `<div class="text-center p-10 text-red-500">ERROR: Unknown View ${Game.state.view}</div>`;
         }
+
+        // Trigger für den Ticker (wird jetzt global gezeichnet)
+        if(typeof UI.updateQuestTracker === 'function') {
+            setTimeout(() => UI.updateQuestTracker(), 50);
+        }
     },
 
     renderMapScanline: function(container) {
@@ -60,11 +65,6 @@ Object.assign(UI, {
                 <canvas id="game-canvas" class="block w-full h-full object-cover absolute inset-0"></canvas>
                 <div id="scanline" class="pointer-events-none absolute inset-0 bg-repeat-y opacity-10"></div>
                 <div id="vignette" class="pointer-events-none absolute inset-0 radial-gradient"></div>
-
-                <div class="absolute w-full flex justify-center pointer-events-none" style="top: 15px; z-index: 50;">
-                    <div id="quest-tracker-ticker" style="display:none;" class="bg-black/90 border border-yellow-500 text-yellow-400 px-4 py-1.5 rounded font-mono text-xs shadow-[0_0_15px_rgba(234,179,8,0.5)] backdrop-blur-sm">
-                        </div>
-                </div>
 
                 <div class="absolute bottom-4 left-4 text-green-400 font-mono text-sm bg-black/50 px-2 py-1 border border-green-900 z-40 pointer-events-none">
                     DIAGNOSE: ${Game.state.zone || 'Unbekannt'}
@@ -80,7 +80,6 @@ Object.assign(UI, {
             </div>
         `;
         if(Game.initCanvas) Game.initCanvas();
-        if(typeof UI.updateQuestTracker === 'function') setTimeout(() => UI.updateQuestTracker(), 50);
     },
 
     renderFullscreenWorldMap: function(container) {
