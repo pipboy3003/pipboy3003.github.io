@@ -1,4 +1,4 @@
-// [2026-02-22 00:30:00] ui_render_views.js - V.A.T.S. Overhaul & Effects
+// [2026-02-22 00:45:00] ui_render_views.js - V.A.T.S. Overhaul Failsafe
 
 Object.assign(UI, {
 
@@ -317,26 +317,34 @@ Object.assign(UI, {
         }
     },
 
-    // --- NEU: V.A.T.S. PREMIUM OVERHAUL MIT EFFEKTEN & RUINEN-HINTERGRUND ---
+    // --- NEU: V.A.T.S. FAILSAFE OVERHAUL (Ignoriert fehlende Container-IDs) ---
     renderCombat: function() {
-        const enemy = Game.state.enemy; if(!enemy) return;
+        const enemy = Game.state.enemy; 
+        if(!enemy) return;
         
-        const screen = document.getElementById('combat-screen') || document.querySelector('.combat-screen');
-        if(!screen) return;
+        // Failsafe: Wir suchen nicht nach einem festen Menü-Namen, 
+        // sondern graben uns vom bekannten "enemy-name" Textfeld nach oben!
+        const nameEl = document.getElementById('enemy-name'); 
+        if(!nameEl) return;
+
+        // Finde die eigentliche Menü-Box (egal ob Overlay, Container etc.)
+        const box = nameEl.closest('.bg-black') || nameEl.parentElement;
 
         // 1. Initiales Setup pro Gegner (Intro & Hintergrund)
-        if (screen.dataset.currentEnemyId !== enemy.id + enemy.maxHp) {
-            screen.dataset.currentEnemyId = enemy.id + enemy.maxHp;
+        if (box && !box.dataset.vatsStyled) {
+            box.dataset.vatsStyled = "true";
+            box.classList.add('relative', 'overflow-hidden');
+            box.style.backgroundColor = "#051005"; // Tiefes Grün-Schwarz erzwingen
             
-            // INTRO ANIMATION (Einmal pro Kampf)
+            // INTRO ANIMATION
             const intro = document.createElement('div');
-            intro.className = "fixed inset-0 z-[4000] bg-black flex flex-col items-center justify-center pointer-events-none";
+            intro.className = "absolute inset-0 z-[4000] bg-black flex flex-col items-center justify-center pointer-events-none";
             intro.innerHTML = `
                 <div class="w-full h-1 bg-[#39ff14] shadow-[0_0_20px_#39ff14] animate-[scaleY_0.2s_ease-in-out]"></div>
-                <div class="text-[#39ff14] font-mono text-4xl md:text-6xl font-bold tracking-[1em] animate-pulse mt-4 ml-4">V.A.T.S.</div>
-                <div class="text-green-300 text-xs tracking-widest mt-4 opacity-70">INITIALIZING TARGETING SYSTEM...</div>
+                <div class="text-[#39ff14] font-mono text-4xl font-bold tracking-[1em] animate-pulse mt-4 ml-4">V.A.T.S.</div>
+                <div class="text-green-300 text-[10px] tracking-widest mt-4 opacity-70">TARGETING SYSTEM ACTIVE</div>
             `;
-            document.body.appendChild(intro);
+            box.appendChild(intro);
             setTimeout(() => {
                 intro.style.transition = "opacity 0.2s, transform 0.2s";
                 intro.style.opacity = "0";
@@ -345,52 +353,38 @@ Object.assign(UI, {
             }, 500);
 
             // RUINEN SKYLINE HINTERGRUND
-            screen.classList.add('bg-[#051005]', 'relative', 'overflow-hidden');
-            let bgLayer = document.getElementById('vats-bg-layer');
-            if(!bgLayer) {
-                bgLayer = document.createElement('div');
-                bgLayer.id = 'vats-bg-layer';
-                bgLayer.className = "absolute inset-0 pointer-events-none z-[0] flex items-end opacity-20";
-                // Zerstörte Stadt Silhouette
-                bgLayer.innerHTML = `
-                    <div class="w-full h-[45%] flex items-end justify-between px-4 border-b-2 border-green-900">
-                        <div class="w-16 h-32 bg-green-900 border-t-2 border-r-2 border-green-500 mb-[-2px]"></div>
-                        <div class="w-24 h-48 bg-green-900 border-t-2 border-l-2 border-r-2 border-green-500 mb-[-2px] flex justify-center pt-4"><div class="w-2/3 h-1/2 border-2 border-green-700/50"></div></div>
-                        <div class="w-12 h-20 bg-green-900 border-t-2 border-l-2 border-green-500 mb-[-2px]"></div>
-                        <div class="w-32 h-64 bg-green-900 border-t-2 border-l-2 border-r-2 border-green-500 mb-[-2px] flex flex-col items-center gap-2 pt-4">
-                            <div class="w-4 h-4 bg-green-500 animate-pulse shadow-[0_0_10px_#39ff14]"></div>
-                            <div class="w-full h-4 border-b-2 border-green-700/50"></div>
-                            <div class="w-1/2 h-4 border-b-2 border-green-700/50"></div>
-                        </div>
-                        <div class="w-20 h-40 bg-green-900 border-t-2 border-l-2 border-green-500 mb-[-2px]"></div>
+            const bgLayer = document.createElement('div');
+            bgLayer.className = "absolute inset-0 pointer-events-none z-[0] flex items-end opacity-20";
+            bgLayer.innerHTML = `
+                <div class="w-full h-[45%] flex items-end justify-between px-2 border-b-2 border-green-900">
+                    <div class="w-12 h-24 bg-green-900 border-t-2 border-r-2 border-green-500 mb-[-2px]"></div>
+                    <div class="w-20 h-40 bg-green-900 border-t-2 border-l-2 border-r-2 border-green-500 mb-[-2px] flex justify-center pt-4"><div class="w-2/3 h-1/2 border-2 border-green-700/50"></div></div>
+                    <div class="w-10 h-16 bg-green-900 border-t-2 border-l-2 border-green-500 mb-[-2px]"></div>
+                    <div class="w-24 h-48 bg-green-900 border-t-2 border-l-2 border-r-2 border-green-500 mb-[-2px] flex flex-col items-center gap-2 pt-4">
+                        <div class="w-3 h-3 bg-green-500 animate-pulse shadow-[0_0_10px_#39ff14]"></div>
+                        <div class="w-full h-3 border-b-2 border-green-700/50"></div>
                     </div>
-                `;
-                screen.insertBefore(bgLayer, screen.firstChild);
-            }
+                </div>
+            `;
+            box.insertBefore(bgLayer, box.firstChild);
             
             // FADENKREUZ & CRT SCANLINES
-            let crt = document.getElementById('vats-crt');
-            if(!crt) {
-                screen.insertAdjacentHTML('beforeend', `
-                    <div id="vats-crt" class="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,30,0,0.15)_50%)] bg-[length:100%_4px] z-[100] mix-blend-overlay"></div>
-                    <div class="pointer-events-none absolute inset-0 shadow-[inset_0_0_150px_rgba(0,255,0,0.2)] z-[90]"></div>
-                    <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center opacity-[0.15] z-[1]">
-                        <div class="relative w-[80vw] h-[80vw] max-w-[400px] max-h-[400px] border-2 border-green-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(0,255,0,0.5)]">
-                            <div class="w-[120%] h-[2px] bg-green-500 absolute shadow-[0_0_10px_#39ff14]"></div>
-                            <div class="h-[120%] w-[2px] bg-green-500 absolute shadow-[0_0_10px_#39ff14]"></div>
-                            <div class="w-[60%] h-[60%] border-2 border-dashed border-green-500 rounded-full animate-[spin_20s_linear_infinite]"></div>
-                        </div>
+            box.insertAdjacentHTML('beforeend', `
+                <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,30,0,0.15)_50%)] bg-[length:100%_4px] z-[100] mix-blend-overlay"></div>
+                <div class="pointer-events-none absolute inset-0 shadow-[inset_0_0_100px_rgba(0,255,0,0.15)] z-[90]"></div>
+                <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center opacity-[0.15] z-[1]">
+                    <div class="relative w-[70vw] h-[70vw] max-w-[300px] max-h-[300px] border-2 border-green-500 rounded-full flex items-center justify-center">
+                        <div class="w-[120%] h-[2px] bg-green-500 absolute shadow-[0_0_10px_#39ff14]"></div>
+                        <div class="h-[120%] w-[2px] bg-green-500 absolute shadow-[0_0_10px_#39ff14]"></div>
+                        <div class="w-[60%] h-[60%] border-2 border-dashed border-green-500 rounded-full animate-[spin_20s_linear_infinite]"></div>
                     </div>
-                `);
-            }
+                </div>
+            `);
         }
 
         // 2. HUD & Massive HP Anzeige
-        const nameEl = document.getElementById('enemy-name'); 
-        if(nameEl) {
-            nameEl.innerHTML = `<span class="text-[#39ff14] animate-pulse mr-3">TARGET:</span><span class="text-green-300 font-mono tracking-widest text-shadow-glow">${enemy.name.toUpperCase()}</span>`;
-            nameEl.className = "text-2xl md:text-4xl font-bold flex items-center justify-center w-full bg-green-900/40 border-b-2 border-green-500 pb-3 pt-2 mb-2 z-10 relative backdrop-blur-sm";
-        }
+        nameEl.innerHTML = `<span class="text-[#39ff14] animate-pulse mr-2">TARGET:</span><span class="text-green-300 font-mono tracking-widest text-shadow-glow">${enemy.name.toUpperCase()}</span>`;
+        nameEl.className = "text-xl md:text-3xl font-bold flex items-center justify-center w-full bg-green-900/40 border-b-2 border-green-500 pb-2 pt-2 mb-3 z-10 relative backdrop-blur-sm";
 
         const hpText = document.getElementById('enemy-hp-text'); 
         if(hpText) {
@@ -403,17 +397,15 @@ Object.assign(UI, {
             const pct = Math.max(0, (enemy.hp/enemy.maxHp)*100);
             hpBar.style.width = `${pct}%`;
             
-            // Farbwechsel je nach HP
             let barColor = pct > 50 ? '#39ff14' : (pct > 20 ? '#eab308' : '#ef4444');
             
             hpBar.className = "h-full transition-all duration-500";
             hpBar.style.backgroundColor = barColor;
-            hpBar.style.boxShadow = `0 0 15px ${barColor}`;
+            hpBar.style.boxShadow = `0 0 10px ${barColor}`;
             
             if(hpBar.parentElement) {
-                hpBar.parentElement.className = "w-[90%] mx-auto max-w-lg bg-black border-2 border-green-600 h-8 relative z-10 overflow-hidden mb-8 shadow-[0_0_20px_rgba(0,255,0,0.15)]";
+                hpBar.parentElement.className = "w-[90%] mx-auto max-w-sm bg-black border-2 border-green-600 h-6 relative z-10 overflow-hidden mb-6 shadow-[0_0_15px_rgba(0,255,0,0.1)]";
                 
-                // Segmente für die HP-Leiste (25%, 50%, 75%)
                 if(!hpBar.parentElement.querySelector('.hp-markers')) {
                     hpBar.parentElement.insertAdjacentHTML('beforeend', `
                         <div class="hp-markers absolute inset-0 flex justify-between pointer-events-none opacity-50 z-20">
@@ -426,7 +418,7 @@ Object.assign(UI, {
             }
         }
 
-        // 3. V.A.T.S. Ziel-Buttons mit unserem neuen Angriffs-Wrapper
+        // 3. V.A.T.S. Ziel-Buttons mit Angriffswrapper
         if(typeof Combat !== 'undefined' && Combat.bodyParts) {
              Combat.bodyParts.forEach((part, index) => {
                  const btn = document.getElementById(`btn-vats-${index}`);
@@ -437,26 +429,24 @@ Object.assign(UI, {
                      let barColor = chance > 65 ? 'bg-[#39ff14]' : (chance > 35 ? 'bg-yellow-500' : 'bg-red-500');
                      let borderColor = chance > 65 ? 'border-[#39ff14]' : (chance > 35 ? 'border-yellow-500' : 'border-red-500');
 
-                     // HIER IST DER WRAPPER FÜR EFFEKTE!
                      btn.setAttribute('onclick', `UI.triggerVatsAttack(${index}, ${chance})`);
-
-                     btn.className = `relative w-full max-w-lg mx-auto bg-black/80 border border-green-900/50 p-4 mb-5 cursor-pointer group hover:bg-green-900/40 transition-all z-10 backdrop-blur-md`;
+                     btn.className = `relative w-full max-w-sm mx-auto bg-black/80 border border-green-900/50 p-3 mb-3 cursor-pointer group hover:bg-green-900/40 transition-all z-10 backdrop-blur-md`;
                      btn.innerHTML = `
-                        <div class="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all -translate-x-1 -translate-y-1"></div>
-                        <div class="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all translate-x-1 -translate-y-1"></div>
-                        <div class="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all -translate-x-1 translate-y-1"></div>
-                        <div class="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all translate-x-1 translate-y-1"></div>
+                        <div class="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all -translate-x-1 -translate-y-1"></div>
+                        <div class="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all translate-x-1 -translate-y-1"></div>
+                        <div class="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all -translate-x-1 translate-y-1"></div>
+                        <div class="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all translate-x-1 translate-y-1"></div>
                         
                         <div class="pointer-events-none w-full h-full flex items-center justify-between px-2">
                             <div class="flex flex-col text-left w-[60%]">
-                                <span class="text-3xl md:text-5xl font-bold text-green-600 uppercase tracking-widest group-hover:text-green-300 transition-colors">${part.name}</span>
-                                <div class="w-full h-1.5 bg-gray-900 mt-2 border border-gray-800">
+                                <span class="text-2xl md:text-4xl font-bold text-green-600 uppercase tracking-widest group-hover:text-green-300 transition-colors">${part.name}</span>
+                                <div class="w-full h-1 bg-gray-900 mt-1 border border-gray-800">
                                     <div class="h-full ${barColor}" style="width: ${chance}%"></div>
                                 </div>
                             </div>
                             
-                            <div class="font-mono font-bold ${textColor} text-6xl md:text-7xl drop-shadow-[0_0_10px_currentColor] flex items-start">
-                                ${chance}<span class="text-2xl mt-2 opacity-80">%</span>
+                            <div class="font-mono font-bold ${textColor} text-4xl md:text-5xl drop-shadow-[0_0_8px_currentColor] flex items-start">
+                                ${chance}<span class="text-xl mt-1 opacity-80">%</span>
                             </div>
                         </div>
                      `;
@@ -467,41 +457,39 @@ Object.assign(UI, {
 
     // --- DIE KAMPF EFFEKTE ---
     triggerVatsAttack: function(index, chance) {
-        // Spam-Schutz
         if (this._isAttacking) return;
         this._isAttacking = true;
 
-        const screen = document.getElementById('combat-screen') || document.querySelector('.combat-screen');
+        const nameEl = document.getElementById('enemy-name'); 
+        const box = nameEl ? (nameEl.closest('.bg-black') || nameEl.parentElement) : null;
         const btn = document.getElementById(`btn-vats-${index}`);
         
-        // HP vor dem Angriff sichern
         const enemyPreHp = Game.state.enemy ? Game.state.enemy.hp : 0;
         const playerPreHp = Game.state.hp;
 
-        // 1. Zoom auf den Button (Waffen-Fokus)
         if(btn) btn.style.transform = "scale(1.05)";
 
-        // 2. Mündungsfeuer-Blitz & Rückstoß-Wackeln
+        // Mündungsfeuer
         const flash = document.createElement('div');
-        flash.className = "fixed inset-0 z-[5000] bg-yellow-100 pointer-events-none";
-        document.body.appendChild(flash);
+        flash.className = "absolute inset-0 z-[5000] bg-yellow-100 pointer-events-none";
+        if(box) {
+            box.appendChild(flash);
+            box.style.transform = "translate(5px, 8px) rotate(1deg)";
+        }
         
-        if (screen) screen.style.transform = "translate(10px, 15px) rotate(1deg)";
-
         setTimeout(() => {
-            if (screen) screen.style.transform = "translate(-15px, -5px) rotate(-1deg)";
+            if(box) box.style.transform = "translate(-8px, -3px) rotate(-1deg)";
             flash.style.opacity = "0";
             flash.style.transition = "opacity 0.15s";
         }, 50);
 
         setTimeout(() => {
-            if (screen) screen.style.transform = "translate(0px, 0px) rotate(0deg)";
+            if(box) box.style.transform = "translate(0px, 0px) rotate(0deg)";
             flash.remove();
         }, 200);
 
-        // 3. Kampf berechnen und Zahlen fliegen lassen
+        // Schaden berechnen & Rendern
         setTimeout(() => {
-            // Echte Logik ausführen
             if(typeof Combat !== 'undefined') Combat.playerAttack(index);
 
             const enemyPostHp = Game.state.enemy ? Game.state.enemy.hp : 0;
@@ -510,13 +498,12 @@ Object.assign(UI, {
             const dmgDealt = enemyPreHp - enemyPostHp;
             const dmgTaken = playerPreHp - playerPostHp;
 
-            // Hat der Spieler Schaden genommen? -> Roter Blitz & Rote Zahl
             if (dmgTaken > 0) {
-                this.spawnFloatingText(`-${Math.round(dmgTaken)} HP`, '#ef4444', 'bottom-[20%] left-1/2'); // Rot
+                this.spawnFloatingText(`-${Math.round(dmgTaken)} HP`, '#ef4444', 'bottom-[20%] left-1/2', box); 
                 
                 const dmgFlash = document.createElement('div');
-                dmgFlash.className = "fixed inset-0 z-[4900] bg-red-600/40 pointer-events-none opacity-0 transition-opacity";
-                document.body.appendChild(dmgFlash);
+                dmgFlash.className = "absolute inset-0 z-[4900] bg-red-600/40 pointer-events-none opacity-0 transition-opacity";
+                if(box) box.appendChild(dmgFlash);
                 
                 requestAnimationFrame(() => dmgFlash.style.opacity = "1");
                 setTimeout(() => {
@@ -525,40 +512,35 @@ Object.assign(UI, {
                 }, 100);
             }
 
-            // Hat der Gegner Schaden genommen? -> Grüne Zahl
             if (dmgDealt > 0) {
-                this.spawnFloatingText(`-${Math.round(dmgDealt)} HP`, '#39ff14', 'top-[20%] right-[10%]'); // Grün
+                this.spawnFloatingText(`-${Math.round(dmgDealt)} HP`, '#39ff14', 'top-[20%] right-[10%]', box); 
             } else if (Game.state.enemy && dmgDealt === 0) {
-                // Verfehlt
-                this.spawnFloatingText(`MISSED!`, '#9ca3af', 'top-[20%] right-[10%]'); // Grau
+                this.spawnFloatingText(`MISSED!`, '#9ca3af', 'top-[20%] right-[10%]', box); 
             }
 
-            // Button Reset
             if(btn) btn.style.transform = "scale(1)";
             this._isAttacking = false;
         }, 250);
     },
 
-    // Helfer für fliegende Text-Zahlen
-    spawnFloatingText: function(text, color, positionClasses) {
+    spawnFloatingText: function(text, color, positionClasses, container) {
+        if(!container) container = document.body;
         const floater = document.createElement('div');
-        floater.className = `fixed ${positionClasses} z-[6000] font-mono font-bold text-4xl md:text-6xl pointer-events-none drop-shadow-[0_0_15px_rgba(0,0,0,1)]`;
+        floater.className = `absolute ${positionClasses} z-[6000] font-mono font-bold text-3xl md:text-5xl pointer-events-none drop-shadow-[0_0_10px_rgba(0,0,0,1)]`;
         floater.style.color = color;
         floater.style.transform = "translate(-50%, -50%) scale(0.5)";
         floater.style.transition = "all 1s cubic-bezier(0.2, 0.8, 0.2, 1)";
         floater.innerText = text;
         
-        document.body.appendChild(floater);
+        container.appendChild(floater);
         
-        const driftX = (Math.random() - 0.5) * 60; // Leichtes Zittern nach links/rechts
+        const driftX = (Math.random() - 0.5) * 60; 
 
-        // Im nächsten Frame die Animation starten
         requestAnimationFrame(() => {
-            floater.style.transform = `translate(calc(-50% + ${driftX}px), -150px) scale(1.2)`;
+            floater.style.transform = `translate(calc(-50% + ${driftX}px), -100px) scale(1.2)`;
             floater.style.opacity = "0";
         });
 
-        // Aufräumen
         setTimeout(() => floater.remove(), 1000);
     }
 });
