@@ -1,4 +1,4 @@
-// [2026-02-21 14:30:00] ui_render_overlays.js - Cinematic Vault Entry
+// [2026-02-21 14:50:00] ui_render_overlays.js - Safe Vault Resting (No Rads)
 
 Object.assign(UI, {
     
@@ -794,18 +794,15 @@ Object.assign(UI, {
         }
     },
 
-    // --- NEU: CINEMATIC VAULT ANIMATION ---
     enterVault: function() { 
         if(Game.state) Game.state.inDialog = true; 
         
         if(typeof UI !== 'undefined' && UI.log) UI.log("Das schwere Vault-Tor knirscht...", "text-blue-400 font-bold");
 
-        // 1. Erstelle das Animations-Layer (Fullscreen)
         const animLayer = document.createElement('div');
         animLayer.id = 'vault-anim-layer';
         animLayer.className = "fixed inset-0 z-[3000] bg-black flex items-center justify-center overflow-hidden transition-opacity duration-1000 pointer-events-auto";
         
-        // Gigantisches Vault-Zahnrad mit Tailwind
         animLayer.innerHTML = `
             <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_#2d3748_0%,_#000_100%)] opacity-80"></div>
             <div id="vault-door-container" class="relative flex items-center justify-center transition-transform duration-[2500ms] ease-in-out">
@@ -823,16 +820,14 @@ Object.assign(UI, {
         `;
         document.body.appendChild(animLayer);
 
-        // 2. Starte die Animation (Tür rollt zur Seite auf)
         setTimeout(() => {
             const container = document.getElementById('vault-door-container');
             const gear = document.getElementById('vault-gear');
             const flash = document.getElementById('vault-flash');
 
-            if(container) container.style.transform = "translateX(120vw)"; // Rollt nach rechts aus dem Bild
-            if(gear) gear.style.transform = "rotate(270deg)"; // Dreht sich dabei
+            if(container) container.style.transform = "translateX(120vw)"; 
+            if(gear) gear.style.transform = "rotate(270deg)"; 
 
-            // 3. Nach dem Wegrollen -> Weißer Blitz & Menü öffnen
             setTimeout(() => {
                 if(flash) flash.style.opacity = "1";
                 
@@ -851,7 +846,7 @@ Object.assign(UI, {
         }, 100);
     },
 
-    // Das eigentliche Lager-Menü, das nach der Animation erscheint
+    // CUSTOM VAULT REST: Heilt HP voll und löscht Rads!
     _showVaultMenuInternal: function() {
         const overlay = this.restoreOverlay(); 
         overlay.style.display = 'flex';
@@ -873,8 +868,19 @@ Object.assign(UI, {
         restBtn.className = "action-button w-full border-blue-500 text-blue-400 hover:bg-blue-900 py-4 font-bold text-xl"; 
         restBtn.innerHTML = "🛏️ AUSRUHEN (GRATIS)"; 
         restBtn.onclick = () => { 
-            Game.rest(); 
-            this.showInfoDialog("AUSGERUHT", "Du hast geschlafen. Deine TP sind wieder vollständig regeneriert.");
+            // WICHTIG: Statt Game.rest() machen wir hier eine "Clean Healing"
+            if(Game.state) {
+                Game.state.hp = Game.state.maxHp || 20; 
+                
+                // Dekontamination!
+                if(Game.state.rad !== undefined) Game.state.rad = 0; 
+                if(Game.state.rads !== undefined) Game.state.rads = 0; 
+                
+                if(typeof Game.saveGame === 'function') Game.saveGame();
+                if(typeof UI.update === 'function') UI.update();
+            }
+            
+            this.showInfoDialog("DEKONTAMINIERT & AUSGERUHT", "Du hast sicher in der Vault geschlafen. Deine TP sind vollständig regeneriert und die Dekontaminationsduschen haben jegliche Verstrahlung abgewaschen!");
         }; 
         
         const leaveBtn = document.createElement('button'); 
