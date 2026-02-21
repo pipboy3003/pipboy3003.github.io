@@ -1,4 +1,4 @@
-// [2026-02-21 18:35:00] ui_render_overlays.js - Persistent HUD Return
+// [2026-02-21 18:50:00] ui_render_overlays.js - Cleaned up (No Quest Tracker)
 
 Object.assign(UI, {
     
@@ -57,122 +57,8 @@ Object.assign(UI, {
         document.addEventListener('keydown', this._activeEscHandler);
     },
 
-    // DAS IST DAS NEUE ALTE HUD - Absolute Brechstange für Sichtbarkeit
-    updateQuestTracker: function() { 
-        // 1. Eventuellen Restmüll vom Button-Versuch wegräumen
-        const oldBtn = document.getElementById('hud-quest-button');
-        if(oldBtn) oldBtn.remove();
-
-        // 2. HUD-Container holen oder neu bauen (Global am Body!)
-        let hud = document.getElementById('quest-tracker-hud');
-        if(!hud) {
-            hud = document.createElement('div');
-            hud.id = 'quest-tracker-hud';
-            
-            // Hardcoded Inline Styles für garantierte Sichtbarkeit
-            Object.assign(hud.style, {
-                position: 'fixed',
-                top: '80px',          // Unter dem Hauptmenü
-                left: '10px',         // Links am Rand
-                width: '250px',
-                backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                borderLeft: '4px solid #facc15',
-                padding: '10px',
-                boxShadow: '0 0 15px rgba(0,0,0,0.8)',
-                zIndex: '9999',       // Garantiert ÜBER der Map!
-                pointerEvents: 'none',
-                color: 'white',
-                fontFamily: 'monospace',
-                fontSize: '12px',
-                display: 'none',
-                borderRadius: '0 4px 4px 0'
-            });
-            
-            document.body.appendChild(hud);
-        }
-
-        // Sichtbarkeit steuern: Nur wenn auf Map und nicht im Dialog und Quest aktiv
-        if(!Game.state || Game.state.view !== 'map' || Game.state.inDialog || !Game.state.trackedQuestId) {
-            hud.style.display = 'none';
-            return;
-        }
-
-        const qId = Game.state.trackedQuestId;
-        
-        let qData = null;
-        if (Array.isArray(Game.state.activeQuests)) qData = Game.state.activeQuests.find(q => q.id === qId);
-        else if (Game.state.activeQuests) qData = Game.state.activeQuests[qId];
-
-        let def = null;
-        if (Game.questDefs) {
-            if (Array.isArray(Game.questDefs)) def = Game.questDefs.find(d => d.id === qId);
-            else def = Game.questDefs[qId];
-        }
-
-        if(!qData || !def) {
-            hud.style.display = 'none';
-            return;
-        }
-        
-        // HUD Anzeigen
-        hud.style.display = 'block';
-
-        let objectives = "";
-        if(def.type === 'collect_multi') {
-            objectives = Object.entries(def.reqItems).map(([id, amt]) => {
-                const inInv = Game.state.inventory.filter(i => i.id === id).reduce((s, i) => s + i.count, 0);
-                const iName = Game.items[id]?.name || id;
-                const done = inInv >= amt;
-                const icon = done ? "✔" : "☐";
-                return `<div style="color: ${done ? '#22c55e' : '#fef08a'}; text-decoration: ${done ? 'line-through' : 'none'}; margin-top: 4px; padding-left: 4px;">
-                    ${icon} ${inInv} / ${amt} ${iName}
-                </div>`;
-            }).join('');
-        } else {
-            const current = qData.progress || 0;
-            const max = qData.max || 1;
-            let verb = "Ziel:";
-            if(def.type === 'kill') verb = "Eliminiere:";
-            if(def.type === 'collect') verb = "Sammle:";
-            if(def.type === 'visit') verb = "Finde:";
-            
-            objectives = `<div style="color: #fef08a; margin-top: 4px; padding-left: 4px;">
-                ${verb} ${def.target}<br><span style="color: #facc15; font-weight: bold; font-size: 14px;">[${current} / ${max}]</span>
-            </div>`;
-        }
-
-        let directionHint = "";
-        if(def.target && typeof def.target === 'string' && def.target.includes(',')) {
-            const coords = def.target.split(',').map(Number);
-            if(coords.length === 2 && Game.state.sector) {
-                const tx = coords[0]; const ty = coords[1];
-                const cx = Game.state.sector.x; const cy = Game.state.sector.y;
-                
-                if(tx === cx && ty === cy) {
-                    directionHint = `<div style="color: #4ade80; font-size: 10px; margin-top: 8px; font-weight: bold;" class="animate-pulse">📍 ZIEL IM AKTUELLEN SEKTOR!</div>`;
-                } else {
-                    let dir = "";
-                    if(ty < cy) dir += "Norden";
-                    if(ty > cy) dir += "Süden";
-                    if(tx > cx) dir += (dir ? "osten" : "Osten");
-                    if(tx < cx) dir += (dir ? "westen" : "Westen");
-                    if(dir) directionHint = `<div style="color: #9ca3af; font-size: 10px; margin-top: 8px; font-style: italic;">📡 Zielrichtung: <b>${dir}</b></div>`;
-                }
-            }
-        }
-
-        hud.innerHTML = `
-            <div style="color: #eab308; font-weight: bold; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #713f12; padding-bottom: 4px; margin-bottom: 4px;">
-                ◉ ${def.title}
-            </div>
-            <div>${objectives}</div>
-            ${directionHint}
-        `;
-    },
-
     showConfirm: function(title, htmlContent, onConfirm) {
         if(Game.state) Game.state.inDialog = true;
-        this.updateQuestTracker(); // HUD verstecken
 
         const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
@@ -206,7 +92,6 @@ Object.assign(UI, {
 
     showInfoDialog: function(title, htmlContent) {
         if(Game.state) Game.state.inDialog = true;
-        this.updateQuestTracker(); // HUD verstecken
 
         const infoOverlay = document.createElement('div');
         infoOverlay.className = "fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fadeIn pointer-events-auto";
@@ -233,7 +118,6 @@ Object.assign(UI, {
             
             if(!isBaseOpen) {
                 if(Game.state) Game.state.inDialog = false;
-                this.updateQuestTracker(); // HUD wieder zeigen
             }
         };
 
@@ -257,7 +141,6 @@ Object.assign(UI, {
         
         if(!item) return;
         if(Game.state) Game.state.inDialog = true;
-        this.updateQuestTracker();
         
         const box = document.createElement('div');
         box.className = "bg-black border-2 border-green-500 p-4 shadow-[0_0_15px_green] max-w-sm text-center mb-4 w-full pointer-events-auto";
@@ -356,7 +239,6 @@ Object.assign(UI, {
         this._trapEscKey();
         
         if(Game.state) Game.state.inDialog = true;
-        this.updateQuestTracker();
 
         const item = Game.state.equip[slot];
         const name = item.props ? item.props.name : item.name;
@@ -627,7 +509,6 @@ Object.assign(UI, {
         this._trapEscKey();
 
         if(Game.state) Game.state.inDialog = true;
-        this.updateQuestTracker();
         
         const box = document.createElement('div');
         box.className = "bg-black border-2 border-red-600 p-4 shadow-[0_0_20px_red] max-w-sm text-center animate-pulse mb-4 pointer-events-auto";
@@ -657,7 +538,6 @@ Object.assign(UI, {
         overlay.innerHTML = '';
         
         if(Game.state) Game.state.inDialog = true;
-        this.updateQuestTracker();
         
         overlay.onclick = null; 
 
@@ -723,7 +603,6 @@ Object.assign(UI, {
         this._trapEscKey();
         
         if(Game.state) Game.state.inDialog = true;
-        this.updateQuestTracker();
 
         const box = document.createElement('div');
         box.className = "bg-black border-2 border-gray-600 p-4 shadow-[0_0_20px_gray] max-w-sm text-center mb-4 pointer-events-auto";
@@ -759,7 +638,6 @@ Object.assign(UI, {
         document.body.appendChild(overlay);
         
         if(Game.state) Game.state.inDialog = true;
-        this.updateQuestTracker();
         
         const btn = document.getElementById('btn-victory-close');
         if(btn) {
@@ -779,7 +657,6 @@ Object.assign(UI, {
         overlay.innerHTML = '';
         
         if(Game.state) Game.state.inDialog = true;
-        this.updateQuestTracker();
         
         overlay.onclick = null; 
 
@@ -839,8 +716,6 @@ Object.assign(UI, {
     enterVault: function() { 
         if(Game.state) Game.state.inDialog = true; 
         if(typeof UI !== 'undefined' && UI.log) UI.log("Das schwere Vault-Tor knirscht...", "text-blue-400 font-bold");
-
-        this.updateQuestTracker(); // Button im Dialog ausblenden
 
         const animLayer = document.createElement('div');
         animLayer.id = 'vault-anim-layer';
@@ -933,8 +808,6 @@ Object.assign(UI, {
         if(Game.state) Game.state.inDialog = true;
         if(typeof UI !== 'undefined' && UI.log) UI.log("Die rostigen Tore öffnen sich...", "text-yellow-400 font-bold");
 
-        this.updateQuestTracker(); // Button im Dialog ausblenden
-
         const animLayer = document.createElement('div');
         animLayer.id = 'city-anim-layer';
         animLayer.className = "fixed inset-0 z-[3000] bg-black overflow-hidden transition-opacity duration-1000 pointer-events-auto flex items-center justify-center";
@@ -983,7 +856,6 @@ Object.assign(UI, {
                         
                         setTimeout(() => {
                             animLayer.remove();
-                            if(typeof UI.updateQuestTracker === 'function') UI.updateQuestTracker();
                         }, 1000);
                     }, 400);
                 }, 1800);
