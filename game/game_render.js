@@ -1,4 +1,4 @@
-// [2026-02-21 12:10:00] game_render.js - Vault Z-Order Fix
+// [2026-02-21 12:30:00] game_render.js - City & Ghost Town Animations
 
 Object.assign(Game, {
     particles: [],
@@ -205,6 +205,65 @@ Object.assign(Game, {
         ctx.beginPath(); ctx.moveTo(px+10, py+ts); ctx.lineTo(px+10+sway, py+ts-8); ctx.stroke();
     },
 
+    // NEU: Rusty Springs (City) Animation
+    drawCity: function(ctx, x, y, time) {
+        const ts = this.TILE; const px = x*ts; const py = y*ts;
+        ctx.save(); ctx.translate(px, py);
+
+        // Rostiger Untergrund
+        ctx.fillStyle = "#3e2723"; ctx.fillRect(2, 2, ts-4, ts-4);
+
+        // Gebäude 1 (Links, größer, rostiges Wellblech)
+        ctx.fillStyle = "#8d6e63"; ctx.fillRect(4, ts-18, 14, 16);
+        ctx.strokeStyle = "#5d4037"; ctx.lineWidth = 1;
+        for(let i=4; i<18; i+=3) { ctx.beginPath(); ctx.moveTo(i, ts-18); ctx.lineTo(i, ts-2); ctx.stroke(); }
+
+        // Gebäude 2 (Rechts, kleiner)
+        ctx.fillStyle = "#6d4c41"; ctx.fillRect(ts-14, ts-14, 12, 12);
+
+        // Flackerndes Fenster
+        const flicker = Math.sin(time/100) * 0.2 + 0.8;
+        ctx.fillStyle = `rgba(255, 200, 50, ${flicker})`;
+        ctx.fillRect(8, ts-10, 4, 4);
+
+        // Rauch aus Schornstein
+        const smokeY = (time / 60) % 15;
+        const smokeX = Math.sin(time/250) * 3;
+        ctx.fillStyle = `rgba(150,150,150,${1 - smokeY/15})`;
+        ctx.beginPath(); ctx.arc(10 + smokeX, ts-20 - smokeY, 2 + smokeY/5, 0, Math.PI*2); ctx.fill();
+
+        ctx.restore();
+    },
+
+    // NEU: Ghost Town Animation
+    drawGhostTown: function(ctx, x, y, time) {
+        const ts = this.TILE; const px = x*ts; const py = y*ts;
+        ctx.save(); ctx.translate(px, py);
+
+        // Staubiger Boden
+        ctx.fillStyle = "#795548"; ctx.fillRect(2, 2, ts-4, ts-4);
+
+        // Verfallene Hütte (schief)
+        ctx.save(); ctx.translate(8, ts-4); ctx.rotate(-0.15);
+        ctx.fillStyle = "#4e342e"; ctx.fillRect(-4, -12, 10, 12);
+        ctx.fillStyle = "#3e2723"; ctx.fillRect(-3, -10, 3, 4); // Leeres Fenster
+        ctx.restore();
+
+        // Kaputter Zaunpfahl
+        ctx.fillStyle = "#3e2723"; ctx.fillRect(ts-8, ts-10, 2, 8);
+
+        // Animierter Tumbleweed (Steppenläufer)
+        const tumbleX = (time / 25) % (ts + 30) - 15;
+        ctx.save(); ctx.translate(tumbleX, ts-6);
+        ctx.rotate(time / 80);
+        ctx.strokeStyle = "#a1887f"; ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        for(let i=0; i<6; i++) { ctx.rotate(Math.PI*2/6); ctx.ellipse(0, 0, 4, 2.5, 0, 0, Math.PI*2); ctx.stroke(); }
+        ctx.restore();
+
+        ctx.restore();
+    },
+
     drawVault: function(ctx, x, y, time) {
         const ts = this.TILE;
         const px = x * ts + ts / 2;
@@ -213,7 +272,7 @@ Object.assign(Game, {
         ctx.save();
         ctx.translate(px, py);
 
-        // Bodenplatte (massiv, um alles darunter zu verdecken)
+        // Bodenplatte (massiv)
         ctx.fillStyle = "#111";
         ctx.beginPath();
         ctx.arc(0, 0, ts * 0.95, 0, Math.PI*2);
@@ -316,24 +375,24 @@ Object.assign(Game, {
                     
                     const t = this.state.currentMap[y][x]; 
                     
-                    // 1. Terrain-Details (Gras, Wasser, Bäume)
+                    // 1. Terrain-Details (liegen unten)
                     if(t === '~') this.drawWater(ctx, x, y, time);
                     else if(t === 't') this.drawTree(ctx, x, y, time);
                     else if(t === '"') this.drawGrass(ctx, x, y, time);
                     else if(t === '.') this.drawGrass(ctx, x, y, time);
                     
-                    // 'V' (Vault) wurde hier entfernt!
-
-                    // 2. Objekte & Kreaturen (werden ÜBER Terrain gezeichnet)
+                    // 2. Objekte & Kreaturen (liegen OBEN drauf)
                     if(t === 'M') this.drawMonster(ctx, x, y, time); 
                     else if(t === 'W') this.drawWanderer(ctx, x, y, time);
                     
-                    // FIX: Vault wird jetzt HIER gezeichnet, über Gras und Wegen!
+                    // POIs: Vault, City, Ghost Town
                     if(t === 'V') this.drawVault(ctx, x, y, time);
+                    if(t === 'C') this.drawCity(ctx, x, y, time);       // NEU
+                    if(t === 'G') this.drawGhostTown(ctx, x, y, time);  // NEU
                     
                     // 3. Items & Ausgänge
                     if(['X', 'R', 'S'].includes(t)) this.drawTile(ctx, x, y, t);
-                    if(t === 'G') this.drawTile(ctx, x, y, t);
+                    // 'G' entfernt, da es jetzt eine eigene Funktion hat
                     if(t === '?') this.drawTile(ctx, x, y, t);
                     
                     const opacity = Math.max(0, (dist - 4) / (10 - 4));
@@ -356,5 +415,5 @@ Object.assign(Game, {
     drawOtherPlayers: function(ctx) { if(typeof Network==='undefined'||!Network.otherPlayers)return; for(let pid in Network.otherPlayers){ const p=Network.otherPlayers[pid]; if(p.sector&&(p.sector.x!==this.state.sector.x||p.sector.y!==this.state.sector.y))continue; const ox=p.x*this.TILE+this.TILE/2; const oy=p.y*this.TILE+this.TILE/2; ctx.fillStyle="#00ffff"; ctx.beginPath(); ctx.arc(ox,oy,6,0,Math.PI*2); ctx.fill(); } },
     drawMonster: function(ctx,x,y,time) { const ts=this.TILE; const px=x*ts+ts/2; const py=y*ts+ts/2; const sc=1+Math.sin(time/200)*0.1; ctx.save(); ctx.translate(px,py); ctx.scale(sc,sc); ctx.fillStyle="#d32f2f"; ctx.beginPath(); ctx.arc(0,0,8,0,Math.PI*2); ctx.fill(); ctx.strokeStyle="#ff5252"; ctx.lineWidth=2; for(let i=0;i<8;i++){ ctx.beginPath(); ctx.moveTo(0,0); const a=(i/8)*Math.PI*2; ctx.lineTo(Math.cos(a)*12,Math.sin(a)*12); ctx.stroke(); } ctx.fillStyle="#ffeb3b"; ctx.fillRect(-4,-2,3,3); ctx.fillRect(2,-2,3,3); ctx.restore(); },
     drawWanderer: function(ctx,x,y,time) { const ts=this.TILE; const px=x*ts+ts/2; const py=y*ts+ts/2; const b=Math.abs(Math.sin(time/300))*3; ctx.save(); ctx.translate(px,py-b); ctx.fillStyle="#4fc3f7"; ctx.beginPath(); ctx.arc(0,-6,5,Math.PI,0); ctx.lineTo(6,10); ctx.lineTo(-6,10); ctx.fill(); ctx.fillStyle="#8d6e63"; ctx.fillRect(-4,0,8,6); ctx.restore(); },
-    drawTile: function(ctx,x,y,type) { const ts=this.TILE; const cx=x*ts+ts/2; const cy=y*ts+ts/2; const dI=(c,cl,s=20)=>{ctx.font=`bold ${s}px monospace`;ctx.fillStyle=cl;ctx.textAlign="center";ctx.textBaseline="middle";ctx.shadowColor=cl;ctx.shadowBlur=5;ctx.fillText(c,cx,cy);ctx.shadowBlur=0;}; switch(type){ case 'R':dI("💰","#ff3333",22);break; case 'G':dI("👻","#cccccc",22);break; case 'X':ctx.fillStyle="#8B4513";ctx.fillRect(cx-8,cy-6,16,12);ctx.strokeStyle="#ffd700";ctx.strokeRect(cx-8,cy-6,16,12);break; case 'S':dI("🏪","#00ff00",22);break; case 'H':dI("⛰️","#888",22);break; case 'E':dI("EXIT","#00ffff",10);break; case 'P':dI("✚","#ff0000",18);break; case '?':dI("?","#ff00ff",20);break; } }
+    drawTile: function(ctx,x,y,type) { const ts=this.TILE; const cx=x*ts+ts/2; const cy=y*ts+ts/2; const dI=(c,cl,s=20)=>{ctx.font=`bold ${s}px monospace`;ctx.fillStyle=cl;ctx.textAlign="center";ctx.textBaseline="middle";ctx.shadowColor=cl;ctx.shadowBlur=5;ctx.fillText(c,cx,cy);ctx.shadowBlur=0;}; switch(type){ case 'R':dI("💰","#ff3333",22);break; case 'X':ctx.fillStyle="#8B4513";ctx.fillRect(cx-8,cy-6,16,12);ctx.strokeStyle="#ffd700";ctx.strokeRect(cx-8,cy-6,16,12);break; case 'S':dI("🏪","#00ff00",22);break; case 'H':dI("⛰️","#888",22);break; case 'E':dI("EXIT","#00ffff",10);break; case 'P':dI("✚","#ff0000",18);break; case '?':dI("?","#ff00ff",20);break; } }
 });
