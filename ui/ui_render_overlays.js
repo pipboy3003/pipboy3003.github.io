@@ -1,4 +1,4 @@
-// [2026-02-21 16:20:00] ui_render_overlays.js - Rusty Springs Animation
+// [2026-02-21 18:05:00] ui_render_overlays.js - Absolute Quest Button Overlay
 
 Object.assign(UI, {
     
@@ -136,10 +136,66 @@ Object.assign(UI, {
         this.showInfoDialog(def.title, html);
     },
 
-    updateQuestTracker: function() { return; },
+    // NEU: Hängt den Button DIREKT an den Body, unzerstörbar.
+    updateQuestTracker: function() { 
+        let btn = document.getElementById('hud-quest-button');
+        
+        if(!btn) {
+            btn = document.createElement('button');
+            btn.id = 'hud-quest-button';
+            btn.onclick = () => UI.showActiveQuestDialog();
+            
+            // Hardcoded Inline Styles für garantierte Sichtbarkeit
+            Object.assign(btn.style, {
+                position: 'fixed',
+                top: '70px',          // Höhe exakt passend zur Sektor-Anzeige
+                left: '50%',          // Mitte des Bildschirms
+                marginLeft: '100px',  // 100px nach rechts geschoben -> genau neben dem Sektor-Feld
+                width: '44px',
+                height: '44px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '22px',
+                zIndex: '9999',       // Überlagert alles (außer Overlay-Dialoge)
+                cursor: 'pointer',
+                transition: 'all 0.3s ease-in-out'
+            });
+            
+            document.body.appendChild(btn);
+        }
+
+        // Sichtbarkeit steuern: Nur wenn auf Map und nicht im Dialog
+        if(!Game.state || Game.state.view !== 'map' || Game.state.inDialog) {
+            btn.style.display = 'none';
+            return;
+        }
+        
+        btn.style.display = 'flex';
+
+        const hasQuest = !!Game.state.trackedQuestId;
+        
+        if (hasQuest) {
+            btn.style.backgroundColor = 'rgba(113, 63, 18, 0.9)'; // Dark yellow/brown
+            btn.style.border = '2px solid #facc15'; // Bright yellow
+            btn.style.color = '#facc15';
+            btn.style.boxShadow = '0 0 15px rgba(234, 179, 8, 0.6)';
+            btn.classList.add('animate-pulse');
+            btn.innerText = '📜';
+        } else {
+            btn.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+            btn.style.border = '2px solid #4b5563'; // Gray
+            btn.style.color = '#6b7280';
+            btn.style.boxShadow = 'none';
+            btn.classList.remove('animate-pulse');
+            btn.innerText = '📜';
+        }
+    },
 
     showConfirm: function(title, htmlContent, onConfirm) {
         if(Game.state) Game.state.inDialog = true;
+        this.updateQuestTracker(); // Button verstecken
 
         const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
@@ -173,6 +229,7 @@ Object.assign(UI, {
 
     showInfoDialog: function(title, htmlContent) {
         if(Game.state) Game.state.inDialog = true;
+        this.updateQuestTracker(); // Button verstecken
 
         const infoOverlay = document.createElement('div');
         infoOverlay.className = "fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fadeIn pointer-events-auto";
@@ -199,6 +256,7 @@ Object.assign(UI, {
             
             if(!isBaseOpen) {
                 if(Game.state) Game.state.inDialog = false;
+                this.updateQuestTracker(); // Button wieder zeigen
             }
         };
 
@@ -222,6 +280,7 @@ Object.assign(UI, {
         
         if(!item) return;
         if(Game.state) Game.state.inDialog = true;
+        this.updateQuestTracker();
         
         const box = document.createElement('div');
         box.className = "bg-black border-2 border-green-500 p-4 shadow-[0_0_15px_green] max-w-sm text-center mb-4 w-full pointer-events-auto";
@@ -320,6 +379,7 @@ Object.assign(UI, {
         this._trapEscKey();
         
         if(Game.state) Game.state.inDialog = true;
+        this.updateQuestTracker();
 
         const item = Game.state.equip[slot];
         const name = item.props ? item.props.name : item.name;
@@ -590,6 +650,7 @@ Object.assign(UI, {
         this._trapEscKey();
 
         if(Game.state) Game.state.inDialog = true;
+        this.updateQuestTracker();
         
         const box = document.createElement('div');
         box.className = "bg-black border-2 border-red-600 p-4 shadow-[0_0_20px_red] max-w-sm text-center animate-pulse mb-4 pointer-events-auto";
@@ -619,6 +680,7 @@ Object.assign(UI, {
         overlay.innerHTML = '';
         
         if(Game.state) Game.state.inDialog = true;
+        this.updateQuestTracker();
         
         overlay.onclick = null; 
 
@@ -684,6 +746,7 @@ Object.assign(UI, {
         this._trapEscKey();
         
         if(Game.state) Game.state.inDialog = true;
+        this.updateQuestTracker();
 
         const box = document.createElement('div');
         box.className = "bg-black border-2 border-gray-600 p-4 shadow-[0_0_20px_gray] max-w-sm text-center mb-4 pointer-events-auto";
@@ -719,6 +782,7 @@ Object.assign(UI, {
         document.body.appendChild(overlay);
         
         if(Game.state) Game.state.inDialog = true;
+        this.updateQuestTracker();
         
         const btn = document.getElementById('btn-victory-close');
         if(btn) {
@@ -738,6 +802,7 @@ Object.assign(UI, {
         overlay.innerHTML = '';
         
         if(Game.state) Game.state.inDialog = true;
+        this.updateQuestTracker();
         
         overlay.onclick = null; 
 
@@ -797,6 +862,8 @@ Object.assign(UI, {
     enterVault: function() { 
         if(Game.state) Game.state.inDialog = true; 
         if(typeof UI !== 'undefined' && UI.log) UI.log("Das schwere Vault-Tor knirscht...", "text-blue-400 font-bold");
+
+        this.updateQuestTracker(); // Button im Dialog ausblenden
 
         const animLayer = document.createElement('div');
         animLayer.id = 'vault-anim-layer';
@@ -885,10 +952,11 @@ Object.assign(UI, {
         overlay.appendChild(box);
     },
 
-    // --- NEU: CITY CINEMATIC ANIMATION ---
     enterCityCinematic: function(onComplete) {
         if(Game.state) Game.state.inDialog = true;
         if(typeof UI !== 'undefined' && UI.log) UI.log("Die rostigen Tore öffnen sich...", "text-yellow-400 font-bold");
+
+        this.updateQuestTracker(); // Button im Dialog ausblenden
 
         const animLayer = document.createElement('div');
         animLayer.id = 'city-anim-layer';
@@ -903,7 +971,6 @@ Object.assign(UI, {
                 <div class="absolute w-full h-12 bg-[repeating-linear-gradient(45deg,#000,#000_20px,#eab308_20px,#eab308_40px)] opacity-60 top-1/4"></div>
                 <div class="absolute w-full h-12 bg-[repeating-linear-gradient(-45deg,#000,#000_20px,#eab308_20px,#eab308_40px)] opacity-60 bottom-1/4"></div>
             </div>
-
             <div id="rs-sign" class="absolute z-20 flex flex-col items-center transition-opacity duration-700">
                 <div class="bg-[#1a110b] border-8 border-[#3e2723] p-6 shadow-[0_0_40px_rgba(0,0,0,0.9)] rounded-lg relative overflow-hidden">
                     <div class="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,0,0,0.2)_2px,rgba(0,0,0,0.2)_4px)] pointer-events-none"></div>
@@ -911,7 +978,6 @@ Object.assign(UI, {
                     <div class="text-cyan-400 text-center tracking-[0.6em] text-xs md:text-sm mt-3 animate-pulse drop-shadow-[0_0_10px_rgba(0,255,255,0.9)]">EST. 2077 // TRADE HUB</div>
                 </div>
             </div>
-
             <div id="rs-flash" class="absolute inset-0 bg-yellow-600 opacity-0 transition-opacity duration-500 pointer-events-none z-30 mix-blend-overlay"></div>
         `;
 
@@ -923,16 +989,13 @@ Object.assign(UI, {
             const sign = document.getElementById('rs-sign');
             const flash = document.getElementById('rs-flash');
 
-            // 1. Schild geht aus / blendet aus
             if(sign) sign.style.opacity = "0";
 
             setTimeout(() => {
-                // 2. Tore fahren auf
                 if(doorL) doorL.style.transform = "translateX(-100%)";
                 if(doorR) doorR.style.transform = "translateX(100%)";
                 
                 setTimeout(() => {
-                    // 3. Kurzer Blitz, dann ins Stadtmenü
                     if(flash) flash.style.opacity = "0.8";
                     
                     setTimeout(() => {
@@ -943,6 +1006,8 @@ Object.assign(UI, {
                         
                         setTimeout(() => {
                             animLayer.remove();
+                            // Button check nach Animation
+                            if(typeof UI.updateQuestTracker === 'function') UI.updateQuestTracker();
                         }, 1000);
                     }, 400);
                 }, 1800);
