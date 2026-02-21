@@ -1,4 +1,4 @@
-// [2026-02-18 16:30:00] ui_view_world.js - Enhanced Pixel Colors
+// [2026-02-21 06:30:00] ui_view_world.js - Dynamic POIs Fix
 
 Object.assign(UI, {
     mapState: {
@@ -10,7 +10,7 @@ Object.assign(UI, {
         needsRender: true,
         centeredOnce: false,
         worldBuffer: null, 
-        lastExploredCount: 0 // Zum Prüfen auf Änderungen
+        lastExploredCount: 0 
     },
 
     getTouchDistance: function(t1, t2) {
@@ -119,7 +119,6 @@ Object.assign(UI, {
     updateWorldBuffer: function() {
         if(!Game.state || !Game.state.explored) return;
 
-        // Gesamtgröße der Welt
         const totalW = Game.WORLD_W * Game.MAP_W; 
         const totalH = Game.WORLD_H * Game.MAP_H;
 
@@ -127,7 +126,6 @@ Object.assign(UI, {
             this.mapState.worldBuffer = document.createElement('canvas');
             this.mapState.worldBuffer.width = totalW;
             this.mapState.worldBuffer.height = totalH;
-            // Schwarz initialisieren
             const ctx = this.mapState.worldBuffer.getContext('2d');
             ctx.fillStyle = "#000000"; 
             ctx.fillRect(0, 0, totalW, totalH);
@@ -137,34 +135,16 @@ Object.assign(UI, {
         const ctx = this.mapState.worldBuffer.getContext('2d');
         const keys = Object.keys(Game.state.explored);
         
-        // Optimierung: Nur rendern wenn neue Tiles dazu kamen
         if (keys.length === this.mapState.lastExploredCount) return;
 
-        // --- ERWEITERTE FARBPALETTE ---
         const colors = {
-            '.': '#4a4036', // Standard Boden (dunkelbraun)
-            ',': '#6e6259', // NEU: Kleine Steine/Kies (helleres grau-braun)
-            '_': '#8b5a2b', // Pfad
-            '"': '#1a3300', // Gras
-            ';': '#1e1e11', // Sumpf
-            '~': '#2244aa', // Wasser
-            
-            '^': '#6b5b45', // Hügel (erdiges braun)
-            'M': '#333333', // NEU: Richtige Berge/Gipfel (dunkles Fels-Grau)
-            
-            '#': '#222222', // Ruinen/Wände (fast schwarz)
-            '=': '#555555', // Straße (Asphalt grau)
-            '+': '#654321', // Bodenvariante
-            
-            't': '#0f2405', // Baum (sehr dunkles Grün)
-            
-            // POIs (leuchtend)
+            '.': '#4a4036', ',': '#6e6259', '_': '#8b5a2b', '"': '#1a3300', 
+            ';': '#1e1e11', '~': '#2244aa', '^': '#6b5b45', 'Y': '#333333', 
+            '#': '#222222', '=': '#555555', '+': '#654321', 't': '#0f2405', 
             'V': '#ffcc00', 'C': '#ff4400', 'G': '#cccccc', 'X': '#8B4513'
         };
 
-        // WICHTIG: Das hier ist der "Pixel-Genau" Teil.
         keys.forEach(key => {
-            // Key Format: "SX,SY_LX,LY"
             const parts = key.split('_');
             if(parts.length !== 2) return;
             
@@ -173,11 +153,9 @@ Object.assign(UI, {
             
             const tileChar = Game.state.explored[key];
             
-            // Globale Position berechnen
             const gx = sx * Game.MAP_W + lx;
             const gy = sy * Game.MAP_H + ly;
             
-            // Farbe wählen oder Fallback auf Boden, wenn unbekannt
             ctx.fillStyle = colors[tileChar] || '#4a4036'; 
             ctx.fillRect(gx, gy, 1, 1);
         });
@@ -232,7 +210,6 @@ Object.assign(UI, {
             }
         }
 
-        // Buffer aktualisieren (Prüfen auf neue Tiles)
         this.updateWorldBuffer();
 
         // 1. Background
@@ -245,7 +222,6 @@ Object.assign(UI, {
 
         // 2. Buffer zeichnen
         if (this.mapState.worldBuffer) {
-            // Anti-Aliasing ausmachen für scharfe Pixel
             ctx.imageSmoothingEnabled = false;
             ctx.drawImage(
                 this.mapState.worldBuffer, 
@@ -255,7 +231,7 @@ Object.assign(UI, {
             );
         }
 
-        // 3. Grid (Dynamisch)
+        // 3. Grid
         ctx.strokeStyle = "rgba(0, 255, 0, 0.1)";
         ctx.lineWidth = 1;
         const gridSize = 50 * s;
@@ -282,25 +258,36 @@ Object.assign(UI, {
         ctx.beginPath(); ctx.arc(pDrawX, pDrawY, Math.max(5, pulse * (s/3)), 0, Math.PI*2); ctx.fill();
         ctx.fillStyle = "#39ff14"; ctx.beginPath(); ctx.arc(pDrawX, pDrawY, Math.max(2, 4 * (s/3)), 0, Math.PI*2); ctx.fill();
 
-        // 5. POIs
-        if(Game.state.worldPOIs) {
-            Game.state.worldPOIs.forEach(poi => {
-                const px = (poi.x * Game.MAP_W + 25) * s + ox; 
-                const py = (poi.y * Game.MAP_H + 25) * s + oy;
-                
-                if(px > -50 && px < rect.width+50 && py > -50 && py < rect.height+50) {
-                    ctx.font = `bold ${Math.max(12, 16 * (s/3))}px monospace`; 
-                    ctx.textAlign = "center"; ctx.textBaseline = "middle";
-                    let icon = "❓";
-                    if(poi.type === 'V') icon = "⚙️";
-                    if(poi.type === 'C') icon = "🏙️";
-                    if(poi.type === 'G') icon = "👻";
-                    
-                    ctx.shadowColor = 'black'; ctx.shadowBlur = 4; ctx.fillStyle="#fff"; 
-                    ctx.fillText(icon, px, py); ctx.shadowBlur = 0;
-                }
-            });
+        // 5. FIX: DYNAMISCHE POIs aus dem Generator lesen anstatt aus der veralteten Liste
+        let activePOIs = [];
+        if (typeof WorldGen !== 'undefined' && WorldGen.locations) {
+            if(WorldGen.locations.vault) activePOIs.push({x: WorldGen.locations.vault.x, y: WorldGen.locations.vault.y, type: 'V'});
+            if(WorldGen.locations.city) activePOIs.push({x: WorldGen.locations.city.x, y: WorldGen.locations.city.y, type: 'C'});
+            if(WorldGen.locations.ghostTown) activePOIs.push({x: WorldGen.locations.ghostTown.x, y: WorldGen.locations.ghostTown.y, type: 'G'});
+        } else if (Game.state.worldPOIs) {
+            // Absoluter Notfall-Fallback, falls WorldGen nicht geladen ist
+            activePOIs = Game.state.worldPOIs; 
         }
+
+        activePOIs.forEach(poi => {
+            // Wichtig: +25 positioniert das Icon in die Mitte des 50x50 Sektors
+            const mapW = Game.MAP_W || 50;
+            const mapH = Game.MAP_H || 50;
+            const px = (poi.x * mapW + (mapW/2)) * s + ox; 
+            const py = (poi.y * mapH + (mapH/2)) * s + oy;
+            
+            if(px > -50 && px < rect.width+50 && py > -50 && py < rect.height+50) {
+                ctx.font = `bold ${Math.max(12, 16 * (s/3))}px monospace`; 
+                ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                let icon = "❓";
+                if(poi.type === 'V') icon = "⚙️";
+                if(poi.type === 'C') icon = "🏙️";
+                if(poi.type === 'G') icon = "👻";
+                
+                ctx.shadowColor = 'black'; ctx.shadowBlur = 4; ctx.fillStyle="#fff"; 
+                ctx.fillText(icon, px, py); ctx.shadowBlur = 0;
+            }
+        });
 
         // 6. Compass & Text
         this.drawCompass(ctx, rect.width, rect.height);
