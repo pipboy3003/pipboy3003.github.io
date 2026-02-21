@@ -1,4 +1,4 @@
-// [2026-02-20 06:30:00] ui_render_overlays.js - New Quest Button Dialog
+// [2026-02-21 10:20:00] ui_render_overlays.js - Quest Button DB Fix
 
 Object.assign(UI, {
     
@@ -57,7 +57,7 @@ Object.assign(UI, {
         document.addEventListener('keydown', this._activeEscHandler);
     },
 
-    // NEU: Pop-up für den Quest-Button
+    // KORRIGIERT: Greift jetzt auf Game.questDefs zu!
     showActiveQuestDialog: function() {
         if(!Game.state || !Game.state.trackedQuestId) {
             this.showInfoDialog("KEINE MISSION", "Du hast aktuell keine Quest angepinnt. Gehe im Pip-OS auf 'Quests', um eine auszuwählen.");
@@ -71,9 +71,9 @@ Object.assign(UI, {
         else if (Game.state.activeQuests) qData = Game.state.activeQuests[qId];
 
         let def = null;
-        if (window.GameData && window.GameData.quests) {
-            if (Array.isArray(window.GameData.quests)) def = window.GameData.quests.find(d => d.id === qId);
-            else def = window.GameData.quests[qId];
+        if (Game.questDefs) {
+            if (Array.isArray(Game.questDefs)) def = Game.questDefs.find(d => d.id === qId);
+            else def = Game.questDefs[qId];
         }
 
         if(!qData || !def) {
@@ -137,9 +137,7 @@ Object.assign(UI, {
         this.showInfoDialog(def.title, html);
     },
 
-    // Leerer Stub, damit alte Aufrufe nicht crashen
     updateQuestTracker: function() {
-        // Funktion wurde durch showActiveQuestDialog ersetzt
         return; 
     },
 
