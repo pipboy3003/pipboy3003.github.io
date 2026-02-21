@@ -1,4 +1,4 @@
-// [2026-02-21 14:00:00] game_render.js - Massive Ghost Town & City Dioramas
+// [2026-02-21 22:00:00] game_render.js - Bulletproof Canvas Quest HUD
 
 Object.assign(Game, {
     particles: [],
@@ -183,7 +183,6 @@ Object.assign(Game, {
         ctx.beginPath(); ctx.moveTo(px+10, py+ts); ctx.lineTo(px+10+sway, py+ts-8); ctx.stroke();
     },
 
-    // --- MASSIVE CITY DIORAMA ---
     drawCity: function(ctx, x, y, time) {
         const ts = this.TILE;
         const px = x * ts + ts / 2;
@@ -192,35 +191,29 @@ Object.assign(Game, {
         ctx.save();
         ctx.translate(px, py);
 
-        // Riesige Schrott-Bodenplatte
         ctx.fillStyle = "#1a1a1a";
         ctx.beginPath(); ctx.ellipse(0, 0, ts*2.5, ts*2, 0, 0, Math.PI*2); ctx.fill();
 
-        // Gebäude 1: Wachturm (Hinten Links)
         ctx.fillStyle = "#2d2d2d"; ctx.fillRect(-ts*1.8, -ts*1.5, ts*0.8, ts*2);
-        ctx.fillStyle = "#444"; ctx.fillRect(-ts*1.9, -ts*1.5, ts*1.0, ts*0.3); // Plattform
-        ctx.fillStyle = "#ffeb3b"; ctx.fillRect(-ts*1.5, -ts*1.2, ts*0.2, ts*0.2); // Licht im Turm
+        ctx.fillStyle = "#444"; ctx.fillRect(-ts*1.9, -ts*1.5, ts*1.0, ts*0.3); 
+        ctx.fillStyle = "#ffeb3b"; ctx.fillRect(-ts*1.5, -ts*1.2, ts*0.2, ts*0.2); 
 
-        // Gebäude 2: Wohncontainer (Rechts)
         ctx.fillStyle = "#5d4037"; ctx.fillRect(ts*0.8, -ts*0.8, ts*1.5, ts*1.2);
-        ctx.fillStyle = "#3e2723"; ctx.fillRect(ts*0.7, -ts*0.9, ts*1.7, ts*0.3); // Dach
-        ctx.fillStyle = "#000"; ctx.fillRect(ts*1.2, -ts*0.2, ts*0.4, ts*0.6); // Tür
+        ctx.fillStyle = "#3e2723"; ctx.fillRect(ts*0.7, -ts*0.9, ts*1.7, ts*0.3); 
+        ctx.fillStyle = "#000"; ctx.fillRect(ts*1.2, -ts*0.2, ts*0.4, ts*0.6); 
 
-        // Glühendes Giftfass (Vorne Rechts)
         const glow = Math.sin(time/200)*0.3 + 0.5;
         ctx.fillStyle = "#1b5e20"; ctx.fillRect(ts*1.5, ts*0.5, ts*0.4, ts*0.6);
         ctx.fillStyle = `rgba(57, 255, 20, ${glow})`;
         ctx.beginPath(); ctx.arc(ts*1.7, ts*0.5, ts*0.3, 0, Math.PI*2); ctx.fill();
 
-        // Haupt-Tor (Mitte)
         ctx.fillStyle = "#3e2723"; 
-        ctx.fillRect(-ts*0.8, -ts*1.2, ts*0.4, ts*1.5); // Pfeiler Links
-        ctx.fillRect(ts*0.4, -ts*1.2, ts*0.4, ts*1.5);  // Pfeiler Rechts
+        ctx.fillRect(-ts*0.8, -ts*1.2, ts*0.4, ts*1.5); 
+        ctx.fillRect(ts*0.4, -ts*1.2, ts*0.4, ts*1.5);  
         
         ctx.fillStyle = "#2d1a11";
-        ctx.fillRect(-ts*1.0, -ts*1.0, ts*2.0, ts*0.5); // Querbalken Schild
+        ctx.fillRect(-ts*1.0, -ts*1.0, ts*2.0, ts*0.5); 
 
-        // Neon Schriftzug
         const flicker = Math.sin(time/150)*0.2 + 0.8;
         ctx.fillStyle = `rgba(0, 255, 255, ${flicker})`;
         ctx.shadowBlur = 10; ctx.shadowColor = "#0ff";
@@ -232,7 +225,6 @@ Object.assign(Game, {
         ctx.restore();
     },
 
-    // --- MASSIVE GHOST TOWN DIORAMA ---
     drawGhostTown: function(ctx, x, y, time) {
         const ts = this.TILE;
         const px = x * ts + ts / 2;
@@ -241,56 +233,44 @@ Object.assign(Game, {
         ctx.save();
         ctx.translate(px, py);
 
-        // Staubiger runder Platz (nimmt 4-5 Tiles ein!)
         ctx.fillStyle = "#3e3a35";
         ctx.beginPath(); ctx.ellipse(0, 0, ts*2.8, ts*2.2, 0, 0, Math.PI*2); ctx.fill();
 
-        // --- Gebäude 1: Zerfallene Windmühle (Hinten Links) ---
         ctx.save(); 
         ctx.translate(-ts*1.8, -ts*1.2);
         ctx.strokeStyle = "#2a1e18"; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(-10, 25); ctx.lineTo(0, -25); ctx.lineTo(10, 25); ctx.stroke();
-        // Rotor
         ctx.translate(0, -25);
-        ctx.rotate(time / 1000); // Dreht extrem langsam und unrund
+        ctx.rotate(time / 1000); 
         ctx.fillStyle = "#1a120e";
         ctx.fillRect(-2, -20, 4, 40);
         ctx.fillRect(-20, -2, 40, 4);
         ctx.restore();
 
-        // --- Gebäude 2: Eingestürzte Scheune (Hinten Rechts) ---
         ctx.save(); 
         ctx.translate(ts*1.5, -ts*0.8);
         ctx.fillStyle = "#2d1f18"; ctx.fillRect(-ts*0.8, -ts*0.8, ts*1.6, ts*1.2);
-        // Schiefes Dach
         ctx.fillStyle = "#150d09";
         ctx.beginPath(); ctx.moveTo(-ts, -ts*0.8); ctx.lineTo(-ts*0.2, -ts*1.5); ctx.lineTo(ts*0.8, -ts*0.6); ctx.fill();
-        ctx.fillStyle = "#000"; ctx.fillRect(-ts*0.4, -ts*0.2, ts*0.4, ts*0.6); // Offenes Tor
+        ctx.fillStyle = "#000"; ctx.fillRect(-ts*0.4, -ts*0.2, ts*0.4, ts*0.6); 
         ctx.restore();
 
-        // --- Friedhof (Vorne Rechts) ---
         ctx.fillStyle = "#2a1e18";
         ctx.fillRect(ts*1.2, ts*0.8, 3, 12);
-        ctx.fillRect(ts*1.0, ts*1.0, 7, 3); // Kreuz 1
-        
+        ctx.fillRect(ts*1.0, ts*1.0, 7, 3); 
         ctx.fillRect(ts*1.8, ts*1.2, 3, 10);
-        ctx.fillRect(ts*1.6, ts*1.4, 7, 3); // Kreuz 2
+        ctx.fillRect(ts*1.6, ts*1.4, 7, 3); 
 
-        // --- Hauptgebäude: Hopeless Saloon (Mitte) ---
         ctx.fillStyle = "#2a1e18";
         ctx.fillRect(-ts*0.9, -ts*0.8, ts*1.8, ts*1.2);
-        
-        // Dach
         ctx.fillStyle = "#1a120e";
         ctx.beginPath(); ctx.moveTo(-ts*1.1, -ts*0.8); ctx.lineTo(0, -ts*1.4); ctx.lineTo(ts*1.1, -ts*0.8); ctx.fill();
 
-        // Fenster & Tür
         ctx.fillStyle = "#000";
         ctx.fillRect(-ts*0.6, -ts*0.2, ts*0.3, ts*0.4); 
         ctx.fillRect(ts*0.3, -ts*0.2, ts*0.3, ts*0.4);  
         ctx.fillRect(-ts*0.25, ts*0.1, ts*0.5, ts*0.3); 
 
-        // Schiefes Schild
         ctx.save();
         ctx.translate(0, -ts*0.6);
         ctx.rotate(0.15);
@@ -302,8 +282,6 @@ Object.assign(Game, {
         ctx.fillText("HOPELESS", 0, 0);
         ctx.restore();
 
-        // --- Rollender Tumbleweed ---
-        // Rollt von Rechts nach Links durch das ganze Areal
         const tX = ((time / 20) % (ts * 8)) - ts * 4;
         const bounce = Math.abs(Math.sin(time / 150)) * 10;
         ctx.save();
@@ -414,7 +392,6 @@ Object.assign(Game, {
 
         const visibleTiles = [];
 
-        // LAYER 1: Boden & Natur (Gras, Wasser, Bäume)
         for(let y=startY; y<endY; y++) { 
             for(let x=startX; x<endX; x++) { 
                 if(y>=0 && y<this.MAP_H && x>=0 && x<this.MAP_W) { 
@@ -435,7 +412,6 @@ Object.assign(Game, {
             } 
         } 
 
-        // LAYER 2: Große POI Gebäude & Ruinen (Werden über das Gras gezeichnet)
         visibleTiles.forEach(tile => {
             if(tile.t === 'V') this.drawVault(ctx, tile.x, tile.y, time);
             if(tile.t === 'C') this.drawCity(ctx, tile.x, tile.y, time);
@@ -443,7 +419,6 @@ Object.assign(Game, {
             if(['X', 'R', 'S', '?'].includes(tile.t)) this.drawTile(ctx, tile.x, tile.y, tile.t);
         });
 
-        // LAYER 3: Charaktere und Monster
         visibleTiles.forEach(tile => {
             if(tile.t === 'M') this.drawMonster(ctx, tile.x, tile.y, time); 
             if(tile.t === 'W') this.drawWanderer(ctx, tile.x, tile.y, time);
@@ -452,7 +427,6 @@ Object.assign(Game, {
         this.drawPlayer(ctx); 
         this.drawOtherPlayers(ctx);
 
-        // LAYER 4: Partikel & Schatten
         this.updateParticles(); 
         this.drawParticles(ctx);
 
@@ -464,9 +438,65 @@ Object.assign(Game, {
             }
         });
 
+        // HIER PASSIERT DIE MAGIE: Wir verlassen die "Welt-Kamera" und zeichnen direkt auf den Bildschirm (HUD Layer)
         ctx.restore(); 
+        
         ctx.fillStyle = "rgba(0, 255, 0, 0.02)"; 
         for(let i=0; i<viewH; i+=4) { ctx.fillRect(0, i, viewW, 1); }
+
+        // --- DER UNZERSTÖRBARE CANVAS QUEST-TRACKER ---
+        if(this.state && this.state.trackedQuestId && this.state.view === 'map' && !this.state.inDialog) {
+            const qId = this.state.trackedQuestId;
+            let qData = null;
+            if (Array.isArray(this.state.activeQuests)) qData = this.state.activeQuests.find(q => q.id === qId);
+            else if (this.state.activeQuests) qData = this.state.activeQuests[qId];
+
+            let def = null;
+            if (this.questDefs) {
+                if (Array.isArray(this.questDefs)) def = this.questDefs.find(d => d.id === qId);
+                else def = this.questDefs[qId];
+            }
+
+            if (qData || def) {
+                let title = def ? def.title : "Unbekannt";
+                let prog = "";
+                
+                if (def && def.type === 'collect_multi') {
+                    let td = 0; let tr = def.reqItems ? Object.keys(def.reqItems).length : 1;
+                    if(def.reqItems) Object.entries(def.reqItems).forEach(([id, amt]) => {
+                        const inInv = this.state.inventory.filter(i => i.id === id).reduce((s, i) => s + i.count, 0);
+                        if(inInv >= amt) td++;
+                    });
+                    prog = `[${td}/${tr}]`;
+                } else {
+                    prog = `[${qData ? (qData.progress||0) : 0}/${qData ? (qData.max||1) : 1}]`;
+                }
+
+                const txt = `📌 MISSION: ${title.toUpperCase()} ${prog}`;
+                
+                ctx.font = "bold 13px monospace";
+                const tw = ctx.measureText(txt).width;
+                
+                // Wir zeichnen es genau oben mittig in das Canvas (ca. 10 Pixel unter den oberen Rand)
+                const bx = (viewW / 2) - (tw / 2) - 15;
+                const by = 15; 
+                
+                // Schwarzer Kasten, halbtransparent
+                ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+                ctx.fillRect(bx, by, tw + 30, 26);
+                
+                // Gelber Rand
+                ctx.strokeStyle = "#facc15";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(bx, by, tw + 30, 26);
+
+                // Gelber Text
+                ctx.fillStyle = "#facc15";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(txt, viewW / 2, by + 14);
+            }
+        }
     },
     
     drawPlayer: function(ctx) { const px=this.state.player.x*this.TILE+this.TILE/2; const py=this.state.player.y*this.TILE+this.TILE/2; ctx.save(); ctx.translate(px,py); ctx.rotate(this.state.player.rot-Math.PI/2); const g=ctx.createRadialGradient(0,0,10,0,0,140); g.addColorStop(0,"rgba(255,255,200,0.25)"); g.addColorStop(1,"rgba(255,255,200,0)"); ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,140,-Math.PI/5,Math.PI/5); ctx.fillStyle=g; ctx.fill(); ctx.fillStyle="#39ff14"; ctx.shadowBlur=10; ctx.shadowColor="#39ff14"; ctx.beginPath(); ctx.moveTo(8,0); ctx.lineTo(-6,7); ctx.lineTo(-2,0); ctx.lineTo(-6,-7); ctx.fill(); ctx.shadowBlur=0; ctx.restore(); },
