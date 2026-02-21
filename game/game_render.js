@@ -1,4 +1,4 @@
-// [2026-02-21 23:55:00] game_render.js - Flashlight attached to player fix
+// [2026-02-22 00:15:00] game_render.js - Flashlight & Day Cycle Overhaul
 
 Object.assign(Game, {
     particles: [],
@@ -562,8 +562,8 @@ Object.assign(Game, {
             ctx.fillRect(0, 0, viewW, viewH);
         }
 
-        // TAGESZEIT & TASCHENLAMPE
-        const cycleLength = 4 * 60 * 1000; 
+        // TAGESZEIT & TASCHENLAMPE (10 Minuten Zyklus)
+        const cycleLength = 10 * 60 * 1000; 
         const timePhase = ((time + 60000) % cycleLength) / cycleLength; 
         
         let darkness = 0;
@@ -574,7 +574,7 @@ Object.assign(Game, {
         if (darkness > 0) {
             ctx.save();
             
-            // NEU: Berechne exakte Spielerposition auf dem Bildschirm
+            // Exakte Spielerposition auf dem Bildschirm berechnen
             const screenPx = (this.state.player.x * this.TILE + this.TILE/2) - this.camera.x;
             const screenPy = (this.state.player.y * this.TILE + this.TILE/2) - this.camera.y;
             
@@ -586,21 +586,19 @@ Object.assign(Game, {
             ctx.fillStyle = ambientGrad;
             ctx.fillRect(0, 0, viewW, viewH);
 
-            // Taschenlampen-Kegel
+            // Natürlicher, weicher Taschenlampen-Kegel
             ctx.translate(screenPx, screenPy);
             const pRot = this.state.player.rot || 0;
             ctx.rotate(pRot); 
             
-            const beamGrad = ctx.createLinearGradient(0, 0, 0, -300); 
-            beamGrad.addColorStop(0, `rgba(255, 255, 200, ${darkness * 0.5})`);
+            const beamGrad = ctx.createRadialGradient(0, 0, 10, 0, 0, 300);
+            beamGrad.addColorStop(0, `rgba(255, 255, 200, ${darkness * 0.6})`);
             beamGrad.addColorStop(1, 'rgba(255, 255, 200, 0)');
             
             ctx.fillStyle = beamGrad;
             ctx.beginPath();
-            ctx.moveTo(-10, 0);
-            ctx.lineTo(10, 0);
-            ctx.lineTo(120, -300);
-            ctx.lineTo(-120, -300);
+            ctx.moveTo(0, 0);
+            ctx.arc(0, 0, 300, -Math.PI/2 - Math.PI/5, -Math.PI/2 + Math.PI/5);
             ctx.fill();
             
             ctx.restore();
@@ -668,7 +666,23 @@ Object.assign(Game, {
         }
     },
     
-    drawPlayer: function(ctx) { const px=this.state.player.x*this.TILE+this.TILE/2; const py=this.state.player.y*this.TILE+this.TILE/2; ctx.save(); ctx.translate(px,py); ctx.rotate(this.state.player.rot-Math.PI/2); const g=ctx.createRadialGradient(0,0,10,0,0,140); g.addColorStop(0,"rgba(255,255,200,0.25)"); g.addColorStop(1,"rgba(255,255,200,0)"); ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,140,-Math.PI/5,Math.PI/5); ctx.fillStyle=g; ctx.fill(); ctx.fillStyle="#39ff14"; ctx.shadowBlur=10; ctx.shadowColor="#39ff14"; ctx.beginPath(); ctx.moveTo(8,0); ctx.lineTo(-6,7); ctx.lineTo(-2,0); ctx.lineTo(-6,-7); ctx.fill(); ctx.shadowBlur=0; ctx.restore(); },
+    // ALTER KEGEL ENTFERNT - Nur noch das Sprite wird gezeichnet
+    drawPlayer: function(ctx) { 
+        const px=this.state.player.x*this.TILE+this.TILE/2; 
+        const py=this.state.player.y*this.TILE+this.TILE/2; 
+        ctx.save(); 
+        ctx.translate(px,py); 
+        ctx.rotate(this.state.player.rot-Math.PI/2); 
+        ctx.fillStyle="#39ff14"; 
+        ctx.shadowBlur=10; 
+        ctx.shadowColor="#39ff14"; 
+        ctx.beginPath(); 
+        ctx.moveTo(8,0); ctx.lineTo(-6,7); ctx.lineTo(-2,0); ctx.lineTo(-6,-7); 
+        ctx.fill(); 
+        ctx.shadowBlur=0; 
+        ctx.restore(); 
+    },
+
     drawOtherPlayers: function(ctx) { if(typeof Network==='undefined'||!Network.otherPlayers)return; for(let pid in Network.otherPlayers){ const p=Network.otherPlayers[pid]; if(p.sector&&(p.sector.x!==this.state.sector.x||p.sector.y!==this.state.sector.y))continue; const ox=p.x*this.TILE+this.TILE/2; const oy=p.y*this.TILE+this.TILE/2; ctx.fillStyle="#00ffff"; ctx.beginPath(); ctx.arc(ox,oy,6,0,Math.PI*2); ctx.fill(); } },
     drawMonster: function(ctx,x,y,time) { const ts=this.TILE; const px=x*ts+ts/2; const py=y*ts+ts/2; const sc=1+Math.sin(time/200)*0.1; ctx.save(); ctx.translate(px,py); ctx.scale(sc,sc); ctx.fillStyle="#d32f2f"; ctx.beginPath(); ctx.arc(0,0,8,0,Math.PI*2); ctx.fill(); ctx.strokeStyle="#ff5252"; ctx.lineWidth=2; for(let i=0;i<8;i++){ ctx.beginPath(); ctx.moveTo(0,0); const a=(i/8)*Math.PI*2; ctx.lineTo(Math.cos(a)*12,Math.sin(a)*12); ctx.stroke(); } ctx.fillStyle="#ffeb3b"; ctx.fillRect(-4,-2,3,3); ctx.fillRect(2,-2,3,3); ctx.restore(); },
     drawWanderer: function(ctx,x,y,time) { const ts=this.TILE; const px=x*ts+ts/2; const py=y*ts+ts/2; const b=Math.abs(Math.sin(time/300))*3; ctx.save(); ctx.translate(px,py-b); ctx.fillStyle="#4fc3f7"; ctx.beginPath(); ctx.arc(0,-6,5,Math.PI,0); ctx.lineTo(6,10); ctx.lineTo(-6,10); ctx.fill(); ctx.fillStyle="#8d6e63"; ctx.fillRect(-4,0,8,6); ctx.restore(); },
