@@ -1,4 +1,4 @@
-// [2026-02-21 22:45:00] ui_render_views.js - World Map Legend Fix
+// [2026-02-21 23:15:00] ui_render_views.js - V.A.T.S. Visual Overhaul
 
 Object.assign(UI, {
 
@@ -317,21 +317,92 @@ Object.assign(UI, {
         }
     },
 
+    // --- NEU: V.A.T.S. VISUAL OVERHAUL ---
     renderCombat: function() {
         const enemy = Game.state.enemy; if(!enemy) return;
-        const nameEl = document.getElementById('enemy-name'); if(nameEl) nameEl.textContent = enemy.name;
-        const hpText = document.getElementById('enemy-hp-text'); if(hpText) hpText.textContent = `${Math.max(0, enemy.hp)}/${enemy.maxHp} TP`;
-        const hpBar = document.getElementById('enemy-hp-bar'); if(hpBar) hpBar.style.width = `${Math.max(0, (enemy.hp/enemy.maxHp)*100)}%`;
+        
+        // 1. Hole den gesamten Kampf-Bildschirm und style ihn um (nur 1x)
+        const screen = document.getElementById('combat-screen') || document.querySelector('.combat-screen');
+        if (screen && !screen.dataset.vatsStyled) {
+            screen.dataset.vatsStyled = "true";
+            
+            // Hintergrund dunkelgrün machen, Overflow verstecken
+            screen.classList.add('bg-[#051005]', 'relative', 'overflow-hidden');
+            
+            // Fette CRT Scanlines, Fadenkreuz und leuchtende Vignette reinballern
+            screen.insertAdjacentHTML('beforeend', `
+                <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,30,0,0.15)_50%)] bg-[length:100%_4px] z-[100] mix-blend-overlay"></div>
+                <div class="pointer-events-none absolute inset-0 shadow-[inset_0_0_150px_rgba(0,255,0,0.2)] z-[90]"></div>
+                
+                <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center opacity-[0.15] z-[1]">
+                    <div class="text-green-500 font-mono text-2xl tracking-[1em] mb-4 opacity-50">V.A.T.S.</div>
+                    <div class="relative w-[80vw] h-[80vw] max-w-[400px] max-h-[400px] border-2 border-green-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(0,255,0,0.5)]">
+                        <div class="w-[120%] h-[2px] bg-green-500 absolute"></div>
+                        <div class="h-[120%] w-[2px] bg-green-500 absolute"></div>
+                        <div class="w-[60%] h-[60%] border-2 border-dashed border-green-500 rounded-full animate-[spin_20s_linear_infinite]"></div>
+                    </div>
+                </div>
+            `);
+        }
 
+        // 2. Gegner-Name wie ein Terminal-Header stylen
+        const nameEl = document.getElementById('enemy-name'); 
+        if(nameEl) {
+            nameEl.innerHTML = `<span class="text-green-500 animate-pulse mr-3">🎯 TARGET:</span><span class="text-green-300 font-mono tracking-widest text-shadow-glow">${enemy.name.toUpperCase()}</span>`;
+            nameEl.className = "text-2xl md:text-4xl font-bold flex items-center justify-center w-full bg-green-900/30 border-b-2 border-green-600 pb-3 pt-2 mb-4 z-10 relative backdrop-blur-sm";
+        }
+
+        // 3. HP Leiste als Block-Balken
+        const hpText = document.getElementById('enemy-hp-text'); 
+        if(hpText) {
+            hpText.textContent = `SYS_HP: ${Math.max(0, enemy.hp)}/${enemy.maxHp}`;
+            hpText.className = "text-green-400 font-mono text-xs font-bold tracking-widest z-10 relative mb-1 text-center";
+        }
+
+        const hpBar = document.getElementById('enemy-hp-bar'); 
+        if(hpBar) {
+            const pct = Math.max(0, (enemy.hp/enemy.maxHp)*100);
+            hpBar.style.width = `${pct}%`;
+            hpBar.className = "h-full bg-[#39ff14] transition-all duration-300 shadow-[0_0_15px_#39ff14]";
+            if(hpBar.parentElement) {
+                // Den Hintergrund der HP-Leiste anpassen
+                hpBar.parentElement.className = "w-[80%] mx-auto max-w-md bg-black border-2 border-green-700 h-6 relative z-10 overflow-hidden mb-6";
+            }
+        }
+
+        // 4. Die Body-Part Buttons in fette V.A.T.S. Zielboxen verwandeln
         if(typeof Combat !== 'undefined' && Combat.bodyParts) {
              Combat.bodyParts.forEach((part, index) => {
                  const btn = document.getElementById(`btn-vats-${index}`);
                  if(btn) {
                      const chance = (typeof Combat.calculateHitChance === 'function') ? Combat.calculateHitChance(index) : 0;
+                     
+                     // Farben berechnen (Grün = gut, Gelb = okay, Rot = schlecht)
+                     let textColor = chance > 65 ? 'text-[#39ff14]' : (chance > 35 ? 'text-yellow-400' : 'text-red-500');
+                     let barColor = chance > 65 ? 'bg-[#39ff14]' : (chance > 35 ? 'bg-yellow-500' : 'bg-red-500');
+                     let borderColor = chance > 65 ? 'border-[#39ff14]' : (chance > 35 ? 'border-yellow-500' : 'border-red-500');
+
+                     // Den Button-Kasten stylen
+                     btn.className = `relative w-full max-w-lg mx-auto bg-black/80 border border-green-900/50 p-4 mb-5 cursor-pointer group hover:bg-green-900/40 transition-all z-10 backdrop-blur-md`;
+                     
+                     // HTML für den Button überschreiben (mit Klammern!)
                      btn.innerHTML = `
-                        <div class="pointer-events-none w-full h-full flex items-center justify-between px-4">
-                            <span class="text-5xl font-bold text-gray-400 uppercase tracking-tighter drop-shadow-md">${part.name}</span>
-                            <span class="font-bold ${chance > 50 ? 'text-green-400' : 'text-red-400'} text-6xl shadow-black drop-shadow-md">${chance}<span class="text-3xl align-top">%</span></span>
+                        <div class="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all -translate-x-1 -translate-y-1"></div>
+                        <div class="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all translate-x-1 -translate-y-1"></div>
+                        <div class="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all -translate-x-1 translate-y-1"></div>
+                        <div class="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all translate-x-1 translate-y-1"></div>
+                        
+                        <div class="pointer-events-none w-full h-full flex items-center justify-between px-2">
+                            <div class="flex flex-col text-left w-[60%]">
+                                <span class="text-3xl md:text-5xl font-bold text-green-600 uppercase tracking-widest group-hover:text-green-300 transition-colors">${part.name}</span>
+                                <div class="w-full h-1.5 bg-gray-900 mt-2 border border-gray-800">
+                                    <div class="h-full ${barColor}" style="width: ${chance}%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="font-mono font-bold ${textColor} text-6xl md:text-7xl drop-shadow-[0_0_10px_currentColor] flex items-start">
+                                ${chance}<span class="text-2xl mt-2 opacity-80">%</span>
+                            </div>
                         </div>
                      `;
                  }
