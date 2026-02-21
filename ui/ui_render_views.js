@@ -1,4 +1,4 @@
-// [2026-02-20 06:25:00] ui_render_views.js - Quest Button Integration
+// [2026-02-21 17:15:00] ui_render_views.js - Quest Scroll Button Integration
 
 Object.assign(UI, {
 
@@ -55,20 +55,26 @@ Object.assign(UI, {
     },
 
     renderMapScanline: function(container) {
+        // Prüfen, ob eine Quest aktiv ist, um den Button leuchten zu lassen
+        const hasQuest = !!(Game.state && Game.state.trackedQuestId);
+        const questBtnClass = hasQuest 
+            ? "bg-yellow-900/80 border-2 border-yellow-400 text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.6)] hover:bg-yellow-700 animate-pulse" 
+            : "bg-black/80 border-2 border-gray-700 text-gray-500 hover:bg-gray-900 opacity-80";
+
         container.innerHTML = `
             <div class="relative w-full h-full bg-black overflow-hidden">
                 <canvas id="game-canvas" class="block w-full h-full object-cover"></canvas>
                 <div id="scanline" class="pointer-events-none absolute inset-0 bg-repeat-y opacity-10"></div>
                 <div id="vignette" class="pointer-events-none absolute inset-0 radial-gradient"></div>
 
-                <button onclick="UI.showActiveQuestDialog()" class="absolute top-4 right-4 z-40 bg-black/80 border-2 border-yellow-500 text-yellow-500 w-12 h-12 rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(234,179,8,0.4)] hover:bg-yellow-900 transition-colors text-2xl" title="Aktuelle Quest">
+                <button onclick="UI.showActiveQuestDialog()" class="absolute top-6 right-6 z-[60] w-14 h-14 rounded-full flex items-center justify-center text-3xl transition-all ${questBtnClass}" title="Aktuelle Mission">
                     📜
                 </button>
 
-                <div class="absolute bottom-4 left-4 text-green-400 font-mono text-sm bg-black/50 px-2 py-1 border border-green-900">
+                <div class="absolute bottom-4 left-4 text-green-400 font-mono text-sm bg-black/50 px-2 py-1 border border-green-900 z-40 pointer-events-none">
                     DIAGNOSE: ${Game.state.zone || 'Unbekannt'}
                 </div>
-                <div class="absolute bottom-20 right-4 flex flex-col gap-2 md:hidden">
+                <div class="absolute bottom-20 right-4 flex flex-col gap-2 md:hidden z-40">
                     <button onclick="Game.move(0, -1)" class="p-4 bg-green-900/30 border border-green-500 rounded active:bg-green-500">⬆️</button>
                     <div class="flex gap-2">
                         <button onclick="Game.move(-1, 0)" class="p-4 bg-green-900/30 border border-green-500 rounded active:bg-green-500">⬅️</button>
