@@ -1,4 +1,4 @@
-// [2026-02-21 22:00:00] game_render.js - Bulletproof Canvas Quest HUD
+// [2026-02-21 22:25:00] game_render.js - Quest Tracker Moved to Left
 
 Object.assign(Game, {
     particles: [],
@@ -438,13 +438,13 @@ Object.assign(Game, {
             }
         });
 
-        // HIER PASSIERT DIE MAGIE: Wir verlassen die "Welt-Kamera" und zeichnen direkt auf den Bildschirm (HUD Layer)
+        // Wir verlassen die Welt-Kamera und zeichnen auf den Bildschirm (HUD Layer)
         ctx.restore(); 
         
         ctx.fillStyle = "rgba(0, 255, 0, 0.02)"; 
         for(let i=0; i<viewH; i+=4) { ctx.fillRect(0, i, viewW, 1); }
 
-        // --- DER UNZERSTÖRBARE CANVAS QUEST-TRACKER ---
+        // --- DER UNZERSTÖRBARE CANVAS QUEST-TRACKER (LINKS UNTER DEM ZELT) ---
         if(this.state && this.state.trackedQuestId && this.state.view === 'map' && !this.state.inDialog) {
             const qId = this.state.trackedQuestId;
             let qData = null;
@@ -477,9 +477,9 @@ Object.assign(Game, {
                 ctx.font = "bold 13px monospace";
                 const tw = ctx.measureText(txt).width;
                 
-                // Wir zeichnen es genau oben mittig in das Canvas (ca. 10 Pixel unter den oberen Rand)
-                const bx = (viewW / 2) - (tw / 2) - 15;
-                const by = 15; 
+                // Positionierung: Links unter dem Lager-Button
+                const bx = 15; // 15 Pixel Abstand vom linken Rand
+                const by = 80; // 80 Pixel vom oberen Rand (unter dem Zelt-Button)
                 
                 // Schwarzer Kasten, halbtransparent
                 ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
@@ -490,11 +490,11 @@ Object.assign(Game, {
                 ctx.lineWidth = 2;
                 ctx.strokeRect(bx, by, tw + 30, 26);
 
-                // Gelber Text
+                // Gelber Text (Linksbündig)
                 ctx.fillStyle = "#facc15";
-                ctx.textAlign = "center";
+                ctx.textAlign = "left";
                 ctx.textBaseline = "middle";
-                ctx.fillText(txt, viewW / 2, by + 14);
+                ctx.fillText(txt, bx + 15, by + 14); // 15 Pixel Innenabstand
             }
         }
     },
