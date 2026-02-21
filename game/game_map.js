@@ -1,28 +1,21 @@
-// [2026-02-18 16:00:00] game_map.js - Pixel Perfect Discovery
+// [2026-02-21 10:55:00] game_map.js - Vault Entry Fix
 
 Object.assign(Game, {
     reveal: function(px, py) { 
         if(!this.state) return; 
         if(!this.state.explored) this.state.explored = {}; 
         
-        const r = 3; // Sichtradius (etwas erhöht für besseres Mapping)
+        const r = 3; 
         const sx = this.state.sector.x;
         const sy = this.state.sector.y;
-        const sk = `${sx},${sy}`; // Sektor Key
+        const sk = `${sx},${sy}`; 
 
-        // Wir scannen das Umfeld
         for(let y = py - r; y <= py + r; y++) {
             for(let x = px - r; x <= px + r; x++) {
-                // Prüfen ob innerhalb des Sektors
                 if(x >= 0 && x < this.MAP_W && y >= 0 && y < this.MAP_H) {
-                    // Line of Sight Check (optional, hier einfach Radius)
-                    // Wir speichern: Sektor_X_Y = TYP (z.B. "t" für Baum)
                     const key = `${sk}_${x},${y}`;
-                    
-                    // Nur speichern wenn noch nicht bekannt (Spart Speicher)
                     if (!this.state.explored[key]) {
                         const tile = this.state.currentMap[y][x];
-                        // Wir speichern das Zeichen des Tiles!
                         this.state.explored[key] = tile;
                     }
                 }
@@ -34,7 +27,6 @@ Object.assign(Game, {
         if(!this.state || this.state.isGameOver || this.state.view !== 'map' || this.state.inDialog) return;
         const nx = this.state.player.x + dx; const ny = this.state.player.y + dy;
         
-        // Sektor Wechsel Check
         if(nx < 0 || nx >= this.MAP_W || ny < 0 || ny >= this.MAP_H) { this.changeSector(nx, ny); return; }
 
         const t = this.state.currentMap[ny][nx]; const pk = `${nx},${ny}`;
@@ -50,7 +42,7 @@ Object.assign(Game, {
         if (t === 'v') { this.descendDungeon(); return; }
         if (t === '?') { this.testMinigames(); return; } 
 
-        // Kollision
+        // Kollision (V wurde entfernt, da man drauftreten soll!)
         if(['M', 'W', '#', 'U', 't', 'o', 'Y', '|', 'F', 'T', 'R', '^', '~'].includes(t) && t !== 'R' && t !== '+') { 
             if(this.state.hiddenItems && this.state.hiddenItems[pk]) { this.addToInventory(this.state.hiddenItems[pk], 1); delete this.state.hiddenItems[pk]; return; }
             if(typeof UI !== 'undefined' && UI.shakeView) UI.shakeView();
@@ -63,16 +55,23 @@ Object.assign(Game, {
 
         this.state.player.x = nx; this.state.player.y = ny;
         
-        // Rotation update
         if(dx===1) this.state.player.rot=Math.PI/2; if(dx===-1) this.state.player.rot=-Math.PI/2;
         if(dy===1) this.state.player.rot=Math.PI; if(dy===-1) this.state.player.rot=0;
 
-        // WICHTIG: Erst bewegen, dann aufdecken!
         this.reveal(nx, ny);
         
         if(typeof Network!=='undefined') Network.sendHeartbeat();
 
-        if(t==='V') { UI.switchView('vault'); return; }
+        // FIX: Betreten der Vault 101 öffnet das korrekte Menü
+        if(t==='V') { 
+            if(typeof UI !== 'undefined' && typeof UI.enterVault === 'function') {
+                UI.enterVault(); 
+            } else {
+                if(typeof UI !== 'undefined') UI.log("Vault 101 erreicht", "text-yellow-400");
+            }
+            return; 
+        }
+        
         if(t==='C') { this.enterCity(); return; } 
         if(t==='S'||t==='H'||t==='A'||t==='R'||t==='K') { this.tryEnterDungeon(t==='S'?'market':(t==='H'?'cave':(t==='A'?'military':(t==='R'?'raider':'tower')))); return; }
         
@@ -118,7 +117,8 @@ Object.assign(Game, {
             const tx=px+dx, ty=py+dy;
             if(tx>=0&&tx<this.MAP_W&&ty>=0&&ty<this.MAP_H) {
                 const t=this.state.currentMap[ty][tx];
-                if(['^', 't', '~', '#'].includes(t)) this.state.currentMap[ty][tx] = '.';
+                // Wichtig: 'V' nicht entfernen, sonst löscht man die Vault weg, wenn man daneben spawnt!
+                if(['^', 'Y', 't', '~', '#'].includes(t)) this.state.currentMap[ty][tx] = '.';
             }
         }
         const ct = this.state.currentMap[py][px];
@@ -147,7 +147,6 @@ Object.assign(Game, {
              if(['t','#'].includes(this.state.currentMap[hy][hx])) this.state.hiddenItems[`${hx},${hy}`] = 'screws';
         }
 
-        // Zone Name Update
         let zn = "Ödland";
         const bd = this.worldData[key].biome;
         if(bd === 'forest') zn = "Verstrahlter Wald";
@@ -161,7 +160,6 @@ Object.assign(Game, {
         this.reveal(this.state.player.x, this.state.player.y);
     },
     
-    // Dungeon Methoden bleiben gleich
     tryEnterDungeon: function(t){const k=`${this.state.sector.x},${this.state.sector.y}_${t}`;const c=this.state.cooldowns?this.state.cooldowns[k]:0;if(c&&Date.now()<c){if(typeof UI!=='undefined')UI.showDungeonLocked(Math.ceil((c-Date.now())/60000));return;}if(typeof UI!=='undefined')UI.showDungeonWarning(()=>this.enterDungeon(t));},
     enterDungeon: function(t,l=1){if(l===1){this.state.savedPosition={x:this.state.player.x,y:this.state.player.y};this.state.sectorExploredCache=JSON.parse(JSON.stringify(this.state.explored));}this.state.dungeonLevel=l;this.state.dungeonType=t;if(typeof WorldGen!=='undefined'){WorldGen.setSeed((this.state.sector.x+1)*(this.state.sector.y+1)*Date.now()+l);const d=WorldGen.generateDungeonLayout(this.MAP_W,this.MAP_H);this.state.currentMap=d.map;this.state.player.x=d.startX;this.state.player.y=d.startY;if(l<3)for(let y=0;y<this.MAP_H;y++)for(let x=0;x<this.MAP_W;x++)if(this.state.currentMap[y][x]==='X')this.state.currentMap[y][x]='v';}this.state.zone="Dungeon";this.state.explored={};this.reveal(this.state.player.x,this.state.player.y);if(this.renderStaticMap)this.renderStaticMap();if(typeof UI!=='undefined')UI.update();},
     descendDungeon: function(){this.enterDungeon(this.state.dungeonType,this.state.dungeonLevel+1);if(typeof UI!=='undefined'){UI.shakeView();UI.log("Tiefer...","text-purple-400");}},
