@@ -1,4 +1,4 @@
-// [2026-02-21 17:15:00] ui_render_views.js - Quest Scroll Button Integration
+// [2026-02-21 17:45:00] ui_render_views.js - Bulletproof Quest Button Placement
 
 Object.assign(UI, {
 
@@ -55,11 +55,14 @@ Object.assign(UI, {
     },
 
     renderMapScanline: function(container) {
-        // Prüfen, ob eine Quest aktiv ist, um den Button leuchten zu lassen
         const hasQuest = !!(Game.state && Game.state.trackedQuestId);
-        const questBtnClass = hasQuest 
-            ? "bg-yellow-900/80 border-2 border-yellow-400 text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.6)] hover:bg-yellow-700 animate-pulse" 
-            : "bg-black/80 border-2 border-gray-700 text-gray-500 hover:bg-gray-900 opacity-80";
+        
+        // Bulletproof Inline-Styles für absolute Sichtbarkeit und korrekte Position
+        const btnBg = hasQuest ? 'rgba(113, 63, 18, 0.9)' : 'rgba(0,0,0,0.8)';
+        const btnBorder = hasQuest ? '#facc15' : '#4b5563';
+        const btnText = hasQuest ? '#facc15' : '#6b7280';
+        const btnShadow = hasQuest ? '0 0 15px rgba(234,179,8,0.6)' : 'none';
+        const btnAnim = hasQuest ? 'animate-pulse' : '';
 
         container.innerHTML = `
             <div class="relative w-full h-full bg-black overflow-hidden">
@@ -67,7 +70,10 @@ Object.assign(UI, {
                 <div id="scanline" class="pointer-events-none absolute inset-0 bg-repeat-y opacity-10"></div>
                 <div id="vignette" class="pointer-events-none absolute inset-0 radial-gradient"></div>
 
-                <button onclick="UI.showActiveQuestDialog()" class="absolute top-6 right-6 z-[60] w-14 h-14 rounded-full flex items-center justify-center text-3xl transition-all ${questBtnClass}" title="Aktuelle Mission">
+                <button onclick="UI.showActiveQuestDialog()" 
+                        class="absolute flex items-center justify-center rounded-full transition-all cursor-pointer ${btnAnim}" 
+                        style="top: 14px; left: 50%; margin-left: 95px; width: 44px; height: 44px; font-size: 22px; z-index: 9999; background-color: ${btnBg}; border: 2px solid ${btnBorder}; color: ${btnText}; box-shadow: ${btnShadow};" 
+                        title="Aktuelle Mission">
                     📜
                 </button>
 
