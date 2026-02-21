@@ -1,4 +1,4 @@
-// [2026-02-21 18:30:00] ui_render_views.js - Cleaned up Map for HUD
+// [2026-02-21 18:45:00] ui_render_views.js - Cleaned up (No Quest Tracker)
 
 Object.assign(UI, {
 
@@ -51,11 +51,6 @@ Object.assign(UI, {
                 break;
             default:
                 container.innerHTML = `<div class="text-center p-10 text-red-500">ERROR: Unknown View ${Game.state.view}</div>`;
-        }
-
-        // Trigger für das Overlay HUD
-        if(typeof UI.updateQuestTracker === 'function') {
-            setTimeout(() => UI.updateQuestTracker(), 50);
         }
     },
 
