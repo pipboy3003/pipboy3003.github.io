@@ -1,9 +1,12 @@
-// [2026-02-21 16:15:00] game_map.js - Cinematic City Entry Hook
+// [2026-02-21 22:50:00] game_map.js - POI Discovery Hook
 
 Object.assign(Game, {
     reveal: function(px, py) { 
         if(!this.state) return; 
         if(!this.state.explored) this.state.explored = {}; 
+        
+        // NEU: Tracker für entdeckte Orte auf der Weltkarte
+        if(!this.state.discoveredPOIs) this.state.discoveredPOIs = {};
         
         const r = 3; 
         const sx = this.state.sector.x;
@@ -14,9 +17,20 @@ Object.assign(Game, {
             for(let x = px - r; x <= px + r; x++) {
                 if(x >= 0 && x < this.MAP_W && y >= 0 && y < this.MAP_H) {
                     const key = `${sk}_${x},${y}`;
+                    const tile = this.state.currentMap[y][x];
+                    
                     if (!this.state.explored[key]) {
-                        const tile = this.state.currentMap[y][x];
                         this.state.explored[key] = tile;
+                    }
+                    
+                    // NEU: Wenn es ein wichtiges Gebäude ist, in Liste eintragen
+                    if (['V', 'C', 'G', 'S', 'H', 'A', 'R'].includes(tile)) {
+                        if (!this.state.discoveredPOIs[sk]) this.state.discoveredPOIs[sk] = [];
+                        if (!this.state.discoveredPOIs[sk].includes(tile)) {
+                            this.state.discoveredPOIs[sk].push(tile);
+                            if(typeof UI !== 'undefined' && UI.log) UI.log("Neuen Ort auf Weltkarte verzeichnet!", "text-yellow-400 font-bold");
+                            this.saveGame();
+                        }
                     }
                 }
             }
@@ -163,10 +177,8 @@ Object.assign(Game, {
     forceOpenChest: function(x,y){this.state.currentMap[y][x]='B';if(this.renderStaticMap)this.renderStaticMap();const m=this.state.dungeonLevel||1;this.state.caps+=(100*m);this.addToInventory('legendary_part',1);if(Math.random()<0.5)this.addToInventory('stimpack',1);if(typeof UI!=='undefined')UI.showDungeonVictory(100*m,m);setTimeout(()=>this.leaveCity(),4000);},
     leaveCity: function(){this.state.view='map';this.state.dungeonLevel=0;if(this.state.savedPosition){this.state.player.x=this.state.savedPosition.x;this.state.player.y=this.state.savedPosition.y;this.state.savedPosition=null;}if(typeof UI!=='undefined')UI.switchView('map').then(()=>{if(this.renderStaticMap)this.renderStaticMap();});},
     
-    // NEU: Ruft die Animation aus UI auf, falls vorhanden
     enterCity: function() {
         this.state.savedPosition = { x: this.state.player.x, y: this.state.player.y };
-        
         if (typeof UI !== 'undefined' && typeof UI.enterCityCinematic === 'function') {
             UI.enterCityCinematic(() => {
                 this.state.view = 'city';
