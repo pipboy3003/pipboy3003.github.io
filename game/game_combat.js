@@ -1,4 +1,4 @@
-// [2026-02-21 10:15:00] game_combat.js - Bulletproof Win Logic
+// [2026-02-21 09:40:00] game_combat.js - Auto-Repair & Bulletproof Combat
 
 window.Combat = {
     enemy: null,
@@ -12,7 +12,19 @@ window.Combat = {
         { name: "BEINE", hitMod: 1.3, dmgMod: 0.8 }
     ],
 
+    // [NEU] REPARATUR-TOOL: Heilt kaputte Spielstände (NaN Errors)
+    repairState: function() {
+        if (!Game.state) return;
+        if (isNaN(Game.state.xp) || Game.state.xp === null) Game.state.xp = 0;
+        if (isNaN(Game.state.lvl) || Game.state.lvl === null) Game.state.lvl = 1;
+        if (isNaN(Game.state.caps) || Game.state.caps === null) Game.state.caps = 0;
+        if (isNaN(Game.state.kills) || Game.state.kills === null) Game.state.kills = 0;
+        if (isNaN(Game.state.hp) || Game.state.hp === null) Game.state.hp = Game.state.maxHp || 20;
+    },
+
     start: function(enemyInput) {
+        this.repairState(); // Repariert den Spieler VOR dem Kampf
+
         let enemyData = enemyInput;
         
         if (typeof enemyInput === 'string') {
@@ -338,21 +350,24 @@ window.Combat = {
 
     win: function() {
         try {
+            this.repairState(); // Sicherheitshalber vor dem Speichern nochmal reparieren
+
             const enemyName = (this.enemy && this.enemy.name) ? String(this.enemy.name) : "Kreatur";
             this.log(`${enemyName} besiegt!`, 'text-yellow-400 font-bold');
             
-            // 1. XP berechnen (Ausfallsicher)
             let xpBase = 5;
             if (this.enemy && this.enemy.xp !== undefined) {
                 if (Array.isArray(this.enemy.xp) && this.enemy.xp.length >= 2) {
-                    xpBase = this.enemy.xp[0] + Math.floor(Math.random()*(this.enemy.xp[1]-this.enemy.xp[0]));
+                    xpBase = Number(this.enemy.xp[0]) + Math.floor(Math.random()*(Number(this.enemy.xp[1])-Number(this.enemy.xp[0])));
                 } else {
                     xpBase = Number(this.enemy.xp) || 5;
                 }
             }
+            // Falls Number() versagt hat, auf 5 zurücksetzen
+            if (isNaN(xpBase)) xpBase = 5;
+
             if(typeof Game.gainExp === 'function') Game.gainExp(xpBase);
             
-            // 2. Kronkorken (Loot) (Ausfallsicher)
             if(this.enemy && this.enemy.loot !== undefined) {
                 let maxLoot = Number(this.enemy.loot);
                 if (!isNaN(maxLoot) && maxLoot > 0) {
@@ -362,7 +377,6 @@ window.Combat = {
                 }
             }
             
-            // 3. Drops (Ausfallsicher prüfen ob Array)
             if(this.enemy && this.enemy.drops) {
                 let dropsArr = Array.isArray(this.enemy.drops) ? this.enemy.drops : [this.enemy.drops];
                 dropsArr.forEach(d => {
@@ -373,7 +387,6 @@ window.Combat = {
                 });
             }
 
-            // 4. Quest Kills abgleichen (Ausfallsicherer String Check)
             let mobId = (this.enemy && this.enemy.id) ? this.enemy.id : null;
             if(!mobId && typeof Game.monsters === 'object' && Game.monsters !== null) {
                 const cleanName = enemyName.replace(/Legendäre /g, '').replace(/Legendärer /g, '');
@@ -389,18 +402,16 @@ window.Combat = {
                 Game.updateQuestProgress('kill', mobId, 1);
             }
 
-            // 5. Stat-Pflege
             if(Game.state) {
-                if(Game.state.kills === undefined) Game.state.kills = 0;
+                if(isNaN(Game.state.kills)) Game.state.kills = 0;
                 Game.state.kills++;
             }
             if(typeof Game.saveGame === 'function') Game.saveGame();
 
         } catch (err) {
             console.error("Combat Win Error gesichert:", err);
-            this.log("Systemfehler beim Looten behoben.", "text-gray-500");
+            this.log("Systemfehler behoben.", "text-gray-500");
         } finally {
-            // 6. IMMER den Kampf beenden, egal was passiert
             setTimeout(() => {
                 if(Game.state) Game.state.enemy = null;
                 if(typeof UI.switchView === 'function') UI.switchView('map');
@@ -409,6 +420,7 @@ window.Combat = {
     },
 
     flee: function() {
+        this.repairState(); // Auch bei der Flucht aufräumen
         if(Math.random() < 0.5) {
             this.log("Flucht gelungen!", 'text-green-400');
             this.triggerFeedback('dodge'); 
