@@ -1,4 +1,4 @@
-// [2026-02-21 18:05:00] ui_render_overlays.js - Absolute Quest Button Overlay
+// [2026-02-21 18:35:00] ui_render_overlays.js - Persistent HUD Return
 
 Object.assign(UI, {
     
@@ -57,9 +57,43 @@ Object.assign(UI, {
         document.addEventListener('keydown', this._activeEscHandler);
     },
 
-    showActiveQuestDialog: function() {
-        if(!Game.state || !Game.state.trackedQuestId) {
-            this.showInfoDialog("KEINE MISSION", "Du hast aktuell keine Quest angepinnt. Gehe im Pip-OS auf 'Quests', um eine auszuwählen.");
+    // DAS IST DAS NEUE ALTE HUD - Absolute Brechstange für Sichtbarkeit
+    updateQuestTracker: function() { 
+        // 1. Eventuellen Restmüll vom Button-Versuch wegräumen
+        const oldBtn = document.getElementById('hud-quest-button');
+        if(oldBtn) oldBtn.remove();
+
+        // 2. HUD-Container holen oder neu bauen (Global am Body!)
+        let hud = document.getElementById('quest-tracker-hud');
+        if(!hud) {
+            hud = document.createElement('div');
+            hud.id = 'quest-tracker-hud';
+            
+            // Hardcoded Inline Styles für garantierte Sichtbarkeit
+            Object.assign(hud.style, {
+                position: 'fixed',
+                top: '80px',          // Unter dem Hauptmenü
+                left: '10px',         // Links am Rand
+                width: '250px',
+                backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                borderLeft: '4px solid #facc15',
+                padding: '10px',
+                boxShadow: '0 0 15px rgba(0,0,0,0.8)',
+                zIndex: '9999',       // Garantiert ÜBER der Map!
+                pointerEvents: 'none',
+                color: 'white',
+                fontFamily: 'monospace',
+                fontSize: '12px',
+                display: 'none',
+                borderRadius: '0 4px 4px 0'
+            });
+            
+            document.body.appendChild(hud);
+        }
+
+        // Sichtbarkeit steuern: Nur wenn auf Map und nicht im Dialog und Quest aktiv
+        if(!Game.state || Game.state.view !== 'map' || Game.state.inDialog || !Game.state.trackedQuestId) {
+            hud.style.display = 'none';
             return;
         }
 
@@ -76,9 +110,12 @@ Object.assign(UI, {
         }
 
         if(!qData || !def) {
-            this.showInfoDialog("FEHLER", "Quest-Daten konnten nicht geladen werden.");
+            hud.style.display = 'none';
             return;
         }
+        
+        // HUD Anzeigen
+        hud.style.display = 'block';
 
         let objectives = "";
         if(def.type === 'collect_multi') {
@@ -87,7 +124,7 @@ Object.assign(UI, {
                 const iName = Game.items[id]?.name || id;
                 const done = inInv >= amt;
                 const icon = done ? "✔" : "☐";
-                return `<div class="${done ? 'text-green-500 line-through' : 'text-yellow-100'} text-sm font-mono mt-2">
+                return `<div style="color: ${done ? '#22c55e' : '#fef08a'}; text-decoration: ${done ? 'line-through' : 'none'}; margin-top: 4px; padding-left: 4px;">
                     ${icon} ${inInv} / ${amt} ${iName}
                 </div>`;
             }).join('');
@@ -99,8 +136,8 @@ Object.assign(UI, {
             if(def.type === 'collect') verb = "Sammle:";
             if(def.type === 'visit') verb = "Finde:";
             
-            objectives = `<div class="text-yellow-100 text-sm font-mono mt-2">
-                ${verb} ${def.target}<br><span class="text-yellow-500 font-bold text-lg">[${current} / ${max}]</span>
+            objectives = `<div style="color: #fef08a; margin-top: 4px; padding-left: 4px;">
+                ${verb} ${def.target}<br><span style="color: #facc15; font-weight: bold; font-size: 14px;">[${current} / ${max}]</span>
             </div>`;
         }
 
@@ -112,90 +149,30 @@ Object.assign(UI, {
                 const cx = Game.state.sector.x; const cy = Game.state.sector.y;
                 
                 if(tx === cx && ty === cy) {
-                    directionHint = `<div class="text-green-400 text-sm mt-4 animate-pulse font-bold border border-green-500 p-2 bg-green-900/20">📍 ZIEL IM AKTUELLEN SEKTOR!</div>`;
+                    directionHint = `<div style="color: #4ade80; font-size: 10px; margin-top: 8px; font-weight: bold;" class="animate-pulse">📍 ZIEL IM AKTUELLEN SEKTOR!</div>`;
                 } else {
                     let dir = "";
                     if(ty < cy) dir += "Norden";
                     if(ty > cy) dir += "Süden";
                     if(tx > cx) dir += (dir ? "osten" : "Osten");
                     if(tx < cx) dir += (dir ? "westen" : "Westen");
-                    if(dir) directionHint = `<div class="text-gray-400 text-xs mt-4 p-2 border border-gray-700 bg-gray-900/50">📡 Zielrichtung: <b>${dir}</b></div>`;
+                    if(dir) directionHint = `<div style="color: #9ca3af; font-size: 10px; margin-top: 8px; font-style: italic;">📡 Zielrichtung: <b>${dir}</b></div>`;
                 }
             }
         }
 
-        const html = `
-            <div class="text-yellow-500 font-bold text-sm uppercase tracking-widest border-b border-yellow-900 pb-2 mb-2">AKTIVE MISSION</div>
-            <div class="flex flex-col items-center text-center mb-4">
-                ${objectives}
+        hud.innerHTML = `
+            <div style="color: #eab308; font-weight: bold; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #713f12; padding-bottom: 4px; margin-bottom: 4px;">
+                ◉ ${def.title}
             </div>
+            <div>${objectives}</div>
             ${directionHint}
-            <div class="text-[10px] text-gray-500 mt-4 italic">${def.desc || ''}</div>
         `;
-
-        this.showInfoDialog(def.title, html);
-    },
-
-    // NEU: Hängt den Button DIREKT an den Body, unzerstörbar.
-    updateQuestTracker: function() { 
-        let btn = document.getElementById('hud-quest-button');
-        
-        if(!btn) {
-            btn = document.createElement('button');
-            btn.id = 'hud-quest-button';
-            btn.onclick = () => UI.showActiveQuestDialog();
-            
-            // Hardcoded Inline Styles für garantierte Sichtbarkeit
-            Object.assign(btn.style, {
-                position: 'fixed',
-                top: '70px',          // Höhe exakt passend zur Sektor-Anzeige
-                left: '50%',          // Mitte des Bildschirms
-                marginLeft: '100px',  // 100px nach rechts geschoben -> genau neben dem Sektor-Feld
-                width: '44px',
-                height: '44px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '22px',
-                zIndex: '9999',       // Überlagert alles (außer Overlay-Dialoge)
-                cursor: 'pointer',
-                transition: 'all 0.3s ease-in-out'
-            });
-            
-            document.body.appendChild(btn);
-        }
-
-        // Sichtbarkeit steuern: Nur wenn auf Map und nicht im Dialog
-        if(!Game.state || Game.state.view !== 'map' || Game.state.inDialog) {
-            btn.style.display = 'none';
-            return;
-        }
-        
-        btn.style.display = 'flex';
-
-        const hasQuest = !!Game.state.trackedQuestId;
-        
-        if (hasQuest) {
-            btn.style.backgroundColor = 'rgba(113, 63, 18, 0.9)'; // Dark yellow/brown
-            btn.style.border = '2px solid #facc15'; // Bright yellow
-            btn.style.color = '#facc15';
-            btn.style.boxShadow = '0 0 15px rgba(234, 179, 8, 0.6)';
-            btn.classList.add('animate-pulse');
-            btn.innerText = '📜';
-        } else {
-            btn.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-            btn.style.border = '2px solid #4b5563'; // Gray
-            btn.style.color = '#6b7280';
-            btn.style.boxShadow = 'none';
-            btn.classList.remove('animate-pulse');
-            btn.innerText = '📜';
-        }
     },
 
     showConfirm: function(title, htmlContent, onConfirm) {
         if(Game.state) Game.state.inDialog = true;
-        this.updateQuestTracker(); // Button verstecken
+        this.updateQuestTracker(); // HUD verstecken
 
         const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
@@ -229,7 +206,7 @@ Object.assign(UI, {
 
     showInfoDialog: function(title, htmlContent) {
         if(Game.state) Game.state.inDialog = true;
-        this.updateQuestTracker(); // Button verstecken
+        this.updateQuestTracker(); // HUD verstecken
 
         const infoOverlay = document.createElement('div');
         infoOverlay.className = "fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fadeIn pointer-events-auto";
@@ -256,7 +233,7 @@ Object.assign(UI, {
             
             if(!isBaseOpen) {
                 if(Game.state) Game.state.inDialog = false;
-                this.updateQuestTracker(); // Button wieder zeigen
+                this.updateQuestTracker(); // HUD wieder zeigen
             }
         };
 
@@ -1006,7 +983,6 @@ Object.assign(UI, {
                         
                         setTimeout(() => {
                             animLayer.remove();
-                            // Button check nach Animation
                             if(typeof UI.updateQuestTracker === 'function') UI.updateQuestTracker();
                         }, 1000);
                     }, 400);
