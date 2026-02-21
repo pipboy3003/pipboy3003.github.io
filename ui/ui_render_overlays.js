@@ -1,4 +1,4 @@
-// [2026-02-21 10:20:00] ui_render_overlays.js - Quest Button DB Fix
+// [2026-02-21 14:30:00] ui_render_overlays.js - Cinematic Vault Entry
 
 Object.assign(UI, {
     
@@ -57,7 +57,6 @@ Object.assign(UI, {
         document.addEventListener('keydown', this._activeEscHandler);
     },
 
-    // KORRIGIERT: Greift jetzt auf Game.questDefs zu!
     showActiveQuestDialog: function() {
         if(!Game.state || !Game.state.trackedQuestId) {
             this.showInfoDialog("KEINE MISSION", "Du hast aktuell keine Quest angepinnt. Gehe im Pip-OS auf 'Quests', um eine auszuwählen.");
@@ -137,9 +136,7 @@ Object.assign(UI, {
         this.showInfoDialog(def.title, html);
     },
 
-    updateQuestTracker: function() {
-        return; 
-    },
+    updateQuestTracker: function() { return; },
 
     showConfirm: function(title, htmlContent, onConfirm) {
         if(Game.state) Game.state.inDialog = true;
@@ -623,8 +620,7 @@ Object.assign(UI, {
         
         if(Game.state) Game.state.inDialog = true;
         
-        // Prevent accidental close during gamble
-        overlay.onclick = null;
+        overlay.onclick = null; 
 
         const box = document.createElement('div');
         box.className = "bg-black border-4 border-yellow-500 p-6 shadow-[0_0_40px_gold] max-w-sm text-center relative overflow-hidden pointer-events-auto";
@@ -798,7 +794,65 @@ Object.assign(UI, {
         }
     },
 
+    // --- NEU: CINEMATIC VAULT ANIMATION ---
     enterVault: function() { 
+        if(Game.state) Game.state.inDialog = true; 
+        
+        if(typeof UI !== 'undefined' && UI.log) UI.log("Das schwere Vault-Tor knirscht...", "text-blue-400 font-bold");
+
+        // 1. Erstelle das Animations-Layer (Fullscreen)
+        const animLayer = document.createElement('div');
+        animLayer.id = 'vault-anim-layer';
+        animLayer.className = "fixed inset-0 z-[3000] bg-black flex items-center justify-center overflow-hidden transition-opacity duration-1000 pointer-events-auto";
+        
+        // Gigantisches Vault-Zahnrad mit Tailwind
+        animLayer.innerHTML = `
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_#2d3748_0%,_#000_100%)] opacity-80"></div>
+            <div id="vault-door-container" class="relative flex items-center justify-center transition-transform duration-[2500ms] ease-in-out">
+                <div id="vault-gear" class="relative w-64 h-64 md:w-96 md:h-96 bg-[#4a5568] rounded-full border-[12px] border-[#2d3748] flex items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.9)] transition-transform duration-[2500ms] ease-in-out">
+                    <div class="absolute w-full h-12 bg-[#2d3748]" style="transform: rotate(0deg);"></div>
+                    <div class="absolute w-full h-12 bg-[#2d3748]" style="transform: rotate(45deg);"></div>
+                    <div class="absolute w-full h-12 bg-[#2d3748]" style="transform: rotate(90deg);"></div>
+                    <div class="absolute w-full h-12 bg-[#2d3748]" style="transform: rotate(135deg);"></div>
+                    <div class="absolute w-52 h-52 md:w-80 md:h-80 bg-[#1a202c] rounded-full z-10 border-4 border-[#111] flex items-center justify-center shadow-inner">
+                        <span class="text-6xl md:text-8xl font-bold text-yellow-500 tracking-widest font-mono drop-shadow-[0_0_20px_rgba(234,179,8,0.8)]">101</span>
+                    </div>
+                </div>
+            </div>
+            <div id="vault-flash" class="absolute inset-0 bg-white opacity-0 transition-opacity duration-300 pointer-events-none z-50"></div>
+        `;
+        document.body.appendChild(animLayer);
+
+        // 2. Starte die Animation (Tür rollt zur Seite auf)
+        setTimeout(() => {
+            const container = document.getElementById('vault-door-container');
+            const gear = document.getElementById('vault-gear');
+            const flash = document.getElementById('vault-flash');
+
+            if(container) container.style.transform = "translateX(120vw)"; // Rollt nach rechts aus dem Bild
+            if(gear) gear.style.transform = "rotate(270deg)"; // Dreht sich dabei
+
+            // 3. Nach dem Wegrollen -> Weißer Blitz & Menü öffnen
+            setTimeout(() => {
+                if(flash) flash.style.opacity = "1";
+                
+                setTimeout(() => {
+                    this._showVaultMenuInternal(); 
+                    if(flash) flash.style.opacity = "0";
+                    animLayer.style.opacity = "0";
+                    
+                    setTimeout(() => {
+                        animLayer.remove();
+                    }, 1000);
+                }, 300);
+
+            }, 2000);
+
+        }, 100);
+    },
+
+    // Das eigentliche Lager-Menü, das nach der Animation erscheint
+    _showVaultMenuInternal: function() {
         const overlay = this.restoreOverlay(); 
         overlay.style.display = 'flex';
         overlay.innerHTML = ''; 
@@ -806,20 +860,26 @@ Object.assign(UI, {
         if(Game.state) Game.state.inDialog = true; 
         
         const box = document.createElement('div');
-        box.className = "flex flex-col gap-2 w-full max-w-sm p-4 bg-black border-2 border-blue-500 shadow-[0_0_20px_blue] pointer-events-auto";
+        box.className = "flex flex-col gap-3 w-full max-w-sm p-6 bg-black border-4 border-blue-600 shadow-[0_0_30px_blue] pointer-events-auto animate-float-in";
         box.onclick = (e) => e.stopPropagation();
 
         const msg = document.createElement('div');
-        msg.innerHTML = "<h2 class='text-blue-300 font-bold mb-2'>VAULT 101</h2><p class='text-sm text-gray-400'>Sicherer Schlafplatz. Kostet nichts, heilt alles.</p>";
+        msg.innerHTML = `
+            <h2 class='text-blue-400 font-bold mb-2 text-3xl tracking-widest border-b-2 border-blue-900 pb-2 text-center'>VAULT 101</h2>
+            <p class='text-sm text-blue-200 mb-4 text-center'>Willkommen zuhause, Bewohner.<br>Hier bist du sicher vor dem Ödland.</p>
+        `;
         
         const restBtn = document.createElement('button'); 
-        restBtn.className = "action-button w-full border-blue-500 text-blue-300"; 
-        restBtn.textContent = "Ausruhen (Gratis)"; 
-        restBtn.onclick = () => { Game.rest(); UI.leaveDialog(); }; 
+        restBtn.className = "action-button w-full border-blue-500 text-blue-400 hover:bg-blue-900 py-4 font-bold text-xl"; 
+        restBtn.innerHTML = "🛏️ AUSRUHEN (GRATIS)"; 
+        restBtn.onclick = () => { 
+            Game.rest(); 
+            this.showInfoDialog("AUSGERUHT", "Du hast geschlafen. Deine TP sind wieder vollständig regeneriert.");
+        }; 
         
         const leaveBtn = document.createElement('button'); 
-        leaveBtn.className = "action-button w-full"; 
-        leaveBtn.textContent = "Weiter geht's"; 
+        leaveBtn.className = "action-button w-full border-gray-600 text-gray-400 hover:bg-gray-800 py-2 mt-2"; 
+        leaveBtn.innerHTML = "🚪 ZURÜCK INS ÖDLAND"; 
         leaveBtn.onclick = () => UI.leaveDialog(); 
         
         box.appendChild(msg);
