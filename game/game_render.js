@@ -1,8 +1,8 @@
-// [2026-02-21 23:45:00] game_render.js - Dynamic Weather & Day/Night Cycle
+// [2026-02-21 23:55:00] game_render.js - Flashlight attached to player fix
 
 Object.assign(Game, {
     particles: [],
-    weatherParticles: [], // NEU: Eigenes System für Wetter
+    weatherParticles: [], 
 
     initCache: function() {
         this.cacheCanvas = document.createElement('canvas');
@@ -508,7 +508,7 @@ Object.assign(Game, {
             }
         });
 
-        // WETTER SYSTEM (im Camera-Space, sieht cooler aus)
+        // WETTER SYSTEM
         if (!this.weatherParticles) this.weatherParticles = [];
         let wType = 'ash'; 
         const zn = this.state.zone || '';
@@ -556,7 +556,6 @@ Object.assign(Game, {
         
         // --- SCREEN SPACE OVERLAYS ---
 
-        // Radstorm Screen Tint
         if (wType === 'radstorm') {
             const radPulse = (Math.sin(time / 500) + 1) / 2;
             ctx.fillStyle = `rgba(20, 80, 0, ${0.1 + radPulse * 0.15})`;
@@ -564,21 +563,23 @@ Object.assign(Game, {
         }
 
         // TAGESZEIT & TASCHENLAMPE
-        const cycleLength = 4 * 60 * 1000; // 4 Minuten pro Tag
-        const timePhase = ((time + 60000) % cycleLength) / cycleLength; // Start bei 0.25 (Morgen)
+        const cycleLength = 4 * 60 * 1000; 
+        const timePhase = ((time + 60000) % cycleLength) / cycleLength; 
         
         let darkness = 0;
-        if (timePhase < 0.25 || timePhase > 0.75) darkness = 0.85; // Nacht
-        else if (timePhase < 0.35) darkness = 0.85 - ((timePhase - 0.25) / 0.1) * 0.85; // Sonnenaufgang
-        else if (timePhase > 0.65) darkness = ((timePhase - 0.65) / 0.1) * 0.85; // Sonnenuntergang
+        if (timePhase < 0.25 || timePhase > 0.75) darkness = 0.85; 
+        else if (timePhase < 0.35) darkness = 0.85 - ((timePhase - 0.25) / 0.1) * 0.85; 
+        else if (timePhase > 0.65) darkness = ((timePhase - 0.65) / 0.1) * 0.85; 
 
         if (darkness > 0) {
             ctx.save();
-            const px = viewW / 2;
-            const py = viewH / 2;
+            
+            // NEU: Berechne exakte Spielerposition auf dem Bildschirm
+            const screenPx = (this.state.player.x * this.TILE + this.TILE/2) - this.camera.x;
+            const screenPy = (this.state.player.y * this.TILE + this.TILE/2) - this.camera.y;
             
             // Umgebung verdunkeln, Spieler-Mitte leicht aufhellen
-            const ambientGrad = ctx.createRadialGradient(px, py, 30, px, py, 250);
+            const ambientGrad = ctx.createRadialGradient(screenPx, screenPy, 30, screenPx, screenPy, 250);
             ambientGrad.addColorStop(0, `rgba(0,0,0,${Math.max(0, darkness - 0.5)})`); 
             ambientGrad.addColorStop(1, `rgba(0,0,0,${darkness})`); 
             
@@ -586,11 +587,11 @@ Object.assign(Game, {
             ctx.fillRect(0, 0, viewW, viewH);
 
             // Taschenlampen-Kegel
-            ctx.translate(px, py);
+            ctx.translate(screenPx, screenPy);
             const pRot = this.state.player.rot || 0;
             ctx.rotate(pRot); 
             
-            const beamGrad = ctx.createLinearGradient(0, 0, 0, -300); // Licht strahlt nach vorne
+            const beamGrad = ctx.createLinearGradient(0, 0, 0, -300); 
             beamGrad.addColorStop(0, `rgba(255, 255, 200, ${darkness * 0.5})`);
             beamGrad.addColorStop(1, 'rgba(255, 255, 200, 0)');
             
@@ -605,11 +606,9 @@ Object.assign(Game, {
             ctx.restore();
         }
 
-        // Scanlines
         ctx.fillStyle = "rgba(0, 255, 0, 0.02)"; 
         for(let i=0; i<viewH; i+=4) { ctx.fillRect(0, i, viewW, 1); }
 
-        // PIP-BOY UHR (Oben rechts)
         const totalMinutes = Math.floor(timePhase * 24 * 60);
         const hours = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
         const mins = (totalMinutes % 60).toString().padStart(2, '0');
@@ -619,7 +618,6 @@ Object.assign(Game, {
         ctx.textAlign = "right";
         ctx.fillText(`LOKALE ZEIT: ${hours}:${mins}`, viewW - 15, 25);
 
-        // QUEST-TRACKER
         if(this.state && this.state.trackedQuestId && this.state.view === 'map' && !this.state.inDialog) {
             const qId = this.state.trackedQuestId;
             let qData = null;
