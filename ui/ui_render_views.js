@@ -1,4 +1,4 @@
-// [2026-02-21 17:45:00] ui_render_views.js - Bulletproof Quest Button Placement
+// [2026-02-21 18:00:00] ui_render_views.js - Cleaned up Map Container
 
 Object.assign(UI, {
 
@@ -52,30 +52,19 @@ Object.assign(UI, {
             default:
                 container.innerHTML = `<div class="text-center p-10 text-red-500">ERROR: Unknown View ${Game.state.view}</div>`;
         }
+
+        // Trigger für den neuen globalen Quest-Button
+        if(typeof UI.updateQuestTracker === 'function') {
+            setTimeout(() => UI.updateQuestTracker(), 50);
+        }
     },
 
     renderMapScanline: function(container) {
-        const hasQuest = !!(Game.state && Game.state.trackedQuestId);
-        
-        // Bulletproof Inline-Styles für absolute Sichtbarkeit und korrekte Position
-        const btnBg = hasQuest ? 'rgba(113, 63, 18, 0.9)' : 'rgba(0,0,0,0.8)';
-        const btnBorder = hasQuest ? '#facc15' : '#4b5563';
-        const btnText = hasQuest ? '#facc15' : '#6b7280';
-        const btnShadow = hasQuest ? '0 0 15px rgba(234,179,8,0.6)' : 'none';
-        const btnAnim = hasQuest ? 'animate-pulse' : '';
-
         container.innerHTML = `
             <div class="relative w-full h-full bg-black overflow-hidden">
                 <canvas id="game-canvas" class="block w-full h-full object-cover"></canvas>
                 <div id="scanline" class="pointer-events-none absolute inset-0 bg-repeat-y opacity-10"></div>
                 <div id="vignette" class="pointer-events-none absolute inset-0 radial-gradient"></div>
-
-                <button onclick="UI.showActiveQuestDialog()" 
-                        class="absolute flex items-center justify-center rounded-full transition-all cursor-pointer ${btnAnim}" 
-                        style="top: 14px; left: 50%; margin-left: 95px; width: 44px; height: 44px; font-size: 22px; z-index: 9999; background-color: ${btnBg}; border: 2px solid ${btnBorder}; color: ${btnText}; box-shadow: ${btnShadow};" 
-                        title="Aktuelle Mission">
-                    📜
-                </button>
 
                 <div class="absolute bottom-4 left-4 text-green-400 font-mono text-sm bg-black/50 px-2 py-1 border border-green-900 z-40 pointer-events-none">
                     DIAGNOSE: ${Game.state.zone || 'Unbekannt'}
