@@ -16,8 +16,8 @@ if (typeof Game !== 'undefined' && !Game.trackQuest) {
         if(typeof this.saveGame === 'function') this.saveGame();
         
         if(typeof UI !== 'undefined') {
-            if (UI.renderQuests) UI.renderQuests(); // Ansicht aktualisieren
-            if (UI.updateQuestTracker) UI.updateQuestTracker(); // Ticker aktualisieren
+            if (UI.renderQuests) UI.renderQuests(); 
+            if (UI.updateQuestTracker) UI.updateQuestTracker(); 
         }
     };
 }
