@@ -1,4 +1,4 @@
-// [2026-02-21 09:00:00] game_combat.js - Win function bugfix (undefined name)
+// [2026-02-21 09:10:00] game_combat.js - Bulletproof Enemy Loader & UI Fix
 
 window.Combat = {
     enemy: null,
@@ -12,15 +12,30 @@ window.Combat = {
         { name: "BEINE", hitMod: 1.3, dmgMod: 0.8 }
     ],
 
-    start: function(enemyEntity) {
-        Game.state.enemy = JSON.parse(JSON.stringify(enemyEntity)); 
-        Game.state.enemy.maxHp = Game.state.enemy.hp; 
+    start: function(enemyInput) {
+        let enemyData = enemyInput;
         
-        // SICHERHEITS-FALLBACK: Wenn ein Gegner keinen Namen hat, geben wir ihm einen
-        if (!Game.state.enemy.name) {
-            Game.state.enemy.name = "Unbekannte Kreatur";
+        // FIX: Wenn nur eine ID (Text) übergeben wurde, lade das echte Monster aus der DB!
+        if (typeof enemyInput === 'string') {
+            if (Game.monsters && Game.monsters[enemyInput]) {
+                enemyData = Game.monsters[enemyInput];
+                enemyData.id = enemyInput; // ID sichern für Quests
+            } else {
+                // Fallback, falls das Monster in der DB fehlt
+                enemyData = { id: enemyInput, name: "Mutierte Kreatur", hp: 20, dmg: 2, xp: 5 };
+            }
         }
         
+        // Tiefenkopie, damit das Original unangetastet bleibt
+        Game.state.enemy = JSON.parse(JSON.stringify(enemyData || {})); 
+        
+        // BULLETPROOF FALLBACKS: Falls irgendein Wert fehlt, füllen wir ihn auf!
+        Game.state.enemy.name = Game.state.enemy.name || "Unbekanntes Monster";
+        Game.state.enemy.hp = Game.state.enemy.hp || 20;
+        Game.state.enemy.maxHp = Game.state.enemy.maxHp || Game.state.enemy.hp;
+        Game.state.enemy.dmg = Game.state.enemy.dmg || 2;
+        Game.state.enemy.xp = Game.state.enemy.xp || 5;
+
         this.enemy = Game.state.enemy;
         Game.state.view = 'combat';
         
@@ -326,9 +341,7 @@ window.Combat = {
     },
 
     win: function() {
-        // Sicherer Fallback für den Namen
-        const enemyName = this.enemy.name || "Unbekannte Kreatur";
-        
+        const enemyName = this.enemy.name || "Kreatur";
         this.log(`${enemyName} besiegt!`, 'text-yellow-400 font-bold');
         
         const xpBase = Array.isArray(this.enemy.xp) ? (this.enemy.xp[0] + Math.floor(Math.random()*(this.enemy.xp[1]-this.enemy.xp[0]))) : (this.enemy.xp || 5);
@@ -348,9 +361,9 @@ window.Combat = {
             });
         }
 
-        // BUGFIX: Nur replace anwenden, wenn enemyName ein String ist.
-        let mobId = null;
-        if(Game.monsters && typeof enemyName === 'string') {
+        // FIX: Ausfallsicheres Ermitteln der ID für die Quests!
+        let mobId = this.enemy.id || null;
+        if(!mobId && Game.monsters && typeof enemyName === 'string') {
             const cleanName = enemyName.replace('Legendäre ', '');
             for(let k in Game.monsters) {
                 if(Game.monsters[k].name === cleanName) {
