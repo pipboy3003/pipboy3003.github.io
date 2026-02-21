@@ -1,4 +1,4 @@
-// [2026-02-21 21:35:00] ui_render_overlays.js - Global Quest Ticker Injector
+// [2026-02-21 21:55:00] ui_render_overlays.js - Cleaned up HTML
 
 Object.assign(UI, {
     
@@ -57,86 +57,12 @@ Object.assign(UI, {
         document.addEventListener('keydown', this._activeEscHandler);
     },
 
-    // --- NEU: ABSOLUTE BRECHSTANGE FÜR DEN TICKER ---
     updateQuestTracker: function() { 
-        let ticker = document.getElementById('quest-tracker-ticker');
-        
-        // 1. Wenn er nicht existiert, direkt an den BODY hängen!
-        if(!ticker) {
-            ticker = document.createElement('div');
-            ticker.id = 'quest-tracker-ticker';
-            document.body.appendChild(ticker); 
-        }
-
-        // 2. CSS Styles hart erzwingen, damit nichts überschrieben wird
-        Object.assign(ticker.style, {
-            position: 'fixed',
-            top: '100px', // Genau unter deinem Sektor-Button
-            left: '50%',
-            transform: 'translateX(-50%)',
-            backgroundColor: 'rgba(0, 0, 0, 0.85)',
-            border: '2px solid #facc15',
-            color: '#facc15',
-            padding: '6px 20px',
-            borderRadius: '8px',
-            fontFamily: 'monospace',
-            fontSize: '14px',
-            zIndex: '99999', // Höher geht nicht
-            pointerEvents: 'none',
-            boxShadow: '0 0 15px rgba(234, 179, 8, 0.5)',
-            whiteSpace: 'nowrap',
-            display: 'none' // Standard: Versteckt
-        });
-
-        // 3. Sichtbarkeit prüfen
-        if(!Game.state || Game.state.view !== 'map' || Game.state.inDialog || !Game.state.trackedQuestId) {
-            ticker.style.display = 'none';
-            return;
-        }
-
-        const qId = Game.state.trackedQuestId;
-        
-        let qData = null;
-        if (Array.isArray(Game.state.activeQuests)) qData = Game.state.activeQuests.find(q => q.id === qId);
-        else if (Game.state.activeQuests) qData = Game.state.activeQuests[qId];
-
-        let def = null;
-        if (Game.questDefs) {
-            if (Array.isArray(Game.questDefs)) def = Game.questDefs.find(d => d.id === qId);
-            else def = Game.questDefs[qId];
-        }
-
-        if(!qData && !def) {
-            ticker.style.display = 'none';
-            return;
-        }
-
-        // Falls qData fehlt (z.b. abgeschlossen), nehmen wir 0
-        let progressText = "";
-        if(def.type === 'collect_multi') {
-            let totalDone = 0;
-            let totalReq = def.reqItems ? Object.keys(def.reqItems).length : 1;
-            if(def.reqItems) {
-                Object.entries(def.reqItems).forEach(([id, amt]) => {
-                    const inInv = Game.state.inventory.filter(i => i.id === id).reduce((s, i) => s + i.count, 0);
-                    if(inInv >= amt) totalDone++;
-                });
-            }
-            progressText = `[${totalDone}/${totalReq}]`;
-        } else {
-            const current = qData ? (qData.progress || 0) : 0;
-            const max = qData ? (qData.max || 1) : 1;
-            progressText = `[${current}/${max}]`;
-        }
-
-        // 4. Inhalt schreiben und sichtbar machen
-        ticker.innerHTML = `<span style="opacity: 0.7;">📍 MISSION:</span> <b style="letter-spacing: 1px; margin-left: 4px;">${def.title.toUpperCase()}</b> <span style="margin-left: 8px; font-weight: bold;">${progressText}</span>`;
-        ticker.style.display = 'block';
+        return; // Leerer Dummy, damit keine Fehler geworfen werden. Zeichnen übernimmt jetzt das Canvas!
     },
 
     showConfirm: function(title, htmlContent, onConfirm) {
         if(Game.state) Game.state.inDialog = true;
-        this.updateQuestTracker(); // Ticker verstecken
 
         const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
@@ -170,7 +96,6 @@ Object.assign(UI, {
 
     showInfoDialog: function(title, htmlContent) {
         if(Game.state) Game.state.inDialog = true;
-        this.updateQuestTracker(); // Ticker verstecken
 
         const infoOverlay = document.createElement('div');
         infoOverlay.className = "fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fadeIn pointer-events-auto";
@@ -197,7 +122,6 @@ Object.assign(UI, {
             
             if(!isBaseOpen) {
                 if(Game.state) Game.state.inDialog = false;
-                this.updateQuestTracker(); // Ticker wieder zeigen
             }
         };
 
@@ -221,7 +145,6 @@ Object.assign(UI, {
         
         if(!item) return;
         if(Game.state) Game.state.inDialog = true;
-        this.updateQuestTracker();
         
         const box = document.createElement('div');
         box.className = "bg-black border-2 border-green-500 p-4 shadow-[0_0_15px_green] max-w-sm text-center mb-4 w-full pointer-events-auto";
@@ -320,7 +243,6 @@ Object.assign(UI, {
         this._trapEscKey();
         
         if(Game.state) Game.state.inDialog = true;
-        this.updateQuestTracker();
 
         const item = Game.state.equip[slot];
         const name = item.props ? item.props.name : item.name;
@@ -387,7 +309,6 @@ Object.assign(UI, {
         setTimeout(() => {
             msg.classList.add('translate-y-[-20px]', 'opacity-0', 'scale-90');
             setTimeout(() => msg.remove(), 700);
-            if(typeof UI.updateQuestTracker === 'function') UI.updateQuestTracker();
         }, 4500);
     },
 
@@ -592,7 +513,6 @@ Object.assign(UI, {
         this._trapEscKey();
 
         if(Game.state) Game.state.inDialog = true;
-        this.updateQuestTracker();
         
         const box = document.createElement('div');
         box.className = "bg-black border-2 border-red-600 p-4 shadow-[0_0_20px_red] max-w-sm text-center animate-pulse mb-4 pointer-events-auto";
@@ -622,7 +542,6 @@ Object.assign(UI, {
         overlay.innerHTML = '';
         
         if(Game.state) Game.state.inDialog = true;
-        this.updateQuestTracker();
         
         overlay.onclick = null; 
 
@@ -688,7 +607,6 @@ Object.assign(UI, {
         this._trapEscKey();
         
         if(Game.state) Game.state.inDialog = true;
-        this.updateQuestTracker();
 
         const box = document.createElement('div');
         box.className = "bg-black border-2 border-gray-600 p-4 shadow-[0_0_20px_gray] max-w-sm text-center mb-4 pointer-events-auto";
@@ -724,7 +642,6 @@ Object.assign(UI, {
         document.body.appendChild(overlay);
         
         if(Game.state) Game.state.inDialog = true;
-        this.updateQuestTracker();
         
         const btn = document.getElementById('btn-victory-close');
         if(btn) {
@@ -744,7 +661,6 @@ Object.assign(UI, {
         overlay.innerHTML = '';
         
         if(Game.state) Game.state.inDialog = true;
-        this.updateQuestTracker();
         
         overlay.onclick = null; 
 
@@ -804,8 +720,6 @@ Object.assign(UI, {
     enterVault: function() { 
         if(Game.state) Game.state.inDialog = true; 
         if(typeof UI !== 'undefined' && UI.log) UI.log("Das schwere Vault-Tor knirscht...", "text-blue-400 font-bold");
-
-        this.updateQuestTracker(); // Ticker im Dialog ausblenden
 
         const animLayer = document.createElement('div');
         animLayer.id = 'vault-anim-layer';
@@ -898,8 +812,6 @@ Object.assign(UI, {
         if(Game.state) Game.state.inDialog = true;
         if(typeof UI !== 'undefined' && UI.log) UI.log("Die rostigen Tore öffnen sich...", "text-yellow-400 font-bold");
 
-        this.updateQuestTracker(); // Ticker im Dialog ausblenden
-
         const animLayer = document.createElement('div');
         animLayer.id = 'city-anim-layer';
         animLayer.className = "fixed inset-0 z-[3000] bg-black overflow-hidden transition-opacity duration-1000 pointer-events-auto flex items-center justify-center";
@@ -948,7 +860,6 @@ Object.assign(UI, {
                         
                         setTimeout(() => {
                             animLayer.remove();
-                            if(typeof UI.updateQuestTracker === 'function') UI.updateQuestTracker();
                         }, 1000);
                     }, 400);
                 }, 1800);
