@@ -1,4 +1,26 @@
-// [2026-01-28 17:00:00] ui_view_journal.js - Complete
+// [2026-02-21 21:00:00] ui_view_journal.js - Complete (Wiki + Tracking Fix)
+
+// SICHERHEIT: Zentrale Funktion für das Quest-Tracking
+if (typeof Game !== 'undefined' && !Game.trackQuest) {
+    Game.trackQuest = function(qId) {
+        if (!this.state) return;
+        
+        if (this.state.trackedQuestId === qId) {
+            this.state.trackedQuestId = null; 
+            if(typeof UI !== 'undefined' && UI.log) UI.log("Mission nicht mehr verfolgt.", "text-gray-400");
+        } else {
+            this.state.trackedQuestId = qId; 
+            if(typeof UI !== 'undefined' && UI.log) UI.log("Mission fixiert!", "text-yellow-400 font-bold");
+        }
+        
+        if(typeof this.saveGame === 'function') this.saveGame();
+        
+        if(typeof UI !== 'undefined') {
+            if (UI.renderQuests) UI.renderQuests(); // Ansicht aktualisieren
+            if (UI.updateQuestTracker) UI.updateQuestTracker(); // Ticker aktualisieren
+        }
+    };
+}
 
 Object.assign(UI, {
 
@@ -278,7 +300,7 @@ Object.assign(UI, {
                             ${activeData ? `
                                 <button class="text-lg hover:scale-125 transition-transform ${isTracked ? 'opacity-100' : 'opacity-20 hover:opacity-100'}" 
                                         title="${isTracked ? 'Nicht mehr verfolgen' : 'Auf HUD anzeigen'}"
-                                        onclick="event.stopPropagation(); Game.state.trackedQuestId = '${isTracked ? '' : def.id}'; UI.renderQuests(); UI.updateQuestTracker();">
+                                        onclick="event.stopPropagation(); Game.trackQuest('${def.id}');">
                                     📌
                                 </button>
                             ` : ''}
