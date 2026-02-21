@@ -1,4 +1,4 @@
-// [2026-02-21 21:50:00] ui_render_views.js - Cleaned up HTML
+// [2026-02-21 22:45:00] ui_render_views.js - World Map Legend Fix
 
 Object.assign(UI, {
 
@@ -52,6 +52,10 @@ Object.assign(UI, {
             default:
                 container.innerHTML = `<div class="text-center p-10 text-red-500">ERROR: Unknown View ${Game.state.view}</div>`;
         }
+
+        if(typeof UI.updateQuestTracker === 'function') {
+            setTimeout(() => UI.updateQuestTracker(), 50);
+        }
     },
 
     renderMapScanline: function(container) {
@@ -88,7 +92,7 @@ Object.assign(UI, {
                 <div class="absolute top-4 left-0 w-full flex justify-center items-center pointer-events-none z-20">
                     <div class="bg-black/80 border-t-2 border-b-2 border-green-500 px-8 py-2 flex items-center gap-4 shadow-[0_0_15px_rgba(0,255,0,0.2)] backdrop-blur-sm pointer-events-auto">
                         <h2 class="text-xl font-bold text-green-400 tracking-[0.2em] uppercase text-shadow-glow">WELTKARTE</h2>
-                        <button onclick="if(typeof UI.showTutorial === 'function') UI.showTutorial('map')" class="border border-green-500 text-green-500 hover:bg-green-900 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all">?</button>
+                        <button onclick="if(typeof UI.showMapLegend === 'function') UI.showMapLegend()" class="border border-green-500 text-green-500 hover:bg-green-900 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all bg-black/80">?</button>
                     </div>
                 </div>
 
