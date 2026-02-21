@@ -1,4 +1,4 @@
-// [2026-02-21 22:25:00] game_render.js - Quest Tracker Moved to Left
+// [2026-02-21 22:55:00] game_render.js - Dungeon Dioramas added
 
 Object.assign(Game, {
     particles: [],
@@ -349,6 +349,105 @@ Object.assign(Game, {
         ctx.restore();
     },
 
+    // NEU: Supermarkt (S) Diorama
+    drawMarket: function(ctx, x, y, time) {
+        const ts = this.TILE; const px = x * ts + ts/2; const py = y * ts + ts/2;
+        ctx.save(); ctx.translate(px, py);
+        
+        // Gebäude-Klotz
+        ctx.fillStyle = "#3b3b3b"; ctx.fillRect(-ts*0.9, -ts*0.8, ts*1.8, ts*1.4);
+        ctx.fillStyle = "#222"; ctx.fillRect(-ts*0.9, -ts*0.8, ts*1.8, ts*0.2); // Dachkante
+        
+        // Kaputte Schaufenster
+        ctx.fillStyle = "#0a0a0a"; 
+        ctx.fillRect(-ts*0.7, -ts*0.2, ts*0.5, ts*0.6);
+        ctx.fillRect(ts*0.2, -ts*0.2, ts*0.5, ts*0.6);
+        
+        // Neon-Schild
+        ctx.fillStyle = "#111"; ctx.fillRect(-ts*0.8, -ts*0.6, ts*1.6, ts*0.3);
+        const flicker = Math.sin(time/120) > 0 ? "#10b981" : "#064e3b";
+        ctx.fillStyle = flicker;
+        ctx.font = `bold ${ts*0.2}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("SUPER DUPER", 0, -ts*0.45);
+        
+        ctx.restore();
+    },
+
+    // NEU: Höhle (H) Diorama
+    drawCave: function(ctx, x, y, time) {
+        const ts = this.TILE; const px = x * ts + ts/2; const py = y * ts + ts/2;
+        ctx.save(); ctx.translate(px, py);
+        
+        // Felsenhügel
+        ctx.fillStyle = "#4a4a4a"; ctx.beginPath(); ctx.arc(0, ts*0.4, ts, Math.PI, 0); ctx.fill();
+        ctx.fillStyle = "#333"; ctx.beginPath(); ctx.arc(ts*0.2, ts*0.4, ts*0.8, Math.PI, 0); ctx.fill();
+        
+        // Dunkler Eingang
+        ctx.fillStyle = "#000"; ctx.beginPath(); ctx.arc(0, ts*0.4, ts*0.4, Math.PI, 0); ctx.fill();
+        
+        // Glühende Pilze
+        const glow = Math.sin(time/300)*0.5 + 0.5;
+        ctx.fillStyle = `rgba(0, 255, 255, ${glow})`;
+        ctx.beginPath(); ctx.arc(-ts*0.6, 0, 3, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(ts*0.5, ts*0.2, 2, 0, Math.PI*2); ctx.fill();
+        
+        ctx.restore();
+    },
+
+    // NEU: Militärbasis (A) Diorama
+    drawMilitary: function(ctx, x, y, time) {
+        const ts = this.TILE; const px = x * ts + ts/2; const py = y * ts + ts/2;
+        ctx.save(); ctx.translate(px, py);
+        
+        // Beton-Bunker
+        ctx.fillStyle = "#4b5320"; ctx.fillRect(-ts*0.9, -ts*0.8, ts*1.8, ts*1.4); // Army Green
+        ctx.fillStyle = "#333"; ctx.fillRect(-ts*0.9, -ts*0.8, ts*1.8, ts*0.3); // Dickes Dach
+        
+        // Panzertür
+        ctx.fillStyle = "#1a1a1a"; ctx.fillRect(-ts*0.3, -ts*0.1, ts*0.6, ts*0.7);
+        ctx.fillStyle = "#555"; ctx.fillRect(-ts*0.25, 0, ts*0.2, ts*0.6); // Tür links
+        ctx.fillRect(ts*0.05, 0, ts*0.2, ts*0.6); // Tür rechts
+        
+        // Rotes Alarmlicht (Rotiert)
+        ctx.save();
+        ctx.translate(0, -ts*0.9);
+        ctx.rotate(time/200);
+        ctx.fillStyle = "rgba(255, 0, 0, 0.6)";
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0, 0, ts, 0, Math.PI/4); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0, 0, ts, Math.PI, Math.PI + Math.PI/4); ctx.fill();
+        ctx.fillStyle = "#f00"; ctx.beginPath(); ctx.arc(0,0, 4, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+        
+        ctx.restore();
+    },
+
+    // NEU: Raider Festung (R) Diorama
+    drawRaider: function(ctx, x, y, time) {
+        const ts = this.TILE; const px = x * ts + ts/2; const py = y * ts + ts/2;
+        ctx.save(); ctx.translate(px, py);
+        
+        // Schrottwände
+        ctx.fillStyle = "#3e2723"; ctx.fillRect(-ts*0.8, -ts*0.6, ts*1.6, ts);
+        ctx.fillStyle = "#5d4037"; 
+        ctx.beginPath(); ctx.moveTo(-ts*0.8, -ts*0.6); ctx.lineTo(-ts*0.5, -ts); ctx.lineTo(-ts*0.2, -ts*0.6); ctx.fill();
+        
+        // Holzspieße
+        ctx.strokeStyle = "#4e342e"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(-ts*0.9, ts*0.4); ctx.lineTo(-ts*1.2, -ts*0.2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(ts*0.9, ts*0.4); ctx.lineTo(ts*1.2, -ts*0.2); ctx.stroke();
+        
+        // Totenkopf-Markierung
+        ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(0, -ts*0.2, 4, 0, Math.PI*2); ctx.fill();
+        
+        // Brennende Tonne
+        ctx.fillStyle = "#111"; ctx.fillRect(ts*0.4, 0, ts*0.3, ts*0.4);
+        const fireColors = ["#ef4444", "#f59e0b", "#eab308"];
+        ctx.fillStyle = fireColors[Math.floor((time/100) % 3)];
+        ctx.beginPath(); ctx.arc(ts*0.55, -2 + Math.sin(time/50)*2, 4, 0, Math.PI*2); ctx.fill();
+        
+        ctx.restore();
+    },
+
     checkLineOfSight: function(x0, y0, x1, y1) {
         let dx = Math.abs(x1-x0); let dy = Math.abs(y1-y0);
         let sx = (x0<x1) ? 1 : -1; let sy = (y0<y1) ? 1 : -1;
@@ -416,7 +515,14 @@ Object.assign(Game, {
             if(tile.t === 'V') this.drawVault(ctx, tile.x, tile.y, time);
             if(tile.t === 'C') this.drawCity(ctx, tile.x, tile.y, time);
             if(tile.t === 'G') this.drawGhostTown(ctx, tile.x, tile.y, time);
-            if(['X', 'R', 'S', '?'].includes(tile.t)) this.drawTile(ctx, tile.x, tile.y, tile.t);
+            
+            // NEUE DUNGEON RENDERER
+            if(tile.t === 'S') this.drawMarket(ctx, tile.x, tile.y, time);
+            if(tile.t === 'H') this.drawCave(ctx, tile.x, tile.y, time);
+            if(tile.t === 'A') this.drawMilitary(ctx, tile.x, tile.y, time);
+            if(tile.t === 'R') this.drawRaider(ctx, tile.x, tile.y, time);
+            
+            if(['X', '?'].includes(tile.t)) this.drawTile(ctx, tile.x, tile.y, tile.t);
         });
 
         visibleTiles.forEach(tile => {
@@ -438,13 +544,11 @@ Object.assign(Game, {
             }
         });
 
-        // Wir verlassen die Welt-Kamera und zeichnen auf den Bildschirm (HUD Layer)
         ctx.restore(); 
         
         ctx.fillStyle = "rgba(0, 255, 0, 0.02)"; 
         for(let i=0; i<viewH; i+=4) { ctx.fillRect(0, i, viewW, 1); }
 
-        // --- DER UNZERSTÖRBARE CANVAS QUEST-TRACKER (LINKS UNTER DEM ZELT) ---
         if(this.state && this.state.trackedQuestId && this.state.view === 'map' && !this.state.inDialog) {
             const qId = this.state.trackedQuestId;
             let qData = null;
@@ -477,24 +581,20 @@ Object.assign(Game, {
                 ctx.font = "bold 13px monospace";
                 const tw = ctx.measureText(txt).width;
                 
-                // Positionierung: Links unter dem Lager-Button
-                const bx = 15; // 15 Pixel Abstand vom linken Rand
-                const by = 80; // 80 Pixel vom oberen Rand (unter dem Zelt-Button)
+                const bx = 15; 
+                const by = 80; 
                 
-                // Schwarzer Kasten, halbtransparent
                 ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
                 ctx.fillRect(bx, by, tw + 30, 26);
                 
-                // Gelber Rand
                 ctx.strokeStyle = "#facc15";
                 ctx.lineWidth = 2;
                 ctx.strokeRect(bx, by, tw + 30, 26);
 
-                // Gelber Text (Linksbündig)
                 ctx.fillStyle = "#facc15";
                 ctx.textAlign = "left";
                 ctx.textBaseline = "middle";
-                ctx.fillText(txt, bx + 15, by + 14); // 15 Pixel Innenabstand
+                ctx.fillText(txt, bx + 15, by + 14); 
             }
         }
     },
