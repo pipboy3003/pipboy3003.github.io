@@ -1,4 +1,4 @@
-// [2026-02-21 19:30:00] ui_render_overlays.js - Minimalist Quest Ticker
+// [2026-02-21 21:10:00] ui_render_overlays.js - Ticker Content Writer
 
 Object.assign(UI, {
     
@@ -57,39 +57,14 @@ Object.assign(UI, {
         document.addEventListener('keydown', this._activeEscHandler);
     },
 
-    // --- NEU: DER DEZENTE QUEST-TICKER UNTER DEM SEKTOR-BADGE ---
+    // Füllt das Ticker-Div, das jetzt fest in der Karte verbaut ist
     updateQuestTracker: function() { 
-        let ticker = document.getElementById('quest-tracker-ticker');
+        const ticker = document.getElementById('quest-tracker-ticker');
         
-        if(!ticker) {
-            ticker = document.createElement('div');
-            ticker.id = 'quest-tracker-ticker';
-            
-            // Feste Position unter der Sektor-Anzeige (mittig)
-            Object.assign(ticker.style, {
-                position: 'fixed',
-                top: '110px', 
-                left: '50%',
-                transform: 'translateX(-50%)',
-                backgroundColor: 'rgba(0, 0, 0, 0.75)',
-                border: '1px solid #facc15', // Gelber Rahmen
-                color: '#facc15',            // Gelbe Schrift
-                padding: '4px 16px',
-                borderRadius: '4px',
-                fontFamily: 'monospace',
-                fontSize: '12px',
-                zIndex: '9999',
-                pointerEvents: 'none',       // Klicks fallen durch (stört nicht beim Spielen)
-                display: 'none',
-                textAlign: 'center',
-                boxShadow: '0 0 10px rgba(234, 179, 8, 0.3)',
-                whiteSpace: 'nowrap'
-            });
-            
-            document.body.appendChild(ticker);
-        }
+        // Failsafe: Wenn der Ticker Container auf der Map nicht da ist, abbrechen.
+        if(!ticker) return; 
 
-        // Unsichtbar schalten, wenn Dialog offen, falsche Ansicht oder keine Quest angepinnt
+        // Wenn nicht auf Map, im Dialog, oder nichts gepinnt -> Verstecken
         if(!Game.state || Game.state.view !== 'map' || Game.state.inDialog || !Game.state.trackedQuestId) {
             ticker.style.display = 'none';
             return;
@@ -97,7 +72,6 @@ Object.assign(UI, {
 
         const qId = Game.state.trackedQuestId;
         
-        // Finde Quest-Daten
         let qData = null;
         if (Array.isArray(Game.state.activeQuests)) qData = Game.state.activeQuests.find(q => q.id === qId);
         else if (Game.state.activeQuests) qData = Game.state.activeQuests[qId];
@@ -113,15 +87,16 @@ Object.assign(UI, {
             return;
         }
         
-        // Fortschritt berechnen
         let progressText = "";
         if(def.type === 'collect_multi') {
             let totalDone = 0;
-            let totalReq = Object.keys(def.reqItems).length;
-            Object.entries(def.reqItems).forEach(([id, amt]) => {
-                const inInv = Game.state.inventory.filter(i => i.id === id).reduce((s, i) => s + i.count, 0);
-                if(inInv >= amt) totalDone++;
-            });
+            let totalReq = def.reqItems ? Object.keys(def.reqItems).length : 1;
+            if(def.reqItems) {
+                Object.entries(def.reqItems).forEach(([id, amt]) => {
+                    const inInv = Game.state.inventory.filter(i => i.id === id).reduce((s, i) => s + i.count, 0);
+                    if(inInv >= amt) totalDone++;
+                });
+            }
             progressText = `[${totalDone}/${totalReq}]`;
         } else {
             const current = qData.progress || 0;
@@ -129,8 +104,13 @@ Object.assign(UI, {
             progressText = `[${current}/${max}]`;
         }
 
-        // Ticker füllen und anzeigen
-        ticker.innerHTML = `<span style="opacity: 0.7;">↳ MISSION:</span> <b>${def.title.toUpperCase()}</b> ${progressText}`;
+        // Ticker mit Inhalt füllen, nach Sektor positionieren und anzeigen
+        ticker.style.position = 'fixed';
+        ticker.style.top = '110px';
+        ticker.style.left = '50%';
+        ticker.style.transform = 'translateX(-50%)';
+
+        ticker.innerHTML = `<span style="opacity: 0.7;">↳ MISSION:</span> <b class="tracking-widest ml-1">${def.title.toUpperCase()}</b> <span class="ml-2 font-bold">${progressText}</span>`;
         ticker.style.display = 'block';
     },
 
@@ -387,8 +367,6 @@ Object.assign(UI, {
         setTimeout(() => {
             msg.classList.add('translate-y-[-20px]', 'opacity-0', 'scale-90');
             setTimeout(() => msg.remove(), 700);
-            
-            // Ticker aktualisieren, da Quest beendet
             if(typeof UI.updateQuestTracker === 'function') UI.updateQuestTracker();
         }, 4500);
     },
@@ -807,7 +785,7 @@ Object.assign(UI, {
         if(Game.state) Game.state.inDialog = true; 
         if(typeof UI !== 'undefined' && UI.log) UI.log("Das schwere Vault-Tor knirscht...", "text-blue-400 font-bold");
 
-        this.updateQuestTracker(); 
+        this.updateQuestTracker(); // Ticker im Dialog ausblenden
 
         const animLayer = document.createElement('div');
         animLayer.id = 'vault-anim-layer';
