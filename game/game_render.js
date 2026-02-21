@@ -1,4 +1,4 @@
-// [2026-02-18 18:30:00] game_render.js - Visuals Update (Stones & Peaks)
+// [2026-02-21 10:50:00] game_render.js - Awesome Vault 101 Door Animation
 
 Object.assign(Game, {
     particles: [],
@@ -64,8 +64,8 @@ Object.assign(Game, {
                 this.drawFloorDetail(ctx, x, y, t);
 
                 if(t === '#') this.drawConnectedWall(ctx, x, y, map);
-                else if(t === '^') this.drawMountain(ctx, x, y); // Hügel
-                else if(t === 'Y') this.drawHighMountain(ctx, x, y); // NEU: Hohe Berge
+                else if(t === '^') this.drawMountain(ctx, x, y); 
+                else if(t === 'Y') this.drawHighMountain(ctx, x, y); 
                 else if(t === '=') this.drawRoad(ctx, x, y); 
                 else if(t === '+') this.drawBridge(ctx, x, y); 
                 else if(t === '~') { 
@@ -86,7 +86,7 @@ Object.assign(Game, {
         if(type === '"') color = "#1b331b"; 
         if(type === '_') color = "#3b3626"; 
         if(type === ';') color = "#241f1a"; 
-        if(type === ',') color = "#26211d"; // Dunkler Boden für Steine
+        if(type === ',') color = "#26211d"; 
         
         if(type === 't') color = "#1b331b"; 
         if(type === '^' || type === 'Y') color = "#222"; 
@@ -95,21 +95,18 @@ Object.assign(Game, {
         ctx.fillStyle = color;
         ctx.fillRect(px, py, ts, ts);
 
-        // Details
         if(type === '"' && rand > 0.6) { ctx.fillStyle = "#2e4e2e"; ctx.fillRect(px+rand*ts, py+(1-rand)*ts, 2, 2); }
         if(type === '_' && rand > 0.8) { ctx.fillStyle = "#5e5a4a"; ctx.fillRect(px+rand*ts, py+(1-rand)*ts, 2, 2); }
         
-        // NEU: Steine zeichnen
         if(type === ',') {
             ctx.fillStyle = "#666"; 
-            // Ein großer Stein oder zwei kleine
             if (rand > 0.5) {
-                ctx.fillRect(px + ts*0.2, py + ts*0.3, ts*0.4, ts*0.3); // Großer Stein
-                ctx.fillStyle = "#888"; // Highlight
+                ctx.fillRect(px + ts*0.2, py + ts*0.3, ts*0.4, ts*0.3); 
+                ctx.fillStyle = "#888"; 
                 ctx.fillRect(px + ts*0.25, py + ts*0.35, ts*0.1, ts*0.1);
             } else {
-                ctx.fillRect(px + ts*0.1, py + ts*0.1, ts*0.2, ts*0.2); // Klein
-                ctx.fillRect(px + ts*0.6, py + ts*0.6, ts*0.25, ts*0.25); // Klein
+                ctx.fillRect(px + ts*0.1, py + ts*0.1, ts*0.2, ts*0.2); 
+                ctx.fillRect(px + ts*0.6, py + ts*0.6, ts*0.25, ts*0.25); 
             }
         }
         
@@ -124,15 +121,11 @@ Object.assign(Game, {
 
     drawBridge: function(ctx, x, y) {
         const ts = this.TILE; const px = x * ts; const py = y * ts;
-        ctx.fillStyle = "#0d47a1"; ctx.fillRect(px, py, ts, ts); // Wasser drunter
-        
-        ctx.fillStyle = "#5d4037"; // Holzplanken
+        ctx.fillStyle = "#0d47a1"; ctx.fillRect(px, py, ts, ts); 
+        ctx.fillStyle = "#5d4037"; 
         ctx.fillRect(px + 4, py, ts - 8, ts); 
-        
-        ctx.fillStyle = "#3e2723"; // Ritzen
+        ctx.fillStyle = "#3e2723"; 
         for(let i=0; i<ts; i+=5) ctx.fillRect(px+4, py+i, ts-8, 1);
-        
-        // Geländer
         ctx.fillStyle = "#8d6e63"; 
         ctx.fillRect(px+2, py, 2, ts); 
         ctx.fillRect(px+ts-4, py, 2, ts); 
@@ -151,27 +144,20 @@ Object.assign(Game, {
         }
     },
 
-    // NEU: Zeichnet einen hohen, spitzen Berg
     drawHighMountain: function(ctx, x, y) {
         const ts = this.TILE; const px = x * ts; const py = y * ts;
-        
-        // Basis
         ctx.fillStyle = "#2c2c2c"; 
         ctx.beginPath(); 
         ctx.moveTo(px, py+ts); 
-        ctx.lineTo(px+ts/2, py-ts*0.2); // Sehr hoch
+        ctx.lineTo(px+ts/2, py-ts*0.2); 
         ctx.lineTo(px+ts, py+ts); 
         ctx.fill();
-        
-        // Licht-Seite
         ctx.fillStyle = "#444"; 
         ctx.beginPath(); 
         ctx.moveTo(px+ts*0.2, py+ts); 
         ctx.lineTo(px+ts/2, py-ts*0.2); 
         ctx.lineTo(px+ts/2, py+ts); 
         ctx.fill();
-
-        // Schnee-Kappe
         ctx.fillStyle = "#fff";
         ctx.beginPath();
         ctx.moveTo(px+ts*0.4, py+ts*0.2);
@@ -219,6 +205,67 @@ Object.assign(Game, {
         ctx.beginPath(); ctx.moveTo(px+10, py+ts); ctx.lineTo(px+10+sway, py+ts-8); ctx.stroke();
     },
 
+    // NEU: Die riesige Vault-Tür Animation
+    drawVault: function(ctx, x, y, time) {
+        const ts = this.TILE;
+        const px = x * ts + ts / 2;
+        const py = y * ts + ts / 2;
+
+        ctx.save();
+        ctx.translate(px, py);
+
+        // Bodenplatte (etwas größer als 1 Tile)
+        ctx.fillStyle = "#111";
+        ctx.beginPath();
+        ctx.arc(0, 0, ts * 0.9, 0, Math.PI*2);
+        ctx.fill();
+        
+        // Warnstreifen (Gelb/Schwarz)
+        ctx.lineWidth = 3;
+        for(let i=0; i<12; i++) {
+            ctx.strokeStyle = (i%2 === 0) ? "#eab308" : "#000";
+            ctx.beginPath();
+            ctx.arc(0, 0, ts * 0.85, (i*Math.PI)/6, ((i+1)*Math.PI)/6);
+            ctx.stroke();
+        }
+
+        // Das Vault-Zahnrad (dreht sich ganz langsam)
+        const rot = Math.sin(time / 2000) * 0.5; 
+        ctx.rotate(rot);
+
+        ctx.fillStyle = "#4a5568"; // Metall
+        ctx.beginPath();
+        ctx.arc(0, 0, ts * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Zahnrad-Zähne
+        ctx.fillStyle = "#4a5568";
+        for(let i=0; i<8; i++) {
+            ctx.save();
+            ctx.rotate(i * Math.PI / 4);
+            ctx.fillRect(-ts*0.15, -ts*0.85, ts*0.3, ts*0.2);
+            ctx.restore();
+        }
+
+        // Innerer Kreis
+        ctx.fillStyle = "#2d3748";
+        ctx.beginPath();
+        ctx.arc(0, 0, ts * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Pulsierende Zahlen "101"
+        const pulse = (Math.sin(time / 300) + 1) / 2; 
+        ctx.shadowBlur = 10 + pulse * 15;
+        ctx.shadowColor = "#eab308";
+        ctx.fillStyle = "#facc15";
+        ctx.font = `bold ${ts*0.35}px monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("101", 0, 0);
+
+        ctx.restore();
+    },
+
     checkLineOfSight: function(x0, y0, x1, y1) {
         let dx = Math.abs(x1-x0); let dy = Math.abs(y1-y0);
         let sx = (x0<x1) ? 1 : -1; let sy = (y0<y1) ? 1 : -1;
@@ -228,7 +275,7 @@ Object.assign(Game, {
             if(dist > 0) { 
                 if(x0>=0 && x0<this.MAP_W && y0>=0 && y0<this.MAP_H) {
                     const t = this.state.currentMap[y0][x0];
-                    if(['#', '^', 'Y', 't'].includes(t)) return false; // Y blockiert Sicht
+                    if(['#', '^', 'Y', 't'].includes(t)) return false; 
                 }
             }
             let e2 = 2*err; if(e2>-dy) { err-=dy; x0+=sx; } if(e2<dx) { err+=dx; y0+=sy; } dist++;
@@ -275,13 +322,15 @@ Object.assign(Game, {
                     else if(t === 't') this.drawTree(ctx, x, y, time);
                     else if(t === '"') this.drawGrass(ctx, x, y, time);
                     else if(t === '.') this.drawGrass(ctx, x, y, time);
-                    else if(t === ',') { } // Steine sind schon im Cache
                     
-                    // Zeichne Monster/NPCs
+                    // NEU: Rufe die Vault-Animation auf!
+                    else if(t === 'V') this.drawVault(ctx, x, y, time);
+                    
                     if(t === 'M') this.drawMonster(ctx, x, y, time); 
                     else if(t === 'W') this.drawWanderer(ctx, x, y, time);
                     
-                    if(['X', 'V', 'R', 'S'].includes(t)) this.drawTile(ctx, x, y, t);
+                    // V wurde hier entfernt, damit es nicht als normales Emoji gemalt wird
+                    if(['X', 'R', 'S'].includes(t)) this.drawTile(ctx, x, y, t);
                     if(t === 'G') this.drawTile(ctx, x, y, t);
                     if(t === '?') this.drawTile(ctx, x, y, t);
                     
@@ -305,5 +354,5 @@ Object.assign(Game, {
     drawOtherPlayers: function(ctx) { if(typeof Network==='undefined'||!Network.otherPlayers)return; for(let pid in Network.otherPlayers){ const p=Network.otherPlayers[pid]; if(p.sector&&(p.sector.x!==this.state.sector.x||p.sector.y!==this.state.sector.y))continue; const ox=p.x*this.TILE+this.TILE/2; const oy=p.y*this.TILE+this.TILE/2; ctx.fillStyle="#00ffff"; ctx.beginPath(); ctx.arc(ox,oy,6,0,Math.PI*2); ctx.fill(); } },
     drawMonster: function(ctx,x,y,time) { const ts=this.TILE; const px=x*ts+ts/2; const py=y*ts+ts/2; const sc=1+Math.sin(time/200)*0.1; ctx.save(); ctx.translate(px,py); ctx.scale(sc,sc); ctx.fillStyle="#d32f2f"; ctx.beginPath(); ctx.arc(0,0,8,0,Math.PI*2); ctx.fill(); ctx.strokeStyle="#ff5252"; ctx.lineWidth=2; for(let i=0;i<8;i++){ ctx.beginPath(); ctx.moveTo(0,0); const a=(i/8)*Math.PI*2; ctx.lineTo(Math.cos(a)*12,Math.sin(a)*12); ctx.stroke(); } ctx.fillStyle="#ffeb3b"; ctx.fillRect(-4,-2,3,3); ctx.fillRect(2,-2,3,3); ctx.restore(); },
     drawWanderer: function(ctx,x,y,time) { const ts=this.TILE; const px=x*ts+ts/2; const py=y*ts+ts/2; const b=Math.abs(Math.sin(time/300))*3; ctx.save(); ctx.translate(px,py-b); ctx.fillStyle="#4fc3f7"; ctx.beginPath(); ctx.arc(0,-6,5,Math.PI,0); ctx.lineTo(6,10); ctx.lineTo(-6,10); ctx.fill(); ctx.fillStyle="#8d6e63"; ctx.fillRect(-4,0,8,6); ctx.restore(); },
-    drawTile: function(ctx,x,y,type) { const ts=this.TILE; const cx=x*ts+ts/2; const cy=y*ts+ts/2; const dI=(c,cl,s=20)=>{ctx.font=`bold ${s}px monospace`;ctx.fillStyle=cl;ctx.textAlign="center";ctx.textBaseline="middle";ctx.shadowColor=cl;ctx.shadowBlur=5;ctx.fillText(c,cx,cy);ctx.shadowBlur=0;}; switch(type){ case 'V':dI("⚙️","#ffff00",24);break; case 'R':dI("💰","#ff3333",22);break; case 'G':dI("👻","#cccccc",22);break; case 'X':ctx.fillStyle="#8B4513";ctx.fillRect(cx-8,cy-6,16,12);ctx.strokeStyle="#ffd700";ctx.strokeRect(cx-8,cy-6,16,12);break; case 'S':dI("🏪","#00ff00",22);break; case 'H':dI("⛰️","#888",22);break; case 'E':dI("EXIT","#00ffff",10);break; case 'P':dI("✚","#ff0000",18);break; case '?':dI("?","#ff00ff",20);break; } }
+    drawTile: function(ctx,x,y,type) { const ts=this.TILE; const cx=x*ts+ts/2; const cy=y*ts+ts/2; const dI=(c,cl,s=20)=>{ctx.font=`bold ${s}px monospace`;ctx.fillStyle=cl;ctx.textAlign="center";ctx.textBaseline="middle";ctx.shadowColor=cl;ctx.shadowBlur=5;ctx.fillText(c,cx,cy);ctx.shadowBlur=0;}; switch(type){ case 'R':dI("💰","#ff3333",22);break; case 'G':dI("👻","#cccccc",22);break; case 'X':ctx.fillStyle="#8B4513";ctx.fillRect(cx-8,cy-6,16,12);ctx.strokeStyle="#ffd700";ctx.strokeRect(cx-8,cy-6,16,12);break; case 'S':dI("🏪","#00ff00",22);break; case 'H':dI("⛰️","#888",22);break; case 'E':dI("EXIT","#00ffff",10);break; case 'P':dI("✚","#ff0000",18);break; case '?':dI("?","#ff00ff",20);break; } }
 });
