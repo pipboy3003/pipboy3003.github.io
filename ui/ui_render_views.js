@@ -1,4 +1,4 @@
-// [2026-02-22 09:00:00] ui_render_views.js - VATS Background Polish (No Grid)
+// [2026-02-22 09:05:00] ui_render_views.js - Removed Radar Grid & Enhanced Skyline
 
 Object.assign(UI, {
 
@@ -364,6 +364,7 @@ Object.assign(UI, {
         }
     },
 
+    // --- V.A.T.S. OVERHAUL: NO GRID, BIGGER SKYLINE ---
     renderCombat: function() {
         const enemy = Game.state.enemy; 
         if(!enemy) return;
@@ -393,23 +394,25 @@ Object.assign(UI, {
                 setTimeout(() => intro.remove(), 250);
             }, 500);
 
-            // RUINEN SKYLINE HINTERGRUND (Jetzt deutlicher sichtbar: opacity-40)
+            // RUINEN SKYLINE HINTERGRUND (Größer und deutlicher sichtbar)
             const bgLayer = document.createElement('div');
             bgLayer.className = "absolute inset-0 pointer-events-none z-[0] flex items-end opacity-40";
             bgLayer.innerHTML = `
-                <div class="w-full h-[45%] flex items-end justify-between px-2 border-b-2 border-green-900">
-                    <div class="w-12 h-24 bg-green-900 border-t-2 border-r-2 border-green-500 mb-[-2px]"></div>
-                    <div class="w-20 h-40 bg-green-900 border-t-2 border-l-2 border-r-2 border-green-500 mb-[-2px] flex justify-center pt-4"><div class="w-2/3 h-1/2 border-2 border-green-700/50"></div></div>
-                    <div class="w-10 h-16 bg-green-900 border-t-2 border-l-2 border-green-500 mb-[-2px]"></div>
-                    <div class="w-24 h-48 bg-green-900 border-t-2 border-l-2 border-r-2 border-green-500 mb-[-2px] flex flex-col items-center gap-2 pt-4">
-                        <div class="w-3 h-3 bg-green-500 animate-pulse shadow-[0_0_10px_#39ff14]"></div>
-                        <div class="w-full h-3 border-b-2 border-green-700/50"></div>
+                <div class="w-full h-[60%] flex items-end justify-between px-2 border-b-4 border-green-900">
+                    <div class="w-16 h-32 bg-green-900 border-t-2 border-r-2 border-green-500 mb-[-4px]"></div>
+                    <div class="w-24 h-56 bg-green-900 border-t-2 border-l-2 border-r-2 border-green-500 mb-[-4px] flex justify-center pt-4"><div class="w-2/3 h-1/2 border-2 border-green-700/50"></div></div>
+                    <div class="w-12 h-20 bg-green-900 border-t-2 border-l-2 border-green-500 mb-[-4px]"></div>
+                    <div class="w-32 h-64 bg-green-900 border-t-2 border-l-2 border-r-2 border-green-500 mb-[-4px] flex flex-col items-center gap-3 pt-6">
+                        <div class="w-4 h-4 bg-green-500 animate-pulse shadow-[0_0_15px_#39ff14]"></div>
+                        <div class="w-full h-4 border-b-2 border-green-700/50"></div>
+                        <div class="w-full h-4 border-b-2 border-green-700/50"></div>
                     </div>
+                    <div class="w-20 h-40 bg-green-900 border-t-2 border-l-2 border-green-500 mb-[-4px]"></div>
                 </div>
             `;
             box.insertBefore(bgLayer, box.firstChild);
             
-            // FADENKREUZ & CRT SCANLINES (Gitter/Kreis entfernt!)
+            // NUR SCANLINES & VIGNETTE (Gitter restlos entfernt!)
             box.insertAdjacentHTML('beforeend', `
                 <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,30,0,0.15)_50%)] bg-[length:100%_4px] z-[100] mix-blend-overlay"></div>
                 <div class="pointer-events-none absolute inset-0 shadow-[inset_0_0_100px_rgba(0,255,0,0.15)] z-[90]"></div>
@@ -466,7 +469,7 @@ Object.assign(UI, {
 
                      btn.setAttribute('onclick', `UI.triggerVatsAttack(${index}, ${chance})`);
                      
-                     // BUTTON HINTERGRUND LEICHTER GEMACHT (bg-black/50 und backdrop-blur-sm)
+                     // BACKGROUND BLUR FÜR DIE BUTTONS
                      btn.className = `relative w-full max-w-sm mx-auto bg-black/50 border border-green-900/50 p-3 mb-3 cursor-pointer group hover:bg-green-900/60 transition-all z-10 backdrop-blur-sm`;
                      
                      btn.innerHTML = `
