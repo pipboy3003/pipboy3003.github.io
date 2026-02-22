@@ -1,4 +1,4 @@
-// [2026-02-22 01:30:00] ui_render_views.js - V.A.T.S. with HP Numbers inside Bar
+// [2026-02-22 02:20:00] ui_render_views.js - Graveyard Logic & V.A.T.S. HP Update
 
 Object.assign(UI, {
 
@@ -51,10 +51,6 @@ Object.assign(UI, {
                 break;
             default:
                 container.innerHTML = `<div class="text-center p-10 text-red-500">ERROR: Unknown View ${Game.state.view}</div>`;
-        }
-
-        if(typeof UI.updateQuestTracker === 'function') {
-            setTimeout(() => UI.updateQuestTracker(), 50);
         }
     },
 
@@ -283,25 +279,73 @@ Object.assign(UI, {
         ctx.beginPath(); ctx.arc(cx, cy - 60, 15, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
     },
 
+    // --- NEU: DIE LEICHENHALLE FÜR DIE CHARAKTERAUSWAHL ---
     renderCharacterSelection: function(saves) {
         this.charSelectMode = true; this.currentSaves = saves;
         if(this.els.loginScreen) this.els.loginScreen.style.display = 'none';
         if(this.els.charSelectScreen) this.els.charSelectScreen.style.display = 'flex';
         if(this.els.charSlotsList) this.els.charSlotsList.innerHTML = '';
+        
+        if (!this.deleteSaveSlot) {
+            this.deleteSaveSlot = function(index) {
+                if (typeof Game.deleteSave === 'function') Game.deleteSave(index);
+                else {
+                    localStorage.removeItem('save_' + index);
+                    localStorage.removeItem('slot_' + index);
+                    localStorage.removeItem('wasteland_save_' + index);
+                    localStorage.removeItem('vault_save_' + index);
+                }
+                window.location.reload(); 
+            };
+        }
+
         for (let i = 0; i < 5; i++) {
             const slot = document.createElement('div');
-            slot.className = "char-slot border-2 border-green-900 bg-black/80 p-4 mb-2 cursor-pointer hover:border-yellow-400 flex justify-between items-center group relative";
+            slot.className = "char-slot border-2 border-green-900 bg-black/80 p-4 mb-2 relative";
             const save = saves[i];
+            
             if (save) {
-                const isDead = (save.hp !== undefined && save.hp <= 0);
-                slot.innerHTML = `<div class="flex flex-col z-10"><span class="text-xl ${isDead ? 'text-red-500' : 'text-yellow-400'} font-bold">${isDead ? '💀' : '👤'} ${save.playerName}</span><span class="text-xs text-green-300 font-mono">Level ${save.lvl}</span></div><button class="bg-green-700 text-black font-bold px-4 py-1 text-xs rounded group-hover:bg-[#39ff14]">START ▶</button>`;
+                const isDead = (save.hp !== undefined && save.hp <= 0) || save.isGameOver === true;
+                
+                if (isDead) {
+                    slot.className += " border-red-900 bg-red-950/20"; 
+                    slot.innerHTML = `
+                        <div class="flex justify-between items-center w-full">
+                            <div class="flex flex-col z-10">
+                                <span class="text-xl text-red-500 font-bold">☠️ ${save.playerName}</span>
+                                <span class="text-xs text-red-400 font-mono">VERSTORBEN (Level ${save.lvl})</span>
+                            </div>
+                            <button onclick="event.stopPropagation(); UI.deleteSaveSlot(${i})" class="bg-red-900 text-white font-bold px-4 py-2 text-xs rounded hover:bg-red-600 transition-colors shadow-[0_0_10px_red]">
+                                LÖSCHEN 🗑️
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    slot.className += " cursor-pointer hover:border-yellow-400 flex justify-between items-center group";
+                    slot.innerHTML = `
+                        <div class="flex flex-col z-10">
+                            <span class="text-xl text-yellow-400 font-bold">👤 ${save.playerName}</span>
+                            <span class="text-xs text-green-300 font-mono">Level ${save.lvl}</span>
+                        </div>
+                        <button class="bg-green-700 text-black font-bold px-4 py-1 text-xs rounded group-hover:bg-[#39ff14]">START ▶</button>
+                    `;
+                    slot.onclick = () => { if(typeof this.selectSlot === 'function') this.selectSlot(i); };
+                }
             } else {
-                slot.innerHTML = `<div class="text-gray-500 font-bold">+ NEUEN CHARAKTER</div>`;
+                slot.className += " cursor-pointer hover:border-yellow-400 flex justify-center items-center group";
+                slot.innerHTML = `<div class="text-gray-500 font-bold group-hover:text-yellow-400">+ NEUEN CHARAKTER</div>`;
+                slot.onclick = () => { if(typeof this.selectSlot === 'function') this.selectSlot(i); };
             }
-            slot.onclick = () => { if(typeof this.selectSlot === 'function') this.selectSlot(i); };
             if(this.els.charSlotsList) this.els.charSlotsList.appendChild(slot);
         }
-        if(typeof this.selectSlot === 'function') this.selectSlot(0);
+        
+        if(typeof this.selectSlot === 'function') {
+            if (saves[0] && ((saves[0].hp !== undefined && saves[0].hp <= 0) || saves[0].isGameOver)) {
+                // Do nothing, slot 0 is dead
+            } else {
+                this.selectSlot(0);
+            }
+        }
     },
 
     renderSpawnList: function(players) {
@@ -317,7 +361,7 @@ Object.assign(UI, {
         }
     },
 
-    // --- NEU: V.A.T.S. FAILSAFE OVERHAUL (Mit exakten HP-Zahlen) ---
+    // --- NEU: V.A.T.S. FAILSAFE OVERHAUL (Mit exakten HP-Zahlen im Balken) ---
     renderCombat: function() {
         const enemy = Game.state.enemy; 
         if(!enemy) return;
@@ -327,13 +371,11 @@ Object.assign(UI, {
 
         const box = nameEl.closest('.bg-black') || nameEl.parentElement;
 
-        // 1. Initiales Setup pro Gegner (Intro & Hintergrund)
         if (box && !box.dataset.vatsStyled) {
             box.dataset.vatsStyled = "true";
             box.classList.add('relative', 'overflow-hidden');
             box.style.backgroundColor = "#051005"; 
             
-            // INTRO ANIMATION
             const intro = document.createElement('div');
             intro.className = "absolute inset-0 z-[4000] bg-black flex flex-col items-center justify-center pointer-events-none";
             intro.innerHTML = `
@@ -349,7 +391,6 @@ Object.assign(UI, {
                 setTimeout(() => intro.remove(), 250);
             }, 500);
 
-            // RUINEN SKYLINE HINTERGRUND
             const bgLayer = document.createElement('div');
             bgLayer.className = "absolute inset-0 pointer-events-none z-[0] flex items-end opacity-20";
             bgLayer.innerHTML = `
@@ -365,7 +406,6 @@ Object.assign(UI, {
             `;
             box.insertBefore(bgLayer, box.firstChild);
             
-            // FADENKREUZ & CRT SCANLINES
             box.insertAdjacentHTML('beforeend', `
                 <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,30,0,0.15)_50%)] bg-[length:100%_4px] z-[100] mix-blend-overlay"></div>
                 <div class="pointer-events-none absolute inset-0 shadow-[inset_0_0_100px_rgba(0,255,0,0.15)] z-[90]"></div>
@@ -379,11 +419,9 @@ Object.assign(UI, {
             `);
         }
 
-        // 2. HUD & Massive HP Anzeige mit ZAHLEN im Balken
         nameEl.innerHTML = `<span class="text-[#39ff14] animate-pulse mr-2">TARGET:</span><span class="text-green-300 font-mono tracking-widest text-shadow-glow">${enemy.name.toUpperCase()}</span>`;
         nameEl.className = "text-xl md:text-3xl font-bold flex items-center justify-center w-full bg-green-900/40 border-b-2 border-green-500 pb-2 pt-2 mb-3 z-10 relative backdrop-blur-sm";
 
-        // Den alten HP Text verstecken, da wir ihn viel cooler in die Leiste packen
         const oldHpText = document.getElementById('enemy-hp-text');
         if (oldHpText) oldHpText.style.display = 'none';
 
@@ -402,10 +440,8 @@ Object.assign(UI, {
             if(hpBar.parentElement) {
                 hpBar.parentElement.className = "w-[90%] mx-auto max-w-sm bg-black border-2 border-green-600 h-8 relative z-10 overflow-hidden mb-6 shadow-[0_0_15px_rgba(0,255,0,0.1)]";
                 
-                // Alte Overlays aufräumen, damit sie beim Rendern nicht stapeln
                 hpBar.parentElement.querySelectorAll('.vats-hp-overlay').forEach(e => e.remove());
                 
-                // Exakte Zahlen + Markierungen mitten über die Leiste legen
                 hpBar.parentElement.insertAdjacentHTML('beforeend', `
                     <div class="vats-hp-overlay absolute inset-0 flex justify-center items-center pointer-events-none z-30">
                         <span class="font-mono font-bold text-white text-base tracking-widest" style="text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;">
@@ -421,7 +457,6 @@ Object.assign(UI, {
             }
         }
 
-        // 3. V.A.T.S. Ziel-Buttons mit Angriffswrapper
         if(typeof Combat !== 'undefined' && Combat.bodyParts) {
              Combat.bodyParts.forEach((part, index) => {
                  const btn = document.getElementById(`btn-vats-${index}`);
@@ -458,7 +493,6 @@ Object.assign(UI, {
         }
     },
 
-    // --- DIE KAMPF EFFEKTE ---
     triggerVatsAttack: function(index, chance) {
         if (this._isAttacking) return;
         this._isAttacking = true;
@@ -472,7 +506,6 @@ Object.assign(UI, {
 
         if(btn) btn.style.transform = "scale(1.05)";
 
-        // Mündungsfeuer
         const flash = document.createElement('div');
         flash.className = "absolute inset-0 z-[5000] bg-yellow-100 pointer-events-none";
         if(box) {
@@ -491,7 +524,6 @@ Object.assign(UI, {
             flash.remove();
         }, 200);
 
-        // Schaden berechnen & Rendern
         setTimeout(() => {
             if(typeof Combat !== 'undefined') Combat.playerAttack(index);
 
