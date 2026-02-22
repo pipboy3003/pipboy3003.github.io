@@ -1,11 +1,11 @@
-// [2026-02-21 22:50:00] game_map.js - POI Discovery Hook
+// [2026-02-22 12:45:00] game_map.js - Chest Scaling & Minigames Hook
 
 Object.assign(Game, {
     reveal: function(px, py) { 
         if(!this.state) return; 
         if(!this.state.explored) this.state.explored = {}; 
         
-        // NEU: Tracker für entdeckte Orte auf der Weltkarte
+        // Tracker für entdeckte Orte auf der Weltkarte
         if(!this.state.discoveredPOIs) this.state.discoveredPOIs = {};
         
         const r = 3; 
@@ -23,7 +23,7 @@ Object.assign(Game, {
                         this.state.explored[key] = tile;
                     }
                     
-                    // NEU: Wenn es ein wichtiges Gebäude ist, in Liste eintragen
+                    // Wenn es ein wichtiges Gebäude ist, in Liste eintragen
                     if (['V', 'C', 'G', 'S', 'H', 'A', 'R'].includes(tile)) {
                         if (!this.state.discoveredPOIs[sk]) this.state.discoveredPOIs[sk] = [];
                         if (!this.state.discoveredPOIs[sk].includes(tile)) {
@@ -52,7 +52,16 @@ Object.assign(Game, {
             delete this.state.hiddenItems[pk];
         }
 
-        if (t === 'X') { this.openChest(nx, ny); return; } 
+        // NEU: Kisten-Logik ausgelagert (Dungeon Truhen behalten ihr altes System)
+        if (t === 'X') { 
+            if (this.state.dungeonLevel >= 3) {
+                 this.openChest(nx, ny); // Boss-Truhe im Dungeon (Memory)
+            } else {
+                 this.interactWithChest(nx, ny); // Standard Map-Truhe (Scaling + Minigames)
+            }
+            return; 
+        } 
+        
         if (t === 'v') { this.descendDungeon(); return; }
         if (t === '?') { this.testMinigames(); return; } 
 
@@ -192,5 +201,130 @@ Object.assign(Game, {
         }
     },
     
-    testMinigames: function(){if(UI.els.dialog){UI.els.dialog.style.display='flex';UI.els.dialog.innerHTML='<div class="bg-black text-white p-4 border border-green-500"><button onclick="UI.startMinigame(\'hacking\')">HACK</button><button onclick="UI.els.dialog.style.display=\'none\'">X</button></div>';}}
+    testMinigames: function(){if(UI.els.dialog){UI.els.dialog.style.display='flex';UI.els.dialog.innerHTML='<div class="bg-black text-white p-4 border border-green-500"><button onclick="UI.startMinigame(\'hacking\')">HACK</button><button onclick="UI.els.dialog.style.display=\'none\'">X</button></div>';}},
+
+    // ==========================================
+    // NEU: SCALING CHESTS & MINIGAMES LOGIK
+    // ==========================================
+
+    interactWithChest: function(x, y) {
+        if(this.state.inDialog) return;
+        this.state.inDialog = true; 
+        
+        // 70% Chance auf Lockpicking, 30% Chance auf Bombe
+        const isBomb = Math.random() < 0.3;
+        const diff = Math.max(1, Math.min(10, Math.floor(this.state.lvl / 5) + 1));
+        
+        const onSuccess = () => {
+            this.state.inDialog = false;
+            this.state.currentMap[y][x] = '.'; 
+            if(this.renderStaticMap) this.renderStaticMap();
+            
+            const loot = this.generateScaledLoot(this.state.lvl);
+            let lootMsg = "Du hast die Truhe geplündert!<br><br><div class='text-left inline-block mt-2'>";
+            
+            loot.forEach(item => {
+                this.safeGiveItem(item.id, item.count); 
+                const itemName = this.items[item.id] ? this.items[item.id].name : item.id.toUpperCase();
+                lootMsg += `<span class="text-yellow-400 font-bold font-mono">> + ${item.count}x ${itemName}</span><br>`;
+            });
+            lootMsg += "</div>";
+            
+            if(typeof UI !== 'undefined' && UI.showInfoDialog) {
+                UI.showInfoDialog("TRUHE GEÖFFNET", lootMsg);
+            }
+            
+            this.saveGame();
+            if(this.draw) this.draw();
+            if(typeof UI !== 'undefined' && UI.update) UI.update();
+        };
+        
+        const onFail = () => {
+            this.state.inDialog = false;
+            this.state.currentMap[y][x] = '.'; 
+            if(this.renderStaticMap) this.renderStaticMap();
+            
+            if(isBomb) {
+                const dmg = 15 + (this.state.lvl * 3);
+                this.state.hp -= dmg;
+                if(typeof UI !== 'undefined' && UI.showInfoDialog) {
+                    UI.showInfoDialog("💥 BOOOM! 💥", `Du hast den Zünder ausgelöst! Die Kiste ist explodiert und der Loot vernichtet.<br><br>Du verlierst <span class="text-red-500 font-bold">${dmg} TP</span>.`);
+                }
+                if(this.state.hp <= 0 && typeof UI !== 'undefined' && UI.showGameOver) UI.showGameOver();
+            } else {
+                if(typeof UI !== 'undefined' && UI.showInfoDialog) {
+                    UI.showInfoDialog("VERKLEMMT", "Dein Dietrich ist abgebrochen und das Schloss hat sich für immer verklemmt. Die Truhe lässt sich nicht mehr öffnen.");
+                }
+            }
+            
+            this.saveGame();
+            if(this.draw) this.draw();
+            if(typeof UI !== 'undefined' && UI.update) UI.update();
+        };
+
+        if(isBomb) {
+            if(typeof UI !== 'undefined' && UI.startMinigame) {
+                UI.startMinigame('bomb', onSuccess, onFail, diff);
+            } else {
+                onSuccess(); 
+            }
+        } else {
+            if(typeof UI !== 'undefined' && UI.startMinigame) {
+                UI.startMinigame('lockpicking', onSuccess, onFail, diff);
+            } else {
+                onSuccess(); 
+            }
+        }
+    },
+
+    generateScaledLoot: function(playerLevel) {
+        const loot = [];
+        
+        const capsAmount = Math.floor(Math.random() * 20 * playerLevel) + 15;
+        loot.push({ id: 'caps', count: capsAmount });
+        
+        if(Math.random() > 0.2) {
+            const ammoAmount = Math.floor(Math.random() * 5 * playerLevel) + 5;
+            loot.push({ id: 'ammo', count: ammoAmount });
+        }
+        
+        if(Math.random() > 0.5) {
+            loot.push({ id: 'stimpack', count: Math.random() > 0.8 ? 2 : 1 });
+        }
+        
+        if(this.items) {
+            const possibleEquip = Object.values(this.items).filter(item => 
+                (item.type === 'weapon' || item.type === 'body' || item.type === 'head' || item.type === 'legs') && 
+                (item.lvlReq || 1) <= playerLevel && 
+                (item.lvlReq || 1) >= Math.max(1, playerLevel - 5)
+            );
+            
+            if(possibleEquip.length > 0 && Math.random() > 0.6) {
+                const randomEquip = possibleEquip[Math.floor(Math.random() * possibleEquip.length)];
+                loot.push({ id: randomEquip.id, count: 1 });
+            } else if (Math.random() > 0.2) {
+                loot.push({ id: 'junk', count: Math.floor(Math.random() * 4) + 1 });
+            }
+        }
+        
+        return loot;
+    },
+
+    safeGiveItem: function(id, count) {
+        if(id === 'caps') {
+            this.state.caps = (this.state.caps || 0) + count;
+            return;
+        }
+        
+        if (typeof this.addToInventory === 'function') {
+            this.addToInventory(id, count);
+        } else if (typeof this.giveItem === 'function') {
+            this.giveItem(id, count);
+        } else {
+            if(!this.state.inventory) this.state.inventory = [];
+            let item = this.state.inventory.find(i => i.id === id);
+            if(item) item.count += count;
+            else this.state.inventory.push({id: id, count: count});
+        }
+    }
 });
