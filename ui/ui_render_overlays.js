@@ -1,4 +1,4 @@
-// [2026-02-21 21:55:00] ui_render_overlays.js - Cleaned up HTML
+// [2026-02-22 02:15:00] ui_render_overlays.js - Permadeath Wipe & Clean Dialogs
 
 Object.assign(UI, {
     
@@ -57,8 +57,9 @@ Object.assign(UI, {
         document.addEventListener('keydown', this._activeEscHandler);
     },
 
+    // WICHTIG: Leerer Dummy, da der Tracker jetzt sicher auf dem Game-Canvas gezeichnet wird!
     updateQuestTracker: function() { 
-        return; // Leerer Dummy, damit keine Fehler geworfen werden. Zeichnen übernimmt jetzt das Canvas!
+        return; 
     },
 
     showConfirm: function(title, htmlContent, onConfirm) {
@@ -344,105 +345,6 @@ Object.assign(UI, {
         overlay.appendChild(box);
     },
 
-    showHighscoreBoard: async function() {
-        const overlay = this.restoreOverlay();
-        overlay.style.display = 'flex';
-        if(Game.state) Game.state.inDialog = true;
-        this._trapEscKey();
-
-        overlay.innerHTML = `
-            <div class="flex flex-col items-center justify-center p-6 border-2 border-green-500 bg-black shadow-[0_0_20px_green] pointer-events-auto" onclick="event.stopPropagation()">
-                <div class="text-green-500 animate-pulse text-2xl mb-6">EMPFANGE DATEN...</div>
-                <button class="action-button border-red-500 text-red-500 w-full" onclick="UI.leaveDialog()">ABBRECHEN</button>
-            </div>`;
-
-        try {
-            const scores = await Network.getHighscores();
-            if(!scores) throw new Error("Keine Daten empfangen.");
-
-            scores.sort((a,b) => b.lvl - a.lvl || b.xp - a.xp);
-
-            const box = document.createElement('div');
-            box.className = "bg-black border-4 border-green-600 p-4 shadow-[0_0_30px_green] w-full max-w-2xl max-h-[90%] flex flex-col relative pointer-events-auto";
-            box.onclick = (e) => e.stopPropagation();
-
-            const closeBtn = document.createElement('button');
-            closeBtn.className = "absolute top-2 right-2 text-green-500 text-xl border border-green-500 px-3 hover:bg-green-900 font-bold z-50";
-            closeBtn.textContent = "X";
-            closeBtn.onclick = function() { UI.leaveDialog(); }; 
-            
-            box.innerHTML = `
-                <h2 class="text-3xl font-bold text-green-400 mb-4 text-center border-b-2 border-green-600 pb-2 tracking-widest shrink-0">VAULT LEGENDS</h2>
-                <div class="flex justify-between mb-2 text-xs text-green-300 uppercase font-bold px-2 shrink-0">
-                    <span class="w-8">#</span>
-                    <span class="w-1/3 cursor-pointer hover:text-white" onclick="UI.renderHighscoreList(this.dataset.scores, 'name')">NAME</span>
-                    <span class="w-16 text-right cursor-pointer hover:text-white" onclick="UI.renderHighscoreList(this.dataset.scores, 'lvl')">LVL</span>
-                    <span class="w-16 text-right cursor-pointer hover:text-white" onclick="UI.renderHighscoreList(this.dataset.scores, 'kills')">KILLS</span>
-                    <span class="w-24 text-right cursor-pointer hover:text-white" onclick="UI.renderHighscoreList(this.dataset.scores, 'xp')">EXP</span>
-                </div>
-                <div id="highscore-list" class="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0 border-b border-green-900/50 mb-2"></div>
-                <div class="text-[10px] text-center text-green-800 shrink-0">ESC / KLICK NEBEN FENSTER ZUM SCHLIESSEN</div>
-            `;
-            box.appendChild(closeBtn);
-
-            const listContainer = box.querySelector('#highscore-list');
-            if(listContainer) listContainer.dataset.rawScores = JSON.stringify(scores);
-            
-            this.renderHighscoreList = (sortBy) => {
-                const container = document.getElementById('highscore-list');
-                if(!container) return;
-                let data = JSON.parse(container.dataset.rawScores);
-                
-                if(sortBy === 'name') data.sort((a,b) => a.name.localeCompare(b.name));
-                else if(sortBy === 'lvl') data.sort((a,b) => b.lvl - a.lvl || b.xp - a.xp);
-                else if(sortBy === 'kills') data.sort((a,b) => b.kills - a.kills || b.lvl - a.lvl);
-                else if(sortBy === 'xp') data.sort((a,b) => b.xp - a.xp);
-
-                container.innerHTML = '';
-                data.forEach((entry, idx) => {
-                    const isDead = entry.status === 'dead';
-                    const isTop3 = idx < 3;
-                    
-                    let rowClass = "flex justify-between items-center py-2 border-b border-green-900/30 text-lg ";
-                    if(isTop3) rowClass += "text-yellow-400 font-bold bg-yellow-900/10 ";
-                    else if(isDead) rowClass += "text-gray-500 italic ";
-                    else rowClass += "text-green-400 ";
-
-                    const icon = isDead ? '❌' : (isTop3 ? '🏆' : '');
-                    const nameDisplay = `${icon} ${entry.name}`;
-
-                    const row = document.createElement('div');
-                    row.className = rowClass;
-                    row.innerHTML = `
-                        <span class="w-8 opacity-50">${idx+1}</span>
-                        <span class="w-1/3 truncate">${nameDisplay}</span>
-                        <span class="w-16 text-right">${entry.lvl}</span>
-                        <span class="w-16 text-right">${entry.kills}</span>
-                        <span class="w-24 text-right font-mono text-sm opacity-80">${entry.xp}</span>
-                    `;
-                    container.appendChild(row);
-                });
-            };
-
-            overlay.innerHTML = '';
-            overlay.appendChild(box);
-            this.renderHighscoreList('lvl');
-
-        } catch(e) {
-            let msg = e.message;
-            if(msg && msg.toLowerCase().includes("permission_denied")) {
-                msg = "ZUGRIFF VERWEIGERT: FIREBASE REGELN BLOCKIEREN 'leaderboard'.";
-            }
-            overlay.innerHTML = `
-                <div class="border-2 border-red-500 bg-black p-6 text-center shadow-[0_0_20px_red] pointer-events-auto" onclick="event.stopPropagation()">
-                    <div class="text-red-500 font-bold text-2xl mb-4 tracking-widest">NETZWERK FEHLER</div>
-                    <div class="text-green-400 font-mono mb-6">${msg}</div>
-                    <button class="action-button w-full border-red-500 text-red-500" onclick="UI.leaveDialog()">SCHLIESSEN</button>
-                </div>
-            `;
-        }
-    },
-
     showShopConfirm: function(itemKey) {
         const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
@@ -536,93 +438,6 @@ Object.assign(UI, {
         box.appendChild(btnContainer); overlay.appendChild(box);
     },
 
-    showWastelandGamble: function(callback) {
-        const overlay = this.restoreOverlay();
-        overlay.style.display = 'flex';
-        overlay.innerHTML = '';
-        
-        if(Game.state) Game.state.inDialog = true;
-        
-        overlay.onclick = null; 
-
-        const box = document.createElement('div');
-        box.className = "bg-black border-4 border-yellow-500 p-6 shadow-[0_0_40px_gold] max-w-sm text-center relative overflow-hidden pointer-events-auto";
-        
-        const bg = document.createElement('div');
-        bg.className = "absolute inset-0 bg-yellow-900/20 z-0 pointer-events-none";
-        box.appendChild(bg);
-        
-        box.innerHTML += `
-            <h2 class="text-2xl font-bold text-yellow-400 mb-2 tracking-widest relative z-10">WASTELAND GAMBLE</h2>
-            <p class="text-green-300 text-xs mb-4 relative z-10">Würfle um dein Schicksal!</p>
-            
-            <div id="dice-container" class="flex justify-center gap-4 mb-6 relative z-10">
-                <div id="die-1" class="w-12 h-12 border-2 border-yellow-400 flex items-center justify-center text-3xl font-bold bg-black text-yellow-400 shadow-lg">?</div>
-                <div id="die-2" class="w-12 h-12 border-2 border-yellow-400 flex items-center justify-center text-3xl font-bold bg-black text-yellow-400 shadow-lg">?</div>
-                <div id="die-3" class="w-12 h-12 border-2 border-yellow-400 flex items-center justify-center text-3xl font-bold bg-black text-yellow-400 shadow-lg">?</div>
-            </div>
-            
-            <button id="btn-roll" class="action-button w-full border-green-500 text-green-500 font-bold text-xl py-3 hover:bg-green-900 relative z-10">WÜRFELN!</button>
-        `;
-        
-        overlay.appendChild(box);
-        
-        const btnRoll = document.getElementById('btn-roll');
-        btnRoll.onclick = () => {
-            btnRoll.disabled = true;
-            btnRoll.textContent = "ROLLING...";
-            
-            let rolls = 0;
-            const maxRolls = 20;
-            const interval = setInterval(() => {
-                const d1 = Math.floor(Math.random() * 6) + 1;
-                const d2 = Math.floor(Math.random() * 6) + 1;
-                const d3 = Math.floor(Math.random() * 6) + 1;
-                document.getElementById('die-1').textContent = d1;
-                document.getElementById('die-2').textContent = d2;
-                document.getElementById('die-3').textContent = d3;
-                rolls++;
-                
-                if(rolls >= maxRolls) {
-                    clearInterval(interval);
-                    const sum = parseInt(document.getElementById('die-1').textContent) + 
-                                parseInt(document.getElementById('die-2').textContent) + 
-                                parseInt(document.getElementById('die-3').textContent);
-                    
-                    btnRoll.textContent = `SUMME: ${sum}`;
-                    btnRoll.classList.add('animate-pulse');
-                    setTimeout(() => {
-                        UI.leaveDialog();
-                        callback(sum);
-                    }, 1500);
-                }
-            }, 50);
-        };
-    },
-
-    showDungeonLocked: function(minutesLeft) {
-        const overlay = this.restoreOverlay();
-        overlay.style.display = 'flex';
-        overlay.innerHTML = '';
-        this._trapEscKey();
-        
-        if(Game.state) Game.state.inDialog = true;
-
-        const box = document.createElement('div');
-        box.className = "bg-black border-2 border-gray-600 p-4 shadow-[0_0_20px_gray] max-w-sm text-center mb-4 pointer-events-auto";
-        box.onclick = (e) => e.stopPropagation();
-
-        box.innerHTML = `
-            <h2 class="text-3xl font-bold text-gray-400 mb-2 tracking-widest">🔒 LOCKED</h2>
-            <p class="text-gray-300 mb-4 font-bold">Dieses Gebiet ist versiegelt.<br>Versuche es in ${minutesLeft} Minuten wieder.</p>
-        `;
-        const btn = document.createElement('button');
-        btn.className = "border border-gray-500 text-gray-500 hover:bg-gray-900 px-4 py-2 font-bold w-full";
-        btn.textContent = "VERSTANDEN";
-        btn.onclick = () => UI.leaveDialog();
-        box.appendChild(btn); overlay.appendChild(box);
-    },
-
     showDungeonVictory: function(caps, lvl) {
         const overlay = document.createElement('div');
         overlay.id = "victory-overlay";
@@ -654,31 +469,41 @@ Object.assign(UI, {
             btn.focus();
         }
     },
-    
-    showPermadeathWarning: function() {
-        const overlay = this.restoreOverlay();
-        overlay.style.display = 'flex';
-        overlay.innerHTML = '';
-        
-        if(Game.state) Game.state.inDialog = true;
-        
-        overlay.onclick = null; 
 
-        const box = document.createElement('div');
-        box.className = "bg-black border-4 border-red-600 p-6 shadow-[0_0_50px_red] max-w-lg text-center animate-pulse pointer-events-auto";
-        box.innerHTML = `
-            <div class="text-6xl text-red-600 mb-4 font-bold">☠️</div>
-            <h1 class="text-4xl font-bold text-red-600 mb-4 tracking-widest border-b-2 border-red-600 pb-2">PERMADEATH AKTIV</h1>
-            <p class="text-red-400 font-mono text-lg mb-6 leading-relaxed">WARNUNG, BEWOHNER!<br>Das Ödland kennt keine Gnade.<br>Wenn deine HP auf 0 fallen, wird dieser Charakter<br><span class="font-bold text-white bg-red-900 px-1">DAUERHAFT GELÖSCHT</span>.</p>
-            <button class="action-button w-full border-red-600 text-red-500 font-bold py-4 text-xl hover:bg-red-900" onclick="UI.leaveDialog()">ICH HABE VERSTANDEN</button>
-        `;
-        overlay.appendChild(box);
-    },
-
+    // --- NEU: ABSOLUTER PERMADEATH WIPE ---
     showGameOver: function() {
         if(this.els.gameOver) this.els.gameOver.classList.remove('hidden');
-        if(typeof Network !== 'undefined' && Game.state) Network.registerDeath(Game.state);
+        
+        // Todes-Eintrag ans Netzwerk senden (damit der Charakter in den Vault Legends landet)
+        if(typeof Network !== 'undefined' && Game.state) {
+            Network.registerDeath(Game.state);
+        }
+        
         this.toggleControls(false);
+
+        // Wir erzwingen den Tod im State und löschen den Spielstand gnadenlos
+        if (Game && Game.state) {
+            Game.state.hp = 0;
+            Game.state.isGameOver = true;
+            
+            // 1. Offizielle Engine-Löschung versuchen
+            if (typeof Game.deleteSave === 'function') {
+                Game.deleteSave(UI.selectedSlot || 0);
+            } 
+            // 2. Brutale LocalStorage Zerstörung als Fallback
+            else if (window.localStorage) {
+                const slot = UI.selectedSlot !== undefined ? UI.selectedSlot : 0;
+                localStorage.removeItem('save_' + slot);
+                localStorage.removeItem('slot_' + slot);
+                localStorage.removeItem('wasteland_save_' + slot);
+                localStorage.removeItem('vault_save_' + slot);
+            }
+            
+            // Warnung ins Log schreiben
+            if(typeof UI.log === 'function') {
+                UI.log("☠️ PERMADEATH: Dein Spielstand wurde ausgelöscht.", "text-red-500 font-bold text-xl");
+            }
+        }
     },
     
     showManualOverlay: async function() {
@@ -702,18 +527,6 @@ Object.assign(UI, {
                 text += '<br><button class="action-button w-full mt-4 border-red-500 text-red-500" onclick="document.getElementById(\'manual-overlay\').classList.add(\'hidden\'); document.getElementById(\'manual-overlay\').style.display=\'none\';">SCHLIESSEN (ESC)</button>';
                 content.innerHTML = text; 
             } catch(e) { content.innerHTML = `<div class="text-red-500">Fehler beim Laden: ${e.message}</div>`; }
-        }
-    },
-
-    showChangelogOverlay: async function() {
-        const overlay = document.getElementById('changelog-overlay');
-        const content = document.getElementById('changelog-content');
-        if(overlay && content) {
-            content.textContent = 'Lade Daten...';
-            overlay.style.display = 'flex'; overlay.classList.remove('hidden');
-            const verDisplay = document.getElementById('version-display'); 
-            const ver = verDisplay ? verDisplay.textContent.trim() : Date.now();
-            try { const res = await fetch(`change.log?v=${ver}`); if (!res.ok) throw new Error("Logfile nicht gefunden"); const text = await res.text(); content.textContent = text; } catch(e) { content.textContent = `Fehler beim Laden: ${e.message}`; }
         }
     },
 
@@ -806,64 +619,5 @@ Object.assign(UI, {
         box.appendChild(restBtn); 
         box.appendChild(leaveBtn);
         overlay.appendChild(box);
-    },
-
-    enterCityCinematic: function(onComplete) {
-        if(Game.state) Game.state.inDialog = true;
-        if(typeof UI !== 'undefined' && UI.log) UI.log("Die rostigen Tore öffnen sich...", "text-yellow-400 font-bold");
-
-        const animLayer = document.createElement('div');
-        animLayer.id = 'city-anim-layer';
-        animLayer.className = "fixed inset-0 z-[3000] bg-black overflow-hidden transition-opacity duration-1000 pointer-events-auto flex items-center justify-center";
-
-        animLayer.innerHTML = `
-            <div id="rs-door-left" class="absolute top-0 bottom-0 left-0 w-1/2 bg-[repeating-linear-gradient(90deg,#3e2723,#3e2723_10px,#2d1a11_10px,#2d1a11_20px)] border-r-[12px] border-[#1a110b] transition-transform duration-[2500ms] ease-in-out flex items-center justify-end overflow-hidden shadow-[10px_0_30px_rgba(0,0,0,0.8)] z-10">
-                <div class="absolute w-full h-12 bg-[repeating-linear-gradient(45deg,#000,#000_20px,#eab308_20px,#eab308_40px)] opacity-60 top-1/4"></div>
-                <div class="absolute w-full h-12 bg-[repeating-linear-gradient(-45deg,#000,#000_20px,#eab308_20px,#eab308_40px)] opacity-60 bottom-1/4"></div>
-            </div>
-            <div id="rs-door-right" class="absolute top-0 bottom-0 right-0 w-1/2 bg-[repeating-linear-gradient(90deg,#3e2723,#3e2723_10px,#2d1a11_10px,#2d1a11_20px)] border-l-[12px] border-[#1a110b] transition-transform duration-[2500ms] ease-in-out flex items-center justify-start overflow-hidden shadow-[-10px_0_30px_rgba(0,0,0,0.8)] z-10">
-                <div class="absolute w-full h-12 bg-[repeating-linear-gradient(45deg,#000,#000_20px,#eab308_20px,#eab308_40px)] opacity-60 top-1/4"></div>
-                <div class="absolute w-full h-12 bg-[repeating-linear-gradient(-45deg,#000,#000_20px,#eab308_20px,#eab308_40px)] opacity-60 bottom-1/4"></div>
-            </div>
-            <div id="rs-sign" class="absolute z-20 flex flex-col items-center transition-opacity duration-700">
-                <div class="bg-[#1a110b] border-8 border-[#3e2723] p-6 shadow-[0_0_40px_rgba(0,0,0,0.9)] rounded-lg relative overflow-hidden">
-                    <div class="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,0,0,0.2)_2px,rgba(0,0,0,0.2)_4px)] pointer-events-none"></div>
-                    <h1 class="text-4xl md:text-6xl font-bold text-orange-500 tracking-[0.2em] font-mono drop-shadow-[0_0_15px_rgba(255,165,0,0.9)] animate-pulse">RUSTY SPRINGS</h1>
-                    <div class="text-cyan-400 text-center tracking-[0.6em] text-xs md:text-sm mt-3 animate-pulse drop-shadow-[0_0_10px_rgba(0,255,255,0.9)]">EST. 2077 // TRADE HUB</div>
-                </div>
-            </div>
-            <div id="rs-flash" class="absolute inset-0 bg-yellow-600 opacity-0 transition-opacity duration-500 pointer-events-none z-30 mix-blend-overlay"></div>
-        `;
-
-        document.body.appendChild(animLayer);
-
-        setTimeout(() => {
-            const doorL = document.getElementById('rs-door-left');
-            const doorR = document.getElementById('rs-door-right');
-            const sign = document.getElementById('rs-sign');
-            const flash = document.getElementById('rs-flash');
-
-            if(sign) sign.style.opacity = "0";
-
-            setTimeout(() => {
-                if(doorL) doorL.style.transform = "translateX(-100%)";
-                if(doorR) doorR.style.transform = "translateX(100%)";
-                
-                setTimeout(() => {
-                    if(flash) flash.style.opacity = "0.8";
-                    
-                    setTimeout(() => {
-                        if (onComplete) onComplete();
-                        if(flash) flash.style.opacity = "0";
-                        animLayer.style.opacity = "0";
-                        if(Game.state) Game.state.inDialog = false;
-                        
-                        setTimeout(() => {
-                            animLayer.remove();
-                        }, 1000);
-                    }, 400);
-                }, 1800);
-            }, 500); 
-        }, 100);
     }
 });
