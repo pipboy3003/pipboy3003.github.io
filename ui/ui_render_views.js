@@ -1,4 +1,4 @@
-// [2026-02-22 00:45:00] ui_render_views.js - V.A.T.S. Overhaul Failsafe
+// [2026-02-22 01:30:00] ui_render_views.js - V.A.T.S. with HP Numbers inside Bar
 
 Object.assign(UI, {
 
@@ -317,24 +317,21 @@ Object.assign(UI, {
         }
     },
 
-    // --- NEU: V.A.T.S. FAILSAFE OVERHAUL (Ignoriert fehlende Container-IDs) ---
+    // --- NEU: V.A.T.S. FAILSAFE OVERHAUL (Mit exakten HP-Zahlen) ---
     renderCombat: function() {
         const enemy = Game.state.enemy; 
         if(!enemy) return;
         
-        // Failsafe: Wir suchen nicht nach einem festen Menü-Namen, 
-        // sondern graben uns vom bekannten "enemy-name" Textfeld nach oben!
         const nameEl = document.getElementById('enemy-name'); 
         if(!nameEl) return;
 
-        // Finde die eigentliche Menü-Box (egal ob Overlay, Container etc.)
         const box = nameEl.closest('.bg-black') || nameEl.parentElement;
 
         // 1. Initiales Setup pro Gegner (Intro & Hintergrund)
         if (box && !box.dataset.vatsStyled) {
             box.dataset.vatsStyled = "true";
             box.classList.add('relative', 'overflow-hidden');
-            box.style.backgroundColor = "#051005"; // Tiefes Grün-Schwarz erzwingen
+            box.style.backgroundColor = "#051005"; 
             
             // INTRO ANIMATION
             const intro = document.createElement('div');
@@ -382,18 +379,17 @@ Object.assign(UI, {
             `);
         }
 
-        // 2. HUD & Massive HP Anzeige
+        // 2. HUD & Massive HP Anzeige mit ZAHLEN im Balken
         nameEl.innerHTML = `<span class="text-[#39ff14] animate-pulse mr-2">TARGET:</span><span class="text-green-300 font-mono tracking-widest text-shadow-glow">${enemy.name.toUpperCase()}</span>`;
         nameEl.className = "text-xl md:text-3xl font-bold flex items-center justify-center w-full bg-green-900/40 border-b-2 border-green-500 pb-2 pt-2 mb-3 z-10 relative backdrop-blur-sm";
 
-        const hpText = document.getElementById('enemy-hp-text'); 
-        if(hpText) {
-            hpText.innerHTML = `SYS_HP: <span class="text-white text-lg ml-1">${Math.max(0, Math.floor(enemy.hp))}</span> <span class="opacity-50">/ ${enemy.maxHp}</span>`;
-            hpText.className = "text-green-400 font-mono text-sm font-bold tracking-widest z-10 relative mb-1 text-center";
-        }
+        // Den alten HP Text verstecken, da wir ihn viel cooler in die Leiste packen
+        const oldHpText = document.getElementById('enemy-hp-text');
+        if (oldHpText) oldHpText.style.display = 'none';
 
         const hpBar = document.getElementById('enemy-hp-bar'); 
         if(hpBar) {
+            const currentHp = Math.max(0, Math.floor(enemy.hp));
             const pct = Math.max(0, (enemy.hp/enemy.maxHp)*100);
             hpBar.style.width = `${pct}%`;
             
@@ -404,17 +400,24 @@ Object.assign(UI, {
             hpBar.style.boxShadow = `0 0 10px ${barColor}`;
             
             if(hpBar.parentElement) {
-                hpBar.parentElement.className = "w-[90%] mx-auto max-w-sm bg-black border-2 border-green-600 h-6 relative z-10 overflow-hidden mb-6 shadow-[0_0_15px_rgba(0,255,0,0.1)]";
+                hpBar.parentElement.className = "w-[90%] mx-auto max-w-sm bg-black border-2 border-green-600 h-8 relative z-10 overflow-hidden mb-6 shadow-[0_0_15px_rgba(0,255,0,0.1)]";
                 
-                if(!hpBar.parentElement.querySelector('.hp-markers')) {
-                    hpBar.parentElement.insertAdjacentHTML('beforeend', `
-                        <div class="hp-markers absolute inset-0 flex justify-between pointer-events-none opacity-50 z-20">
-                            <div class="h-full w-[2px] bg-black ml-[25%]"></div>
-                            <div class="h-full w-[2px] bg-black ml-[25%]"></div>
-                            <div class="h-full w-[2px] bg-black ml-[25%]"></div>
-                        </div>
-                    `);
-                }
+                // Alte Overlays aufräumen, damit sie beim Rendern nicht stapeln
+                hpBar.parentElement.querySelectorAll('.vats-hp-overlay').forEach(e => e.remove());
+                
+                // Exakte Zahlen + Markierungen mitten über die Leiste legen
+                hpBar.parentElement.insertAdjacentHTML('beforeend', `
+                    <div class="vats-hp-overlay absolute inset-0 flex justify-center items-center pointer-events-none z-30">
+                        <span class="font-mono font-bold text-white text-base tracking-widest" style="text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;">
+                            ${currentHp} / ${enemy.maxHp} TP
+                        </span>
+                    </div>
+                    <div class="vats-hp-overlay absolute inset-0 flex justify-between pointer-events-none opacity-50 z-20">
+                        <div class="h-full w-[2px] bg-black ml-[25%]"></div>
+                        <div class="h-full w-[2px] bg-black ml-[25%]"></div>
+                        <div class="h-full w-[2px] bg-black ml-[25%]"></div>
+                    </div>
+                `);
             }
         }
 
