@@ -1,21 +1,16 @@
-// [2026-02-22 10:25:00] ui_render_views.js - Complete File with VATS CSS Enforcer
+// [2026-02-22 10:45:00] ui_render_views.js - Fullscreen Skyline & No Grid Fix
 
 // WACHHUND: Überwacht das Spiel permanent. Wenn die Engine das V.A.T.S. resettet, 
-// wird der CSS-Style sofort wieder erzwungen.
+// krallt er sich den Root-Container und erzwingt das Vollbild-Design!
 if (!window.vatsObserverInit) {
     window.vatsObserverInit = true;
     setTimeout(() => {
         if(document.body) {
             const observer = new MutationObserver(() => {
-                // Wir suchen nach dem Gegner-Namen, um zu wissen, dass V.A.T.S. offen ist
-                const nameEl = document.getElementById('enemy-name');
-                if (nameEl) {
-                    // Wir suchen die Hauptbox drumherum
-                    const box = nameEl.closest('.bg-black') || nameEl.parentElement;
-                    // Wenn die Box die Klasse noch nicht hat, fügen wir sie hinzu.
-                    if (box && !box.classList.contains('vats-digital-skyline-bg')) {
-                        if (typeof UI.applyVatsStyle === 'function') UI.applyVatsStyle();
-                    }
+                const vatsBtn = document.getElementById('btn-vats-0');
+                // Wenn der Button da ist, aber unsere Effekte fehlen -> Feuer frei!
+                if (vatsBtn && !vatsBtn.dataset.vatsApplied) {
+                    if (typeof UI.applyVatsStyle === 'function') UI.applyVatsStyle();
                 }
             });
             observer.observe(document.body, { childList: true, subtree: true });
@@ -49,8 +44,6 @@ Object.assign(UI, {
         if(!container || !Game.state) return;
 
         container.innerHTML = '';
-        
-        // Aufräumen von alten Effekten
         document.querySelectorAll('.vats-fx-layer').forEach(e => e.remove());
 
         switch(Game.state.view) {
@@ -391,34 +384,69 @@ Object.assign(UI, {
     },
 
     renderCombat: function() {
-        // Fallback-Aufruf, falls das Spiel manuell das Fenster baut. 
-        // Der Observer kümmert sich um den Rest.
+        // Initiiert beim Start des Kampfes sofort den Style.
         this.applyVatsStyle();
     },
 
-    // --- DIE NEUE, VEREINFACHTE STYLE-FUNKTION (NUR CSS!) ---
+    // --- DIE ABSOLUTE LÖSUNG: VOLLBILD-SKYLINE, KEIN GITTER ---
     applyVatsStyle: function() {
         const enemy = Game.state ? Game.state.enemy : null; 
         if(!enemy) return;
         
+        const vatsBtn = document.getElementById('btn-vats-0');
         const nameEl = document.getElementById('enemy-name'); 
-        if(!nameEl) return;
+        if(!vatsBtn || !nameEl) return;
 
-        const box = nameEl.closest('.bg-black') || nameEl.parentElement;
-        if(!box) return;
+        // Blocker, damit die Funktion nicht in einem Endlosloop festhängt
+        if (vatsBtn.dataset.vatsApplied) return;
+        vatsBtn.dataset.vatsApplied = "true";
 
-        // 1. HINTERGRUND PER CSS KLASSE SETZEN (statt HTML Injection)
-        // "bg-black" muss weg, damit unser CSS-Hintergrund greift
-        box.classList.remove('bg-black');
-        box.classList.add('vats-digital-skyline-bg');
+        // 1. FINDE DEN WAHREN VOLLBILD-CONTAINER!
+        // Das ist die Box, die über den gesamten iPad Screen geht.
+        let root = vatsBtn.closest('.fixed') || vatsBtn.closest('.absolute');
+        if (!root) root = vatsBtn.parentElement.parentElement; // Fallback
+
+        // 2. STIL DES ROOT-CONTAINERS BEREINIGEN
+        root.style.backgroundColor = "#020802"; // Solides, dunkles Grün-Schwarz
+        root.style.backgroundImage = "none"; // Jegliche Gitter-Verläufe löschen!
         
-        // 2. TARGET NAME & HP BAR (Updates wie gehabt)
-        if (!nameEl.querySelector('.vats-name-tag')) {
-            nameEl.innerHTML = `<span class="vats-name-tag text-[#39ff14] animate-pulse mr-2">TARGET:</span><span class="text-green-300 font-mono tracking-widest text-shadow-glow">${enemy.name.toUpperCase()}</span>`;
-            // Hintergrund transparent machen, damit der Box-Hintergrund durchscheint
-            nameEl.className = "text-xl md:text-3xl font-bold flex items-center justify-center w-full border-b-2 border-green-500 pb-2 pt-2 mb-3 z-[10] relative bg-transparent";
-        }
+        // Lösche alle alten eingefügten V.A.T.S. Effekte, um den DOM sauber zu halten
+        root.querySelectorAll('.vats-fx-layer').forEach(e => e.remove());
 
+        // 3. ALLE INNEREN SCHWARZEN KÄSTEN DURCHSICHTIG MACHEN
+        // Wenn wir das nicht tun, verdecken die "bg-black" Container die Skyline.
+        root.querySelectorAll('.bg-black').forEach(el => {
+            el.classList.remove('bg-black');
+            el.style.backgroundColor = "transparent";
+        });
+
+        // 4. ECHTE SVG SKYLINE ÜBER DEN GESAMTEN BILDSCHIRM EINBAUEN
+        const fxBg = document.createElement('div');
+        fxBg.className = "vats-fx-layer absolute inset-0 pointer-events-none flex flex-col justify-end overflow-hidden z-[0]";
+        fxBg.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500" preserveAspectRatio="none" class="w-full h-full opacity-40">
+                <rect width="1000" height="500" fill="url(#skylineGlow)" />
+                <path d="M0,500 L0,300 L50,300 L50,150 L80,150 L80,220 L150,220 L150,100 L200,100 L200,180 L250,180 L250,50 L300,50 L300,190 L380,190 L380,260 L450,260 L450,80 L520,80 L520,230 L600,230 L600,120 L680,120 L680,270 L750,270 L750,160 L850,160 L850,310 L950,310 L950,200 L1000,200 L1000,500 Z" fill="#041204" stroke="#39ff14" stroke-width="2"/>
+                <rect x="160" y="150" width="12" height="20" fill="#39ff14" class="animate-pulse" />
+                <rect x="260" y="100" width="10" height="15" fill="#39ff14" opacity="0.5" />
+                <rect x="470" y="130" width="15" height="25" fill="#eab308" class="animate-pulse" />
+                <rect x="700" y="190" width="18" height="12" fill="#39ff14" />
+                <defs>
+                    <linearGradient id="skylineGlow" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stop-color="transparent"/>
+                        <stop offset="100%" stop-color="#0a2a0a" stop-opacity="0.9"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+        `;
+        // Fügt das SVG ganz hinten (z-index 0) in den Bildschirm ein
+        root.insertBefore(fxBg, root.firstChild);
+
+        // 5. ZIELNAME DESIGN
+        nameEl.innerHTML = `<span class="text-[#39ff14] animate-pulse mr-2">TARGET:</span><span class="text-green-300 font-mono tracking-widest text-shadow-glow">${enemy.name.toUpperCase()}</span>`;
+        nameEl.className = "text-xl md:text-3xl font-bold flex items-center justify-center w-full border-b-2 border-green-500 pb-2 pt-2 mb-3 z-[10] relative text-shadow-md";
+
+        // 6. HP BAR MIT ZAHLEN
         const oldHpText = document.getElementById('enemy-hp-text');
         if (oldHpText) oldHpText.style.display = 'none';
 
@@ -435,30 +463,27 @@ Object.assign(UI, {
             
             const parent = hpBar.parentElement;
             if(parent) {
-                // Auch hier: Hintergrund transparent, damit der globale Hintergrund wirkt
-                parent.className = "w-[90%] mx-auto max-w-sm bg-transparent border-2 border-green-600 h-8 relative z-[10] overflow-hidden mb-6 shadow-[0_0_15px_rgba(0,255,0,0.1)]";
+                // Den Hintergrund der Leiste etwas dunkler machen, damit sie auffällt
+                parent.className = "w-[90%] mx-auto max-w-sm bg-black/60 border-2 border-green-600 h-8 relative z-[10] overflow-hidden mb-6 shadow-[0_0_15px_rgba(0,255,0,0.1)]";
                 
-                if(!parent.querySelector('.vats-hp-overlay')) {
-                    parent.insertAdjacentHTML('beforeend', `
-                        <div class="vats-hp-overlay absolute inset-0 flex justify-center items-center pointer-events-none z-30">
-                            <span class="vats-hp-num font-mono font-bold text-white text-base tracking-widest" style="text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;">
-                                ${currentHp} / ${enemy.maxHp} TP
-                            </span>
-                        </div>
-                        <div class="vats-hp-overlay absolute inset-0 flex justify-between pointer-events-none opacity-50 z-20">
-                             <div class="h-full w-[1px] bg-green-900/50 ml-[25%]"></div>
-                             <div class="h-full w-[1px] bg-green-900/50 ml-[25%]"></div>
-                             <div class="h-full w-[1px] bg-green-900/50 ml-[25%]"></div>
-                        </div>
-                    `);
-                } else {
-                     const num = parent.querySelector('.vats-hp-num');
-                     if(num) num.innerText = `${currentHp} / ${enemy.maxHp} TP`;
-                }
+                parent.querySelectorAll('.vats-hp-overlay').forEach(e => e.remove());
+                
+                parent.insertAdjacentHTML('beforeend', `
+                    <div class="vats-hp-overlay absolute inset-0 flex justify-center items-center pointer-events-none z-30">
+                        <span class="vats-hp-num font-mono font-bold text-white text-base tracking-widest" style="text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;">
+                            ${currentHp} / ${enemy.maxHp} TP
+                        </span>
+                    </div>
+                    <div class="vats-hp-overlay absolute inset-0 flex justify-between pointer-events-none opacity-50 z-20">
+                        <div class="h-full w-[2px] bg-black ml-[25%]"></div>
+                        <div class="h-full w-[2px] bg-black ml-[25%]"></div>
+                        <div class="h-full w-[2px] bg-black ml-[25%]"></div>
+                    </div>
+                `);
             }
         }
 
-        // 3. ZIEL-BUTTONS
+        // 7. ZIEL-BUTTONS IN V.A.T.S. OPTIK MIT GLAS-EFFEKT
         if(typeof Combat !== 'undefined' && Combat.bodyParts) {
              Combat.bodyParts.forEach((part, index) => {
                  const btn = document.getElementById(`btn-vats-${index}`);
@@ -468,40 +493,33 @@ Object.assign(UI, {
                      let barColor = chance > 65 ? 'bg-[#39ff14]' : (chance > 35 ? 'bg-yellow-500' : 'bg-red-500');
                      let borderColor = chance > 65 ? 'border-[#39ff14]' : (chance > 35 ? 'border-yellow-500' : 'border-red-500');
 
-                     // Klick-Handler nur einmal setzen
-                     if (!btn.onclick) {
-                         btn.onclick = (e) => { e.preventDefault(); UI.triggerVatsAttack(index, chance); };
-                     }
+                     // Unser EIGENER Klick-Blocker, der die Effekte triggert
+                     btn.onclick = (e) => {
+                         e.preventDefault();
+                         UI.triggerVatsAttack(index, chance);
+                     };
 
-                     // WICHTIG: Hier wird der Hintergrund der Buttons transparent gemacht (Klasse in CSS regelt den Rest)
-                     btn.className = `relative w-full max-w-sm mx-auto bg-transparent border-2 border-green-900/50 p-3 mb-3 cursor-pointer group transition-all z-[10] shadow-[0_0_10px_rgba(0,0,0,0.2)] backdrop-blur-[1px]`;
+                     // Transparenter Hintergrund, damit die Skyline durchscheint!
+                     btn.className = `relative w-full max-w-sm mx-auto bg-[#001000]/60 border-2 border-green-900/50 p-3 mb-3 cursor-pointer group hover:bg-[#002000]/80 transition-all z-[10] shadow-[0_0_10px_rgba(0,0,0,0.5)] backdrop-blur-[2px]`;
                      
-                     // Inhalt nur updaten, wenn nötig, um Flackern zu vermeiden
-                     if (!btn.querySelector('.vats-btn-bar')) {
-                         btn.innerHTML = `
-                            <div class="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 ${borderColor} opacity-50 group-hover:opacity-100 transition-all -translate-x-1 -translate-y-1"></div>
-                            <div class="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 ${borderColor} opacity-50 group-hover:opacity-100 transition-all translate-x-1 -translate-y-1"></div>
-                            <div class="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 ${borderColor} opacity-50 group-hover:opacity-100 transition-all -translate-x-1 translate-y-1"></div>
-                            <div class="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 ${borderColor} opacity-50 group-hover:opacity-100 transition-all translate-x-1 translate-y-1"></div>
-                            
-                            <div class="pointer-events-none w-full h-full flex items-center justify-between px-2 relative z-20">
-                                <div class="flex flex-col text-left w-[60%]">
-                                    <span class="text-2xl md:text-4xl font-bold text-green-600 uppercase tracking-widest group-hover:text-green-300 transition-colors text-shadow-sm">${part.name}</span>
-                                    <div class="w-full h-1 bg-green-900/30 mt-1 border border-green-900/50">
-                                        <div class="vats-btn-bar h-full ${barColor}" style="width: ${chance}%"></div>
-                                    </div>
-                                </div>
-                                <div class="vats-btn-txt font-mono font-bold ${textColor} text-4xl md:text-5xl drop-shadow-[0_0_5px_currentColor] flex items-start">
-                                    ${chance}<span class="text-xl mt-1 opacity-80">%</span>
+                     btn.innerHTML = `
+                        <div class="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all -translate-x-1 -translate-y-1"></div>
+                        <div class="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all translate-x-1 -translate-y-1"></div>
+                        <div class="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all -translate-x-1 translate-y-1"></div>
+                        <div class="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all translate-x-1 translate-y-1"></div>
+                        
+                        <div class="pointer-events-none w-full h-full flex items-center justify-between px-2 relative z-20">
+                            <div class="flex flex-col text-left w-[60%]">
+                                <span class="text-2xl md:text-4xl font-bold text-green-600 uppercase tracking-widest group-hover:text-green-300 transition-colors text-shadow-md">${part.name}</span>
+                                <div class="w-full h-1 bg-green-900/50 mt-1 border border-green-900/80">
+                                    <div class="h-full ${barColor}" style="width: ${chance}%"></div>
                                 </div>
                             </div>
-                         `;
-                     } else {
-                         const bar = btn.querySelector('.vats-btn-bar');
-                         const txt = btn.querySelector('.vats-btn-txt');
-                         if(bar) { bar.style.width = `${chance}%`; bar.className = `vats-btn-bar h-full ${barColor}`; }
-                         if(txt) { txt.innerHTML = `${chance}<span class="text-xl mt-1 opacity-80">%</span>`; txt.className = `vats-btn-txt font-mono font-bold ${textColor} text-4xl md:text-5xl drop-shadow-[0_0_5px_currentColor] flex items-start`; }
-                     }
+                            <div class="font-mono font-bold ${textColor} text-4xl md:text-5xl drop-shadow-[0_0_8px_currentColor] flex items-start">
+                                ${chance}<span class="text-xl mt-1 opacity-80">%</span>
+                            </div>
+                        </div>
+                     `;
                  }
              });
         }
@@ -518,34 +536,50 @@ Object.assign(UI, {
         const enemyPreHp = Game.state.enemy ? Game.state.enemy.hp : 0;
         const playerPreHp = Game.state.hp;
 
-        if(btn) btn.style.transform = "scale(1.02)";
+        if(btn) btn.style.transform = "scale(1.05)";
 
-        // Screen Shake
-        if(box) { box.style.transform = "translate(2px, 3px) rotate(0.5deg)"; }
+        // Screen Shake & Blitz
+        const flash = document.createElement('div');
+        flash.className = "absolute inset-0 z-[5000] bg-yellow-100 pointer-events-none";
+        if(box) {
+            box.appendChild(flash);
+            box.style.transform = "translate(5px, 8px) rotate(1deg)";
+        }
         
         setTimeout(() => {
-            if(box) box.style.transform = "translate(-2px, -1px) rotate(-0.5deg)";
+            if(box) box.style.transform = "translate(-8px, -3px) rotate(-1deg)";
+            flash.style.opacity = "0";
+            flash.style.transition = "opacity 0.15s";
         }, 50);
 
         setTimeout(() => {
             if(box) box.style.transform = "translate(0px, 0px) rotate(0deg)";
+            flash.remove();
         }, 200);
 
         setTimeout(() => {
+            // Echte Engine auslösen -> Die Engine zerstört jetzt kurz das HTML!
             if(typeof Combat !== 'undefined') Combat.playerAttack(index);
 
+            // Der MutationObserver repariert das im Hintergrund.
             const enemyPostHp = Game.state.enemy ? Game.state.enemy.hp : 0;
             const playerPostHp = Game.state.hp;
+
             const dmgDealt = enemyPreHp - enemyPostHp;
             const dmgTaken = playerPreHp - playerPostHp;
 
             if (dmgTaken > 0) {
                 this.spawnFloatingText(`-${Math.round(dmgTaken)} HP`, '#ef4444', 'bottom-[20%] left-1/2', box); 
+                
                 const dmgFlash = document.createElement('div');
-                dmgFlash.className = "absolute inset-0 z-[4900] bg-red-600/30 pointer-events-none opacity-0 transition-opacity mix-blend-overlay";
+                dmgFlash.className = "absolute inset-0 z-[4900] bg-red-600/40 pointer-events-none opacity-0 transition-opacity mix-blend-overlay";
                 if(box) box.appendChild(dmgFlash);
+                
                 requestAnimationFrame(() => dmgFlash.style.opacity = "1");
-                setTimeout(() => { dmgFlash.style.opacity = "0"; setTimeout(() => dmgFlash.remove(), 300); }, 100);
+                setTimeout(() => {
+                    dmgFlash.style.opacity = "0";
+                    setTimeout(() => dmgFlash.remove(), 300);
+                }, 100);
             }
 
             if (dmgDealt > 0) {
@@ -562,14 +596,21 @@ Object.assign(UI, {
     spawnFloatingText: function(text, color, positionClasses, container) {
         if(!container) container = document.body;
         const floater = document.createElement('div');
-        floater.className = `absolute ${positionClasses} z-[6000] font-mono font-bold text-3xl md:text-5xl pointer-events-none drop-shadow-[0_0_5px_#000]`;
+        floater.className = `absolute ${positionClasses} z-[6000] font-mono font-bold text-3xl md:text-5xl pointer-events-none drop-shadow-[0_0_10px_#000]`;
         floater.style.color = color;
-        floater.style.transform = "translate(-50%, -50%) scale(0.8)";
-        floater.style.transition = "all 0.8s ease-out";
+        floater.style.transform = "translate(-50%, -50%) scale(0.5)";
+        floater.style.transition = "all 1s cubic-bezier(0.2, 0.8, 0.2, 1)";
         floater.innerText = text;
+        
         container.appendChild(floater);
-        const driftX = (Math.random() - 0.5) * 40; 
-        requestAnimationFrame(() => { floater.style.transform = `translate(calc(-50% + ${driftX}px), -80px) scale(1.1)`; floater.style.opacity = "0"; });
-        setTimeout(() => floater.remove(), 800);
+        
+        const driftX = (Math.random() - 0.5) * 60; 
+
+        requestAnimationFrame(() => {
+            floater.style.transform = `translate(calc(-50% + ${driftX}px), -100px) scale(1.2)`;
+            floater.style.opacity = "0";
+        });
+
+        setTimeout(() => floater.remove(), 1000);
     }
 });
