@@ -1,4 +1,33 @@
-// [2026-02-22 09:30:00] ui_render_overlays.js - VATS Cleanup & Permadeath
+// [2026-02-22 11:45:00] ui_render_overlays.js - Complete File + Ghost Town Psycho Horror
+
+// GHOST TOWN WACHHUND: Überwacht permanent, ob der Spieler in der Geisterstadt steht
+if (!window.ghostTownObserverInit) {
+    window.ghostTownObserverInit = true;
+    setInterval(() => {
+        if(typeof Game !== 'undefined' && Game.state && Game.state.view === 'map' && !Game.state.inDialog) {
+            let isGhost = false;
+            
+            // 1. Checken, ob die Zone so heißt
+            if (Game.state.zone && (Game.state.zone.toLowerCase().includes('ghost') || Game.state.zone.toLowerCase().includes('geister'))) {
+                isGhost = true;
+            }
+            
+            // 2. Checken, ob der Spieler direkt auf dem 'G' Tile steht
+            try {
+                const t = Game.state.currentMap[Game.state.player.y][Game.state.player.x];
+                if (t === 'G') isGhost = true;
+            } catch(e) {}
+
+            if (isGhost) {
+                if(!UI._ghostTownActive) UI.startGhostTownEffects();
+            } else {
+                if(UI._ghostTownActive) UI.stopGhostTownEffects();
+            }
+        } else {
+            if(UI._ghostTownActive) UI.stopGhostTownEffects();
+        }
+    }, 1000);
+}
 
 Object.assign(UI, {
     
@@ -25,9 +54,6 @@ Object.assign(UI, {
 
     leaveDialog: function() {
         if(Game.state) Game.state.inDialog = false;
-        
-        // WICHTIG: Entfernt alle V.A.T.S. Effekte, wenn der Dialog schließt
-        document.querySelectorAll('.vats-fx-layer').forEach(e => e.remove());
         
         if(this._activeEscHandler) {
             document.removeEventListener('keydown', this._activeEscHandler);
@@ -887,5 +913,103 @@ Object.assign(UI, {
                 }, 1800);
             }, 500); 
         }, 100);
+    },
+
+    // ==========================================
+    // NEU: GHOST TOWN PSYCHO HORROR EFFEKTE
+    // ==========================================
+
+    _ghostTownActive: false,
+    _ghostTimeout: null,
+
+    startGhostTownEffects: function() {
+        if(this._ghostTownActive) return;
+        this._ghostTownActive = true;
+        
+        if(typeof UI.log === 'function') {
+            UI.log("Ein unnatürlicher Schauer läuft dir über den Rücken...", "text-purple-500 italic font-bold");
+        }
+        
+        this.scheduleNextGhostEffect();
+    },
+
+    stopGhostTownEffects: function() {
+        if(!this._ghostTownActive) return;
+        this._ghostTownActive = false;
+        
+        if(this._ghostTimeout) {
+            clearTimeout(this._ghostTimeout);
+            this._ghostTimeout = null;
+        }
+        // Bildschirm normalisieren, falls gerade ein Glitch war
+        document.body.style.filter = "none";
+    },
+
+    scheduleNextGhostEffect: function() {
+        if(!this._ghostTownActive) return;
+        
+        // Zufälliges Delay zwischen 2 und 8 Sekunden
+        const delay = 2000 + Math.random() * 6000; 
+        
+        this._ghostTimeout = setTimeout(() => {
+            this.triggerGhostEffect();
+            this.scheduleNextGhostEffect();
+        }, delay);
+    },
+
+    triggerGhostEffect: function() {
+        if(!this._ghostTownActive || Game.state.inDialog) return; // Nicht im Kampf oder Dialogen nerven
+        
+        const r = Math.random();
+        
+        if(r < 0.33) {
+            // EFFEKT 1: Bildschirm Tearing & Farben invertieren
+            document.body.style.filter = "invert(100%) hue-rotate(90deg) grayscale(50%)";
+            setTimeout(() => { 
+                document.body.style.filter = "none"; 
+            }, 100 + Math.random() * 150);
+            
+        } else if(r < 0.66) {
+            // EFFEKT 2: Fake V.A.T.S. Flash (Jumpscare)
+            const flash = document.createElement('div');
+            flash.className = "fixed inset-0 z-[9000] pointer-events-none flex flex-col items-center justify-center bg-[#1a0000] overflow-hidden";
+            flash.innerHTML = `
+                <div class="absolute inset-0 bg-[linear-gradient(rgba(255,0,0,0.1)_50%,rgba(0,0,0,0.5)_50%)] bg-[length:100%_4px] mix-blend-overlay"></div>
+                <div class="text-red-600 font-mono text-5xl md:text-7xl font-bold tracking-[1em] animate-pulse opacity-90 text-shadow-md">TARGET: ???</div>
+                <div class="mt-10 w-full max-w-md border-2 border-red-900 p-4 bg-red-950/50">
+                    <div class="text-red-500 font-mono text-4xl flex justify-between"><span>SOUL</span><span>0%</span></div>
+                </div>
+            `;
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 100 + Math.random() * 100);
+            
+        } else {
+            // EFFEKT 3: Paranoia Text auf dem Bildschirm
+            const msgs = ["SIEH HINTER DICH...", "LAUF WEG!", "WIR SIND HIER...", "DEIN ENDE NAHT", "KEIN ENTRINNEN", "NICHT UMNDREHEN"];
+            const msg = msgs[Math.floor(Math.random()*msgs.length)];
+            
+            const txt = document.createElement('div');
+            // Zufällige Position
+            const top = 20 + Math.random() * 60;
+            const left = 20 + Math.random() * 60;
+            
+            txt.className = `fixed z-[8000] text-red-600 font-mono font-bold text-3xl md:text-5xl pointer-events-none opacity-0 drop-shadow-[0_0_10px_red]`;
+            txt.style.top = `${top}%`;
+            txt.style.left = `${left}%`;
+            txt.style.transform = "translate(-50%, -50%)";
+            txt.innerText = msg;
+            
+            document.body.appendChild(txt);
+            
+            requestAnimationFrame(() => {
+                txt.style.transition = "opacity 0.1s";
+                txt.style.opacity = "0.8";
+            });
+            
+            setTimeout(() => {
+                txt.style.opacity = "0";
+                setTimeout(() => txt.remove(), 200);
+            }, 500 + Math.random() * 500);
+        }
     }
 });
