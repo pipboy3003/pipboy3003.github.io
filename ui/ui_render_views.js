@@ -1,4 +1,4 @@
-// [2026-02-22 09:05:00] ui_render_views.js - Removed Radar Grid & Enhanced Skyline
+// [2026-02-22 09:35:00] ui_render_views.js - Real SVG Skyline, Grid Removed
 
 Object.assign(UI, {
 
@@ -26,6 +26,9 @@ Object.assign(UI, {
         if(!container || !Game.state) return;
 
         container.innerHTML = '';
+        
+        // Aufräumen von alten Effekten (Sicherheit)
+        document.querySelectorAll('.vats-fx-layer').forEach(e => e.remove());
 
         switch(Game.state.view) {
             case 'map':
@@ -364,7 +367,7 @@ Object.assign(UI, {
         }
     },
 
-    // --- V.A.T.S. OVERHAUL: NO GRID, BIGGER SKYLINE ---
+    // --- NEU: V.A.T.S. PERFEKTION OHNE GITTER ---
     renderCombat: function() {
         const enemy = Game.state.enemy; 
         if(!enemy) return;
@@ -374,53 +377,61 @@ Object.assign(UI, {
 
         const box = nameEl.closest('.bg-black') || nameEl.parentElement;
 
-        if (box && !box.dataset.vatsStyled) {
-            box.dataset.vatsStyled = "true";
-            box.classList.add('relative', 'overflow-hidden');
-            box.style.backgroundColor = "#051005"; 
-            
-            const intro = document.createElement('div');
-            intro.className = "absolute inset-0 z-[4000] bg-black flex flex-col items-center justify-center pointer-events-none";
-            intro.innerHTML = `
-                <div class="w-full h-1 bg-[#39ff14] shadow-[0_0_20px_#39ff14] animate-[scaleY_0.2s_ease-in-out]"></div>
-                <div class="text-[#39ff14] font-mono text-4xl font-bold tracking-[1em] animate-pulse mt-4 ml-4">V.A.T.S.</div>
-                <div class="text-green-300 text-[10px] tracking-widest mt-4 opacity-70">TARGETING SYSTEM ACTIVE</div>
-            `;
-            box.appendChild(intro);
-            setTimeout(() => {
-                intro.style.transition = "opacity 0.2s, transform 0.2s";
-                intro.style.opacity = "0";
-                intro.style.transform = "scale(1.2)";
-                setTimeout(() => intro.remove(), 250);
-            }, 500);
+        // 1. Müll-Abfuhr: ALTE EFFEKTE LÖSCHEN
+        document.querySelectorAll('.vats-fx-layer').forEach(e => e.remove());
 
-            // RUINEN SKYLINE HINTERGRUND (Größer und deutlicher sichtbar)
-            const bgLayer = document.createElement('div');
-            bgLayer.className = "absolute inset-0 pointer-events-none z-[0] flex items-end opacity-40";
-            bgLayer.innerHTML = `
-                <div class="w-full h-[60%] flex items-end justify-between px-2 border-b-4 border-green-900">
-                    <div class="w-16 h-32 bg-green-900 border-t-2 border-r-2 border-green-500 mb-[-4px]"></div>
-                    <div class="w-24 h-56 bg-green-900 border-t-2 border-l-2 border-r-2 border-green-500 mb-[-4px] flex justify-center pt-4"><div class="w-2/3 h-1/2 border-2 border-green-700/50"></div></div>
-                    <div class="w-12 h-20 bg-green-900 border-t-2 border-l-2 border-green-500 mb-[-4px]"></div>
-                    <div class="w-32 h-64 bg-green-900 border-t-2 border-l-2 border-r-2 border-green-500 mb-[-4px] flex flex-col items-center gap-3 pt-6">
-                        <div class="w-4 h-4 bg-green-500 animate-pulse shadow-[0_0_15px_#39ff14]"></div>
-                        <div class="w-full h-4 border-b-2 border-green-700/50"></div>
-                        <div class="w-full h-4 border-b-2 border-green-700/50"></div>
-                    </div>
-                    <div class="w-20 h-40 bg-green-900 border-t-2 border-l-2 border-green-500 mb-[-4px]"></div>
-                </div>
-            `;
-            box.insertBefore(bgLayer, box.firstChild);
+        // 2. Globaler Hintergrund-Kasten (bricht aus der kleinen Box aus)
+        const fxBg = document.createElement('div');
+        fxBg.className = "vats-fx-layer fixed inset-0 pointer-events-none flex flex-col justify-end overflow-hidden z-[5] bg-[#051005]";
+        fxBg.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 200" preserveAspectRatio="none" class="w-full h-[40vh] opacity-50 z-[1]">
+                <rect width="1000" height="200" fill="url(#skylineGlow)" />
+                <path d="M0,200 L0,150 L50,150 L50,100 L80,100 L80,120 L150,120 L150,60 L200,60 L200,80 L250,80 L250,30 L300,30 L300,90 L380,90 L380,130 L450,130 L450,50 L520,50 L520,110 L600,110 L600,70 L680,70 L680,140 L750,140 L750,80 L850,80 L850,150 L950,150 L950,110 L1000,110 L1000,200 Z" fill="#021402" stroke="#39ff14" stroke-width="2"/>
+                <rect x="160" y="80" width="10" height="15" fill="#39ff14" class="animate-pulse" />
+                <rect x="260" y="50" width="8" height="12" fill="#39ff14" opacity="0.5" />
+                <rect x="470" y="70" width="12" height="20" fill="#eab308" class="animate-pulse" />
+                <rect x="700" y="90" width="15" height="10" fill="#39ff14" />
+                <defs>
+                    <linearGradient id="skylineGlow" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stop-color="transparent"/>
+                        <stop offset="100%" stop-color="#0a4a0a" stop-opacity="0.9"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+            <div class="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,30,0,0.15)_50%)] bg-[length:100%_4px] mix-blend-overlay z-[2]"></div>
+            <div class="absolute inset-0 shadow-[inset_0_0_150px_rgba(0,255,0,0.2)] z-[3]"></div>
+        `;
+        
+        // Den Hintergrund direkt in die Box setzen, aber per "fixed" füllt er das Fenster
+        if(box) {
+            box.appendChild(fxBg);
+            box.style.backgroundColor = "transparent";
+            box.classList.remove('bg-black');
+            box.style.position = "relative";
+            box.style.zIndex = "10";
             
-            // NUR SCANLINES & VIGNETTE (Gitter restlos entfernt!)
-            box.insertAdjacentHTML('beforeend', `
-                <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,30,0,0.15)_50%)] bg-[length:100%_4px] z-[100] mix-blend-overlay"></div>
-                <div class="pointer-events-none absolute inset-0 shadow-[inset_0_0_100px_rgba(0,255,0,0.15)] z-[90]"></div>
-            `);
+            // Einmaliges V.A.T.S. Intro-Flackern
+            if (!box.dataset.vatsInit) {
+                box.dataset.vatsInit = "true";
+                const intro = document.createElement('div');
+                intro.className = "absolute inset-0 z-[4000] flex flex-col items-center justify-center pointer-events-none bg-[#051005]";
+                intro.innerHTML = `
+                    <div class="w-full h-1 bg-[#39ff14] shadow-[0_0_20px_#39ff14] animate-[scaleY_0.2s_ease-in-out]"></div>
+                    <div class="text-[#39ff14] font-mono text-4xl font-bold tracking-[1em] animate-pulse mt-4 ml-4">V.A.T.S.</div>
+                `;
+                box.appendChild(intro);
+                setTimeout(() => {
+                    intro.style.transition = "opacity 0.2s, transform 0.2s";
+                    intro.style.opacity = "0";
+                    intro.style.transform = "scale(1.2)";
+                    setTimeout(() => intro.remove(), 250);
+                }, 500);
+            }
         }
 
+        // 3. TARGET NAME & HP BAR
         nameEl.innerHTML = `<span class="text-[#39ff14] animate-pulse mr-2">TARGET:</span><span class="text-green-300 font-mono tracking-widest text-shadow-glow">${enemy.name.toUpperCase()}</span>`;
-        nameEl.className = "text-xl md:text-3xl font-bold flex items-center justify-center w-full bg-green-900/40 border-b-2 border-green-500 pb-2 pt-2 mb-3 z-10 relative backdrop-blur-sm";
+        nameEl.className = "text-xl md:text-3xl font-bold flex items-center justify-center w-full bg-green-900/40 border-b-2 border-green-500 pb-2 pt-2 mb-3 z-[10] relative backdrop-blur-sm";
 
         const oldHpText = document.getElementById('enemy-hp-text');
         if (oldHpText) oldHpText.style.display = 'none';
@@ -457,6 +468,7 @@ Object.assign(UI, {
             }
         }
 
+        // 4. VATS BUTTONS
         if(typeof Combat !== 'undefined' && Combat.bodyParts) {
              Combat.bodyParts.forEach((part, index) => {
                  const btn = document.getElementById(`btn-vats-${index}`);
@@ -469,8 +481,8 @@ Object.assign(UI, {
 
                      btn.setAttribute('onclick', `UI.triggerVatsAttack(${index}, ${chance})`);
                      
-                     // BACKGROUND BLUR FÜR DIE BUTTONS
-                     btn.className = `relative w-full max-w-sm mx-auto bg-black/50 border border-green-900/50 p-3 mb-3 cursor-pointer group hover:bg-green-900/60 transition-all z-10 backdrop-blur-sm`;
+                     // Z-Index angepasst und transparenter
+                     btn.className = `relative w-full max-w-sm mx-auto bg-black/50 border border-green-900/50 p-3 mb-3 cursor-pointer group hover:bg-green-900/60 transition-all z-[10] backdrop-blur-sm`;
                      
                      btn.innerHTML = `
                         <div class="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all -translate-x-1 -translate-y-1"></div>
