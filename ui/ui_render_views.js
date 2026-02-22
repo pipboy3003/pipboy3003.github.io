@@ -1,4 +1,4 @@
-// [2026-02-22 10:45:00] ui_render_views.js - Fullscreen Skyline & No Grid Fix
+// [2026-02-22 10:45:00] ui_render_views.js - Fullscreen Skyline & Live HP Fix
 
 // WACHHUND: Überwacht das Spiel permanent. Wenn die Engine das V.A.T.S. resettet, 
 // krallt er sich den Root-Container und erzwingt das Vollbild-Design!
@@ -7,9 +7,8 @@ if (!window.vatsObserverInit) {
     setTimeout(() => {
         if(document.body) {
             const observer = new MutationObserver(() => {
-                const vatsBtn = document.getElementById('btn-vats-0');
-                // Wenn der Button da ist, aber unsere Effekte fehlen -> Feuer frei!
-                if (vatsBtn && !vatsBtn.dataset.vatsApplied) {
+                const nameEl = document.getElementById('enemy-name');
+                if (nameEl && !nameEl.dataset.vatsApplied) {
                     if (typeof UI.applyVatsStyle === 'function') UI.applyVatsStyle();
                 }
             });
@@ -44,6 +43,8 @@ Object.assign(UI, {
         if(!container || !Game.state) return;
 
         container.innerHTML = '';
+        
+        // Alte Effekte beim Menü-Wechsel restlos löschen
         document.querySelectorAll('.vats-fx-layer').forEach(e => e.remove());
 
         switch(Game.state.view) {
@@ -384,43 +385,60 @@ Object.assign(UI, {
     },
 
     renderCombat: function() {
-        // Initiiert beim Start des Kampfes sofort den Style.
         this.applyVatsStyle();
     },
 
-    // --- DIE ABSOLUTE LÖSUNG: VOLLBILD-SKYLINE, KEIN GITTER ---
+    // --- ABSOLUTER FIX: VOLLBILD-SKYLINE, KEIN GITTER, LIVE HP ---
     applyVatsStyle: function() {
         const enemy = Game.state ? Game.state.enemy : null; 
         if(!enemy) return;
         
-        const vatsBtn = document.getElementById('btn-vats-0');
         const nameEl = document.getElementById('enemy-name'); 
-        if(!vatsBtn || !nameEl) return;
+        if(!nameEl) return;
 
-        // Blocker, damit die Funktion nicht in einem Endlosloop festhängt
-        if (vatsBtn.dataset.vatsApplied) return;
-        vatsBtn.dataset.vatsApplied = "true";
-
-        // 1. FINDE DEN WAHREN VOLLBILD-CONTAINER!
-        // Das ist die Box, die über den gesamten iPad Screen geht.
-        let root = vatsBtn.closest('.fixed') || vatsBtn.closest('.absolute');
-        if (!root) root = vatsBtn.parentElement.parentElement; // Fallback
-
-        // 2. STIL DES ROOT-CONTAINERS BEREINIGEN
-        root.style.backgroundColor = "#020802"; // Solides, dunkles Grün-Schwarz
-        root.style.backgroundImage = "none"; // Jegliche Gitter-Verläufe löschen!
+        // VERHINDERT ENDLOS-SCHLEIFE
+        if (nameEl.dataset.vatsApplied === "true") {
+            // Nur HP Updaten, wenn sich Werte geändert haben!
+            const hpBar = document.getElementById('enemy-hp-bar'); 
+            if(hpBar) {
+                const currentHp = Math.max(0, Math.floor(enemy.hp));
+                const pct = Math.max(0, (enemy.hp/enemy.maxHp)*100);
+                let barColor = pct > 50 ? '#39ff14' : (pct > 20 ? '#eab308' : '#ef4444');
+                
+                hpBar.style.width = `${pct}%`;
+                hpBar.style.backgroundColor = barColor;
+                hpBar.style.boxShadow = `0 0 10px ${barColor}`;
+                
+                const parent = hpBar.parentElement;
+                if(parent) {
+                    const num = parent.querySelector('.vats-hp-num');
+                    if(num) num.innerText = `${currentHp} / ${enemy.maxHp} TP`;
+                }
+            }
+            return; 
+        }
         
-        // Lösche alle alten eingefügten V.A.T.S. Effekte, um den DOM sauber zu halten
+        nameEl.dataset.vatsApplied = "true";
+
+        // 1. FINDE DEN ROOT-CONTAINER (Für den Vollbild-Hintergrund)
+        let root = nameEl.closest('.fixed') || nameEl.closest('.absolute');
+        if (!root) root = nameEl.parentElement.parentElement; 
+        if(!root) return;
+
+        // 2. TÖTE DAS GLOBALE GITTER
+        root.style.backgroundColor = "#020802"; 
+        root.style.backgroundImage = "none"; 
+        
+        // Aufräumen alter Skyline-Layer
         root.querySelectorAll('.vats-fx-layer').forEach(e => e.remove());
 
-        // 3. ALLE INNEREN SCHWARZEN KÄSTEN DURCHSICHTIG MACHEN
-        // Wenn wir das nicht tun, verdecken die "bg-black" Container die Skyline.
+        // 3. MACH ALLE BOXEN TRANSPARENT (Damit man den Hintergrund sieht)
         root.querySelectorAll('.bg-black').forEach(el => {
             el.classList.remove('bg-black');
             el.style.backgroundColor = "transparent";
         });
 
-        // 4. ECHTE SVG SKYLINE ÜBER DEN GESAMTEN BILDSCHIRM EINBAUEN
+        // 4. DIE NEUE, SAUBERE ECHTBILD-SKYLINE (SVG) EINBAUEN
         const fxBg = document.createElement('div');
         fxBg.className = "vats-fx-layer absolute inset-0 pointer-events-none flex flex-col justify-end overflow-hidden z-[0]";
         fxBg.innerHTML = `
@@ -439,14 +457,13 @@ Object.assign(UI, {
                 </defs>
             </svg>
         `;
-        // Fügt das SVG ganz hinten (z-index 0) in den Bildschirm ein
         root.insertBefore(fxBg, root.firstChild);
 
         // 5. ZIELNAME DESIGN
         nameEl.innerHTML = `<span class="text-[#39ff14] animate-pulse mr-2">TARGET:</span><span class="text-green-300 font-mono tracking-widest text-shadow-glow">${enemy.name.toUpperCase()}</span>`;
         nameEl.className = "text-xl md:text-3xl font-bold flex items-center justify-center w-full border-b-2 border-green-500 pb-2 pt-2 mb-3 z-[10] relative text-shadow-md";
 
-        // 6. HP BAR MIT ZAHLEN
+        // 6. HP BAR MIT INTEGRIERTEN ZAHLEN
         const oldHpText = document.getElementById('enemy-hp-text');
         if (oldHpText) oldHpText.style.display = 'none';
 
@@ -463,8 +480,8 @@ Object.assign(UI, {
             
             const parent = hpBar.parentElement;
             if(parent) {
-                // Den Hintergrund der Leiste etwas dunkler machen, damit sie auffällt
-                parent.className = "w-[90%] mx-auto max-w-sm bg-black/60 border-2 border-green-600 h-8 relative z-[10] overflow-hidden mb-6 shadow-[0_0_15px_rgba(0,255,0,0.1)]";
+                // Etwas dunklerer Balken-Hintergrund, damit man ihn auf der Skyline sieht
+                parent.className = "w-[90%] mx-auto max-w-sm bg-[#001000]/80 border-2 border-green-600 h-8 relative z-[10] overflow-hidden mb-6 shadow-[0_0_15px_rgba(0,255,0,0.1)]";
                 
                 parent.querySelectorAll('.vats-hp-overlay').forEach(e => e.remove());
                 
@@ -483,7 +500,7 @@ Object.assign(UI, {
             }
         }
 
-        // 7. ZIEL-BUTTONS IN V.A.T.S. OPTIK MIT GLAS-EFFEKT
+        // 7. ZIEL-BUTTONS IN V.A.T.S. OPTIK (Leicht Transparent für Skyline-Blick)
         if(typeof Combat !== 'undefined' && Combat.bodyParts) {
              Combat.bodyParts.forEach((part, index) => {
                  const btn = document.getElementById(`btn-vats-${index}`);
@@ -499,7 +516,6 @@ Object.assign(UI, {
                          UI.triggerVatsAttack(index, chance);
                      };
 
-                     // Transparenter Hintergrund, damit die Skyline durchscheint!
                      btn.className = `relative w-full max-w-sm mx-auto bg-[#001000]/60 border-2 border-green-900/50 p-3 mb-3 cursor-pointer group hover:bg-[#002000]/80 transition-all z-[10] shadow-[0_0_10px_rgba(0,0,0,0.5)] backdrop-blur-[2px]`;
                      
                      btn.innerHTML = `
@@ -538,30 +554,21 @@ Object.assign(UI, {
 
         if(btn) btn.style.transform = "scale(1.05)";
 
-        // Screen Shake & Blitz
-        const flash = document.createElement('div');
-        flash.className = "absolute inset-0 z-[5000] bg-yellow-100 pointer-events-none";
-        if(box) {
-            box.appendChild(flash);
-            box.style.transform = "translate(5px, 8px) rotate(1deg)";
-        }
+        // Screen Shake
+        if(box) { box.style.transform = "translate(2px, 3px) rotate(0.5deg)"; }
         
         setTimeout(() => {
-            if(box) box.style.transform = "translate(-8px, -3px) rotate(-1deg)";
-            flash.style.opacity = "0";
-            flash.style.transition = "opacity 0.15s";
+            if(box) box.style.transform = "translate(-2px, -1px) rotate(-0.5deg)";
         }, 50);
 
         setTimeout(() => {
             if(box) box.style.transform = "translate(0px, 0px) rotate(0deg)";
-            flash.remove();
         }, 200);
 
         setTimeout(() => {
-            // Echte Engine auslösen -> Die Engine zerstört jetzt kurz das HTML!
+            // Echte Engine auslösen -> Die Engine rechnet Schaden aus
             if(typeof Combat !== 'undefined') Combat.playerAttack(index);
 
-            // Der MutationObserver repariert das im Hintergrund.
             const enemyPostHp = Game.state.enemy ? Game.state.enemy.hp : 0;
             const playerPostHp = Game.state.hp;
 
@@ -570,16 +577,11 @@ Object.assign(UI, {
 
             if (dmgTaken > 0) {
                 this.spawnFloatingText(`-${Math.round(dmgTaken)} HP`, '#ef4444', 'bottom-[20%] left-1/2', box); 
-                
                 const dmgFlash = document.createElement('div');
-                dmgFlash.className = "absolute inset-0 z-[4900] bg-red-600/40 pointer-events-none opacity-0 transition-opacity mix-blend-overlay";
+                dmgFlash.className = "absolute inset-0 z-[4900] bg-red-600/30 pointer-events-none opacity-0 transition-opacity mix-blend-overlay";
                 if(box) box.appendChild(dmgFlash);
-                
                 requestAnimationFrame(() => dmgFlash.style.opacity = "1");
-                setTimeout(() => {
-                    dmgFlash.style.opacity = "0";
-                    setTimeout(() => dmgFlash.remove(), 300);
-                }, 100);
+                setTimeout(() => { dmgFlash.style.opacity = "0"; setTimeout(() => dmgFlash.remove(), 300); }, 100);
             }
 
             if (dmgDealt > 0) {
@@ -589,6 +591,11 @@ Object.assign(UI, {
             }
 
             if(btn) btn.style.transform = "scale(1)";
+            
+            // WICHTIG: Erlaubt das Update der HP Leiste im nächsten Tick!
+            if(nameEl) nameEl.dataset.vatsApplied = "false";
+            this.applyVatsStyle(); // Manuell nochmal aufrufen für die neuen HP-Werte
+
             this._isAttacking = false;
         }, 250);
     },
@@ -596,21 +603,14 @@ Object.assign(UI, {
     spawnFloatingText: function(text, color, positionClasses, container) {
         if(!container) container = document.body;
         const floater = document.createElement('div');
-        floater.className = `absolute ${positionClasses} z-[6000] font-mono font-bold text-3xl md:text-5xl pointer-events-none drop-shadow-[0_0_10px_#000]`;
+        floater.className = `absolute ${positionClasses} z-[6000] font-mono font-bold text-3xl md:text-5xl pointer-events-none drop-shadow-[0_0_5px_#000]`;
         floater.style.color = color;
-        floater.style.transform = "translate(-50%, -50%) scale(0.5)";
-        floater.style.transition = "all 1s cubic-bezier(0.2, 0.8, 0.2, 1)";
+        floater.style.transform = "translate(-50%, -50%) scale(0.8)";
+        floater.style.transition = "all 0.8s ease-out";
         floater.innerText = text;
-        
         container.appendChild(floater);
-        
-        const driftX = (Math.random() - 0.5) * 60; 
-
-        requestAnimationFrame(() => {
-            floater.style.transform = `translate(calc(-50% + ${driftX}px), -100px) scale(1.2)`;
-            floater.style.opacity = "0";
-        });
-
-        setTimeout(() => floater.remove(), 1000);
+        const driftX = (Math.random() - 0.5) * 40; 
+        requestAnimationFrame(() => { floater.style.transform = `translate(calc(-50% + ${driftX}px), -80px) scale(1.1)`; floater.style.opacity = "0"; });
+        setTimeout(() => floater.remove(), 800);
     }
 });
