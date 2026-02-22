@@ -1,4 +1,20 @@
-// [2026-02-22 09:50:00] ui_render_views.js - Unbreakable VATS UI & No Grid
+// [2026-02-22 10:05:00] ui_render_views.js - V.A.T.S. MutationObserver Enforcer & Solid Skyline
+
+// WACHHUND: Überwacht das Spiel permanent. Wenn die Engine das V.A.T.S. resettet, schlagen wir sofort zurück!
+if (!window.vatsObserverInit) {
+    window.vatsObserverInit = true;
+    setTimeout(() => {
+        if(document.body) {
+            const observer = new MutationObserver(() => {
+                const nameEl = document.getElementById('enemy-name');
+                if (nameEl && !nameEl.dataset.vatsApplied) {
+                    if (typeof UI.applyVatsStyle === 'function') UI.applyVatsStyle();
+                }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        }
+    }, 100);
+}
 
 Object.assign(UI, {
 
@@ -365,71 +381,61 @@ Object.assign(UI, {
         }
     },
 
-    // --- DIE UNZERSTÖRBARE V.A.T.S. LOGIK ---
     renderCombat: function() {
-        const enemy = Game.state.enemy; 
+        // Fallback-Aufruf, falls das Spiel manuell das Fenster baut. 
+        // Der Rest wird vom MutationObserver übernommen!
+        this.applyVatsStyle();
+    },
+
+    // --- DIE KUGELSICHERE V.A.T.S. STYLE INJECTION ---
+    applyVatsStyle: function() {
+        const enemy = Game.state ? Game.state.enemy : null; 
         if(!enemy) return;
         
         const nameEl = document.getElementById('enemy-name'); 
-        if(!nameEl) return;
+        if(!nameEl || nameEl.dataset.vatsApplied) return; // Wenn schon fertig, überspringen
+        nameEl.dataset.vatsApplied = "true";
 
         const box = nameEl.closest('.bg-black') || nameEl.parentElement;
         if(!box) return;
 
-        // 1. SKYLINE & BACKGROUND IMMER PRÜFEN (Falls die Engine sie löscht)
-        if (!box.querySelector('.vats-fx-layer')) {
-            box.classList.add('relative', 'overflow-hidden');
-            box.style.backgroundColor = "#051005"; 
-            
-            const fxBg = document.createElement('div');
-            fxBg.className = "vats-fx-layer absolute inset-0 pointer-events-none flex flex-col justify-end overflow-hidden z-[5]";
-            
-            // Echte SVG Skyline (Ohne Gitter!)
-            fxBg.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 200" preserveAspectRatio="none" class="w-full h-[50vh] opacity-40 z-[1]">
-                    <rect width="1000" height="200" fill="url(#skylineGlow)" />
-                    <path d="M0,200 L0,150 L50,150 L50,100 L80,100 L80,120 L150,120 L150,60 L200,60 L200,80 L250,80 L250,30 L300,30 L300,90 L380,90 L380,130 L450,130 L450,50 L520,50 L520,110 L600,110 L600,70 L680,70 L680,140 L750,140 L750,80 L850,80 L850,150 L950,150 L950,110 L1000,110 L1000,200 Z" fill="#021402" stroke="#39ff14" stroke-width="2"/>
-                    <rect x="160" y="80" width="10" height="15" fill="#39ff14" class="animate-pulse" />
-                    <rect x="260" y="50" width="8" height="12" fill="#39ff14" opacity="0.5" />
-                    <rect x="470" y="70" width="12" height="20" fill="#eab308" class="animate-pulse" />
-                    <rect x="700" y="90" width="15" height="10" fill="#39ff14" />
-                    <defs>
-                        <linearGradient id="skylineGlow" x1="0" x2="0" y1="0" y2="1">
-                            <stop offset="0%" stop-color="transparent"/>
-                            <stop offset="100%" stop-color="#0a4a0a" stop-opacity="0.9"/>
-                        </linearGradient>
-                    </defs>
-                </svg>
-                <div class="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,30,0,0.15)_50%)] bg-[length:100%_4px] mix-blend-overlay z-[2]"></div>
-                <div class="absolute inset-0 shadow-[inset_0_0_150px_rgba(0,255,0,0.2)] z-[3]"></div>
-            `;
-            box.insertBefore(fxBg, box.firstChild);
+        // 1. KAMPF-HINTERGRUND ABSOLUT BLICKDICHT MACHEN!
+        // Das verhindert, dass das globale Gitter durchscheint.
+        box.classList.add('relative', 'overflow-hidden');
+        box.style.backgroundColor = "#020802"; // Extrem dunkles Grün/Schwarz (Blickdicht!)
+        box.style.border = "2px solid #39ff14";
+        box.style.boxShadow = "0 0 40px rgba(57,255,20,0.15)";
+        
+        // Lösche alle alten Müll-Effekte der Engine
+        box.querySelectorAll('.vats-fx-layer').forEach(e => e.remove());
 
-            // Intro Flackern
-            if (box.dataset.currentEnemy !== enemy.id + enemy.maxHp) {
-                box.dataset.currentEnemy = enemy.id + enemy.maxHp;
-                const intro = document.createElement('div');
-                intro.className = "absolute inset-0 z-[4000] flex flex-col items-center justify-center pointer-events-none bg-[#051005]";
-                intro.innerHTML = `
-                    <div class="w-full h-1 bg-[#39ff14] shadow-[0_0_20px_#39ff14] animate-[scaleY_0.2s_ease-in-out]"></div>
-                    <div class="text-[#39ff14] font-mono text-4xl md:text-6xl font-bold tracking-[1em] animate-pulse mt-4 ml-4">V.A.T.S.</div>
-                `;
-                box.appendChild(intro);
-                setTimeout(() => {
-                    intro.style.transition = "opacity 0.2s, transform 0.2s";
-                    intro.style.opacity = "0";
-                    intro.style.transform = "scale(1.2)";
-                    setTimeout(() => intro.remove(), 250);
-                }, 500);
-            }
-        }
+        // 2. SVG SKYLINE EINBAUEN (Garantiert gitterfrei)
+        const fxBg = document.createElement('div');
+        fxBg.className = "vats-fx-layer absolute inset-0 pointer-events-none flex flex-col justify-end overflow-hidden z-[5]";
+        fxBg.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 200" preserveAspectRatio="none" class="w-full h-[50%] opacity-60 z-[1]">
+                <rect width="1000" height="200" fill="url(#skylineGlow)" />
+                <path d="M0,200 L0,150 L50,150 L50,100 L80,100 L80,120 L150,120 L150,60 L200,60 L200,80 L250,80 L250,30 L300,30 L300,90 L380,90 L380,130 L450,130 L450,50 L520,50 L520,110 L600,110 L600,70 L680,70 L680,140 L750,140 L750,80 L850,80 L850,150 L950,150 L950,110 L1000,110 L1000,200 Z" fill="#051005" stroke="#39ff14" stroke-width="2"/>
+                <rect x="160" y="80" width="10" height="15" fill="#39ff14" class="animate-pulse" />
+                <rect x="260" y="50" width="8" height="12" fill="#39ff14" opacity="0.5" />
+                <rect x="470" y="70" width="12" height="20" fill="#eab308" class="animate-pulse" />
+                <rect x="700" y="90" width="15" height="10" fill="#39ff14" />
+                <defs>
+                    <linearGradient id="skylineGlow" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stop-color="transparent"/>
+                        <stop offset="100%" stop-color="#0a4a0a" stop-opacity="0.9"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+            <div class="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,30,0,0.15)_50%)] bg-[length:100%_4px] mix-blend-overlay z-[2]"></div>
+        `;
+        box.insertBefore(fxBg, box.firstChild);
 
-        // 2. NAME & HP SICHERN (Engine überschreibt das ständig, wir schreiben es neu!)
-        if (!nameEl.querySelector('.vats-name-tag')) {
-            nameEl.innerHTML = `<span class="vats-name-tag text-[#39ff14] animate-pulse mr-2">TARGET:</span><span class="text-green-300 font-mono tracking-widest text-shadow-glow">${enemy.name.toUpperCase()}</span>`;
-            nameEl.className = "text-xl md:text-3xl font-bold flex items-center justify-center w-full bg-green-900/40 border-b-2 border-green-500 pb-2 pt-2 mb-3 z-[10] relative backdrop-blur-sm";
-        }
+        // 3. TARGET NAME
+        nameEl.innerHTML = `<span class="text-[#39ff14] animate-pulse mr-2">TARGET:</span><span class="text-green-300 font-mono tracking-widest text-shadow-glow">${enemy.name.toUpperCase()}</span>`;
+        nameEl.className = "text-xl md:text-3xl font-bold flex items-center justify-center w-full border-b-2 border-green-500 pb-2 pt-2 mb-3 z-[10] relative";
 
+        // 4. HP BAR MIT ZAHLEN
         const oldHpText = document.getElementById('enemy-hp-text');
         if (oldHpText) oldHpText.style.display = 'none';
 
@@ -437,7 +443,6 @@ Object.assign(UI, {
         if(hpBar) {
             const currentHp = Math.max(0, Math.floor(enemy.hp));
             const pct = Math.max(0, (enemy.hp/enemy.maxHp)*100);
-            
             let barColor = pct > 50 ? '#39ff14' : (pct > 20 ? '#eab308' : '#ef4444');
             
             hpBar.style.width = `${pct}%`;
@@ -446,12 +451,12 @@ Object.assign(UI, {
             hpBar.style.boxShadow = `0 0 10px ${barColor}`;
             
             const parent = hpBar.parentElement;
-            if(parent && !parent.querySelector('.vats-hp-overlay')) {
+            if(parent) {
                 parent.className = "w-[90%] mx-auto max-w-sm bg-black border-2 border-green-600 h-8 relative z-[10] overflow-hidden mb-6 shadow-[0_0_15px_rgba(0,255,0,0.1)]";
-                
+                parent.querySelectorAll('.vats-hp-overlay').forEach(e => e.remove());
                 parent.insertAdjacentHTML('beforeend', `
                     <div class="vats-hp-overlay absolute inset-0 flex justify-center items-center pointer-events-none z-30">
-                        <span class="vats-hp-num font-mono font-bold text-white text-base tracking-widest" style="text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;">
+                        <span class="font-mono font-bold text-white text-base tracking-widest" style="text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;">
                             ${currentHp} / ${enemy.maxHp} TP
                         </span>
                     </div>
@@ -461,55 +466,45 @@ Object.assign(UI, {
                         <div class="h-full w-[2px] bg-black ml-[25%]"></div>
                     </div>
                 `);
-            } else if (parent) {
-                // Wenn Overlay da ist, nur die Zahl updaten
-                const numEl = parent.querySelector('.vats-hp-num');
-                if(numEl) numEl.innerText = `${currentHp} / ${enemy.maxHp} TP`;
             }
         }
 
-        // 3. V.A.T.S. BUTTONS (Wiederherstellen, falls Engine sie löscht)
+        // 5. ZIEL-BUTTONS IN V.A.T.S. OPTIK
         if(typeof Combat !== 'undefined' && Combat.bodyParts) {
              Combat.bodyParts.forEach((part, index) => {
                  const btn = document.getElementById(`btn-vats-${index}`);
                  if(btn) {
                      const chance = (typeof Combat.calculateHitChance === 'function') ? Combat.calculateHitChance(index) : 0;
-                     
                      let textColor = chance > 65 ? 'text-[#39ff14]' : (chance > 35 ? 'text-yellow-400' : 'text-red-500');
                      let barColor = chance > 65 ? 'bg-[#39ff14]' : (chance > 35 ? 'bg-yellow-500' : 'bg-red-500');
                      let borderColor = chance > 65 ? 'border-[#39ff14]' : (chance > 35 ? 'border-yellow-500' : 'border-red-500');
 
-                     // Wenn der Button unsere Wrapper-Klasse NICHT hat, hat die Engine ihn überschrieben!
-                     if (!btn.querySelector('.vats-btn-inner')) {
-                         btn.setAttribute('onclick', `UI.triggerVatsAttack(${index}, ${chance})`);
-                         btn.className = `relative w-full max-w-sm mx-auto bg-black/50 border border-green-900/50 p-3 mb-3 cursor-pointer group hover:bg-green-900/60 transition-all z-[10] backdrop-blur-sm`;
-                         
-                         btn.innerHTML = `
-                            <div class="vats-btn-inner absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all -translate-x-1 -translate-y-1"></div>
-                            <div class="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all translate-x-1 -translate-y-1"></div>
-                            <div class="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all -translate-x-1 translate-y-1"></div>
-                            <div class="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all translate-x-1 translate-y-1"></div>
-                            
-                            <div class="pointer-events-none w-full h-full flex items-center justify-between px-2">
-                                <div class="flex flex-col text-left w-[60%]">
-                                    <span class="text-2xl md:text-4xl font-bold text-green-600 uppercase tracking-widest group-hover:text-green-300 transition-colors">${part.name}</span>
-                                    <div class="w-full h-1 bg-gray-900 mt-1 border border-gray-800">
-                                        <div class="vats-btn-bar h-full ${barColor}" style="width: ${chance}%"></div>
-                                    </div>
-                                </div>
-                                
-                                <div class="vats-btn-txt font-mono font-bold ${textColor} text-4xl md:text-5xl drop-shadow-[0_0_8px_currentColor] flex items-start">
-                                    ${chance}<span class="text-xl mt-1 opacity-80">%</span>
+                     // Unser EIGENER Klick-Blocker, der die Effekte triggert, bevor die Engine eingreift!
+                     btn.onclick = (e) => {
+                         e.preventDefault();
+                         UI.triggerVatsAttack(index, chance);
+                     };
+
+                     btn.className = `relative w-full max-w-sm mx-auto bg-black/80 border-2 border-green-900 p-3 mb-3 cursor-pointer group hover:bg-green-900 transition-all z-[10] shadow-[0_0_10px_rgba(0,0,0,0.5)]`;
+                     
+                     btn.innerHTML = `
+                        <div class="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all -translate-x-1 -translate-y-1"></div>
+                        <div class="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all translate-x-1 -translate-y-1"></div>
+                        <div class="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all -translate-x-1 translate-y-1"></div>
+                        <div class="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all translate-x-1 translate-y-1"></div>
+                        
+                        <div class="pointer-events-none w-full h-full flex items-center justify-between px-2">
+                            <div class="flex flex-col text-left w-[60%]">
+                                <span class="text-2xl md:text-4xl font-bold text-green-600 uppercase tracking-widest group-hover:text-green-300 transition-colors">${part.name}</span>
+                                <div class="w-full h-1 bg-gray-900 mt-1 border border-gray-800">
+                                    <div class="h-full ${barColor}" style="width: ${chance}%"></div>
                                 </div>
                             </div>
-                         `;
-                     } else {
-                         // Button hat Wrapper, wir updaten nur die Werte lautlos (verhindert Flackern)
-                         const bar = btn.querySelector('.vats-btn-bar');
-                         const txt = btn.querySelector('.vats-btn-txt');
-                         if(bar) { bar.style.width = `${chance}%`; bar.className = `vats-btn-bar h-full ${barColor}`; }
-                         if(txt) { txt.innerHTML = `${chance}<span class="text-xl mt-1 opacity-80">%</span>`; txt.className = `vats-btn-txt font-mono font-bold ${textColor} text-4xl md:text-5xl drop-shadow-[0_0_8px_currentColor] flex items-start`; }
-                     }
+                            <div class="font-mono font-bold ${textColor} text-4xl md:text-5xl drop-shadow-[0_0_8px_currentColor] flex items-start">
+                                ${chance}<span class="text-xl mt-1 opacity-80">%</span>
+                            </div>
+                        </div>
+                     `;
                  }
              });
         }
@@ -528,6 +523,7 @@ Object.assign(UI, {
 
         if(btn) btn.style.transform = "scale(1.05)";
 
+        // Screen Shake & Blitz
         const flash = document.createElement('div');
         flash.className = "absolute inset-0 z-[5000] bg-yellow-100 pointer-events-none";
         if(box) {
@@ -547,8 +543,10 @@ Object.assign(UI, {
         }, 200);
 
         setTimeout(() => {
+            // Echte Engine auslösen -> Die Engine zerstört jetzt kurz das HTML!
             if(typeof Combat !== 'undefined') Combat.playerAttack(index);
 
+            // Der MutationObserver hat hier im Hintergrund das Layout schon repariert!
             const enemyPostHp = Game.state.enemy ? Game.state.enemy.hp : 0;
             const playerPostHp = Game.state.hp;
 
@@ -576,16 +574,6 @@ Object.assign(UI, {
             }
 
             if(btn) btn.style.transform = "scale(1)";
-            
-            // DIE GEHEIMWAFFE GEGEN DIE ENGINE: Wir zwingen die UI sich mehrfach neu zu zeichnen, 
-            // falls die Engine asynchron die Vanilla-Buttons lädt!
-            let forceTicks = 0;
-            const forceRender = setInterval(() => {
-                if(typeof UI.renderCombat === 'function') UI.renderCombat();
-                forceTicks++;
-                if(forceTicks > 15) clearInterval(forceRender); // Nach 1.5 Sekunden aufhören
-            }, 100);
-
             this._isAttacking = false;
         }, 250);
     },
