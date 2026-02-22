@@ -1,4 +1,4 @@
-// [2026-01-17 15:00:00] network.js - Save Message uses Player Name
+// [2026-02-22 02:00:00] network.js - Safe Name Release & RIP Highscore Logic
 
 const Network = {
     db: null,
@@ -92,12 +92,13 @@ const Network = {
     
     checkNameAvailability: async function(charName) {
         if (!this.db || !charName) return true;
-        const safeName = charName.replace(/[.#$/[\]]/g, "_");
+        const safeName = charName.replace(/[.#$\[\]]/g, "_");
         const ref = this.db.ref(`leaderboard/${safeName}`);
         
         const snap = await ref.once('value');
         if (snap.exists()) {
             const val = snap.val();
+            // Wenn der Eintrag noch da und 'alive' ist, ist der Name blockiert
             if (val.status === 'alive') return false; 
         }
         return true;
@@ -106,7 +107,7 @@ const Network = {
     updateHighscore: function(gameState) {
         if(!this.active || !this.myId || !gameState || !this.auth.currentUser) return;
         
-        const safeName = (gameState.playerName || "Unknown").replace(/[.#$/[\]]/g, "_");
+        const safeName = (gameState.playerName || "Unknown").replace(/[.#$\[\]]/g, "_");
         const entry = {
             name: gameState.playerName || "Unknown",
             lvl: gameState.lvl,
@@ -120,20 +121,30 @@ const Network = {
         this.db.ref(`leaderboard/${safeName}`).update(entry).catch(e => {}); 
     },
 
+    // --- NEU: SICHERER TODES-EINTRAG (RIP LOGIK) ---
     registerDeath: function(gameState) {
         if(!this.active || !gameState || !this.auth.currentUser) return;
-        const safeName = (gameState.playerName || "Unknown").replace(/[.#$/[\]]/g, "_");
+        
+        const safeName = (gameState.playerName || "Unknown").replace(/[.#$\[\]]/g, "_");
+        const ts = Date.now();
+        // Wir erstellen einen einzigartigen Key für tote Charaktere
+        const deadSafeName = safeName + "_RIP_" + ts;
         
         const entry = {
-            name: gameState.playerName || "Unknown",
+            name: gameState.playerName || "Unknown", // Der Anzeigename bleibt sauber!
             lvl: gameState.lvl,
             kills: gameState.kills || 0,
             xp: gameState.xp + (gameState.lvl * 1000),
             status: 'dead', 
             owner: this.myId,
-            deathTime: Date.now()
+            deathTime: ts
         };
-        this.db.ref(`leaderboard/${safeName}`).set(entry).catch(e => console.error(e));
+        
+        // 1. In die Legendenliste als Toter eintragen
+        this.db.ref(`leaderboard/${deadSafeName}`).set(entry).catch(e => console.error(e));
+        
+        // 2. Den originalen Namen aus dem Leaderboard löschen, um ihn für neue Chars freizugeben!
+        this.db.ref(`leaderboard/${safeName}`).remove().catch(e => console.error(e));
     },
 
     getHighscores: async function() {
@@ -160,7 +171,6 @@ const Network = {
         this.db.ref().update(updates)
             .then(() => { 
                 if(typeof UI !== 'undefined') {
-                    // [FIX] Hier wird jetzt der Spielername verwendet statt "SLOT X"
                     const displayName = (gameState && gameState.playerName) ? gameState.playerName : ("SLOT " + (slotIndex+1));
                     UI.log(displayName + " GESPEICHERT.", "text-cyan-400"); 
                 }
@@ -170,6 +180,7 @@ const Network = {
             });
     },
 
+    // --- NEU: SICHERES LÖSCHEN EINES SLOTS ---
     deleteSlot: async function(slotIndex) {
         if(!this.active || !this.myId || !this.auth.currentUser) {
             return Promise.reject("Not authenticated");
@@ -180,18 +191,26 @@ const Network = {
             const save = snap.val();
 
             if (save && save.playerName) {
-                const safeName = save.playerName.replace(/[.#$/[\]]/g, "_");
+                const safeName = save.playerName.replace(/[.#$\[\]]/g, "_");
                 const lbRef = this.db.ref(`leaderboard/${safeName}`);
                 const lbSnap = await lbRef.once('value');
                 
-                if (lbSnap.exists()) {
-                    await lbRef.update({
-                        status: 'dead',
-                        deathTime: Date.now()
-                    });
+                // Falls der Charakter beim Löschen noch "lebendig" im Leaderboard stand,
+                // töten wir ihn offiziell und geben den Namen frei.
+                if (lbSnap.exists() && lbSnap.val().status === 'alive') {
+                    const ts = Date.now();
+                    const deadSafeName = safeName + "_RIP_" + ts;
+                    
+                    const deadEntry = lbSnap.val();
+                    deadEntry.status = 'dead';
+                    deadEntry.deathTime = ts;
+                    
+                    await this.db.ref(`leaderboard/${deadSafeName}`).set(deadEntry);
+                    await lbRef.remove(); // Name freigeben
                 }
             }
 
+            // Savegame Slot aus der DB wischen
             await this.db.ref(`saves/${this.myId}/${slotIndex}`).remove();
             console.log(`✅ Slot ${slotIndex} erfolgreich gelöscht.`);
             
