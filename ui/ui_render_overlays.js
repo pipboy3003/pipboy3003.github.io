@@ -1,4 +1,4 @@
-// [2026-02-22 08:25:00] ui_render_overlays.js - Complete & Fixed Missing Functions
+// [2026-02-22 09:30:00] ui_render_overlays.js - VATS Cleanup & Permadeath
 
 Object.assign(UI, {
     
@@ -25,6 +25,9 @@ Object.assign(UI, {
 
     leaveDialog: function() {
         if(Game.state) Game.state.inDialog = false;
+        
+        // WICHTIG: Entfernt alle V.A.T.S. Effekte, wenn der Dialog schließt
+        document.querySelectorAll('.vats-fx-layer').forEach(e => e.remove());
         
         if(this._activeEscHandler) {
             document.removeEventListener('keydown', this._activeEscHandler);
@@ -344,7 +347,6 @@ Object.assign(UI, {
         overlay.appendChild(box);
     },
 
-    // --- WIEDERHERGESTELLT: HIGHSCORE BOARD ---
     showHighscoreBoard: async function() {
         const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
@@ -537,7 +539,6 @@ Object.assign(UI, {
         box.appendChild(btnContainer); overlay.appendChild(box);
     },
 
-    // --- WIEDERHERGESTELLT: WASTELAND GAMBLE ---
     showWastelandGamble: function(callback) {
         const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
@@ -602,7 +603,6 @@ Object.assign(UI, {
         };
     },
 
-    // --- WIEDERHERGESTELLT: DUNGEON LOCKED ---
     showDungeonLocked: function(minutesLeft) {
         const overlay = this.restoreOverlay();
         overlay.style.display = 'flex';
@@ -678,7 +678,6 @@ Object.assign(UI, {
         overlay.appendChild(box);
     },
 
-    // --- PERMADEATH LÖSCHUNG ---
     showGameOver: function() {
         if(this.els.gameOver) this.els.gameOver.classList.remove('hidden');
         if(typeof Network !== 'undefined' && Game.state) Network.registerDeath(Game.state);
