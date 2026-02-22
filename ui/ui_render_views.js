@@ -1,4 +1,4 @@
-// [2026-02-22 02:20:00] ui_render_views.js - Graveyard Logic & V.A.T.S. HP Update
+// [2026-02-22 09:00:00] ui_render_views.js - VATS Background Polish (No Grid)
 
 Object.assign(UI, {
 
@@ -51,6 +51,10 @@ Object.assign(UI, {
                 break;
             default:
                 container.innerHTML = `<div class="text-center p-10 text-red-500">ERROR: Unknown View ${Game.state.view}</div>`;
+        }
+
+        if(typeof UI.updateQuestTracker === 'function') {
+            setTimeout(() => UI.updateQuestTracker(), 50);
         }
     },
 
@@ -279,7 +283,6 @@ Object.assign(UI, {
         ctx.beginPath(); ctx.arc(cx, cy - 60, 15, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
     },
 
-    // --- NEU: DIE LEICHENHALLE FÜR DIE CHARAKTERAUSWAHL ---
     renderCharacterSelection: function(saves) {
         this.charSelectMode = true; this.currentSaves = saves;
         if(this.els.loginScreen) this.els.loginScreen.style.display = 'none';
@@ -361,7 +364,6 @@ Object.assign(UI, {
         }
     },
 
-    // --- NEU: V.A.T.S. FAILSAFE OVERHAUL (Mit exakten HP-Zahlen im Balken) ---
     renderCombat: function() {
         const enemy = Game.state.enemy; 
         if(!enemy) return;
@@ -391,8 +393,9 @@ Object.assign(UI, {
                 setTimeout(() => intro.remove(), 250);
             }, 500);
 
+            // RUINEN SKYLINE HINTERGRUND (Jetzt deutlicher sichtbar: opacity-40)
             const bgLayer = document.createElement('div');
-            bgLayer.className = "absolute inset-0 pointer-events-none z-[0] flex items-end opacity-20";
+            bgLayer.className = "absolute inset-0 pointer-events-none z-[0] flex items-end opacity-40";
             bgLayer.innerHTML = `
                 <div class="w-full h-[45%] flex items-end justify-between px-2 border-b-2 border-green-900">
                     <div class="w-12 h-24 bg-green-900 border-t-2 border-r-2 border-green-500 mb-[-2px]"></div>
@@ -406,16 +409,10 @@ Object.assign(UI, {
             `;
             box.insertBefore(bgLayer, box.firstChild);
             
+            // FADENKREUZ & CRT SCANLINES (Gitter/Kreis entfernt!)
             box.insertAdjacentHTML('beforeend', `
                 <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,30,0,0.15)_50%)] bg-[length:100%_4px] z-[100] mix-blend-overlay"></div>
                 <div class="pointer-events-none absolute inset-0 shadow-[inset_0_0_100px_rgba(0,255,0,0.15)] z-[90]"></div>
-                <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center opacity-[0.15] z-[1]">
-                    <div class="relative w-[70vw] h-[70vw] max-w-[300px] max-h-[300px] border-2 border-green-500 rounded-full flex items-center justify-center">
-                        <div class="w-[120%] h-[2px] bg-green-500 absolute shadow-[0_0_10px_#39ff14]"></div>
-                        <div class="h-[120%] w-[2px] bg-green-500 absolute shadow-[0_0_10px_#39ff14]"></div>
-                        <div class="w-[60%] h-[60%] border-2 border-dashed border-green-500 rounded-full animate-[spin_20s_linear_infinite]"></div>
-                    </div>
-                </div>
             `);
         }
 
@@ -468,7 +465,10 @@ Object.assign(UI, {
                      let borderColor = chance > 65 ? 'border-[#39ff14]' : (chance > 35 ? 'border-yellow-500' : 'border-red-500');
 
                      btn.setAttribute('onclick', `UI.triggerVatsAttack(${index}, ${chance})`);
-                     btn.className = `relative w-full max-w-sm mx-auto bg-black/80 border border-green-900/50 p-3 mb-3 cursor-pointer group hover:bg-green-900/40 transition-all z-10 backdrop-blur-md`;
+                     
+                     // BUTTON HINTERGRUND LEICHTER GEMACHT (bg-black/50 und backdrop-blur-sm)
+                     btn.className = `relative w-full max-w-sm mx-auto bg-black/50 border border-green-900/50 p-3 mb-3 cursor-pointer group hover:bg-green-900/60 transition-all z-10 backdrop-blur-sm`;
+                     
                      btn.innerHTML = `
                         <div class="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all -translate-x-1 -translate-y-1"></div>
                         <div class="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 ${borderColor} opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all translate-x-1 -translate-y-1"></div>
