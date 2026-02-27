@@ -1,6 +1,6 @@
 ? Bei Weltkarte ohne Funktion, soll die POI's aufrufen als kleines fenster. Fenster soll sich durch esc drücken oder X schließen lassen.
 Wichtig nur dieses Fenster schließen dann nicht die Weltkarte.
-
+- Items werden beim aufsammeln nicht immer richtig angezeigt
 
 🐛 Aktuelle Bugs & Anpassungen:
 - Lock Picking auf Truhen in Dungeons legen (fertig?)
