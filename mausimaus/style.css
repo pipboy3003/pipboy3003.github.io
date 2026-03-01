@@ -1,12 +1,11 @@
-/* Timestamp: 2026-03-01 08:53:30 CET */
+/* Timestamp: 2026-03-01 08:58:00 CET */
 body {
     margin: 0;
     overflow: hidden; 
     background-color: #87CEEB; 
     font-family: sans-serif;
-    touch-action: none; /* Verhindert Wischen und Zoomen auf Mobile */
+    touch-action: none; 
     
-    /* Wichtig für "Drücken & Halten": Verhindert, dass Text markiert wird */
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
@@ -39,8 +38,17 @@ p {
     color: #f1c40f; 
 }
 
-button {
+#gameOverText {
+    color: #e74c3c;
+    font-size: 36px;
+    font-weight: bold;
+    text-transform: uppercase;
     margin-top: 20px;
+    text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+}
+
+button {
+    margin-top: 10px;
     padding: 12px 30px;
     font-size: 18px;
     font-weight: bold;
@@ -51,7 +59,7 @@ button {
     border-radius: 8px;
     transition: background-color 0.2s;
     box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    pointer-events: auto; /* Damit der Button trotz user-select klickbar bleibt */
+    pointer-events: auto; 
 }
 
 button:hover {
