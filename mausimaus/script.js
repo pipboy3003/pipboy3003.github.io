@@ -1,4 +1,4 @@
-// Timestamp: 2026-03-01 09:25:18 CET
+// Timestamp: 2026-03-01 09:28:08 CET
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB); 
@@ -41,6 +41,12 @@ let spawnTimer = 0;
 let hitTrap = null; 
 let startAngle = 0;
 
+// Katzen-Variablen
+let catState = 0; // 0: idle, 1: warning, 2: slam, 3: rest, 4: retract
+let catSide = 1; // 1 = rechts, -1 = links
+let catTimer = 0;
+let shakeTimer = 0;
+
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); 
 scene.add(ambientLight);
 
@@ -64,6 +70,7 @@ ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true; 
 scene.add(ground);
 
+// --- Die Maus ---
 const mouseGroup = new THREE.Group();
 
 const bodyGeom = new THREE.SphereGeometry(0.5, 16, 16);
@@ -123,6 +130,35 @@ tail.castShadow = true;
 mouseGroup.add(tail);
 
 scene.add(mouseGroup);
+
+// --- Die Katzenpfote ---
+const catGroup = new THREE.Group();
+catGroup.position.set(0, 30, 0); 
+
+const pawMat = new THREE.MeshStandardMaterial({ color: 0xe67e22 }); 
+const pawPadGeom = new THREE.BoxGeometry(10, 4, 12);
+const pawPad = new THREE.Mesh(pawPadGeom, pawMat);
+pawPad.position.y = 2;
+pawPad.castShadow = true;
+catGroup.add(pawPad);
+
+const toeGeom = new THREE.SphereGeometry(2.5, 16, 16);
+for(let i=-1; i<=1; i++) {
+    const toe = new THREE.Mesh(toeGeom, pawMat);
+    toe.position.set(i * 3.5, 1, -5.5);
+    toe.scale.set(1, 0.8, 1.2);
+    toe.castShadow = true;
+    catGroup.add(toe);
+}
+scene.add(catGroup);
+
+// Der Schatten der Katze
+const shadowGeom = new THREE.PlaneGeometry(15, 200);
+const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0 });
+const catShadow = new THREE.Mesh(shadowGeom, shadowMat);
+catShadow.rotation.x = -Math.PI / 2;
+catShadow.position.y = 0.05; 
+scene.add(catShadow);
 
 let moveLeft = false;
 let moveRight = false;
@@ -314,14 +350,12 @@ function animate() {
         }
 
     } else if (gameState === STATE_PLAYING) {
-        // Spieler-Speed ist ebenfalls leicht proportional, um agiler zu werden
         const currentPlayerSpeed = 0.35 + (score * 0.002);
 
         if (moveLeft && mouseGroup.position.x > -14) mouseGroup.position.x -= currentPlayerSpeed;
         if (moveRight && mouseGroup.position.x < 14) mouseGroup.position.x += currentPlayerSpeed;
 
         spawnTimer++;
-        // Proportionale Spawn-Rate (Schneller, je höher der Score)
         const currentSpawnRate = Math.max(15, 70 - (score * 1.5));
 
         if (spawnTimer > currentSpawnRate) { 
@@ -330,7 +364,6 @@ function animate() {
         }
 
         const playerBox = new THREE.Box3().setFromObject(mouseGroup);
-        // Proportionales Tempo der Gegner/Gegenstände
         const currentSpeed = 0.25 + (score * 0.008);
 
         for (let i = entities.length - 1; i >= 0; i--) {
@@ -378,6 +411,62 @@ function animate() {
             }
         }
 
+        // --- KATZEN-LOGIK ---
+        if (score >= 5) {
+            if (catState === 0) {
+                if (Math.random() < 0.002 + (score * 0.0001)) {
+                    catState = 1;
+                    catSide = Math.random() > 0.5 ? 1 : -1;
+                    catTimer = 0;
+                    
+                    catShadow.position.x = catSide * 7.5; 
+                    catGroup.position.set(catSide * 7.5, 30, 0); 
+                }
+            } else if (catState === 1) {
+                catTimer++;
+                catShadow.material.opacity = Math.min(0.6, catTimer / 50); 
+                
+                // Warnzeit wird kürzer bei höherem Score
+                const warningDuration = Math.max(40, 100 - (score * 1.5));
+                if (catTimer > warningDuration) {
+                    catState = 2; // ZUSCHNAPPEN
+                }
+            } else if (catState === 2) {
+                catGroup.position.y -= 2.5; 
+                if (catGroup.position.y <= 0) {
+                    catGroup.position.y = 0;
+                    catState = 3;
+                    catTimer = 0;
+                    shakeTimer = 15; // Wackeleffekt starten
+                    
+                    // Maus auf der falschen Seite? Game Over.
+                    if ((catSide === -1 && mouseGroup.position.x < 0) || 
+                        (catSide === 1 && mouseGroup.position.x > 0)) {
+                        
+                        gameState = STATE_GAMEOVER;
+                        finalScoreElement.innerText = score;
+                        gameOverOverlay.style.display = 'flex';
+                        touchHint.style.display = 'none';
+                        
+                        // Maus optisch plattwalzen
+                        mouseGroup.scale.set(1.5, 0.1, 1.5);
+                    }
+                }
+            } else if (catState === 3) {
+                catTimer++;
+                if (catTimer > 30) {
+                    catState = 4;
+                }
+            } else if (catState === 4) {
+                catGroup.position.y += 0.8;
+                catShadow.material.opacity -= 0.03;
+                if (catGroup.position.y > 30) {
+                    catState = 0;
+                    catShadow.material.opacity = 0;
+                }
+            }
+        }
+
     } else if (gameState === STATE_CUTSCENE) {
         const targetCamPos = new THREE.Vector3(mouseGroup.position.x, 3, mouseGroup.position.z + 5);
         camera.position.lerp(targetCamPos, 0.05);
@@ -392,6 +481,15 @@ function animate() {
         }
     }
 
+    // --- SCREEN SHAKE (Wackelkamera) ---
+    if (shakeTimer > 0) {
+        camera.position.x = defaultCameraPos.x + (Math.random() - 0.5) * 1.5;
+        camera.position.y = defaultCameraPos.y + (Math.random() - 0.5) * 1.5;
+        shakeTimer--;
+    } else if (gameState === STATE_PLAYING && shakeTimer === 0) {
+        camera.position.lerp(defaultCameraPos, 0.1);
+    }
+
     renderer.render(scene, camera);
 }
 
@@ -402,11 +500,19 @@ restartBtn.addEventListener('click', () => {
     level = 1;
     spawnTimer = 0;
     
+    // Katzenstatus zurücksetzen
+    catState = 0;
+    catTimer = 0;
+    shakeTimer = 0;
+    catGroup.position.y = 30;
+    catShadow.material.opacity = 0;
+    
     scoreElement.innerText = score;
     levelElement.innerText = level;
     gameOverOverlay.style.display = 'none'; 
     
     mouseGroup.position.set(0, 0, 0);
+    mouseGroup.scale.set(1, 1, 1); // Plattgewalzt-Effekt aufheben
     body.scale.set(1, 1, 2);
 
     camera.position.copy(defaultCameraPos);
