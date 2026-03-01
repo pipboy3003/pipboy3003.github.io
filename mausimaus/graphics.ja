@@ -1,4 +1,4 @@
-// Timestamp: 2026-03-01 09:55:33 CET
+// Timestamp: 2026-03-01 10:05:00 CET
 
 GAME.setupGraphics = function() {
     GAME.scene = new THREE.Scene();
@@ -15,7 +15,6 @@ GAME.setupGraphics = function() {
     GAME.renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
     document.body.appendChild(GAME.renderer.domElement);
 
-    // Licht
     const ambientLight = new THREE.HemisphereLight(0xffffff, 0x228B22, 0.4); 
     GAME.scene.add(ambientLight);
 
@@ -32,7 +31,6 @@ GAME.setupGraphics = function() {
     dirLight.shadow.camera.bottom = -15;
     GAME.scene.add(dirLight);
 
-    // Boden
     const groundGeometry = new THREE.PlaneGeometry(30, 200);
     const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 }); 
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
@@ -40,7 +38,6 @@ GAME.setupGraphics = function() {
     ground.receiveShadow = true; 
     GAME.scene.add(ground);
 
-    // Gras (Umgebung, die sich später bewegt)
     const grassGroup = new THREE.Group();
     const grassMaterial = new THREE.MeshStandardMaterial({ color: 0x1e6a1e });
     const grassBladeGeom = new THREE.BoxGeometry(0.1, 0.5, 0.1);
@@ -55,11 +52,10 @@ GAME.setupGraphics = function() {
         grassBlade.castShadow = true;
         
         grassGroup.add(grassBlade);
-        GAME.grassBlades.push(grassBlade); // Speichern für die Bewegung
+        GAME.grassBlades.push(grassBlade); 
     }
     GAME.scene.add(grassGroup);
 
-    // --- Die Maus bauen ---
     GAME.mouseGroup = new THREE.Group();
 
     GAME.bodyMesh = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshStandardMaterial({ color: 0x888888 }));
@@ -113,7 +109,6 @@ GAME.setupGraphics = function() {
 
     GAME.scene.add(GAME.mouseGroup);
 
-    // --- Die Katzenpfote bauen ---
     GAME.catGroup = new THREE.Group();
     GAME.catGroup.position.set(0, 30, 0); 
     const furMat = new THREE.MeshStandardMaterial({ color: 0xe67e22 }); 
@@ -151,16 +146,16 @@ GAME.setupGraphics = function() {
         GAME.catGroup.add(fur);
     });
 
+    // NEU: Katzenpfote um 180 Grad drehen, damit die Krallen zum Spieler zeigen!
+    GAME.catGroup.rotation.y = Math.PI;
     GAME.scene.add(GAME.catGroup);
 
-    // Katzenschatten
     GAME.catShadow = new THREE.Mesh(new THREE.PlaneGeometry(15, 200), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0 }));
     GAME.catShadow.rotation.x = -Math.PI / 2;
     GAME.catShadow.position.y = 0.05; 
     GAME.scene.add(GAME.catShadow);
 };
 
-// --- Partikel System ---
 const dustGeom = new THREE.BoxGeometry(0.2, 0.2, 0.2);
 const dustMat = new THREE.MeshBasicMaterial({ color: 0xcccccc, transparent: true, opacity: 0.6 });
 
