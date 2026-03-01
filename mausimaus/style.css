@@ -1,4 +1,4 @@
-/* Timestamp: 2026-03-01 08:43:39 CET */
+/* Timestamp: 2026-03-01 08:48:00 CET */
 body {
     margin: 0;
     overflow: hidden; 
@@ -17,13 +17,18 @@ body {
 }
 
 h1 {
-    margin: 0 0 10px 0;
+    margin: 0 0 5px 0;
+    font-size: 32px;
 }
 
 p {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: bold;
-    margin: 0;
+    margin: 5px 0;
+}
+
+#level {
+    color: #f1c40f; /* Goldener Text für das Level */
 }
 
 button {
