@@ -1,4 +1,4 @@
-// Timestamp: 2026-03-01 09:36:08 CET
+// Timestamp: 2026-03-01 09:42:01 CET
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB); 
@@ -17,6 +17,7 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
 document.body.appendChild(renderer.domElement);
 
+// DOM Elemente
 const scoreElement = document.getElementById('score');
 const levelElement = document.getElementById('level');
 const touchHint = document.getElementById('touch-hint');
@@ -26,6 +27,7 @@ const restartBtn = document.getElementById('restartBtn');
 const startOverlay = document.getElementById('startOverlay');
 const uiContainer = document.getElementById('ui-container');
 
+// Game States
 const STATE_START = 0;
 const STATE_TRANSITION = 1;
 const STATE_PLAYING = 2;
@@ -34,6 +36,7 @@ const STATE_GAMEOVER = 4;
 
 let gameState = STATE_START;
 
+// Spiel-Variablen
 let score = 0;
 let level = 1;
 let entities = []; 
@@ -51,21 +54,22 @@ let shakeTimer = 0;
 let horizontalLimit = 14;
 
 function updateLimits() {
-    const dist = defaultCameraPos.z; // Distanz der Kamera zum Nullpunkt
+    const dist = defaultCameraPos.z; 
     const vFov = (camera.fov * Math.PI) / 180;
     const visibleHeight = 2 * Math.tan(vFov / 2) * dist;
     const visibleWidth = visibleHeight * (window.innerWidth / window.innerHeight);
     
-    horizontalLimit = (visibleWidth / 2) - 1.5; // -1.5 als Puffer für die Mausbreite
+    horizontalLimit = (visibleWidth / 2) - 1.5; 
     
-    if (horizontalLimit > 14) horizontalLimit = 14; // Maximaler Spielraum für Desktop
-    if (horizontalLimit < 2) horizontalLimit = 2;   // Minimaler Spielraum als Fallback
+    if (horizontalLimit > 14) horizontalLimit = 14; 
+    if (horizontalLimit < 2) horizontalLimit = 2;   
 }
 
-// Initiales Berechnen der Grenzen
 updateLimits();
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); 
+// --- Beleuchtung ---
+// Weiches Umgebungslicht für bessere Grafik
+const ambientLight = new THREE.HemisphereLight(0xffffff, 0x228B22, 0.4); 
 scene.add(ambientLight);
 
 const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -81,12 +85,34 @@ dirLight.shadow.camera.top = 15;
 dirLight.shadow.camera.bottom = -15;
 scene.add(dirLight);
 
+// --- Boden & Umgebung ---
 const groundGeometry = new THREE.PlaneGeometry(30, 200);
 const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 }); 
 const ground = new THREE.Mesh(groundGeometry, groundMaterial);
 ground.rotation.x = -Math.PI / 2; 
 ground.receiveShadow = true; 
 scene.add(ground);
+
+// Hunderte von Grashalmen hinzufügen für Textur
+const grassGroup = new THREE.Group();
+const grassMaterial = new THREE.MeshStandardMaterial({ color: 0x1e6a1e });
+const grassBladeGeom = new THREE.BoxGeometry(0.1, 0.5, 0.1);
+
+for (let i = 0; i < 500; i++) {
+    const grassBlade = new THREE.Mesh(grassBladeGeom, grassMaterial);
+    
+    // Zufällige Position auf der Wiese
+    const randomX = (Math.random() - 0.5) * 30;
+    const randomZ = (Math.random() - 0.5) * 200;
+    grassBlade.position.set(randomX, 0.25, randomZ);
+    
+    // Zufällige Höhe und Drehung
+    grassBlade.scale.y = Math.random() * 2 + 1;
+    grassBlade.rotation.y = Math.random() * Math.PI;
+    grassBlade.castShadow = true;
+    grassGroup.add(grassBlade);
+}
+scene.add(grassGroup);
 
 // --- Die Maus ---
 const mouseGroup = new THREE.Group();
@@ -149,27 +175,76 @@ mouseGroup.add(tail);
 
 scene.add(mouseGroup);
 
-// --- Die Katzenpfote ---
+// --- Die Katzenpfote (GRAFISCH VERBESSERT) ---
 const catGroup = new THREE.Group();
 catGroup.position.set(0, 30, 0); 
 
-const pawMat = new THREE.MeshStandardMaterial({ color: 0xe67e22 }); 
-const pawPadGeom = new THREE.BoxGeometry(10, 4, 12);
-const pawPad = new THREE.Mesh(pawPadGeom, pawMat);
-pawPad.position.y = 2;
-pawPad.castShadow = true;
-catGroup.add(pawPad);
+const furMat = new THREE.MeshStandardMaterial({ color: 0xe67e22 }); 
+const padMat = new THREE.MeshStandardMaterial({ color: 0xffa0a0 }); // Rosa Ballen
 
-const toeGeom = new THREE.SphereGeometry(2.5, 16, 16);
-for(let i=-1; i<=1; i++) {
-    const toe = new THREE.Mesh(toeGeom, pawMat);
-    toe.position.set(i * 3.5, 1, -5.5);
-    toe.scale.set(1, 0.8, 1.2);
-    toe.castShadow = true;
-    catGroup.add(toe);
-}
+// Körper (deformierte Kugel für Felloptik)
+const mainPawGeom = new THREE.SphereGeometry(1.8, 32, 32);
+const mainPaw = new THREE.Mesh(mainPawGeom, furMat);
+mainPaw.scale.set(4, 1.5, 3);
+mainPaw.position.y = 1.5;
+mainPaw.position.z = 0.5;
+mainPaw.castShadow = true;
+catGroup.add(mainPaw);
+
+// Hauptballen (Rosa, unten)
+const mainPadGeom = new THREE.SphereGeometry(1.5, 32, 32);
+const mainPad = new THREE.Mesh(mainPadGeom, padMat);
+mainPad.scale.set(3.5, 0.8, 2.5);
+mainPad.position.y = 0.5;
+mainPad.position.z = 0.5;
+mainPad.castShadow = true;
+catGroup.add(mainPad);
+
+// Zehenballen (3 Stück, rosa)
+const toePadGeom = new THREE.SphereGeometry(1, 32, 32);
+
+// Linker Zehballen
+const toePadLeft = new THREE.Mesh(toePadGeom, padMat);
+toePadLeft.scale.set(1, 0.6, 1.2);
+toePadLeft.position.set(-1.8, 0.45, -1);
+toePadLeft.castShadow = true;
+catGroup.add(toePadLeft);
+
+const toeFurLeft = new THREE.Mesh(toePadGeom, furMat);
+toeFurLeft.scale.set(1.2, 0.8, 1.5);
+toeFurLeft.position.set(-1.8, 0.9, -1);
+toeFurLeft.castShadow = true;
+catGroup.add(toeFurLeft);
+
+// Rechter Zehballen
+const toePadRight = new THREE.Mesh(toePadGeom, padMat);
+toePadRight.scale.set(1, 0.6, 1.2);
+toePadRight.position.set(1.8, 0.45, -1);
+toePadRight.castShadow = true;
+catGroup.add(toePadRight);
+
+const toeFurRight = new THREE.Mesh(toePadGeom, furMat);
+toeFurRight.scale.set(1.2, 0.8, 1.5);
+toeFurRight.position.set(1.8, 0.9, -1);
+toeFurRight.castShadow = true;
+catGroup.add(toeFurRight);
+
+// Mittlerer Zehballen (oben)
+const toePadCenter = new THREE.Mesh(toePadGeom, padMat);
+toePadCenter.scale.set(1.2, 0.7, 1.5);
+toePadCenter.position.set(0, 0.5, -1.5);
+toePadCenter.castShadow = true;
+catGroup.add(toePadCenter);
+
+const toeFurCenter = new THREE.Mesh(toePadGeom, furMat);
+toeFurCenter.scale.set(1.5, 1, 2);
+toeFurCenter.position.set(0, 1, -1.5);
+toeFurCenter.castShadow = true;
+catGroup.add(toeFurCenter);
+
 scene.add(catGroup);
 
+// Der Schatten der Katze
 const shadowGeom = new THREE.PlaneGeometry(15, 200);
 const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0 });
 const catShadow = new THREE.Mesh(shadowGeom, shadowMat);
@@ -177,87 +252,7 @@ catShadow.rotation.x = -Math.PI / 2;
 catShadow.position.y = 0.05; 
 scene.add(catShadow);
 
-let moveLeft = false;
-let moveRight = false;
-let isPointerDown = false;
-
-document.addEventListener('keydown', (e) => {
-    if(gameState !== STATE_PLAYING) return;
-    const key = e.key.toLowerCase();
-    if (key === 'arrowleft' || key === 'a') moveLeft = true;
-    if (key === 'arrowright' || key === 'd') moveRight = true;
-});
-
-document.addEventListener('keyup', (e) => {
-    const key = e.key.toLowerCase();
-    if (key === 'arrowleft' || key === 'a') moveLeft = false;
-    if (key === 'arrowright' || key === 'd') moveRight = false;
-});
-
-function updateMovementDirection(clientX) {
-    if(gameState !== STATE_PLAYING) return;
-    const screenWidth = window.innerWidth;
-    if (clientX < screenWidth / 2) {
-        moveLeft = true;
-        moveRight = false;
-    } else {
-        moveRight = true;
-        moveLeft = false;
-    }
-}
-
-startOverlay.addEventListener('click', () => {
-    if (gameState === STATE_START) {
-        gameState = STATE_TRANSITION;
-        startOverlay.style.display = 'none';
-    }
-});
-
-document.addEventListener('mousedown', (e) => {
-    if (e.target.tagName === 'BUTTON' || e.target.id === 'startOverlay') return; 
-    isPointerDown = true;
-    if(gameState === STATE_PLAYING) touchHint.style.display = 'none';
-    updateMovementDirection(e.clientX);
-});
-
-document.addEventListener('mousemove', (e) => {
-    if (isPointerDown) updateMovementDirection(e.clientX);
-});
-
-document.addEventListener('mouseup', () => {
-    isPointerDown = false;
-    moveLeft = false;
-    moveRight = false;
-});
-
-document.addEventListener('touchstart', (e) => {
-    if (e.target.tagName === 'BUTTON' || e.target.id === 'startOverlay') return;
-    isPointerDown = true;
-    if(gameState === STATE_PLAYING) touchHint.style.display = 'none'; 
-    updateMovementDirection(e.touches[0].clientX);
-}, { passive: false });
-
-document.addEventListener('touchmove', (e) => {
-    if (isPointerDown) updateMovementDirection(e.touches[0].clientX);
-}, { passive: false });
-
-document.addEventListener('touchend', (e) => {
-    if (e.touches.length === 0) { 
-        isPointerDown = false;
-        moveLeft = false;
-        moveRight = false;
-    } else {
-        updateMovementDirection(e.touches[0].clientX);
-    }
-});
-
-window.addEventListener('resize', () => {
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    updateLimits(); // Beim Drehen des Handys Grenzen neu berechnen
-});
-
+// --- Entities Spawner (Gleichbleibend) ---
 function spawnEntity() {
     const trapChance = Math.min(0.05 + (level * 0.02), 0.3);
     const isTrap = Math.random() < trapChance;
@@ -320,7 +315,7 @@ function spawnEntity() {
         object.userData = { type: 'cheese' };
     }
     
-    // Spawnt jetzt exakt im sichtbaren Bereich
+    // Spawnt dynamisch im sichtbaren Bereich
     const randomX = (Math.random() - 0.5) * (horizontalLimit * 2);
     const yPos = object.userData.type === 'cheese' && object.geometry.type === 'SphereGeometry' ? 0.3 : 0.5; 
     
@@ -332,6 +327,7 @@ function spawnEntity() {
     entities.push(object);
 }
 
+// --- Hauptschleife (Animations & Logik Update) ---
 function animate() {
     requestAnimationFrame(animate);
 
@@ -371,13 +367,9 @@ function animate() {
     } else if (gameState === STATE_PLAYING) {
         const currentPlayerSpeed = 0.35 + (score * 0.002);
 
-        // Limit-Check eingebaut
+        // Limit-Check
         if (moveLeft && mouseGroup.position.x > -horizontalLimit) mouseGroup.position.x -= currentPlayerSpeed;
         if (moveRight && mouseGroup.position.x < horizontalLimit) mouseGroup.position.x += currentPlayerSpeed;
-
-        // Sicherheits-Clamp falls das Fenster plötzlich extrem schmal gezogen wird
-        if (mouseGroup.position.x > horizontalLimit) mouseGroup.position.x = horizontalLimit;
-        if (mouseGroup.position.x < -horizontalLimit) mouseGroup.position.x = -horizontalLimit;
 
         spawnTimer++;
         const currentSpawnRate = Math.max(15, 70 - (score * 1.5));
@@ -442,7 +434,6 @@ function animate() {
                     catSide = Math.random() > 0.5 ? 1 : -1;
                     catTimer = 0;
                     
-                    // Katzen-Position passt sich dynamisch dem Bildschirm an
                     const catDropX = catSide * (horizontalLimit / 2 + 1.5);
                     catShadow.position.x = catDropX; 
                     catGroup.position.set(catDropX, 30, 0); 
@@ -461,7 +452,7 @@ function animate() {
                     catGroup.position.y = 0;
                     catState = 3;
                     catTimer = 0;
-                    shakeTimer = 15; 
+                    shakeTimer = 15; // Wackeleffekt starten (GRAFISCH)
                     
                     if ((catSide === -1 && mouseGroup.position.x < 0) || 
                         (catSide === 1 && mouseGroup.position.x > 0)) {
@@ -471,6 +462,7 @@ function animate() {
                         gameOverOverlay.style.display = 'flex';
                         touchHint.style.display = 'none';
                         
+                        // Maus optisch plattwalzen
                         mouseGroup.scale.set(1.5, 0.1, 1.5);
                     }
                 }
@@ -503,6 +495,7 @@ function animate() {
         }
     }
 
+    // --- SCREEN SHAKE (Wackelkamera Effekt) ---
     if (shakeTimer > 0) {
         camera.position.x = defaultCameraPos.x + (Math.random() - 0.5) * 1.5;
         camera.position.y = defaultCameraPos.y + (Math.random() - 0.5) * 1.5;
@@ -514,6 +507,41 @@ function animate() {
     renderer.render(scene, camera);
 }
 
+// --- Neustart ---
+// Steuerung Events
+document.addEventListener('keydown', (e) => {
+    if(gameState !== STATE_PLAYING) return;
+    const key = e.key.toLowerCase();
+    if (key === 'arrowleft' || key === 'a') moveLeft = true;
+    if (key === 'arrowright' || key === 'd') moveRight = true;
+});
+
+document.addEventListener('keyup', (e) => {
+    const key = e.key.toLowerCase();
+    if (key === 'arrowleft' || key === 'a') moveLeft = false;
+    if (key === 'arrowright' || key === 'd') moveRight = false;
+});
+
+function updateMovementDirection(clientX) {
+    if(gameState !== STATE_PLAYING) return;
+    const screenWidth = window.innerWidth;
+    if (clientX < screenWidth / 2) {
+        moveLeft = true;
+        moveRight = false;
+    } else {
+        moveRight = true;
+        moveLeft = false;
+    }
+}
+
+// Start-Interaktion
+startOverlay.addEventListener('click', () => {
+    if (gameState === STATE_START) {
+        gameState = STATE_TRANSITION;
+        startOverlay.style.display = 'none';
+    }
+});
+
 restartBtn.addEventListener('click', () => {
     gameState = STATE_PLAYING; 
     hitTrap = null;
@@ -521,6 +549,7 @@ restartBtn.addEventListener('click', () => {
     level = 1;
     spawnTimer = 0;
     
+    // Katzenstatus zurücksetzen
     catState = 0;
     catTimer = 0;
     shakeTimer = 0;
@@ -532,7 +561,7 @@ restartBtn.addEventListener('click', () => {
     gameOverOverlay.style.display = 'none'; 
     
     mouseGroup.position.set(0, 0, 0);
-    mouseGroup.scale.set(1, 1, 1); 
+    mouseGroup.scale.set(1, 1, 1); // Plattgewalzt-Effekt aufheben
     body.scale.set(1, 1, 2);
 
     camera.position.copy(defaultCameraPos);
