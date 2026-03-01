@@ -13,15 +13,91 @@
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
     
     <script>
+        // --- GLOBAL ERROR CAPTURE ---
+        window.logBuffer = [];
+        
+        function captureLog(type, msg) {
+            const line = `[${new Date().toLocaleTimeString()}] [${type}] ${msg}`;
+            window.logBuffer.push(line);
+            console.log(line);
+        }
+
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            const errorDetails = {
+                msg: msg,
+                url: url,
+                line: lineNo,
+                col: columnNo,
+                stack: error ? error.stack : 'N/A'
+            };
+            showCrashReport("RUNTIME_ERROR", errorDetails);
+            return false;
+        };
+
+        window.onunhandledrejection = function(event) {
+            showCrashReport("PROMISE_ERROR", {
+                msg: event.reason ? (event.reason.message || event.reason) : "Unknown Promise Error",
+                stack: event.reason ? event.reason.stack : 'N/A'
+            });
+        };
+
+        function showCrashReport(type, details) {
+            const overlay = document.getElementById('crash-overlay');
+            const reportBox = document.getElementById('crash-report-text');
+            
+            if(overlay) overlay.style.display = 'flex';
+
+            const fullReport = `=== MAUSIMAUS CRASH REPORT ===\nTIMESTAMP: ${new Date().toISOString()}\nTYPE: ${type}\n\nERROR MESSAGE:\n${details.msg}\n\nLOCATION:\n${details.url || 'Internal'} : ${details.line || '?'}:${details.col || '?'}\n\nSTACK TRACE:\n${details.stack}\n\n=== LOG BUFFER ===\n${window.logBuffer.slice(-10).join('\n')}`;
+
+            if(reportBox) reportBox.value = fullReport;
+        }
+
+        function copyCrashReport() {
+            const text = document.getElementById('crash-report-text');
+            text.select();
+            document.execCommand('copy');
+            alert("Bericht kopiert!");
+        }
+    </script>
+    
+    <script>
         const css = document.createElement('link');
         css.rel = 'stylesheet';
         css.href = 'style.css?v=' + Date.now();
         document.head.appendChild(css);
     </script>
     
+    <style>
+        /* Debug Styles for Crash Overlay */
+        #crash-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 9999;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            padding: 20px; box-sizing: border-box; font-family: monospace; color: white;
+        }
+        #crash-overlay h1 { color: #ff4444; border-bottom: 2px solid #ff4444; padding-bottom: 10px; margin-bottom: 10px; }
+        #crash-report-text { width: 100%; max-width: 600px; height: 250px; background: #220000; color: #ff8888; border: 1px solid #ff4444; padding: 10px; margin-bottom: 20px; outline: none; resize: none; }
+        .crash-btn-container { display: flex; gap: 10px; width: 100%; max-width: 600px; }
+        .crash-btn { flex: 1; padding: 15px; font-weight: bold; cursor: pointer; border: none; font-size: 16px; text-transform: uppercase; }
+        .crash-btn.copy { background: #ff4444; color: white; border: 1px solid #ff8888; }
+        .crash-btn.copy:hover { background: #cc0000; }
+        .crash-btn.restart { background: transparent; color: #888; border: 1px solid #888; }
+        .crash-btn.restart:hover { color: white; border-color: white; }
+    </style>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
+    <div id="crash-overlay">
+        <h1>FATAL SYSTEM ERROR</h1>
+        <p style="color: #ff8888; margin-bottom: 15px; text-align: center;">Das Spiel ist abgestürzt. Bitte kopiere diesen Bericht:</p>
+        <textarea id="crash-report-text" readonly></textarea>
+        <div class="crash-btn-container">
+            <button onclick="copyCrashReport()" class="crash-btn copy">BERICHT KOPIEREN</button>
+            <button onclick="location.reload()" class="crash-btn restart">NEUSTART</button>
+        </div>
+    </div>
+
     <div id="vignette"></div>
 
     <div id="startOverlay">
@@ -52,14 +128,37 @@
     </div>
 
     <script>
+        // --- LOAD SCRIPT MIT ERROR HANDLING ---
+        function loadScript(src) { 
+            return new Promise((resolve, reject) => { 
+                captureLog("LOADER", `Loading ${src}...`);
+                const s = document.createElement('script'); 
+                s.src = src; 
+                s.onload = resolve; 
+                s.onerror = (e) => reject({src: src, evt: e, message: "Script failed to load"}); 
+                document.body.appendChild(s); 
+            }); 
+        }
+
         const version = Date.now();
-        const scripts = ['state.js', 'graphics.js', 'mechanics.js', 'main.js'];
-        scripts.forEach(src => {
-            const js = document.createElement('script');
-            js.src = src + '?v=' + version;
-            js.async = false; // Garantiert die korrekte Lade-Reihenfolge
-            document.body.appendChild(js);
-        });
+        
+        // Die Scripte werden nacheinander geladen. 
+        // Falls eines fehlschlägt (z.B. weil graphics.js fehlt), springt der Catch Block ein.
+        loadScript('state.js?v=' + version)
+            .then(() => loadScript('graphics.js?v=' + version)) // VERGISS NICHT: Datei graphics.ja in graphics.js umzubenennen!
+            .then(() => loadScript('mechanics.js?v=' + version))
+            .then(() => loadScript('main.js?v=' + version))
+            .then(() => {
+                captureLog("SYSTEM", "Alle Scripte erfolgreich geladen.");
+            })
+            .catch(err => {
+                showCrashReport("SCRIPT_LOAD_ERROR", {
+                    msg: "Konnte Spieldatei nicht laden: " + err.src,
+                    url: err.src,
+                    line: 0, col: 0,
+                    stack: JSON.stringify(err)
+                });
+            });
     </script>
 </body>
 </html>
