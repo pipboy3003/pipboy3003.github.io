@@ -1,4 +1,4 @@
-// Timestamp: 2026-03-01 08:53:30 CET
+// Timestamp: 2026-03-01 08:58:00 CET
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB); 
@@ -17,16 +17,18 @@ document.body.appendChild(renderer.domElement);
 const scoreElement = document.getElementById('score');
 const levelElement = document.getElementById('level');
 const restartBtn = document.getElementById('restartBtn');
+const gameOverText = document.getElementById('gameOverText');
 const touchHint = document.getElementById('touch-hint');
 
 let isGameOver = false;
 let score = 0;
 let level = 1;
 let collectibles = [];
-let collectibleSpeed = 0.25;
+let traps = [];
+let speedMultiplier = 0.25;
 let spawnTimer = 0;
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); 
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); 
 scene.add(ambientLight);
 
 const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -43,7 +45,7 @@ dirLight.shadow.camera.bottom = -15;
 scene.add(dirLight);
 
 const groundGeometry = new THREE.PlaneGeometry(30, 200);
-const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 }); 
+const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22, roughness: 1.0 }); 
 const ground = new THREE.Mesh(groundGeometry, groundMaterial);
 ground.rotation.x = -Math.PI / 2; 
 ground.receiveShadow = true; 
@@ -53,7 +55,7 @@ scene.add(ground);
 const mouseGroup = new THREE.Group();
 
 const bodyGeom = new THREE.SphereGeometry(0.5, 16, 16);
-const bodyMat = new THREE.MeshStandardMaterial({ color: 0x888888 }); 
+const bodyMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.9 }); 
 const body = new THREE.Mesh(bodyGeom, bodyMat);
 body.scale.set(1, 1, 2); 
 body.position.y = 0.5;
@@ -61,14 +63,14 @@ body.castShadow = true;
 mouseGroup.add(body);
 
 const headGeom = new THREE.SphereGeometry(0.4, 16, 16);
-const headMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
+const headMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.9 });
 const head = new THREE.Mesh(headGeom, headMat);
 head.position.set(0, 0.6, -0.8); 
 head.castShadow = true;
 mouseGroup.add(head);
 
 const earGeom = new THREE.CircleGeometry(0.3, 32);
-const earMat = new THREE.MeshStandardMaterial({ color: 0x888888, side: THREE.DoubleSide });
+const earMat = new THREE.MeshStandardMaterial({ color: 0x888888, side: THREE.DoubleSide, roughness: 0.9 });
 const leftEar = new THREE.Mesh(earGeom, earMat);
 leftEar.position.set(-0.3, 0.9, -0.6);
 leftEar.rotation.y = -Math.PI / 4;
@@ -82,14 +84,14 @@ rightEar.castShadow = true;
 mouseGroup.add(rightEar);
 
 const noseGeom = new THREE.SphereGeometry(0.08, 8, 8);
-const noseMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
+const noseMat = new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 0.4 });
 const nose = new THREE.Mesh(noseGeom, noseMat);
 nose.position.set(0, 0.6, -1.15);
 nose.castShadow = true;
 mouseGroup.add(nose);
 
 const eyeGeom = new THREE.SphereGeometry(0.05, 8, 8);
-const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
+const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 0.2 });
 const leftEye = new THREE.Mesh(eyeGeom, eyeMat);
 leftEye.position.set(-0.15, 0.7, -0.9);
 leftEye.castShadow = true;
@@ -110,13 +112,12 @@ mouseGroup.add(tail);
 
 scene.add(mouseGroup);
 
-// --- Steuerung (Keyboard, Touch & Maus Hold) ---
+// --- Steuerung ---
 let moveLeft = false;
 let moveRight = false;
 let isPointerDown = false;
 const playerSpeed = 0.35; 
 
-// Tastatur bleibt für Desktop-Alternativen erhalten
 document.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
     if (key === 'arrowleft' || key === 'a') moveLeft = true;
@@ -129,13 +130,12 @@ document.addEventListener('keyup', (e) => {
     if (key === 'arrowright' || key === 'd') moveRight = false;
 });
 
-// Touch & Maus Anzeige
 if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
     touchHint.style.display = 'block'; 
 }
 
-// Zentrale Funktion zum Auswerten der Pointer-Position
 function updateMovementDirection(clientX) {
+    if (isGameOver) return;
     const screenWidth = window.innerWidth;
     if (clientX < screenWidth / 2) {
         moveLeft = true;
@@ -146,19 +146,15 @@ function updateMovementDirection(clientX) {
     }
 }
 
-// --- Maus Steuerung (Desktop: Klick & Halten) ---
 document.addEventListener('mousedown', (e) => {
-    if (e.target.tagName === 'BUTTON') return; // Button nicht blockieren
+    if (e.target.tagName === 'BUTTON') return; 
     isPointerDown = true;
     touchHint.style.display = 'none';
     updateMovementDirection(e.clientX);
 });
 
 document.addEventListener('mousemove', (e) => {
-    // Wenn Maus gedrückt ist und bewegt wird, Richtung dynamisch anpassen
-    if (isPointerDown) {
-        updateMovementDirection(e.clientX);
-    }
+    if (isPointerDown) updateMovementDirection(e.clientX);
 });
 
 document.addEventListener('mouseup', () => {
@@ -168,13 +164,11 @@ document.addEventListener('mouseup', () => {
 });
 
 document.addEventListener('mouseleave', () => {
-    // Falls die Maus das Browserfenster verlässt
     isPointerDown = false;
     moveLeft = false;
     moveRight = false;
 });
 
-// --- Touch Steuerung (Mobile: Drücken & Halten) ---
 document.addEventListener('touchstart', (e) => {
     if (e.target.tagName === 'BUTTON') return;
     isPointerDown = true;
@@ -183,10 +177,7 @@ document.addEventListener('touchstart', (e) => {
 }, { passive: false });
 
 document.addEventListener('touchmove', (e) => {
-    // Wenn Finger über den Bildschirm wischt, Richtung dynamisch anpassen
-    if (isPointerDown) {
-        updateMovementDirection(e.touches[0].clientX);
-    }
+    if (isPointerDown) updateMovementDirection(e.touches[0].clientX);
 }, { passive: false });
 
 document.addEventListener('touchend', (e) => {
@@ -195,7 +186,6 @@ document.addEventListener('touchend', (e) => {
         moveLeft = false;
         moveRight = false;
     } else {
-        // Falls ein zweiter Finger noch liegt
         updateMovementDirection(e.touches[0].clientX);
     }
 });
@@ -206,51 +196,95 @@ document.addEventListener('touchcancel', () => {
     moveRight = false;
 });
 
-
 window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
 });
 
-// --- Käse Spawner ---
+// --- Schöner Käse Spawner ---
 function spawnCheese() {
-    let cheese;
+    let cheeseMesh;
     const availableTypes = Math.min(level, 4);
     const cheeseType = Math.floor(Math.random() * availableTypes);
 
+    // Käse-Gruppe für Hover-Animation
+    const cheeseGroup = new THREE.Group();
+    cheeseGroup.userData = { 
+        hoverOffset: Math.random() * Math.PI * 2,
+        rotSpeedX: (Math.random() - 0.5) * 0.04,
+        rotSpeedY: (Math.random() - 0.5) * 0.04 + 0.02
+    };
+
     if (cheeseType === 0) {
-        const geom = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
-        const mat = new THREE.MeshStandardMaterial({ color: 0xFFFF00 }); 
-        cheese = new THREE.Mesh(geom, mat);
-        cheese.rotation.x = Math.PI / 2; 
+        // Gouda
+        const geom = new THREE.CylinderGeometry(0.5, 0.5, 0.4, 16);
+        const mat = new THREE.MeshStandardMaterial({ color: 0xFFD700, roughness: 0.3, metalness: 0.1 }); 
+        cheeseMesh = new THREE.Mesh(geom, mat);
     } 
     else if (cheeseType === 1) {
-        const geom = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 3);
-        const mat = new THREE.MeshStandardMaterial({ color: 0xFAD02C }); 
-        cheese = new THREE.Mesh(geom, mat);
-        cheese.rotation.x = Math.PI / 2;
+        // Emmentaler
+        const geom = new THREE.CylinderGeometry(0.5, 0.5, 0.4, 3);
+        const mat = new THREE.MeshStandardMaterial({ color: 0xFAD02C, roughness: 0.4 }); 
+        cheeseMesh = new THREE.Mesh(geom, mat);
     }
     else if (cheeseType === 2) {
-        const geom = new THREE.SphereGeometry(0.35, 16, 16);
-        const mat = new THREE.MeshStandardMaterial({ color: 0xE74C3C }); 
-        cheese = new THREE.Mesh(geom, mat);
-        cheese.scale.set(1, 0.6, 1); 
+        // Babybel
+        const geom = new THREE.SphereGeometry(0.4, 16, 16);
+        const mat = new THREE.MeshStandardMaterial({ color: 0xE74C3C, roughness: 0.1, metalness: 0.2 }); 
+        cheeseMesh = new THREE.Mesh(geom, mat);
+        cheeseMesh.scale.set(1, 0.6, 1); 
     }
     else {
-        const geom = new THREE.CylinderGeometry(0.4, 0.4, 0.2, 16);
-        const mat = new THREE.MeshStandardMaterial({ color: 0xF5F5F5 }); 
-        cheese = new THREE.Mesh(geom, mat);
-        cheese.rotation.x = Math.PI / 2;
+        // Camembert
+        const geom = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 16);
+        const mat = new THREE.MeshStandardMaterial({ color: 0xFFFAF0, roughness: 0.8 }); 
+        cheeseMesh = new THREE.Mesh(geom, mat);
     }
     
+    cheeseMesh.castShadow = true;
+    cheeseGroup.add(cheeseMesh);
+
     const randomX = (Math.random() - 0.5) * 28;
-    const yPos = cheeseType === 2 ? 0.3 : 0.5; 
-    cheese.position.set(randomX, yPos, -60); 
-    cheese.castShadow = true;
+    cheeseGroup.position.set(randomX, 0.8, -80); 
     
-    scene.add(cheese);
-    collectibles.push(cheese);
+    scene.add(cheeseGroup);
+    collectibles.push(cheeseGroup);
+}
+
+// --- Mausefallen Spawner ---
+function spawnTrap() {
+    const trapGroup = new THREE.Group();
+    
+    // Holzbrett
+    const baseGeom = new THREE.BoxGeometry(1.8, 0.1, 2.2);
+    const baseMat = new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.9 });
+    const base = new THREE.Mesh(baseGeom, baseMat);
+    base.position.y = 0.05;
+    base.castShadow = true;
+    base.receiveShadow = true;
+    trapGroup.add(base);
+
+    // Metallbügel
+    const wireGeom = new THREE.BoxGeometry(1.6, 0.05, 1.0);
+    const wireMat = new THREE.MeshStandardMaterial({ color: 0xAAAAAA, metalness: 0.8, roughness: 0.2 });
+    const wire = new THREE.Mesh(wireGeom, wireMat);
+    wire.position.set(0, 0.1, -0.4);
+    wire.castShadow = true;
+    trapGroup.add(wire);
+
+    // Feder/Auslöser in der Mitte (Rot)
+    const triggerGeom = new THREE.BoxGeometry(0.3, 0.08, 0.3);
+    const triggerMat = new THREE.MeshStandardMaterial({ color: 0x8B0000 });
+    const trigger = new THREE.Mesh(triggerGeom, triggerMat);
+    trigger.position.set(0, 0.1, 0.2);
+    trapGroup.add(trigger);
+
+    const randomX = (Math.random() - 0.5) * 28;
+    trapGroup.position.set(randomX, 0, -80);
+    
+    scene.add(trapGroup);
+    traps.push(trapGroup);
 }
 
 // --- Hauptschleife ---
@@ -263,20 +297,32 @@ function animate() {
     if (moveRight && mouseGroup.position.x < 14) mouseGroup.position.x += playerSpeed;
 
     spawnTimer++;
-    const currentSpawnRate = Math.max(20, 70 - (level * 4)); 
+    const currentSpawnRate = Math.max(15, 60 - (level * 3)); 
 
     if (spawnTimer > currentSpawnRate) { 
-        spawnCheese();
+        // 20% Chance für eine Falle, steigt mit dem Level leicht an
+        const trapChance = 0.15 + (level * 0.02);
+        if (Math.random() < trapChance) {
+            spawnTrap();
+        } else {
+            spawnCheese();
+        }
         spawnTimer = 0;
     }
 
     const playerBox = new THREE.Box3().setFromObject(mouseGroup);
+    const currentSpeed = speedMultiplier + (level * 0.02);
 
+    // Käse updaten
     for (let i = collectibles.length - 1; i >= 0; i--) {
         const cheese = collectibles[i];
         
-        const currentSpeed = collectibleSpeed + (level * 0.02);
         cheese.position.z += currentSpeed; 
+        
+        // Schwebende und drehende Animation
+        cheese.children[0].rotation.x += cheese.userData.rotSpeedX;
+        cheese.children[0].rotation.y += cheese.userData.rotSpeedY;
+        cheese.position.y = 0.8 + Math.sin(Date.now() * 0.005 + cheese.userData.hoverOffset) * 0.2;
 
         const cheeseBox = new THREE.Box3().setFromObject(cheese);
 
@@ -306,6 +352,30 @@ function animate() {
         }
     }
 
+    // Fallen updaten
+    for (let i = traps.length - 1; i >= 0; i--) {
+        const trap = traps[i];
+        trap.position.z += currentSpeed;
+
+        // Etwas kleinere Kollisionsbox für die Falle, damit man knapp ausweichen kann
+        const trapBox = new THREE.Box3().setFromObject(trap);
+        trapBox.expandByScalar(-0.1); 
+
+        if (playerBox.intersectsBox(trapBox)) {
+            isGameOver = true;
+            gameOverText.style.display = 'block';
+            restartBtn.style.display = 'inline-block';
+            moveLeft = false;
+            moveRight = false;
+            return; 
+        }
+
+        if (trap.position.z > 15) {
+            scene.remove(trap);
+            traps.splice(i, 1);
+        }
+    }
+
     renderer.render(scene, camera);
 }
 
@@ -313,11 +383,12 @@ restartBtn.addEventListener('click', () => {
     isGameOver = false; 
     score = 0;
     level = 1;
-    collectibleSpeed = 0.25;
+    speedMultiplier = 0.25;
     spawnTimer = 0;
     
     scoreElement.innerText = score;
     levelElement.innerText = level;
+    gameOverText.style.display = 'none';
     restartBtn.style.display = 'none'; 
     mouseGroup.position.x = 0;
     
@@ -325,6 +396,9 @@ restartBtn.addEventListener('click', () => {
 
     collectibles.forEach(cheese => scene.remove(cheese));
     collectibles = [];
+
+    traps.forEach(trap => scene.remove(trap));
+    traps = [];
 
     animate();
 });
