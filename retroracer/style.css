@@ -1,9 +1,10 @@
-/* Timestamp: 2026-03-01 08:16:25 CET */
+/* Timestamp: 2026-03-01 08:24:59 CET */
 body {
     margin: 0;
-    overflow: hidden; /* Verhindert unschöne Scrollbalken */
-    background-color: #87CEEB; /* Fallback Himmelsfarbe */
+    overflow: hidden;
+    background-color: #87CEEB;
     font-family: sans-serif;
+    touch-action: none;
 }
 
 #ui-container {
@@ -11,7 +12,7 @@ body {
     top: 20px;
     left: 20px;
     color: white;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.8); /* Macht den Text über dem 3D-Hintergrund lesbar */
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
     z-index: 10;
 }
 
@@ -41,4 +42,24 @@ button {
 
 button:hover {
     background-color: #c0392b;
+}
+
+#touch-hint {
+    position: absolute;
+    bottom: 40px;
+    width: 100%;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
+    pointer-events: none;
+    z-index: 10;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.4; }
+    50% { opacity: 1; }
+    100% { opacity: 0.4; }
 }
