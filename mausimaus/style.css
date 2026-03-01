@@ -1,10 +1,18 @@
-/* Timestamp: 2026-03-01 08:48:00 CET */
+/* Timestamp: 2026-03-01 08:53:30 CET */
 body {
     margin: 0;
     overflow: hidden; 
     background-color: #87CEEB; 
     font-family: sans-serif;
-    touch-action: none; 
+    touch-action: none; /* Verhindert Wischen und Zoomen auf Mobile */
+    
+    /* Wichtig für "Drücken & Halten": Verhindert, dass Text markiert wird */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 #ui-container {
@@ -28,7 +36,7 @@ p {
 }
 
 #level {
-    color: #f1c40f; /* Goldener Text für das Level */
+    color: #f1c40f; 
 }
 
 button {
@@ -43,6 +51,7 @@ button {
     border-radius: 8px;
     transition: background-color 0.2s;
     box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    pointer-events: auto; /* Damit der Button trotz user-select klickbar bleibt */
 }
 
 button:hover {
