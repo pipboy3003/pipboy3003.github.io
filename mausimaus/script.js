@@ -1,4 +1,4 @@
-// Timestamp: 2026-03-01 09:28:08 CET
+// Timestamp: 2026-03-01 09:36:08 CET
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB); 
@@ -42,10 +42,28 @@ let hitTrap = null;
 let startAngle = 0;
 
 // Katzen-Variablen
-let catState = 0; // 0: idle, 1: warning, 2: slam, 3: rest, 4: retract
-let catSide = 1; // 1 = rechts, -1 = links
+let catState = 0; 
+let catSide = 1; 
 let catTimer = 0;
 let shakeTimer = 0;
+
+// Dynamische Spielfeldgrenze
+let horizontalLimit = 14;
+
+function updateLimits() {
+    const dist = defaultCameraPos.z; // Distanz der Kamera zum Nullpunkt
+    const vFov = (camera.fov * Math.PI) / 180;
+    const visibleHeight = 2 * Math.tan(vFov / 2) * dist;
+    const visibleWidth = visibleHeight * (window.innerWidth / window.innerHeight);
+    
+    horizontalLimit = (visibleWidth / 2) - 1.5; // -1.5 als Puffer für die Mausbreite
+    
+    if (horizontalLimit > 14) horizontalLimit = 14; // Maximaler Spielraum für Desktop
+    if (horizontalLimit < 2) horizontalLimit = 2;   // Minimaler Spielraum als Fallback
+}
+
+// Initiales Berechnen der Grenzen
+updateLimits();
 
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); 
 scene.add(ambientLight);
@@ -152,7 +170,6 @@ for(let i=-1; i<=1; i++) {
 }
 scene.add(catGroup);
 
-// Der Schatten der Katze
 const shadowGeom = new THREE.PlaneGeometry(15, 200);
 const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0 });
 const catShadow = new THREE.Mesh(shadowGeom, shadowMat);
@@ -238,6 +255,7 @@ window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
+    updateLimits(); // Beim Drehen des Handys Grenzen neu berechnen
 });
 
 function spawnEntity() {
@@ -302,7 +320,8 @@ function spawnEntity() {
         object.userData = { type: 'cheese' };
     }
     
-    const randomX = (Math.random() - 0.5) * 28;
+    // Spawnt jetzt exakt im sichtbaren Bereich
+    const randomX = (Math.random() - 0.5) * (horizontalLimit * 2);
     const yPos = object.userData.type === 'cheese' && object.geometry.type === 'SphereGeometry' ? 0.3 : 0.5; 
     
     if(object.userData.type === 'trap') object.position.set(randomX, 0, -60);
@@ -352,8 +371,13 @@ function animate() {
     } else if (gameState === STATE_PLAYING) {
         const currentPlayerSpeed = 0.35 + (score * 0.002);
 
-        if (moveLeft && mouseGroup.position.x > -14) mouseGroup.position.x -= currentPlayerSpeed;
-        if (moveRight && mouseGroup.position.x < 14) mouseGroup.position.x += currentPlayerSpeed;
+        // Limit-Check eingebaut
+        if (moveLeft && mouseGroup.position.x > -horizontalLimit) mouseGroup.position.x -= currentPlayerSpeed;
+        if (moveRight && mouseGroup.position.x < horizontalLimit) mouseGroup.position.x += currentPlayerSpeed;
+
+        // Sicherheits-Clamp falls das Fenster plötzlich extrem schmal gezogen wird
+        if (mouseGroup.position.x > horizontalLimit) mouseGroup.position.x = horizontalLimit;
+        if (mouseGroup.position.x < -horizontalLimit) mouseGroup.position.x = -horizontalLimit;
 
         spawnTimer++;
         const currentSpawnRate = Math.max(15, 70 - (score * 1.5));
@@ -411,7 +435,6 @@ function animate() {
             }
         }
 
-        // --- KATZEN-LOGIK ---
         if (score >= 5) {
             if (catState === 0) {
                 if (Math.random() < 0.002 + (score * 0.0001)) {
@@ -419,17 +442,18 @@ function animate() {
                     catSide = Math.random() > 0.5 ? 1 : -1;
                     catTimer = 0;
                     
-                    catShadow.position.x = catSide * 7.5; 
-                    catGroup.position.set(catSide * 7.5, 30, 0); 
+                    // Katzen-Position passt sich dynamisch dem Bildschirm an
+                    const catDropX = catSide * (horizontalLimit / 2 + 1.5);
+                    catShadow.position.x = catDropX; 
+                    catGroup.position.set(catDropX, 30, 0); 
                 }
             } else if (catState === 1) {
                 catTimer++;
                 catShadow.material.opacity = Math.min(0.6, catTimer / 50); 
                 
-                // Warnzeit wird kürzer bei höherem Score
                 const warningDuration = Math.max(40, 100 - (score * 1.5));
                 if (catTimer > warningDuration) {
-                    catState = 2; // ZUSCHNAPPEN
+                    catState = 2; 
                 }
             } else if (catState === 2) {
                 catGroup.position.y -= 2.5; 
@@ -437,9 +461,8 @@ function animate() {
                     catGroup.position.y = 0;
                     catState = 3;
                     catTimer = 0;
-                    shakeTimer = 15; // Wackeleffekt starten
+                    shakeTimer = 15; 
                     
-                    // Maus auf der falschen Seite? Game Over.
                     if ((catSide === -1 && mouseGroup.position.x < 0) || 
                         (catSide === 1 && mouseGroup.position.x > 0)) {
                         
@@ -448,7 +471,6 @@ function animate() {
                         gameOverOverlay.style.display = 'flex';
                         touchHint.style.display = 'none';
                         
-                        // Maus optisch plattwalzen
                         mouseGroup.scale.set(1.5, 0.1, 1.5);
                     }
                 }
@@ -481,7 +503,6 @@ function animate() {
         }
     }
 
-    // --- SCREEN SHAKE (Wackelkamera) ---
     if (shakeTimer > 0) {
         camera.position.x = defaultCameraPos.x + (Math.random() - 0.5) * 1.5;
         camera.position.y = defaultCameraPos.y + (Math.random() - 0.5) * 1.5;
@@ -500,7 +521,6 @@ restartBtn.addEventListener('click', () => {
     level = 1;
     spawnTimer = 0;
     
-    // Katzenstatus zurücksetzen
     catState = 0;
     catTimer = 0;
     shakeTimer = 0;
@@ -512,7 +532,7 @@ restartBtn.addEventListener('click', () => {
     gameOverOverlay.style.display = 'none'; 
     
     mouseGroup.position.set(0, 0, 0);
-    mouseGroup.scale.set(1, 1, 1); // Plattgewalzt-Effekt aufheben
+    mouseGroup.scale.set(1, 1, 1); 
     body.scale.set(1, 1, 2);
 
     camera.position.copy(defaultCameraPos);
