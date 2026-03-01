@@ -1,9 +1,9 @@
-/* Timestamp: 2026-03-01 09:48:02 CET */
+/* Timestamp: 2026-03-01 09:52:02 CET */
 body {
     margin: 0;
     overflow: hidden; 
     background-color: #87CEEB; 
-    font-family: 'Fredoka', sans-serif; /* Neue Schriftart angewendet */
+    font-family: 'Fredoka', sans-serif; 
     touch-action: none; 
     
     -webkit-touch-callout: none;
@@ -14,7 +14,6 @@ body {
     user-select: none;
 }
 
-/* Neuer Vignette-Effekt (abdunkelnde Ränder) */
 #vignette {
     position: fixed;
     top: 0;
@@ -22,7 +21,7 @@ body {
     width: 100vw;
     height: 100vh;
     box-shadow: inset 0 0 150px rgba(0,0,0,0.6);
-    pointer-events: none; /* Klicks gehen durch */
+    pointer-events: none; 
     z-index: 5;
 }
 
@@ -53,7 +52,7 @@ body {
     top: 20px;
     left: 20px;
     color: white;
-    text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; /* Starke Outlines */
+    text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; 
     z-index: 10;
 }
 
@@ -70,6 +69,28 @@ p {
 
 #level {
     color: #f1c40f; 
+}
+
+/* NEU: Styling für die Gewichts-Anzeige */
+#weight-container {
+    width: 180px;
+}
+
+#weight-bar-bg {
+    width: 100%;
+    height: 18px;
+    background-color: rgba(0, 0, 0, 0.6);
+    border: 2px solid #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+#weight-bar-fill {
+    width: 0%;
+    height: 100%;
+    background-color: #2ecc71; /* Startet Grün */
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s;
 }
 
 #touch-hint {
