@@ -1,32 +1,47 @@
-// Timestamp: 2026-03-01 10:15:00 CET
+// [2026-03-01 10:22:00] mechanics.js - Hindernis-Erweiterung
 
 GAME.spawnEntity = function() {
-    const roll = Math.random();
+    const rand = Math.random();
+    let object = new THREE.Group();
     let type = 'cheese';
-    let color = 0xffcc00;
 
-    if (roll < 0.2) { type = 'trap'; color = 0x888888; }
-    else if (roll < 0.25) { type = 'chili'; color = 0xff3300; }
+    // Höhere Level = mehr Hindernisse
+    const obstacleChance = Math.min(0.2 + (GAME.level * 0.05), 0.6);
 
-    // Fix: Nutzt exakt das berechnete Limit aus der Grafik-Engine
-    const margin = 0.5; 
-    const spawnX = (Math.random() * (GAME.horizontalLimit * 2 - margin * 2)) - (GAME.horizontalLimit - margin);
-
-    const geometry = type === 'trap' ? new THREE.BoxGeometry(1.2, 0.2, 0.8) : new THREE.SphereGeometry(0.4, 8, 8);
-    const material = new THREE.MeshPhongMaterial({ color: color });
-    const entity = new THREE.Mesh(geometry, material);
-
-    entity.position.set(spawnX, 0.5, -100);
-    entity.userData = { type: type, color: color };
-
-    if (type === 'trap') {
-        const snapper = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.1, 0.7), new THREE.MeshPhongMaterial({ color: 0x444444 }));
-        snapper.position.y = 0.2;
-        snapper.rotation.x = -Math.PI * 0.8;
-        entity.add(snapper);
-        entity.userData.snapper = snapper;
+    if (rand < obstacleChance) {
+        const obsRand = Math.random();
+        
+        if (obsRand < 0.3 && GAME.level >= 3) {
+            // WÄSCHELEINE (Breites Hindernis)
+            object = GAME.createClothesline();
+            object.userData = { type: 'clothesline' };
+            type = 'trap'; // Wir behandeln es wie eine Falle bei Kollision
+        } 
+        else if (obsRand < 0.6) {
+            // PFÜTZE (Verlangsamt die Maus?)
+            object = GAME.createPuddle();
+            object.userData = { type: 'puddle' };
+            type = 'puddle';
+        }
+        else {
+            // KLASSISCHE FALLE
+            // ... (Dein existierender Fallen-Code hier) ...
+            object.userData = { type: 'trap' };
+        }
+    } 
+    else if (rand < obstacleChance + 0.05) {
+        // CHILI
+        // ... (Dein Chili-Code) ...
+    }
+    else {
+        // KÄSE
+        // ... (Dein Käse-Code) ...
     }
 
-    GAME.scene.add(entity);
-    GAME.entities.push(entity);
+    // Positionierung
+    const randomX = (type === 'clothesline') ? 0 : (Math.random() - 0.5) * (GAME.horizontalLimit * 2);
+    object.position.set(randomX, 0, -80); 
+    
+    GAME.scene.add(object);
+    GAME.entities.push(object);
 };
