@@ -1,10 +1,10 @@
-/* Timestamp: 2026-03-01 08:24:59 CET */
+/* Timestamp: 2026-03-01 08:33:38 CET */
 body {
     margin: 0;
-    overflow: hidden;
-    background-color: #87CEEB;
+    overflow: hidden; /* Verhindert Wischen auf Mobile */
+    background-color: #87CEEB; /* Fallback Himmelsfarbe */
     font-family: sans-serif;
-    touch-action: none;
+    touch-action: none; /* Verhindert Zoom und Scroll-Gesten auf Mobile */
 }
 
 #ui-container {
@@ -44,6 +44,7 @@ button:hover {
     background-color: #c0392b;
 }
 
+/* Touch-Hinweis Styling & Animation */
 #touch-hint {
     position: absolute;
     bottom: 40px;
@@ -53,7 +54,7 @@ button:hover {
     font-size: 18px;
     font-weight: bold;
     text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
-    pointer-events: none;
+    pointer-events: none; /* Klicks gehen durch den Text hindurch */
     z-index: 10;
     animation: pulse 2s infinite;
 }
