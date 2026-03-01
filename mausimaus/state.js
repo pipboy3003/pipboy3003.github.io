@@ -1,4 +1,4 @@
-// Timestamp: 2026-03-01 09:55:33 CET
+// Timestamp: 2026-03-01 10:05:00 CET
 
 window.GAME = {
     // Konstanten für den Spielstatus
@@ -9,13 +9,13 @@ window.GAME = {
     STATE_GAMEOVER: 4,
 
     // Spiel-Logik Variablen
-    state: 0, // Startet bei STATE_START
+    state: 0, 
     score: 0,
     level: 1,
     fatness: 1,
     MAX_FATNESS: 3,
     
-    // Arrays für Objekte in der Welt
+    // Arrays für Objekte
     entities: [],
     particles: [],
     grassBlades: [],
@@ -36,12 +36,14 @@ window.GAME = {
     moveLeft: false,
     moveRight: false,
     isPointerDown: false,
+    targetX: 0, // NEU: Ziel-Koordinate für feine Touch-Steuerung
+    useTargetControl: false, // NEU: Unterscheidet zwischen Tastatur und Touch
     
     // Standard Kamera-Positionen
     defaultCameraPos: new THREE.Vector3(0, 6, 12),
     menuCameraPos: new THREE.Vector3(0, 12, 14),
 
-    // Referenzen (Werden in graphics.js befüllt)
+    // Referenzen 
     scene: null,
     camera: null,
     renderer: null,
