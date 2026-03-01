@@ -1,4 +1,4 @@
-/* Timestamp: 2026-03-01 09:06:48 CET */
+/* Timestamp: 2026-03-01 09:10:00 CET */
 body {
     margin: 0;
     overflow: hidden; 
@@ -12,6 +12,29 @@ body {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+}
+
+/* --- Startbildschirm Overlay --- */
+#startOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end; /* Text unten platzieren */
+    padding-bottom: 15vh;
+    box-sizing: border-box;
+    z-index: 50;
+    cursor: pointer;
+}
+
+.pulse-text {
+    color: white;
+    font-size: 32px;
+    text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
+    animation: pulse 1.5s infinite;
 }
 
 #ui-container {
@@ -53,9 +76,9 @@ p {
 }
 
 @keyframes pulse {
-    0% { opacity: 0.4; }
-    50% { opacity: 1; }
-    100% { opacity: 0.4; }
+    0% { opacity: 0.4; transform: scale(0.95); }
+    50% { opacity: 1; transform: scale(1.05); }
+    100% { opacity: 0.4; transform: scale(0.95); }
 }
 
 /* --- Game Over Overlay --- */
