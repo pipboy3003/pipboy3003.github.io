@@ -1,14 +1,17 @@
-// Timestamp: 2026-03-01 09:06:48 CET
+// Timestamp: 2026-03-01 09:10:00 CET
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB); 
 scene.fog = new THREE.Fog(0x87CEEB, 20, 100); 
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-// Startposition der Kamera
+// Standard-Position fürs Spielen
 const defaultCameraPos = new THREE.Vector3(0, 6, 12);
-camera.position.copy(defaultCameraPos);
-camera.lookAt(0, 1, 0);
+// Start-Position fürs Menü (etwas weiter oben)
+const menuCameraPos = new THREE.Vector3(0, 12, 14);
+
+camera.position.copy(menuCameraPos);
+camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -16,23 +19,37 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
 document.body.appendChild(renderer.domElement);
 
+// DOM Elemente
 const scoreElement = document.getElementById('score');
 const levelElement = document.getElementById('level');
 const touchHint = document.getElementById('touch-hint');
 const gameOverOverlay = document.getElementById('gameOverOverlay');
 const finalScoreElement = document.getElementById('finalScore');
 const restartBtn = document.getElementById('restartBtn');
+const startOverlay = document.getElementById('startOverlay');
+const uiContainer = document.getElementById('ui-container');
 
-// Spiel-Status Variablen
-let isGameOver = false;
-let isCutscene = false;
+// Game States
+const STATE_START = 0;
+const STATE_TRANSITION = 1;
+const STATE_PLAYING = 2;
+const STATE_CUTSCENE = 3;
+const STATE_GAMEOVER = 4;
+
+let gameState = STATE_START;
+
+// Spiel-Variablen
 let score = 0;
 let level = 1;
-let entities = []; // Hier kommen jetzt Käse UND Fallen rein
+let entities = []; 
 let gameSpeed = 0.25;
 let spawnTimer = 0;
-let hitTrap = null; // Speichert die Falle für die Animation
+let hitTrap = null; 
 
+// Startmenü-Animation
+let startAngle = 0;
+
+// Beleuchtung
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); 
 scene.add(ambientLight);
 
@@ -49,6 +66,7 @@ dirLight.shadow.camera.top = 15;
 dirLight.shadow.camera.bottom = -15;
 scene.add(dirLight);
 
+// Boden
 const groundGeometry = new THREE.PlaneGeometry(30, 200);
 const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 }); 
 const ground = new THREE.Mesh(groundGeometry, groundMaterial);
@@ -124,7 +142,7 @@ let isPointerDown = false;
 const playerSpeed = 0.35; 
 
 document.addEventListener('keydown', (e) => {
-    if(isCutscene || isGameOver) return;
+    if(gameState !== STATE_PLAYING) return;
     const key = e.key.toLowerCase();
     if (key === 'arrowleft' || key === 'a') moveLeft = true;
     if (key === 'arrowright' || key === 'd') moveRight = true;
@@ -136,12 +154,8 @@ document.addEventListener('keyup', (e) => {
     if (key === 'arrowright' || key === 'd') moveRight = false;
 });
 
-if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-    touchHint.style.display = 'block'; 
-}
-
 function updateMovementDirection(clientX) {
-    if(isCutscene || isGameOver) return;
+    if(gameState !== STATE_PLAYING) return;
     const screenWidth = window.innerWidth;
     if (clientX < screenWidth / 2) {
         moveLeft = true;
@@ -152,10 +166,19 @@ function updateMovementDirection(clientX) {
     }
 }
 
+// Start-Interaktion
+startOverlay.addEventListener('click', () => {
+    if (gameState === STATE_START) {
+        gameState = STATE_TRANSITION;
+        startOverlay.style.display = 'none';
+    }
+});
+
+// Steuerung Events
 document.addEventListener('mousedown', (e) => {
-    if (e.target.tagName === 'BUTTON') return; 
+    if (e.target.tagName === 'BUTTON' || e.target.id === 'startOverlay') return; 
     isPointerDown = true;
-    touchHint.style.display = 'none';
+    if(gameState === STATE_PLAYING) touchHint.style.display = 'none';
     updateMovementDirection(e.clientX);
 });
 
@@ -169,16 +192,10 @@ document.addEventListener('mouseup', () => {
     moveRight = false;
 });
 
-document.addEventListener('mouseleave', () => {
-    isPointerDown = false;
-    moveLeft = false;
-    moveRight = false;
-});
-
 document.addEventListener('touchstart', (e) => {
-    if (e.target.tagName === 'BUTTON') return;
+    if (e.target.tagName === 'BUTTON' || e.target.id === 'startOverlay') return;
     isPointerDown = true;
-    touchHint.style.display = 'none'; 
+    if(gameState === STATE_PLAYING) touchHint.style.display = 'none'; 
     updateMovementDirection(e.touches[0].clientX);
 }, { passive: false });
 
@@ -196,63 +213,45 @@ document.addEventListener('touchend', (e) => {
     }
 });
 
-document.addEventListener('touchcancel', () => {
-    isPointerDown = false;
-    moveLeft = false;
-    moveRight = false;
-});
-
 window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
 });
 
-// --- Entities Spawner (Käse & Falle) ---
+// --- Entities Spawner ---
 function spawnEntity() {
-    // Je höher das Level, desto höher die Wahrscheinlichkeit für eine Falle (Max 30%)
     const trapChance = Math.min(0.05 + (level * 0.02), 0.3);
     const isTrap = Math.random() < trapChance;
-
     let object;
 
     if (isTrap) {
-        // --- MAUSEFALLE BAUEN ---
         object = new THREE.Group();
         object.userData = { type: 'trap' };
 
-        // Holzbrett
         const boardGeom = new THREE.BoxGeometry(2, 0.2, 3);
-        const boardMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b }); // Braun
+        const boardMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b }); 
         const board = new THREE.Mesh(boardGeom, boardMat);
         board.position.y = 0.1;
         board.castShadow = true;
         object.add(board);
 
-        // Schnapp-Bügel (Metall) als Gruppe, um ihn rotieren zu können
         const snapperGroup = new THREE.Group();
-        // Hinge (Scharnier) nach hinten schieben
         snapperGroup.position.set(0, 0.2, -1.2); 
         
-        // Der eigentliche Drahtbügel (als Box für bessere Sichtbarkeit)
         const wireGeom = new THREE.BoxGeometry(1.8, 0.1, 2.4);
-        const wireMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa }); // Grau/Silber
+        const wireMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa }); 
         const wire = new THREE.Mesh(wireGeom, wireMat);
-        // Draht relativ zum Scharnier verschieben
         wire.position.set(0, 0, 1.2); 
         wire.castShadow = true;
         
         snapperGroup.add(wire);
-        
-        // Falle anfänglich "offen" spannen (nach hinten geklappt)
         snapperGroup.rotation.x = -Math.PI / 1.1; 
         
         object.add(snapperGroup);
-        // Referenz auf den Bügel speichern für die Animation
         object.userData.snapper = snapperGroup; 
     } 
     else {
-        // --- KÄSE BAUEN ---
         const availableTypes = Math.min(level, 4);
         const cheeseType = Math.floor(Math.random() * availableTypes);
 
@@ -265,7 +264,7 @@ function spawnEntity() {
         else if (cheeseType === 1) {
             const geom = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 3);
             const mat = new THREE.MeshStandardMaterial({ color: 0xFAD02C }); 
-            object = new THREE.Mesh(geom, mat);
+            object = new Mesh(geom, mat);
             object.rotation.x = Math.PI / 2;
         }
         else if (cheeseType === 2) {
@@ -286,7 +285,6 @@ function spawnEntity() {
     const randomX = (Math.random() - 0.5) * 28;
     const yPos = object.userData.type === 'cheese' && object.geometry.type === 'SphereGeometry' ? 0.3 : 0.5; 
     
-    // Fallengelände ist flach
     if(object.userData.type === 'trap') object.position.set(randomX, 0, -60);
     else object.position.set(randomX, yPos, -60); 
     
@@ -299,8 +297,47 @@ function spawnEntity() {
 function animate() {
     requestAnimationFrame(animate);
 
-    // 1. PHASE: NORMALES SPIEL
-    if (!isCutscene && !isGameOver) {
+    if (gameState === STATE_START) {
+        // Maus rennt im Kreis
+        startAngle += 0.05;
+        const radius = 3;
+        mouseGroup.position.x = Math.cos(startAngle) * radius;
+        mouseGroup.position.z = Math.sin(startAngle) * radius;
+        // Die Maus schaut immer in Laufrichtung (-startAngle passt die Drehung an)
+        mouseGroup.rotation.y = -startAngle + Math.PI; 
+        
+        camera.lookAt(0, 0, 0);
+
+    } else if (gameState === STATE_TRANSITION) {
+        // Fließender Übergang ins Spiel
+        mouseGroup.position.lerp(new THREE.Vector3(0, 0, 0), 0.1);
+        
+        // Drehung sanft auf 0 setzen (nach vorne schauen)
+        const targetRotation = new THREE.Euler(0, 0, 0);
+        const currentQuat = new THREE.Quaternion().setFromEuler(mouseGroup.rotation);
+        const targetQuat = new THREE.Quaternion().setFromEuler(targetRotation);
+        currentQuat.slerp(targetQuat, 0.1);
+        mouseGroup.rotation.setFromQuaternion(currentQuat);
+
+        // Kamera fahrt in Position
+        camera.position.lerp(defaultCameraPos, 0.05);
+        camera.lookAt(0, 1, 0);
+
+        // Wenn Maus und Kamera ungefähr in Position sind -> Spiel starten
+        if (mouseGroup.position.length() < 0.1 && camera.position.distanceTo(defaultCameraPos) < 0.2) {
+            mouseGroup.position.set(0, 0, 0);
+            mouseGroup.rotation.set(0, 0, 0);
+            camera.position.copy(defaultCameraPos);
+            
+            gameState = STATE_PLAYING;
+            uiContainer.style.display = 'block';
+            if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+                touchHint.style.display = 'block';
+            }
+        }
+
+    } else if (gameState === STATE_PLAYING) {
+        // Normales Spiel
         if (moveLeft && mouseGroup.position.x > -14) mouseGroup.position.x -= playerSpeed;
         if (moveRight && mouseGroup.position.x < 14) mouseGroup.position.x += playerSpeed;
 
@@ -324,7 +361,6 @@ function animate() {
             if (playerBox.intersectsBox(entityBox)) {
                 
                 if (entity.userData.type === 'cheese') {
-                    // Käse eingesammelt
                     scene.remove(entity); 
                     entities.splice(i, 1); 
                     
@@ -342,17 +378,15 @@ function animate() {
                     body.scale.set(fatness, height, 2);
                 } 
                 else if (entity.userData.type === 'trap') {
-                    // IN DIE FALLE GETAPPT! Cutscene starten
-                    isCutscene = true;
+                    gameState = STATE_CUTSCENE;
                     hitTrap = entity;
-                    // Falle exakt unter die Maus schieben für die Animation
                     hitTrap.position.x = mouseGroup.position.x;
                     hitTrap.position.z = mouseGroup.position.z;
                     
-                    // Steuerung loslassen
                     moveLeft = false;
                     moveRight = false;
                     isPointerDown = false;
+                    touchHint.style.display = 'none';
                 }
                 continue; 
             }
@@ -362,21 +396,17 @@ function animate() {
                 entities.splice(i, 1);
             }
         }
-    } 
-    // 2. PHASE: DRAMATISCHE CUTSCENE
-    else if (isCutscene) {
-        // Kamera dramatisch heranzoomen
+
+    } else if (gameState === STATE_CUTSCENE) {
+        // Cutscene
         const targetCamPos = new THREE.Vector3(mouseGroup.position.x, 3, mouseGroup.position.z + 5);
         camera.position.lerp(targetCamPos, 0.05);
         camera.lookAt(mouseGroup.position);
 
-        // Bügel zuklappen lassen (bis er auf 0 Grad liegt)
         if (hitTrap.userData.snapper.rotation.x < 0) {
-            hitTrap.userData.snapper.rotation.x += 0.3; // Sehr schnell zuklappen
+            hitTrap.userData.snapper.rotation.x += 0.3; 
         } else {
-            // Cutscene beendet, Game Over Overlay zeigen
-            isCutscene = false;
-            isGameOver = true;
+            gameState = STATE_GAMEOVER;
             finalScoreElement.innerText = score;
             gameOverOverlay.style.display = 'flex';
         }
@@ -387,8 +417,7 @@ function animate() {
 
 // --- Neustart ---
 restartBtn.addEventListener('click', () => {
-    isGameOver = false; 
-    isCutscene = false;
+    gameState = STATE_PLAYING; 
     hitTrap = null;
     score = 0;
     level = 1;
@@ -402,14 +431,11 @@ restartBtn.addEventListener('click', () => {
     mouseGroup.position.set(0, 0, 0);
     body.scale.set(1, 1, 2);
 
-    // Kamera zurücksetzen
     camera.position.copy(defaultCameraPos);
     camera.lookAt(0, 1, 0);
 
-    // Alle Objekte löschen
     entities.forEach(entity => scene.remove(entity));
     entities = [];
 });
 
-// Start
 animate();
