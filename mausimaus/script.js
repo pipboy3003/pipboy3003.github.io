@@ -1,4 +1,4 @@
-// Timestamp: 2026-03-01 08:43:39 CET
+// Timestamp: 2026-03-01 08:48:00 CET
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB); 
@@ -15,11 +15,13 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
 const scoreElement = document.getElementById('score');
+const levelElement = document.getElementById('level');
 const restartBtn = document.getElementById('restartBtn');
 const touchHint = document.getElementById('touch-hint');
 
 let isGameOver = false;
 let score = 0;
+let level = 1;
 let collectibles = [];
 let collectibleSpeed = 0.25;
 let spawnTimer = 0;
@@ -50,11 +52,11 @@ scene.add(ground);
 // --- Die Maus ---
 const mouseGroup = new THREE.Group();
 
-// Körper (Kugel, die in die Länge gestreckt wird - garantiert fehlerfrei)
+// Körper 
 const bodyGeom = new THREE.SphereGeometry(0.5, 16, 16);
 const bodyMat = new THREE.MeshStandardMaterial({ color: 0x888888 }); 
 const body = new THREE.Mesh(bodyGeom, bodyMat);
-body.scale.set(1, 1, 2); // Streckt die Kugel auf der Z-Achse
+body.scale.set(1, 1, 2); 
 body.position.y = 0.5;
 body.castShadow = true;
 mouseGroup.add(body);
@@ -63,7 +65,7 @@ mouseGroup.add(body);
 const headGeom = new THREE.SphereGeometry(0.4, 16, 16);
 const headMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
 const head = new THREE.Mesh(headGeom, headMat);
-head.position.set(0, 0.6, -0.8); // Vorne anbringen
+head.position.set(0, 0.6, -0.8); 
 head.castShadow = true;
 mouseGroup.add(head);
 
@@ -162,15 +164,47 @@ window.addEventListener('resize', () => {
     camera.updateProjectionMatrix();
 });
 
-// --- Käse Spawner ---
+// --- Käse Spawner (Mit verschiedenen Sorten) ---
 function spawnCheese() {
-    const cheeseGeom = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
-    const cheeseMat = new THREE.MeshStandardMaterial({ color: 0xFFFF00 }); 
-    const cheese = new THREE.Mesh(cheeseGeom, cheeseMat);
-    cheese.rotation.x = Math.PI / 2; 
+    let cheese;
+    // Wähle eine Käsesorte basierend auf dem aktuellen Level
+    // Level 1: Nur Sorte 0. Level 2: Sorte 0 & 1. usw. (Max 4 Sorten)
+    const availableTypes = Math.min(level, 4);
+    const cheeseType = Math.floor(Math.random() * availableTypes);
+
+    if (cheeseType === 0) {
+        // Klassischer runder Gouda
+        const geom = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
+        const mat = new THREE.MeshStandardMaterial({ color: 0xFFFF00 }); 
+        cheese = new THREE.Mesh(geom, mat);
+        cheese.rotation.x = Math.PI / 2; 
+    } 
+    else if (cheeseType === 1) {
+        // Emmentaler (Dreieckiges Stück)
+        const geom = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 3);
+        const mat = new THREE.MeshStandardMaterial({ color: 0xFAD02C }); // Etwas wärmeres Gelb
+        cheese = new THREE.Mesh(geom, mat);
+        cheese.rotation.x = Math.PI / 2;
+    }
+    else if (cheeseType === 2) {
+        // Babybel (Rot)
+        const geom = new THREE.SphereGeometry(0.35, 16, 16);
+        const mat = new THREE.MeshStandardMaterial({ color: 0xE74C3C }); 
+        cheese = new THREE.Mesh(geom, mat);
+        cheese.scale.set(1, 0.6, 1); // Flachgedrückte Kugel
+    }
+    else {
+        // Camembert (Weiß)
+        const geom = new THREE.CylinderGeometry(0.4, 0.4, 0.2, 16);
+        const mat = new THREE.MeshStandardMaterial({ color: 0xF5F5F5 }); 
+        cheese = new THREE.Mesh(geom, mat);
+        cheese.rotation.x = Math.PI / 2;
+    }
     
     const randomX = (Math.random() - 0.5) * 28;
-    cheese.position.set(randomX, 0.5, -60); 
+    // Je nach Käsesorte leicht andere Y-Position, damit sie gut auf dem Boden liegen
+    const yPos = cheeseType === 2 ? 0.3 : 0.5; 
+    cheese.position.set(randomX, yPos, -60); 
     cheese.castShadow = true;
     
     scene.add(cheese);
@@ -187,25 +221,45 @@ function animate() {
     if (moveRight && mouseGroup.position.x < 14) mouseGroup.position.x += playerSpeed;
 
     spawnTimer++;
-    if (spawnTimer > 70) { 
+    // Schwierigkeit: Spawnt schneller je höher das Level
+    const currentSpawnRate = Math.max(20, 70 - (level * 4)); 
+
+    if (spawnTimer > currentSpawnRate) { 
         spawnCheese();
         spawnTimer = 0;
-        collectibleSpeed += 0.001; 
     }
 
     const playerBox = new THREE.Box3().setFromObject(mouseGroup);
 
     for (let i = collectibles.length - 1; i >= 0; i--) {
         const cheese = collectibles[i];
-        cheese.position.z += collectibleSpeed; 
+        
+        // Schwierigkeit: Käse bewegt sich schneller je höher das Level
+        const currentSpeed = collectibleSpeed + (level * 0.02);
+        cheese.position.z += currentSpeed; 
 
         const cheeseBox = new THREE.Box3().setFromObject(cheese);
 
         if (playerBox.intersectsBox(cheeseBox)) {
             scene.remove(cheese); 
             collectibles.splice(i, 1); 
+            
+            // Punkte und Level-Logik
             score++; 
             scoreElement.innerText = score;
+
+            // Level up alle 5 Käsestücke
+            const newLevel = Math.floor(score / 5) + 1;
+            if (newLevel > level) {
+                level = newLevel;
+                levelElement.innerText = level;
+            }
+
+            // Maus dicker machen (Maximal 3x so breit)
+            const fatness = Math.min(1 + (score * 0.05), 3);
+            const height = Math.min(1 + (score * 0.02), 1.5); // Wird auch leicht höher
+            body.scale.set(fatness, height, 2);
+
             continue; 
         }
 
@@ -221,11 +275,17 @@ function animate() {
 restartBtn.addEventListener('click', () => {
     isGameOver = false; 
     score = 0;
+    level = 1;
     collectibleSpeed = 0.25;
     spawnTimer = 0;
+    
     scoreElement.innerText = score;
+    levelElement.innerText = level;
     restartBtn.style.display = 'none'; 
     mouseGroup.position.x = 0;
+    
+    // Mausfigur zurücksetzen
+    body.scale.set(1, 1, 2);
 
     collectibles.forEach(cheese => scene.remove(cheese));
     collectibles = [];
