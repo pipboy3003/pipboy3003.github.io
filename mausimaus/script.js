@@ -1,4 +1,4 @@
-// Timestamp: 2026-03-01 09:48:02 CET
+// Timestamp: 2026-03-01 09:52:02 CET
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB); 
@@ -25,6 +25,7 @@ const finalScoreElement = document.getElementById('finalScore');
 const restartBtn = document.getElementById('restartBtn');
 const startOverlay = document.getElementById('startOverlay');
 const uiContainer = document.getElementById('ui-container');
+const weightBarFill = document.getElementById('weight-bar-fill'); // NEU: Balken Referenz
 
 const STATE_START = 0;
 const STATE_TRANSITION = 1;
@@ -40,6 +41,10 @@ let spawnTimer = 0;
 let hitTrap = null; 
 let startAngle = 0;
 
+// NEU: Gewicht der Maus unabhängig vom Score
+let fatness = 1;
+const MAX_FATNESS = 3;
+
 let catState = 0; 
 let catSide = 1; 
 let catTimer = 0;
@@ -47,7 +52,6 @@ let shakeTimer = 0;
 
 let horizontalLimit = 14;
 
-// --- Partikel System ---
 let particles = [];
 const dustGeom = new THREE.BoxGeometry(0.2, 0.2, 0.2);
 const dustMat = new THREE.MeshBasicMaterial({ color: 0xcccccc, transparent: true, opacity: 0.6 });
@@ -59,7 +63,6 @@ function spawnParticles(pos, color, count, isDust) {
     for (let i = 0; i < count; i++) {
         const p = new THREE.Mesh(geom, mat);
         p.position.copy(pos);
-        // Zufällige Explosion in alle Richtungen
         p.velocity = new THREE.Vector3(
             (Math.random() - 0.5) * (isDust ? 0.2 : 0.6),
             Math.random() * (isDust ? 0.1 : 0.5) + 0.1,
@@ -68,6 +71,21 @@ function spawnParticles(pos, color, count, isDust) {
         p.life = 1.0;
         scene.add(p);
         particles.push(p);
+    }
+}
+
+// NEU: UI Funktion für den Gewichts-Balken
+function updateWeightUI() {
+    const percentage = ((fatness - 1) / (MAX_FATNESS - 1)) * 100;
+    weightBarFill.style.width = percentage + '%';
+
+    // Dynamische Farbe je nach Füllstand
+    if (percentage < 50) {
+        weightBarFill.style.backgroundColor = '#2ecc71'; // Grün
+    } else if (percentage < 85) {
+        weightBarFill.style.backgroundColor = '#f1c40f'; // Gelb
+    } else {
+        weightBarFill.style.backgroundColor = '#e74c3c'; // Rot
     }
 }
 
@@ -122,7 +140,6 @@ for (let i = 0; i < 500; i++) {
 }
 scene.add(grassGroup);
 
-// --- Die Maus ---
 const mouseGroup = new THREE.Group();
 
 const bodyGeom = new THREE.SphereGeometry(0.5, 16, 16);
@@ -183,7 +200,6 @@ mouseGroup.add(tail);
 
 scene.add(mouseGroup);
 
-// --- Die Katzenpfote ---
 const catGroup = new THREE.Group();
 catGroup.position.set(0, 30, 0); 
 const furMat = new THREE.MeshStandardMaterial({ color: 0xe67e22 }); 
@@ -284,6 +300,7 @@ startOverlay.addEventListener('click', () => {
     if (gameState === STATE_START) {
         gameState = STATE_TRANSITION;
         startOverlay.style.display = 'none';
+        updateWeightUI(); // Anzeige initialisieren
     }
 });
 
@@ -334,10 +351,11 @@ window.addEventListener('resize', () => {
 
 function spawnEntity() {
     const trapChance = Math.min(0.05 + (level * 0.02), 0.3);
-    const isTrap = Math.random() < trapChance;
+    const rand = Math.random();
     let object;
 
-    if (isTrap) {
+    if (rand < trapChance) {
+        // --- MAUSEFALLE ---
         object = new THREE.Group();
         object.userData = { type: 'trap' };
 
@@ -363,7 +381,36 @@ function spawnEntity() {
         object.add(snapperGroup);
         object.userData.snapper = snapperGroup; 
     } 
+    else if (rand < trapChance + 0.08) { 
+        // --- CHILI POWER-UP (8% Chance) ---
+        object = new THREE.Group();
+        
+        const chiliGeom = new THREE.ConeGeometry(0.2, 0.8, 12);
+        const chiliMat = new THREE.MeshStandardMaterial({ color: 0xe74c3c });
+        const chiliMesh = new THREE.Mesh(chiliGeom, chiliMat);
+        chiliMesh.rotation.x = Math.PI / 2;
+        chiliMesh.castShadow = true;
+        object.add(chiliMesh);
+
+        // Grüner Stiel
+        const stemGeom = new THREE.CylinderGeometry(0.04, 0.04, 0.2, 8);
+        const stemMat = new THREE.MeshStandardMaterial({ color: 0x2ecc71 });
+        const stem = new THREE.Mesh(stemGeom, stemMat);
+        stem.position.set(0, 0.4, 0);
+        chiliMesh.add(stem);
+
+        // Roter Glow
+        const auraMat = new THREE.MeshBasicMaterial({ color: 0xe74c3c, transparent: true, opacity: 0.5 });
+        const aura = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 8), auraMat);
+        object.add(aura);
+
+        const light = new THREE.PointLight(0xe74c3c, 0.8, 3);
+        object.add(light);
+
+        object.userData = { type: 'chili', color: 0xe74c3c };
+    }
     else {
+        // --- KÄSE ---
         object = new THREE.Group();
         const availableTypes = Math.min(level, 4);
         const cheeseType = Math.floor(Math.random() * availableTypes);
@@ -390,7 +437,6 @@ function spawnEntity() {
         mesh.castShadow = true;
         object.add(mesh);
 
-        // Fake Bloom: Leuchtende Aura und PointLight für den Käse
         const auraMat = new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.4 });
         const aura = new THREE.Mesh(new THREE.SphereGeometry(0.6, 8, 8), auraMat);
         object.add(aura);
@@ -402,11 +448,12 @@ function spawnEntity() {
     }
     
     const randomX = (Math.random() - 0.5) * (horizontalLimit * 2);
-    const yPos = object.userData.type === 'cheese' && object.children[0].geometry.type === 'SphereGeometry' ? 0.3 : 0.5; 
+    let yPos = 0.5;
+    if (object.userData.type === 'trap') yPos = 0;
+    if (object.userData.type === 'cheese' && object.children[0].geometry.type === 'SphereGeometry') yPos = 0.3;
+    if (object.userData.type === 'chili') yPos = 0.4;
     
-    if(object.userData.type === 'trap') object.position.set(randomX, 0, -60);
-    else object.position.set(randomX, yPos, -60); 
-    
+    object.position.set(randomX, yPos, -60); 
     scene.add(object);
     entities.push(object);
 }
@@ -415,13 +462,12 @@ function animate() {
     requestAnimationFrame(animate);
     const time = Date.now() * 0.005;
 
-    // Partikel animieren
     for (let i = particles.length - 1; i >= 0; i--) {
         let p = particles[i];
         p.position.add(p.velocity);
-        p.velocity.y -= 0.015; // Gravitation
+        p.velocity.y -= 0.015; 
         p.life -= 0.03;
-        p.scale.multiplyScalar(0.92); // Schrumpfen
+        p.scale.multiplyScalar(0.92); 
         if (p.life <= 0 || p.position.y < 0) {
             scene.remove(p);
             particles.splice(i, 1);
@@ -435,7 +481,6 @@ function animate() {
         mouseGroup.position.z = Math.sin(startAngle) * radius;
         mouseGroup.rotation.y = -startAngle + Math.PI; 
         
-        // Startbildschirm-Watscheln
         mouseGroup.position.y = Math.abs(Math.sin(time * 2)) * 0.2 + 0.5;
         tail.rotation.x = Math.PI / 2 + Math.sin(time * 2) * 0.3;
 
@@ -466,7 +511,9 @@ function animate() {
         }
 
     } else if (gameState === STATE_PLAYING) {
-        const currentPlayerSpeed = 0.35 + (score * 0.002);
+        // Geschwindigkeit wird etwas langsamer, wenn die Maus fett ist
+        const weightPenalty = (fatness - 1) * 0.05;
+        const currentPlayerSpeed = Math.max(0.15, (0.35 + (score * 0.002)) - weightPenalty);
         let isMoving = false;
 
         if (moveLeft && mouseGroup.position.x > -horizontalLimit) {
@@ -481,14 +528,12 @@ function animate() {
         if (mouseGroup.position.x > horizontalLimit) mouseGroup.position.x = horizontalLimit;
         if (mouseGroup.position.x < -horizontalLimit) mouseGroup.position.x = -horizontalLimit;
 
-        // Prozedurale Animationen beim Laufen
         if (isMoving || entities.length > 0) {
-            mouseGroup.position.y = Math.abs(Math.sin(time * 3)) * 0.2 + 0.5; // Hüpfen
-            tail.rotation.x = Math.PI / 2 + Math.sin(time * 3) * 0.4; // Wedeln
-            leftEar.rotation.x = Math.sin(time * 3) * 0.1; // Ohren wackeln
+            mouseGroup.position.y = Math.abs(Math.sin(time * 3)) * 0.2 + 0.5; 
+            tail.rotation.x = Math.PI / 2 + Math.sin(time * 3) * 0.4; 
+            leftEar.rotation.x = Math.sin(time * 3) * 0.1; 
             rightEar.rotation.x = Math.sin(time * 3) * 0.1;
             
-            // Staubpartikel spawnen
             if (Math.random() < 0.2) {
                 spawnParticles(new THREE.Vector3(mouseGroup.position.x, 0.1, mouseGroup.position.z + 1), 0xcccccc, 1, true);
             }
@@ -509,8 +554,7 @@ function animate() {
             const entity = entities[i];
             entity.position.z += currentSpeed; 
 
-            // Leichtes Schweben für Käse (Animation)
-            if(entity.userData.type === 'cheese') {
+            if(entity.userData.type === 'cheese' || entity.userData.type === 'chili') {
                 entity.position.y += Math.sin(time * 4 + entity.position.x) * 0.01;
                 entity.rotation.y += 0.02;
             }
@@ -520,9 +564,7 @@ function animate() {
             if (playerBox.intersectsBox(entityBox)) {
                 
                 if (entity.userData.type === 'cheese') {
-                    // Käse-Explosion!
                     spawnParticles(entity.position.clone(), entity.userData.color, 12, false);
-
                     scene.remove(entity); 
                     entities.splice(i, 1); 
                     
@@ -535,10 +577,23 @@ function animate() {
                         levelElement.innerText = level;
                     }
 
-                    const fatness = Math.min(1 + (score * 0.05), 3);
-                    const height = Math.min(1 + (score * 0.02), 1.5); 
+                    // Maus wird dicker (max bis MAX_FATNESS)
+                    fatness = Math.min(fatness + 0.1, MAX_FATNESS);
+                    const height = 1 + (fatness - 1) * 0.25; 
                     body.scale.set(fatness, height, 2);
+                    updateWeightUI();
                 } 
+                else if (entity.userData.type === 'chili') {
+                    // Feuer-Explosion!
+                    spawnParticles(entity.position.clone(), entity.userData.color, 25, false);
+                    scene.remove(entity); 
+                    entities.splice(i, 1); 
+                    
+                    // Fett verbrennen
+                    fatness = 1;
+                    body.scale.set(fatness, 1, 2);
+                    updateWeightUI();
+                }
                 else if (entity.userData.type === 'trap') {
                     gameState = STATE_CUTSCENE;
                     hitTrap = entity;
@@ -637,12 +692,49 @@ function animate() {
     renderer.render(scene, camera);
 }
 
+document.addEventListener('keydown', (e) => {
+    if(gameState !== STATE_PLAYING) return;
+    const key = e.key.toLowerCase();
+    if (key === 'arrowleft' || key === 'a') moveLeft = true;
+    if (key === 'arrowright' || key === 'd') moveRight = true;
+});
+
+document.addEventListener('keyup', (e) => {
+    const key = e.key.toLowerCase();
+    if (key === 'arrowleft' || key === 'a') moveLeft = false;
+    if (key === 'arrowright' || key === 'd') moveRight = false;
+});
+
+function updateMovementDirection(clientX) {
+    if(gameState !== STATE_PLAYING) return;
+    const screenWidth = window.innerWidth;
+    if (clientX < screenWidth / 2) {
+        moveLeft = true;
+        moveRight = false;
+    } else {
+        moveRight = true;
+        moveLeft = false;
+    }
+}
+
+startOverlay.addEventListener('click', () => {
+    if (gameState === STATE_START) {
+        gameState = STATE_TRANSITION;
+        startOverlay.style.display = 'none';
+        updateWeightUI(); 
+    }
+});
+
 restartBtn.addEventListener('click', () => {
     gameState = STATE_PLAYING; 
     hitTrap = null;
     score = 0;
     level = 1;
     spawnTimer = 0;
+    
+    // Fett und UI zurücksetzen
+    fatness = 1;
+    updateWeightUI();
     
     catState = 0;
     catTimer = 0;
