@@ -24,13 +24,17 @@
     <div id="ui-container">
         <h1>Maus-Sammler 3D</h1>
         <p>Level: <span id="level">1</span></p>
-        <p>Käse gesammelt: <span id="score">0</span></p>
-        <h2 id="gameOverText" style="display:none;">ZUGESCHNAPPT!</h2>
-        <button id="restartBtn" style="display:none;">Neustart</button>
+        <p>Käse: <span id="score">0</span></p>
     </div>
     
     <div id="touch-hint" style="display: none;">
         Bildschirmhälfte gedrückt halten zum Steuern
+    </div>
+
+    <div id="gameOverOverlay" style="display: none;">
+        <h1 class="snap-title">ZUGESCHNAPPT!</h1>
+        <p>Du hast <span id="finalScore">0</span> Stück Käse verdrückt.</p>
+        <button id="restartBtn">Erneut versuchen</button>
     </div>
 
     <script>
