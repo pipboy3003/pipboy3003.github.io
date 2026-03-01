@@ -1,4 +1,4 @@
-/* Timestamp: 2026-03-01 09:10:00 CET */
+/* Timestamp: 2026-03-01 09:25:18 CET */
 body {
     margin: 0;
     overflow: hidden; 
@@ -14,7 +14,6 @@ body {
     user-select: none;
 }
 
-/* --- Startbildschirm Overlay --- */
 #startOverlay {
     position: absolute;
     top: 0;
@@ -23,7 +22,7 @@ body {
     height: 100vh;
     display: flex;
     justify-content: center;
-    align-items: flex-end; /* Text unten platzieren */
+    align-items: flex-end; 
     padding-bottom: 15vh;
     box-sizing: border-box;
     z-index: 50;
@@ -81,7 +80,6 @@ p {
     100% { opacity: 0.4; transform: scale(0.95); }
 }
 
-/* --- Game Over Overlay --- */
 #gameOverOverlay {
     position: absolute;
     top: 0;
