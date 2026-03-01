@@ -1,12 +1,12 @@
-// Timestamp: 2026-03-01 09:55:33 CET
+// Timestamp: 2026-03-01 10:05:00 CET
 
-// Initialisierung
 GAME.setupGraphics();
 GAME.updateLimits();
 
 // --- Event Listeners ---
 document.addEventListener('keydown', (e) => {
     if(GAME.state !== GAME.STATE_PLAYING) return;
+    GAME.useTargetControl = false; // Tastatur überschreibt Touch-Verhalten
     const key = e.key.toLowerCase();
     if (key === 'arrowleft' || key === 'a') GAME.moveLeft = true;
     if (key === 'arrowright' || key === 'd') GAME.moveRight = true;
@@ -18,13 +18,14 @@ document.addEventListener('keyup', (e) => {
     if (key === 'arrowright' || key === 'd') GAME.moveRight = false;
 });
 
+// NEU: 1:1 Mapping (Maus/Finger-Position wird exakt auf die 3D-Welt übertragen)
 function updateMovementDirection(clientX) {
     if(GAME.state !== GAME.STATE_PLAYING) return;
-    if (clientX < window.innerWidth / 2) {
-        GAME.moveLeft = true; GAME.moveRight = false;
-    } else {
-        GAME.moveRight = true; GAME.moveLeft = false;
-    }
+    GAME.useTargetControl = true;
+    
+    // Berechnet die exakte Position im 3D Raum basierend auf der Bildschirmbreite
+    const percentageX = clientX / window.innerWidth;
+    GAME.targetX = (percentageX * (GAME.horizontalLimit * 2)) - GAME.horizontalLimit;
 }
 
 document.getElementById('startOverlay').addEventListener('click', () => {
@@ -43,7 +44,7 @@ document.addEventListener('mousedown', (e) => {
 });
 
 document.addEventListener('mousemove', (e) => { if (GAME.isPointerDown) updateMovementDirection(e.clientX); });
-document.addEventListener('mouseup', () => { GAME.isPointerDown = false; GAME.moveLeft = false; GAME.moveRight = false; });
+document.addEventListener('mouseup', () => { GAME.isPointerDown = false; });
 
 document.addEventListener('touchstart', (e) => {
     if (e.target.tagName === 'BUTTON' || e.target.id === 'startOverlay') return;
@@ -54,7 +55,7 @@ document.addEventListener('touchstart', (e) => {
 
 document.addEventListener('touchmove', (e) => { if (GAME.isPointerDown) updateMovementDirection(e.touches[0].clientX); }, { passive: false });
 document.addEventListener('touchend', (e) => {
-    if (e.touches.length === 0) { GAME.isPointerDown = false; GAME.moveLeft = false; GAME.moveRight = false; } 
+    if (e.touches.length === 0) { GAME.isPointerDown = false; } 
     else { updateMovementDirection(e.touches[0].clientX); }
 });
 
@@ -70,7 +71,6 @@ function animate() {
     requestAnimationFrame(animate);
     const time = Date.now() * 0.005;
 
-    // Partikel Logik
     for (let i = GAME.particles.length - 1; i >= 0; i--) {
         let p = GAME.particles[i];
         p.position.add(p.velocity);
@@ -115,18 +115,32 @@ function animate() {
         const currentPlayerSpeed = Math.max(0.15, (0.35 + (GAME.score * 0.002)) - weightPenalty);
         let isMoving = false;
 
-        if (GAME.moveLeft && GAME.mouseGroup.position.x > -GAME.horizontalLimit) { GAME.mouseGroup.position.x -= currentPlayerSpeed; isMoving = true; }
-        if (GAME.moveRight && GAME.mouseGroup.position.x < GAME.horizontalLimit) { GAME.mouseGroup.position.x += currentPlayerSpeed; isMoving = true; }
+        // NEU: Fließende Logik für die 1:1 Steuerung
+        if (GAME.useTargetControl && GAME.isPointerDown) {
+            const diff = GAME.targetX - GAME.mouseGroup.position.x;
+            if (Math.abs(diff) > 0.1) {
+                // Bewegt sich exakt so schnell wie erlaubt zum Ziel
+                GAME.mouseGroup.position.x += Math.sign(diff) * Math.min(currentPlayerSpeed, Math.abs(diff));
+                isMoving = true;
+            }
+        } else {
+            // Klassische Tastatur-Logik (Fallback)
+            if (GAME.moveLeft && GAME.mouseGroup.position.x > -GAME.horizontalLimit) { 
+                GAME.mouseGroup.position.x -= currentPlayerSpeed; isMoving = true; GAME.targetX = GAME.mouseGroup.position.x; 
+            }
+            if (GAME.moveRight && GAME.mouseGroup.position.x < GAME.horizontalLimit) { 
+                GAME.mouseGroup.position.x += currentPlayerSpeed; isMoving = true; GAME.targetX = GAME.mouseGroup.position.x; 
+            }
+        }
 
         if (GAME.mouseGroup.position.x > GAME.horizontalLimit) GAME.mouseGroup.position.x = GAME.horizontalLimit;
         if (GAME.mouseGroup.position.x < -GAME.horizontalLimit) GAME.mouseGroup.position.x = -GAME.horizontalLimit;
 
-        // DIE PERFEKTE ILLUSION: Die Wiese bewegt sich nach hinten!
         const currentSpeed = 0.25 + (GAME.score * 0.008);
         GAME.grassBlades.forEach(blade => {
             blade.position.z += currentSpeed;
             if (blade.position.z > 15) {
-                blade.position.z -= 200; // Gras wird wieder ganz nach hinten gesetzt
+                blade.position.z -= 200; 
             }
         });
 
@@ -191,7 +205,6 @@ function animate() {
             if (entity.position.z > 15) { GAME.scene.remove(entity); GAME.entities.splice(i, 1); }
         }
 
-        // Katzen-Logik
         if (GAME.score >= 5) {
             if (GAME.catState === 0 && Math.random() < 0.002 + (GAME.score * 0.0001)) {
                 GAME.catState = 1; GAME.catSide = Math.random() > 0.5 ? 1 : -1; GAME.catTimer = 0;
