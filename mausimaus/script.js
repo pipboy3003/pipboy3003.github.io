@@ -1,13 +1,11 @@
-// Timestamp: 2026-03-01 09:10:00 CET
+// Timestamp: 2026-03-01 09:25:18 CET
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB); 
 scene.fog = new THREE.Fog(0x87CEEB, 20, 100); 
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-// Standard-Position fürs Spielen
 const defaultCameraPos = new THREE.Vector3(0, 6, 12);
-// Start-Position fürs Menü (etwas weiter oben)
 const menuCameraPos = new THREE.Vector3(0, 12, 14);
 
 camera.position.copy(menuCameraPos);
@@ -19,7 +17,6 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
 document.body.appendChild(renderer.domElement);
 
-// DOM Elemente
 const scoreElement = document.getElementById('score');
 const levelElement = document.getElementById('level');
 const touchHint = document.getElementById('touch-hint');
@@ -29,7 +26,6 @@ const restartBtn = document.getElementById('restartBtn');
 const startOverlay = document.getElementById('startOverlay');
 const uiContainer = document.getElementById('ui-container');
 
-// Game States
 const STATE_START = 0;
 const STATE_TRANSITION = 1;
 const STATE_PLAYING = 2;
@@ -38,18 +34,13 @@ const STATE_GAMEOVER = 4;
 
 let gameState = STATE_START;
 
-// Spiel-Variablen
 let score = 0;
 let level = 1;
 let entities = []; 
-let gameSpeed = 0.25;
 let spawnTimer = 0;
 let hitTrap = null; 
-
-// Startmenü-Animation
 let startAngle = 0;
 
-// Beleuchtung
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); 
 scene.add(ambientLight);
 
@@ -66,7 +57,6 @@ dirLight.shadow.camera.top = 15;
 dirLight.shadow.camera.bottom = -15;
 scene.add(dirLight);
 
-// Boden
 const groundGeometry = new THREE.PlaneGeometry(30, 200);
 const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 }); 
 const ground = new THREE.Mesh(groundGeometry, groundMaterial);
@@ -74,7 +64,6 @@ ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true; 
 scene.add(ground);
 
-// --- Die Maus ---
 const mouseGroup = new THREE.Group();
 
 const bodyGeom = new THREE.SphereGeometry(0.5, 16, 16);
@@ -135,11 +124,9 @@ mouseGroup.add(tail);
 
 scene.add(mouseGroup);
 
-// --- Steuerung ---
 let moveLeft = false;
 let moveRight = false;
 let isPointerDown = false;
-const playerSpeed = 0.35; 
 
 document.addEventListener('keydown', (e) => {
     if(gameState !== STATE_PLAYING) return;
@@ -166,7 +153,6 @@ function updateMovementDirection(clientX) {
     }
 }
 
-// Start-Interaktion
 startOverlay.addEventListener('click', () => {
     if (gameState === STATE_START) {
         gameState = STATE_TRANSITION;
@@ -174,7 +160,6 @@ startOverlay.addEventListener('click', () => {
     }
 });
 
-// Steuerung Events
 document.addEventListener('mousedown', (e) => {
     if (e.target.tagName === 'BUTTON' || e.target.id === 'startOverlay') return; 
     isPointerDown = true;
@@ -219,7 +204,6 @@ window.addEventListener('resize', () => {
     camera.updateProjectionMatrix();
 });
 
-// --- Entities Spawner ---
 function spawnEntity() {
     const trapChance = Math.min(0.05 + (level * 0.02), 0.3);
     const isTrap = Math.random() < trapChance;
@@ -264,7 +248,7 @@ function spawnEntity() {
         else if (cheeseType === 1) {
             const geom = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 3);
             const mat = new THREE.MeshStandardMaterial({ color: 0xFAD02C }); 
-            object = new Mesh(geom, mat);
+            object = new THREE.Mesh(geom, mat);
             object.rotation.x = Math.PI / 2;
         }
         else if (cheeseType === 2) {
@@ -293,37 +277,30 @@ function spawnEntity() {
     entities.push(object);
 }
 
-// --- Hauptschleife ---
 function animate() {
     requestAnimationFrame(animate);
 
     if (gameState === STATE_START) {
-        // Maus rennt im Kreis
         startAngle += 0.05;
         const radius = 3;
         mouseGroup.position.x = Math.cos(startAngle) * radius;
         mouseGroup.position.z = Math.sin(startAngle) * radius;
-        // Die Maus schaut immer in Laufrichtung (-startAngle passt die Drehung an)
         mouseGroup.rotation.y = -startAngle + Math.PI; 
         
         camera.lookAt(0, 0, 0);
 
     } else if (gameState === STATE_TRANSITION) {
-        // Fließender Übergang ins Spiel
         mouseGroup.position.lerp(new THREE.Vector3(0, 0, 0), 0.1);
         
-        // Drehung sanft auf 0 setzen (nach vorne schauen)
         const targetRotation = new THREE.Euler(0, 0, 0);
         const currentQuat = new THREE.Quaternion().setFromEuler(mouseGroup.rotation);
         const targetQuat = new THREE.Quaternion().setFromEuler(targetRotation);
         currentQuat.slerp(targetQuat, 0.1);
         mouseGroup.rotation.setFromQuaternion(currentQuat);
 
-        // Kamera fahrt in Position
         camera.position.lerp(defaultCameraPos, 0.05);
         camera.lookAt(0, 1, 0);
 
-        // Wenn Maus und Kamera ungefähr in Position sind -> Spiel starten
         if (mouseGroup.position.length() < 0.1 && camera.position.distanceTo(defaultCameraPos) < 0.2) {
             mouseGroup.position.set(0, 0, 0);
             mouseGroup.rotation.set(0, 0, 0);
@@ -337,12 +314,15 @@ function animate() {
         }
 
     } else if (gameState === STATE_PLAYING) {
-        // Normales Spiel
-        if (moveLeft && mouseGroup.position.x > -14) mouseGroup.position.x -= playerSpeed;
-        if (moveRight && mouseGroup.position.x < 14) mouseGroup.position.x += playerSpeed;
+        // Spieler-Speed ist ebenfalls leicht proportional, um agiler zu werden
+        const currentPlayerSpeed = 0.35 + (score * 0.002);
+
+        if (moveLeft && mouseGroup.position.x > -14) mouseGroup.position.x -= currentPlayerSpeed;
+        if (moveRight && mouseGroup.position.x < 14) mouseGroup.position.x += currentPlayerSpeed;
 
         spawnTimer++;
-        const currentSpawnRate = Math.max(20, 70 - (level * 4)); 
+        // Proportionale Spawn-Rate (Schneller, je höher der Score)
+        const currentSpawnRate = Math.max(15, 70 - (score * 1.5));
 
         if (spawnTimer > currentSpawnRate) { 
             spawnEntity();
@@ -350,7 +330,8 @@ function animate() {
         }
 
         const playerBox = new THREE.Box3().setFromObject(mouseGroup);
-        const currentSpeed = gameSpeed + (level * 0.02);
+        // Proportionales Tempo der Gegner/Gegenstände
+        const currentSpeed = 0.25 + (score * 0.008);
 
         for (let i = entities.length - 1; i >= 0; i--) {
             const entity = entities[i];
@@ -398,7 +379,6 @@ function animate() {
         }
 
     } else if (gameState === STATE_CUTSCENE) {
-        // Cutscene
         const targetCamPos = new THREE.Vector3(mouseGroup.position.x, 3, mouseGroup.position.z + 5);
         camera.position.lerp(targetCamPos, 0.05);
         camera.lookAt(mouseGroup.position);
@@ -415,13 +395,11 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-// --- Neustart ---
 restartBtn.addEventListener('click', () => {
     gameState = STATE_PLAYING; 
     hitTrap = null;
     score = 0;
     level = 1;
-    gameSpeed = 0.25;
     spawnTimer = 0;
     
     scoreElement.innerText = score;
