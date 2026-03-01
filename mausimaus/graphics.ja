@@ -1,0 +1,201 @@
+// Timestamp: 2026-03-01 09:55:33 CET
+
+GAME.setupGraphics = function() {
+    GAME.scene = new THREE.Scene();
+    GAME.scene.background = new THREE.Color(0x87CEEB); 
+    GAME.scene.fog = new THREE.Fog(0x87CEEB, 20, 100); 
+
+    GAME.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    GAME.camera.position.copy(GAME.menuCameraPos);
+    GAME.camera.lookAt(0, 0, 0);
+
+    GAME.renderer = new THREE.WebGLRenderer({ antialias: true });
+    GAME.renderer.setSize(window.innerWidth, window.innerHeight);
+    GAME.renderer.shadowMap.enabled = true; 
+    GAME.renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
+    document.body.appendChild(GAME.renderer.domElement);
+
+    // Licht
+    const ambientLight = new THREE.HemisphereLight(0xffffff, 0x228B22, 0.4); 
+    GAME.scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(10, 20, 10);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.near = 0.5;
+    dirLight.shadow.camera.far = 50;
+    dirLight.shadow.camera.left = -15;
+    dirLight.shadow.camera.right = 15;
+    dirLight.shadow.camera.top = 15;
+    dirLight.shadow.camera.bottom = -15;
+    GAME.scene.add(dirLight);
+
+    // Boden
+    const groundGeometry = new THREE.PlaneGeometry(30, 200);
+    const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 }); 
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = -Math.PI / 2; 
+    ground.receiveShadow = true; 
+    GAME.scene.add(ground);
+
+    // Gras (Umgebung, die sich später bewegt)
+    const grassGroup = new THREE.Group();
+    const grassMaterial = new THREE.MeshStandardMaterial({ color: 0x1e6a1e });
+    const grassBladeGeom = new THREE.BoxGeometry(0.1, 0.5, 0.1);
+    
+    for (let i = 0; i < 500; i++) {
+        const grassBlade = new THREE.Mesh(grassBladeGeom, grassMaterial);
+        const randomX = (Math.random() - 0.5) * 30;
+        const randomZ = (Math.random() - 0.5) * 200;
+        grassBlade.position.set(randomX, 0.25, randomZ);
+        grassBlade.scale.y = Math.random() * 2 + 1;
+        grassBlade.rotation.y = Math.random() * Math.PI;
+        grassBlade.castShadow = true;
+        
+        grassGroup.add(grassBlade);
+        GAME.grassBlades.push(grassBlade); // Speichern für die Bewegung
+    }
+    GAME.scene.add(grassGroup);
+
+    // --- Die Maus bauen ---
+    GAME.mouseGroup = new THREE.Group();
+
+    GAME.bodyMesh = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshStandardMaterial({ color: 0x888888 }));
+    GAME.bodyMesh.scale.set(1, 1, 2); 
+    GAME.bodyMesh.position.y = 0.5;
+    GAME.bodyMesh.castShadow = true;
+    GAME.mouseGroup.add(GAME.bodyMesh);
+
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshStandardMaterial({ color: 0x888888 }));
+    head.position.set(0, 0.6, -0.8); 
+    head.castShadow = true;
+    GAME.mouseGroup.add(head);
+
+    const earGeom = new THREE.CircleGeometry(0.3, 32);
+    const earMat = new THREE.MeshStandardMaterial({ color: 0x888888, side: THREE.DoubleSide });
+    
+    GAME.leftEar = new THREE.Mesh(earGeom, earMat);
+    GAME.leftEar.position.set(-0.3, 0.9, -0.6);
+    GAME.leftEar.rotation.y = -Math.PI / 4;
+    GAME.leftEar.castShadow = true;
+    GAME.mouseGroup.add(GAME.leftEar);
+
+    GAME.rightEar = new THREE.Mesh(earGeom, earMat);
+    GAME.rightEar.position.set(0.3, 0.9, -0.6);
+    GAME.rightEar.rotation.y = Math.PI / 4;
+    GAME.rightEar.castShadow = true;
+    GAME.mouseGroup.add(GAME.rightEar);
+
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), new THREE.MeshStandardMaterial({ color: 0x000000 }));
+    nose.position.set(0, 0.6, -1.15);
+    nose.castShadow = true;
+    GAME.mouseGroup.add(nose);
+
+    const eyeGeom = new THREE.SphereGeometry(0.05, 8, 8);
+    const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
+    const leftEye = new THREE.Mesh(eyeGeom, eyeMat);
+    leftEye.position.set(-0.15, 0.7, -0.9);
+    leftEye.castShadow = true;
+    GAME.mouseGroup.add(leftEye);
+
+    const rightEye = new THREE.Mesh(eyeGeom, eyeMat);
+    rightEye.position.set(0.15, 0.7, -0.9);
+    rightEye.castShadow = true;
+    GAME.mouseGroup.add(rightEye);
+
+    GAME.tailMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.5, 8), new THREE.MeshStandardMaterial({ color: 0x555555 }));
+    GAME.tailMesh.position.set(0, 0.4, 0.8);
+    GAME.tailMesh.rotation.x = Math.PI / 2;
+    GAME.tailMesh.castShadow = true;
+    GAME.mouseGroup.add(GAME.tailMesh);
+
+    GAME.scene.add(GAME.mouseGroup);
+
+    // --- Die Katzenpfote bauen ---
+    GAME.catGroup = new THREE.Group();
+    GAME.catGroup.position.set(0, 30, 0); 
+    const furMat = new THREE.MeshStandardMaterial({ color: 0xe67e22 }); 
+    const padMat = new THREE.MeshStandardMaterial({ color: 0xffa0a0 }); 
+
+    const mainPaw = new THREE.Mesh(new THREE.SphereGeometry(1.8, 32, 32), furMat);
+    mainPaw.scale.set(4, 1.5, 3);
+    mainPaw.position.set(0, 1.5, 0.5);
+    mainPaw.castShadow = true;
+    GAME.catGroup.add(mainPaw);
+
+    const mainPad = new THREE.Mesh(new THREE.SphereGeometry(1.5, 32, 32), padMat);
+    mainPad.scale.set(3.5, 0.8, 2.5);
+    mainPad.position.set(0, 0.5, 0.5);
+    mainPad.castShadow = true;
+    GAME.catGroup.add(mainPad);
+
+    const toePositions = [
+        { x: -1.8, y: 0.45, z: -1, furY: 0.9 },
+        { x: 1.8, y: 0.45, z: -1, furY: 0.9 },
+        { x: 0, y: 0.5, z: -1.5, furY: 1 }
+    ];
+
+    toePositions.forEach(pos => {
+        const pad = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 32), padMat);
+        pad.scale.set(pos.x === 0 ? 1.2 : 1, pos.x === 0 ? 0.7 : 0.6, pos.x === 0 ? 1.5 : 1.2);
+        pad.position.set(pos.x, pos.y, pos.z);
+        pad.castShadow = true;
+        GAME.catGroup.add(pad);
+
+        const fur = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 32), furMat);
+        fur.scale.set(pos.x === 0 ? 1.5 : 1.2, pos.x === 0 ? 1 : 0.8, pos.x === 0 ? 2 : 1.5);
+        fur.position.set(pos.x, pos.furY, pos.z);
+        fur.castShadow = true;
+        GAME.catGroup.add(fur);
+    });
+
+    GAME.scene.add(GAME.catGroup);
+
+    // Katzenschatten
+    GAME.catShadow = new THREE.Mesh(new THREE.PlaneGeometry(15, 200), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0 }));
+    GAME.catShadow.rotation.x = -Math.PI / 2;
+    GAME.catShadow.position.y = 0.05; 
+    GAME.scene.add(GAME.catShadow);
+};
+
+// --- Partikel System ---
+const dustGeom = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+const dustMat = new THREE.MeshBasicMaterial({ color: 0xcccccc, transparent: true, opacity: 0.6 });
+
+GAME.spawnParticles = function(pos, color, count, isDust) {
+    const mat = isDust ? dustMat : new THREE.MeshBasicMaterial({ color: color });
+    const geom = isDust ? dustGeom : new THREE.BoxGeometry(0.3, 0.3, 0.3);
+
+    for (let i = 0; i < count; i++) {
+        const p = new THREE.Mesh(geom, mat);
+        p.position.copy(pos);
+        p.velocity = new THREE.Vector3(
+            (Math.random() - 0.5) * (isDust ? 0.2 : 0.6),
+            Math.random() * (isDust ? 0.1 : 0.5) + 0.1,
+            (Math.random() - 0.5) * (isDust ? 0.2 : 0.6)
+        );
+        p.life = 1.0;
+        GAME.scene.add(p);
+        GAME.particles.push(p);
+    }
+};
+
+GAME.updateWeightUI = function() {
+    const percentage = ((GAME.fatness - 1) / (GAME.MAX_FATNESS - 1)) * 100;
+    const bar = document.getElementById('weight-bar-fill');
+    bar.style.width = percentage + '%';
+
+    if (percentage < 50) bar.style.backgroundColor = '#2ecc71'; 
+    else if (percentage < 85) bar.style.backgroundColor = '#f1c40f'; 
+    else bar.style.backgroundColor = '#e74c3c'; 
+};
+
+GAME.updateLimits = function() {
+    const dist = GAME.defaultCameraPos.z; 
+    const vFov = (GAME.camera.fov * Math.PI) / 180;
+    const visibleHeight = 2 * Math.tan(vFov / 2) * dist;
+    const visibleWidth = visibleHeight * (window.innerWidth / window.innerHeight);
+    GAME.horizontalLimit = Math.max(2, Math.min(14, (visibleWidth / 2) - 1.5));
+};
