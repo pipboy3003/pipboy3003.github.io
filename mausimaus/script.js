@@ -1,11 +1,13 @@
-// Timestamp: 2026-03-01 08:58:00 CET
+// Timestamp: 2026-03-01 09:06:48 CET
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB); 
 scene.fog = new THREE.Fog(0x87CEEB, 20, 100); 
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 6, 12);
+// Startposition der Kamera
+const defaultCameraPos = new THREE.Vector3(0, 6, 12);
+camera.position.copy(defaultCameraPos);
 camera.lookAt(0, 1, 0);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -16,19 +18,22 @@ document.body.appendChild(renderer.domElement);
 
 const scoreElement = document.getElementById('score');
 const levelElement = document.getElementById('level');
-const restartBtn = document.getElementById('restartBtn');
-const gameOverText = document.getElementById('gameOverText');
 const touchHint = document.getElementById('touch-hint');
+const gameOverOverlay = document.getElementById('gameOverOverlay');
+const finalScoreElement = document.getElementById('finalScore');
+const restartBtn = document.getElementById('restartBtn');
 
+// Spiel-Status Variablen
 let isGameOver = false;
+let isCutscene = false;
 let score = 0;
 let level = 1;
-let collectibles = [];
-let traps = [];
-let speedMultiplier = 0.25;
+let entities = []; // Hier kommen jetzt Käse UND Fallen rein
+let gameSpeed = 0.25;
 let spawnTimer = 0;
+let hitTrap = null; // Speichert die Falle für die Animation
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); 
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); 
 scene.add(ambientLight);
 
 const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -45,7 +50,7 @@ dirLight.shadow.camera.bottom = -15;
 scene.add(dirLight);
 
 const groundGeometry = new THREE.PlaneGeometry(30, 200);
-const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22, roughness: 1.0 }); 
+const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 }); 
 const ground = new THREE.Mesh(groundGeometry, groundMaterial);
 ground.rotation.x = -Math.PI / 2; 
 ground.receiveShadow = true; 
@@ -55,7 +60,7 @@ scene.add(ground);
 const mouseGroup = new THREE.Group();
 
 const bodyGeom = new THREE.SphereGeometry(0.5, 16, 16);
-const bodyMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.9 }); 
+const bodyMat = new THREE.MeshStandardMaterial({ color: 0x888888 }); 
 const body = new THREE.Mesh(bodyGeom, bodyMat);
 body.scale.set(1, 1, 2); 
 body.position.y = 0.5;
@@ -63,14 +68,14 @@ body.castShadow = true;
 mouseGroup.add(body);
 
 const headGeom = new THREE.SphereGeometry(0.4, 16, 16);
-const headMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.9 });
+const headMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
 const head = new THREE.Mesh(headGeom, headMat);
 head.position.set(0, 0.6, -0.8); 
 head.castShadow = true;
 mouseGroup.add(head);
 
 const earGeom = new THREE.CircleGeometry(0.3, 32);
-const earMat = new THREE.MeshStandardMaterial({ color: 0x888888, side: THREE.DoubleSide, roughness: 0.9 });
+const earMat = new THREE.MeshStandardMaterial({ color: 0x888888, side: THREE.DoubleSide });
 const leftEar = new THREE.Mesh(earGeom, earMat);
 leftEar.position.set(-0.3, 0.9, -0.6);
 leftEar.rotation.y = -Math.PI / 4;
@@ -84,14 +89,14 @@ rightEar.castShadow = true;
 mouseGroup.add(rightEar);
 
 const noseGeom = new THREE.SphereGeometry(0.08, 8, 8);
-const noseMat = new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 0.4 });
+const noseMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
 const nose = new THREE.Mesh(noseGeom, noseMat);
 nose.position.set(0, 0.6, -1.15);
 nose.castShadow = true;
 mouseGroup.add(nose);
 
 const eyeGeom = new THREE.SphereGeometry(0.05, 8, 8);
-const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 0.2 });
+const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
 const leftEye = new THREE.Mesh(eyeGeom, eyeMat);
 leftEye.position.set(-0.15, 0.7, -0.9);
 leftEye.castShadow = true;
@@ -119,6 +124,7 @@ let isPointerDown = false;
 const playerSpeed = 0.35; 
 
 document.addEventListener('keydown', (e) => {
+    if(isCutscene || isGameOver) return;
     const key = e.key.toLowerCase();
     if (key === 'arrowleft' || key === 'a') moveLeft = true;
     if (key === 'arrowright' || key === 'd') moveRight = true;
@@ -135,7 +141,7 @@ if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
 }
 
 function updateMovementDirection(clientX) {
-    if (isGameOver) return;
+    if(isCutscene || isGameOver) return;
     const screenWidth = window.innerWidth;
     if (clientX < screenWidth / 2) {
         moveLeft = true;
@@ -202,205 +208,208 @@ window.addEventListener('resize', () => {
     camera.updateProjectionMatrix();
 });
 
-// --- Schöner Käse Spawner ---
-function spawnCheese() {
-    let cheeseMesh;
-    const availableTypes = Math.min(level, 4);
-    const cheeseType = Math.floor(Math.random() * availableTypes);
+// --- Entities Spawner (Käse & Falle) ---
+function spawnEntity() {
+    // Je höher das Level, desto höher die Wahrscheinlichkeit für eine Falle (Max 30%)
+    const trapChance = Math.min(0.05 + (level * 0.02), 0.3);
+    const isTrap = Math.random() < trapChance;
 
-    // Käse-Gruppe für Hover-Animation
-    const cheeseGroup = new THREE.Group();
-    cheeseGroup.userData = { 
-        hoverOffset: Math.random() * Math.PI * 2,
-        rotSpeedX: (Math.random() - 0.5) * 0.04,
-        rotSpeedY: (Math.random() - 0.5) * 0.04 + 0.02
-    };
+    let object;
 
-    if (cheeseType === 0) {
-        // Gouda
-        const geom = new THREE.CylinderGeometry(0.5, 0.5, 0.4, 16);
-        const mat = new THREE.MeshStandardMaterial({ color: 0xFFD700, roughness: 0.3, metalness: 0.1 }); 
-        cheeseMesh = new THREE.Mesh(geom, mat);
+    if (isTrap) {
+        // --- MAUSEFALLE BAUEN ---
+        object = new THREE.Group();
+        object.userData = { type: 'trap' };
+
+        // Holzbrett
+        const boardGeom = new THREE.BoxGeometry(2, 0.2, 3);
+        const boardMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b }); // Braun
+        const board = new THREE.Mesh(boardGeom, boardMat);
+        board.position.y = 0.1;
+        board.castShadow = true;
+        object.add(board);
+
+        // Schnapp-Bügel (Metall) als Gruppe, um ihn rotieren zu können
+        const snapperGroup = new THREE.Group();
+        // Hinge (Scharnier) nach hinten schieben
+        snapperGroup.position.set(0, 0.2, -1.2); 
+        
+        // Der eigentliche Drahtbügel (als Box für bessere Sichtbarkeit)
+        const wireGeom = new THREE.BoxGeometry(1.8, 0.1, 2.4);
+        const wireMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa }); // Grau/Silber
+        const wire = new THREE.Mesh(wireGeom, wireMat);
+        // Draht relativ zum Scharnier verschieben
+        wire.position.set(0, 0, 1.2); 
+        wire.castShadow = true;
+        
+        snapperGroup.add(wire);
+        
+        // Falle anfänglich "offen" spannen (nach hinten geklappt)
+        snapperGroup.rotation.x = -Math.PI / 1.1; 
+        
+        object.add(snapperGroup);
+        // Referenz auf den Bügel speichern für die Animation
+        object.userData.snapper = snapperGroup; 
     } 
-    else if (cheeseType === 1) {
-        // Emmentaler
-        const geom = new THREE.CylinderGeometry(0.5, 0.5, 0.4, 3);
-        const mat = new THREE.MeshStandardMaterial({ color: 0xFAD02C, roughness: 0.4 }); 
-        cheeseMesh = new THREE.Mesh(geom, mat);
-    }
-    else if (cheeseType === 2) {
-        // Babybel
-        const geom = new THREE.SphereGeometry(0.4, 16, 16);
-        const mat = new THREE.MeshStandardMaterial({ color: 0xE74C3C, roughness: 0.1, metalness: 0.2 }); 
-        cheeseMesh = new THREE.Mesh(geom, mat);
-        cheeseMesh.scale.set(1, 0.6, 1); 
-    }
     else {
-        // Camembert
-        const geom = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 16);
-        const mat = new THREE.MeshStandardMaterial({ color: 0xFFFAF0, roughness: 0.8 }); 
-        cheeseMesh = new THREE.Mesh(geom, mat);
+        // --- KÄSE BAUEN ---
+        const availableTypes = Math.min(level, 4);
+        const cheeseType = Math.floor(Math.random() * availableTypes);
+
+        if (cheeseType === 0) {
+            const geom = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
+            const mat = new THREE.MeshStandardMaterial({ color: 0xFFFF00 }); 
+            object = new THREE.Mesh(geom, mat);
+            object.rotation.x = Math.PI / 2; 
+        } 
+        else if (cheeseType === 1) {
+            const geom = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 3);
+            const mat = new THREE.MeshStandardMaterial({ color: 0xFAD02C }); 
+            object = new THREE.Mesh(geom, mat);
+            object.rotation.x = Math.PI / 2;
+        }
+        else if (cheeseType === 2) {
+            const geom = new THREE.SphereGeometry(0.35, 16, 16);
+            const mat = new THREE.MeshStandardMaterial({ color: 0xE74C3C }); 
+            object = new THREE.Mesh(geom, mat);
+            object.scale.set(1, 0.6, 1); 
+        }
+        else {
+            const geom = new THREE.CylinderGeometry(0.4, 0.4, 0.2, 16);
+            const mat = new THREE.MeshStandardMaterial({ color: 0xF5F5F5 }); 
+            object = new THREE.Mesh(geom, mat);
+            object.rotation.x = Math.PI / 2;
+        }
+        object.userData = { type: 'cheese' };
     }
     
-    cheeseMesh.castShadow = true;
-    cheeseGroup.add(cheeseMesh);
-
     const randomX = (Math.random() - 0.5) * 28;
-    cheeseGroup.position.set(randomX, 0.8, -80); 
+    const yPos = object.userData.type === 'cheese' && object.geometry.type === 'SphereGeometry' ? 0.3 : 0.5; 
     
-    scene.add(cheeseGroup);
-    collectibles.push(cheeseGroup);
-}
-
-// --- Mausefallen Spawner ---
-function spawnTrap() {
-    const trapGroup = new THREE.Group();
+    // Fallengelände ist flach
+    if(object.userData.type === 'trap') object.position.set(randomX, 0, -60);
+    else object.position.set(randomX, yPos, -60); 
     
-    // Holzbrett
-    const baseGeom = new THREE.BoxGeometry(1.8, 0.1, 2.2);
-    const baseMat = new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.9 });
-    const base = new THREE.Mesh(baseGeom, baseMat);
-    base.position.y = 0.05;
-    base.castShadow = true;
-    base.receiveShadow = true;
-    trapGroup.add(base);
-
-    // Metallbügel
-    const wireGeom = new THREE.BoxGeometry(1.6, 0.05, 1.0);
-    const wireMat = new THREE.MeshStandardMaterial({ color: 0xAAAAAA, metalness: 0.8, roughness: 0.2 });
-    const wire = new THREE.Mesh(wireGeom, wireMat);
-    wire.position.set(0, 0.1, -0.4);
-    wire.castShadow = true;
-    trapGroup.add(wire);
-
-    // Feder/Auslöser in der Mitte (Rot)
-    const triggerGeom = new THREE.BoxGeometry(0.3, 0.08, 0.3);
-    const triggerMat = new THREE.MeshStandardMaterial({ color: 0x8B0000 });
-    const trigger = new THREE.Mesh(triggerGeom, triggerMat);
-    trigger.position.set(0, 0.1, 0.2);
-    trapGroup.add(trigger);
-
-    const randomX = (Math.random() - 0.5) * 28;
-    trapGroup.position.set(randomX, 0, -80);
-    
-    scene.add(trapGroup);
-    traps.push(trapGroup);
+    object.castShadow = true;
+    scene.add(object);
+    entities.push(object);
 }
 
 // --- Hauptschleife ---
 function animate() {
-    if (isGameOver) return; 
-    
     requestAnimationFrame(animate);
 
-    if (moveLeft && mouseGroup.position.x > -14) mouseGroup.position.x -= playerSpeed;
-    if (moveRight && mouseGroup.position.x < 14) mouseGroup.position.x += playerSpeed;
+    // 1. PHASE: NORMALES SPIEL
+    if (!isCutscene && !isGameOver) {
+        if (moveLeft && mouseGroup.position.x > -14) mouseGroup.position.x -= playerSpeed;
+        if (moveRight && mouseGroup.position.x < 14) mouseGroup.position.x += playerSpeed;
 
-    spawnTimer++;
-    const currentSpawnRate = Math.max(15, 60 - (level * 3)); 
+        spawnTimer++;
+        const currentSpawnRate = Math.max(20, 70 - (level * 4)); 
 
-    if (spawnTimer > currentSpawnRate) { 
-        // 20% Chance für eine Falle, steigt mit dem Level leicht an
-        const trapChance = 0.15 + (level * 0.02);
-        if (Math.random() < trapChance) {
-            spawnTrap();
-        } else {
-            spawnCheese();
+        if (spawnTimer > currentSpawnRate) { 
+            spawnEntity();
+            spawnTimer = 0;
         }
-        spawnTimer = 0;
-    }
 
-    const playerBox = new THREE.Box3().setFromObject(mouseGroup);
-    const currentSpeed = speedMultiplier + (level * 0.02);
+        const playerBox = new THREE.Box3().setFromObject(mouseGroup);
+        const currentSpeed = gameSpeed + (level * 0.02);
 
-    // Käse updaten
-    for (let i = collectibles.length - 1; i >= 0; i--) {
-        const cheese = collectibles[i];
-        
-        cheese.position.z += currentSpeed; 
-        
-        // Schwebende und drehende Animation
-        cheese.children[0].rotation.x += cheese.userData.rotSpeedX;
-        cheese.children[0].rotation.y += cheese.userData.rotSpeedY;
-        cheese.position.y = 0.8 + Math.sin(Date.now() * 0.005 + cheese.userData.hoverOffset) * 0.2;
+        for (let i = entities.length - 1; i >= 0; i--) {
+            const entity = entities[i];
+            entity.position.z += currentSpeed; 
 
-        const cheeseBox = new THREE.Box3().setFromObject(cheese);
+            const entityBox = new THREE.Box3().setFromObject(entity);
 
-        if (playerBox.intersectsBox(cheeseBox)) {
-            scene.remove(cheese); 
-            collectibles.splice(i, 1); 
-            
-            score++; 
-            scoreElement.innerText = score;
+            if (playerBox.intersectsBox(entityBox)) {
+                
+                if (entity.userData.type === 'cheese') {
+                    // Käse eingesammelt
+                    scene.remove(entity); 
+                    entities.splice(i, 1); 
+                    
+                    score++; 
+                    scoreElement.innerText = score;
 
-            const newLevel = Math.floor(score / 5) + 1;
-            if (newLevel > level) {
-                level = newLevel;
-                levelElement.innerText = level;
+                    const newLevel = Math.floor(score / 5) + 1;
+                    if (newLevel > level) {
+                        level = newLevel;
+                        levelElement.innerText = level;
+                    }
+
+                    const fatness = Math.min(1 + (score * 0.05), 3);
+                    const height = Math.min(1 + (score * 0.02), 1.5); 
+                    body.scale.set(fatness, height, 2);
+                } 
+                else if (entity.userData.type === 'trap') {
+                    // IN DIE FALLE GETAPPT! Cutscene starten
+                    isCutscene = true;
+                    hitTrap = entity;
+                    // Falle exakt unter die Maus schieben für die Animation
+                    hitTrap.position.x = mouseGroup.position.x;
+                    hitTrap.position.z = mouseGroup.position.z;
+                    
+                    // Steuerung loslassen
+                    moveLeft = false;
+                    moveRight = false;
+                    isPointerDown = false;
+                }
+                continue; 
             }
 
-            const fatness = Math.min(1 + (score * 0.05), 3);
-            const height = Math.min(1 + (score * 0.02), 1.5); 
-            body.scale.set(fatness, height, 2);
-
-            continue; 
+            if (entity.position.z > 15) {
+                scene.remove(entity);
+                entities.splice(i, 1);
+            }
         }
+    } 
+    // 2. PHASE: DRAMATISCHE CUTSCENE
+    else if (isCutscene) {
+        // Kamera dramatisch heranzoomen
+        const targetCamPos = new THREE.Vector3(mouseGroup.position.x, 3, mouseGroup.position.z + 5);
+        camera.position.lerp(targetCamPos, 0.05);
+        camera.lookAt(mouseGroup.position);
 
-        if (cheese.position.z > 15) {
-            scene.remove(cheese);
-            collectibles.splice(i, 1);
-        }
-    }
-
-    // Fallen updaten
-    for (let i = traps.length - 1; i >= 0; i--) {
-        const trap = traps[i];
-        trap.position.z += currentSpeed;
-
-        // Etwas kleinere Kollisionsbox für die Falle, damit man knapp ausweichen kann
-        const trapBox = new THREE.Box3().setFromObject(trap);
-        trapBox.expandByScalar(-0.1); 
-
-        if (playerBox.intersectsBox(trapBox)) {
+        // Bügel zuklappen lassen (bis er auf 0 Grad liegt)
+        if (hitTrap.userData.snapper.rotation.x < 0) {
+            hitTrap.userData.snapper.rotation.x += 0.3; // Sehr schnell zuklappen
+        } else {
+            // Cutscene beendet, Game Over Overlay zeigen
+            isCutscene = false;
             isGameOver = true;
-            gameOverText.style.display = 'block';
-            restartBtn.style.display = 'inline-block';
-            moveLeft = false;
-            moveRight = false;
-            return; 
-        }
-
-        if (trap.position.z > 15) {
-            scene.remove(trap);
-            traps.splice(i, 1);
+            finalScoreElement.innerText = score;
+            gameOverOverlay.style.display = 'flex';
         }
     }
 
     renderer.render(scene, camera);
 }
 
+// --- Neustart ---
 restartBtn.addEventListener('click', () => {
     isGameOver = false; 
+    isCutscene = false;
+    hitTrap = null;
     score = 0;
     level = 1;
-    speedMultiplier = 0.25;
+    gameSpeed = 0.25;
     spawnTimer = 0;
     
     scoreElement.innerText = score;
     levelElement.innerText = level;
-    gameOverText.style.display = 'none';
-    restartBtn.style.display = 'none'; 
-    mouseGroup.position.x = 0;
+    gameOverOverlay.style.display = 'none'; 
     
+    mouseGroup.position.set(0, 0, 0);
     body.scale.set(1, 1, 2);
 
-    collectibles.forEach(cheese => scene.remove(cheese));
-    collectibles = [];
+    // Kamera zurücksetzen
+    camera.position.copy(defaultCameraPos);
+    camera.lookAt(0, 1, 0);
 
-    traps.forEach(trap => scene.remove(trap));
-    traps = [];
-
-    animate();
+    // Alle Objekte löschen
+    entities.forEach(entity => scene.remove(entity));
+    entities = [];
 });
 
+// Start
 animate();
