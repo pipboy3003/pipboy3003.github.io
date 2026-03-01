@@ -1,1 +1,44 @@
+/* Timestamp: 2026-03-01 08:16:25 CET */
+body {
+    margin: 0;
+    overflow: hidden; /* Verhindert unschöne Scrollbalken */
+    background-color: #87CEEB; /* Fallback Himmelsfarbe */
+    font-family: sans-serif;
+}
 
+#ui-container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8); /* Macht den Text über dem 3D-Hintergrund lesbar */
+    z-index: 10;
+}
+
+h1 {
+    margin: 0 0 10px 0;
+}
+
+p {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0;
+}
+
+button {
+    margin-top: 20px;
+    padding: 12px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: #e74c3c;
+    color: white;
+    border: 2px solid white;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+button:hover {
+    background-color: #c0392b;
+}
