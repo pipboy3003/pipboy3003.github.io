@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fahrzeugliste-admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="mobile-header">
+    <strong>Fahrzeugliste</strong>
+    <button class="iconbtn" id="mobileThemeBtn" aria-label="Farbschema umschalten">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 1 0 9 9 9 9 0 1 1-9-9z"></path></svg>
+    </button>
+  </div>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">
+        <div class="logo-mark" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 16l2-5a3 3 0 0 1 2.8-2h8.4A3 3 0 0 1 19 11l2 5"></path><path d="M5 16h14"></path><circle cx="7.5" cy="17.5" r="1.5"></circle><circle cx="16.5" cy="17.5" r="1.5"></circle></svg>
+        </div>
+        <div>
+          <h1>Fahrzeugliste</h1>
+          <p>Autos &amp; Bike · Admin</p>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Hauptnavigation">
+        <button class="active" data-view-target="overview"><span>Übersicht</span></button>
+        <button data-view-target="inventory"><span>Bestand</span></button>
+        <button data-view-target="board"><span>Statusboard</span></button>
+        <button data-view-target="maintenance"><span>Wartung</span></button>
+      </nav>
+
+      <div class="sidebar-card">
+        <h2>Arbeitsweise</h2>
+        <p>Klare Tabellen, schnelle Filter, bearbeitbare Detailansicht, Import-Merge und logische Statuswechsel für den Fahrzeugbestand.</p>
+      </div>
+
+      <div class="sidebar-card">
+        <h2>Heute</h2>
+        <p><strong id="todayTasks">3</strong> Fahrzeuge brauchen Aufmerksamkeit, weil Status, Baujahr oder Wartungsinformationen offen sind.</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h2>Verwaltung</h2>
+          <p>Notion-inspirierte Oberfläche mit Bestandsliste, Bearbeitung, Wartung und Statusübersicht.</p>
+        </div>
+        <div class="toolbar">
+          <button class="btn" id="importBtn" title="Import" aria-label="Import">Import</button>
+          <input type="file" id="importFile" accept=".csv,.json" hidden />
+          <label class="search">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+            <input class="input" id="searchInput" type="search" placeholder="Suche nach Fahrzeug, VIN, Besitzer" />
+          </label>
+          <select class="select" id="brandFilter"><option value="">Alle Marken</option></select>
+          <select class="select" id="statusFilter"><option value="">Alle Status</option><option>OPEN</option><option>RESERVED</option><option>SOLD</option></select>
+          <button class="iconbtn" id="themeToggle" aria-label="Farbschema umschalten">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 1 0 9 9 9 9 0 1 1-9-9z"></path></svg>
+          </button>
+          <button class="btn ghost" id="exportBtn">CSV-Export</button>
+          <button class="btn primary" id="addBtn">+ Fahrzeug</button>
+          <span class="badge" title="Import läuft über den versteckten Button">Versteckter Import möglich</span>
+        </div>
+      </header>
+
+      <section class="stats">
+        <article class="stat"><label>Fahrzeuge gesamt</label><strong id="statTotal">0</strong></article>
+        <article class="stat"><label>Offen</label><strong id="statOpen">0</strong></article>
+        <article class="stat"><label>Reserviert</label><strong id="statReserved">0</strong></article>
+        <article class="stat"><label>Verkauft</label><strong id="statSold">0</strong></article>
+        <article class="stat"><label>Nächste Wartungen</label><strong id="statMaintenance">0</strong></article>
+      </section>
+
+      <section class="content">
+        <section class="view active" id="view-overview">
+          <div class="shell">
+            <section class="panel">
+              <div class="panel-head">
+                <div><h3>Betriebsübersicht</h3><p>Die wichtigsten Bestands- und Statusmuster auf einen Blick.</p></div>
+                <span class="badge">Admin Dashboard</span>
+              </div>
+              <div style="padding: var(--space-5); display:grid; gap: var(--space-5);">
+                <div class="metric-grid">
+                  <article class="metric">
+                    <h3 style="margin:0 0 10px;font-size:var(--text-base)">Statusverteilung</h3>
+                    <div class="bar-stack" id="statusBars"></div>
+                  </article>
+                  <article class="metric">
+                    <h3 style="margin:0 0 10px;font-size:var(--text-base)">Markenverteilung</h3>
+                    <div class="bar-stack" id="brandBars"></div>
+                  </article>
+                </div>
+                <article class="metric">
+                  <h3 style="margin:0 0 10px;font-size:var(--text-base)">Offene Aufgaben</h3>
+                  <div class="tasklist" id="taskList"></div>
+                </article>
+              </div>
+            </section>
+            <aside class="panel">
+              <div class="panel-head">
+                <div><h3>Schnellerfassung</h3><p>Neue Fahrzeuge direkt in den Bestand aufnehmen.</p></div>
+              </div>
+              <div style="padding: var(--space-5);">
+                <form class="form" id="createForm">
+                  <input name="vehicle" placeholder="Fahrzeugbezeichnung" required />
+                  <div class="grid">
+                    <input name="brand" placeholder="Marke" required />
+                    <select name="status"><option>OPEN</option><option>RESERVED</option><option>SOLD</option></select>
+                  </div>
+                  <div class="grid">
+                    <input name="keyNumber" placeholder="Schlüsselnummer" />
+                    <input name="vin" placeholder="Fahrgestellnummer" />
+                  </div>
+                  <div class="grid">
+                    <input name="year" placeholder="Baujahr" />
+                    <input name="owner" placeholder="Besitzer" />
+                  </div>
+                  <div class="grid">
+                    <input name="location" placeholder="Standort" />
+                    <input name="maintenanceDue" placeholder="Nächste Wartung, z. B. 2026-07-10" />
+                  </div>
+                  <textarea name="notes" placeholder="Interne Notiz"></textarea>
+                  <div class="footer-actions">
+                    <button class="btn primary" type="submit">Fahrzeug anlegen</button>
+                    <button class="btn" type="button" id="prefillCreate">Beispieldaten</button>
+                  </div>
+                </form>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="view-inventory">
+          <div class="shell">
+            <section class="panel">
+              <div class="panel-head">
+                <div><h3>Bestandsliste</h3><p id="resultCount">0 Einträge</p></div>
+                <div class="footer-actions">
+                  <button class="btn" id="selectAllBtn">Alle markieren</button>
+                  <button class="btn" id="archiveSelectedBtn">Markierte auf SOLD setzen</button>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th><input type="checkbox" id="selectAllCheckbox" class="check" aria-label="Alle auswählen" /></th>
+                      <th>Brand</th>
+                      <th>Fahrzeug</th>
+                      <th>Status</th>
+                      <th>Schlüsselnummer</th>
+                      <th>Fahrgestellnummer</th>
+                      <th>Baujahr</th>
+                      <th>Besitzer</th>
+                      <th>Standort</th>
+                      <th>Nächste Wartung</th>
+                    </tr>
+                  </thead>
+                  <tbody id="vehicleTable"></tbody>
+                </table>
+              </div>
+            </section>
+            <aside class="panel">
+              <div class="panel-head">
+                <div><h3>Fahrzeugdetails</h3><p>Klick auf einen Eintrag zum Bearbeiten.</p></div>
+                <span class="chip" id="detailChip">Bearbeitung</span>
+              </div>
+              <div class="detail" id="detailPane"></div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="view-board">
+          <div class="panel">
+            <div class="panel-head">
+              <div><h3>Statusboard</h3><p>Progressive Übersicht nach OPEN, RESERVED und SOLD.</p></div>
+              <span class="badge">Kanban</span>
+            </div>
+            <div class="kanban" id="kanbanBoard" style="padding: var(--space-5);"></div>
+          </div>
+        </section>
+
+        <section class="view" id="view-maintenance">
+          <div class="shell">
+            <section class="panel">
+              <div class="panel-head">
+                <div><h3>Wartungsplanung</h3><p>Termine, Erinnerungen und Zuständigkeiten.</p></div>
+                <span class="badge">Nächste Schritte</span>
+              </div>
+              <div style="padding: var(--space-5);display:grid;gap:var(--space-4);" id="maintenanceList"></div>
+            </section>
+            <aside class="panel">
+              <div class="panel-head"><div><h3>Dokumente &amp; Hinweise</h3><p>Verknüpfte Informationen pro Fahrzeug.</p></div></div>
+              <div class="detail">
+                <section>
+                  <h3 style="margin:0 0 12px;font-size:var(--text-lg)">Dokumenttypen</h3>
+                  <div class="docs">
+                    <div class="docrow"><span class="pin"></span><div><strong>Zulassung</strong><div class="muted">Für jedes Fahrzeug als eigener Nachweis führbar.</div></div></div>
+                    <div class="docrow"><span class="pin"></span><div><strong>Kaufvertrag</strong><div class="muted">Lässt sich später an echten Speicher anbinden.</div></div></div>
+                    <div class="docrow"><span class="pin"></span><div><strong>Servicehistorie</strong><div class="muted">Sinnvoll für spätere Fahrzeugakten und Audits.</div></div></div>
+                  </div>
+                </section>
+              </div>
+            </aside>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  
+
+  <div class="modal-backdrop" id="importModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="importTitle">
+      <div class="modal-head">
+        <div>
+          <h3 id="importTitle" style="margin:0 0 6px">Import-Vorschau</h3>
+          <p class="muted" id="importSummary" style="margin:0">Datei wird geprüft.</p>
+        </div>
+        <button class="iconbtn" id="closeImportModal" aria-label="Schließen">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="preview-grid">
+          <section class="panel" style="box-shadow:none">
+            <div class="panel-head"><div><h3>Erkannte Zeilen</h3><p>Neu, abgeglichen oder übersprungen</p></div></div>
+            <div class="table-wrap" style="max-height:45vh"><table class="preview-table"><thead><tr><th>Status</th><th>Brand</th><th>Fahrzeug</th><th>VIN / Schlüssel</th></tr></thead><tbody id="previewRows"></tbody></table></div>
+          </section>
+          <section class="panel" style="box-shadow:none">
+            <div class="panel-head"><div><h3>Abgleich-Regeln</h3><p>Vor dem Import</p></div></div>
+            <div class="detail" style="padding-top:0">
+              <div class="field"><label>Duplikatschlüssel</label><strong>Brand + Fahrzeug + VIN + Schlüsselnummer</strong></div>
+              <div class="field"><label>Vorhandene Datensätze</label><strong>werden nicht überschrieben</strong></div>
+              <div class="field"><label>Leere Felder</label><strong>werden bei Bedarf ergänzt</strong></div>
+              <div class="footer-actions"><button class="btn primary" id="confirmImportBtn">Import bestätigen</button><button class="btn" id="cancelImportBtn">Abbrechen</button></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js" defer></script>
+
+</body>
+</html>
