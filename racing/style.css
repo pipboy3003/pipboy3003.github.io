@@ -18,9 +18,10 @@ body {
 }
 .screen.active { display: flex; align-items: center; justify-content: center; }
 
+/* MENU */
 .menu-content {
   text-align: center;
-  background: rgba(0,0,0,0.85);
+  background: rgba(0,0,0,0.88);
   border: 2px solid #ff6600;
   border-radius: 12px;
   padding: 40px 60px;
@@ -47,7 +48,7 @@ body {
   color: #fff;
   border: none;
   border-radius: 6px;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-family: 'Courier New', monospace;
   cursor: pointer;
   transition: all 0.2s;
@@ -71,26 +72,82 @@ body {
 }
 .btn-secondary:hover { background: #ff660022; }
 
-.firebase-status {
-  margin-top: 16px;
-  font-size: 0.75rem;
-  color: #888;
-}
+.firebase-status { margin-top: 16px; font-size: 0.75rem; color: #888; }
 
+/* FAHRZEUGAUSWAHL */
+.carselect-content {
+  text-align: center;
+  background: rgba(0,0,0,0.92);
+  border: 2px solid #ff6600;
+  border-radius: 14px;
+  padding: 32px 40px;
+  max-width: 780px;
+  width: 96%;
+  box-shadow: 0 0 50px #ff660055;
+}
+.carselect-content h2 { color: #ff6600; font-size: 1.8rem; margin-bottom: 6px; }
+.carselect-track-name { color: #aaa; font-size: 0.85rem; margin-bottom: 22px; }
+
+.car-cards {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.car-card {
+  background: #111;
+  border: 2px solid #444;
+  border-radius: 10px;
+  padding: 18px 20px;
+  width: 200px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.car-card:hover { border-color: #ff6600; background: #1a1a1a; }
+.car-card.selected {
+  border-color: #ff6600;
+  background: #1f0e00;
+  box-shadow: 0 0 18px #ff660066;
+}
+.car-card .car-icon { font-size: 2.8rem; margin-bottom: 8px; }
+.car-card .car-name { color: #ff6600; font-size: 1rem; font-weight: bold; margin-bottom: 10px; }
+.car-card .car-stat { font-size: 0.78rem; color: #bbb; margin: 3px 0; text-align: left; }
+.car-card .car-stat span { float: right; color: #ffdd00; }
+.stat-bar-wrap { background: #222; border-radius: 3px; height: 5px; margin: 2px 0 6px; overflow:hidden; }
+.stat-bar { height: 5px; border-radius: 3px; background: linear-gradient(to right, #ff6600, #ffdd00); }
+.car-card .car-desc { font-size: 0.72rem; color: #777; margin-top: 10px; font-style: italic; }
+.selected-badge {
+  position: absolute;
+  top: 8px; right: 8px;
+  background: #ff6600;
+  color: #000;
+  font-size: 0.65rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+.carselect-actions { display: flex; gap: 12px; }
+.carselect-actions .btn-secondary { flex: 1; }
+.carselect-actions .btn-main { flex: 2; }
+
+/* OVERWORLD + RACE SCREENS */
 #screen-overworld, #screen-race {
   display: none;
   position: absolute;
-  top:0;left:0;
-  width:100vw;height:100vh;
+  top:0; left:0;
+  width:100vw; height:100vh;
 }
 #screen-overworld.active, #screen-race.active { display: block; }
 
 #canvas-overworld, #canvas-race {
   position: absolute;
-  top:0;left:0;
-  width:100%;height:100%;
+  top:0; left:0;
+  width:100%; height:100%;
 }
 
+/* HUD OVERWORLD */
 #hud-overworld {
   position: absolute;
   top: 0; left: 0; right: 0;
@@ -110,22 +167,24 @@ body {
 }
 .time-display { font-size: 0.95rem; color: #88ccff; text-shadow: 0 0 8px #88ccff88; }
 
+/* DIALOG */
 .dialog-box {
   position: absolute;
   bottom: 30px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(500px, 90vw);
-  background: rgba(10,10,10,0.95);
+  width: min(520px, 92vw);
+  background: rgba(10,10,10,0.96);
   border: 2px solid #ff6600;
   border-radius: 10px;
   padding: 20px 24px;
   z-index: 20;
   box-shadow: 0 0 30px #ff660066;
+  white-space: pre-line;
 }
 .dialog-box.hidden { display: none; }
 #dialog-title { color: #ff6600; font-size: 1.1rem; font-weight: bold; margin-bottom: 8px; }
-#dialog-text { color: #ddd; line-height: 1.6; margin-bottom: 12px; }
+#dialog-text { color: #ddd; line-height: 1.6; margin-bottom: 12px; font-size: 0.9rem; }
 #dialog-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 #dialog-actions button {
   padding: 7px 14px;
@@ -135,50 +194,55 @@ body {
   border-radius: 4px;
   cursor: pointer;
   font-family: 'Courier New', monospace;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   transition: background 0.15s;
 }
 #dialog-actions button:hover { background: #ff660066; }
 
+/* HUD RACE */
 #hud-race {
   position: absolute;
   top: 12px; left: 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  font-size: 1rem;
+  gap: 5px;
+  font-size: 0.95rem;
   color: #fff;
   text-shadow: 0 0 6px #000;
   pointer-events: none;
   z-index: 10;
 }
 #hud-race > div {
-  background: rgba(0,0,0,0.55);
+  background: rgba(0,0,0,0.6);
   padding: 4px 10px;
   border-radius: 4px;
   border-left: 3px solid #ff6600;
 }
+#race-car-label { color: #ffdd00; font-size: 0.78rem; }
 #boost-bar {
-  width: 120px;
-  height: 10px;
+  width: 120px; height: 8px;
   background: #333;
-  border-radius: 5px;
+  border-radius: 4px;
   margin-top: 2px;
   overflow: hidden;
+  border: none !important;
+  padding: 0 !important;
+  background: transparent !important;
 }
 #boost-fill {
   height: 100%;
   width: 100%;
   background: linear-gradient(to right, #00aaff, #00ffff);
   transition: width 0.1s;
-  border-radius: 5px;
+  border-radius: 4px;
 }
 
+/* RACE RESULT */
 .race-result {
   position: absolute;
   top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0,0,0,0.92);
+  transform: translate(-50%,-50%);
+  background: rgba(0,0,0,0.93);
   border: 2px solid #ff6600;
   border-radius: 12px;
   padding: 36px 48px;
