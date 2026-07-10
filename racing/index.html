@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mechanic's Quest</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- SCREENS -->
+<div id="screen-menu" class="screen active">
+  <div class="menu-content">
+    <h1>🏎️ Mechanic's Quest</h1>
+    <p class="subtitle">Postapokalyptisches Straßenrennen-RPG</p>
+    <button id="btn-start" class="btn-main">▶ Spiel starten</button>
+    <button id="btn-how" class="btn-secondary">📖 Anleitung</button>
+    <div id="firebase-status" class="firebase-status">🔴 Nicht verbunden</div>
+  </div>
+</div>
+
+<div id="screen-howto" class="screen">
+  <div class="menu-content">
+    <h2>📖 Anleitung</h2>
+    <ul>
+      <li><b>W/A/S/D oder Pfeiltasten</b> – Fahren</li>
+      <li><b>SHIFT</b> – Boost</li>
+      <li><b>Overworld:</b> Klicke auf Gebäude zum Interagieren</li>
+      <li><b>Rennen gewinnen</b> → Teile &amp; Geld sammeln</li>
+      <li><b>Werkstatt</b> → Auto upgraden</li>
+      <li><b>Händler</b> → Teile kaufen/verkaufen</li>
+    </ul>
+    <button id="btn-back" class="btn-secondary">← Zurück</button>
+  </div>
+</div>
+
+<div id="screen-overworld" class="screen">
+  <canvas id="canvas-overworld"></canvas>
+  <div id="hud-overworld">
+    <div id="hud-left">
+      <div class="hud-stat">💰 <span id="hud-money">0</span> Caps</div>
+      <div class="hud-stat">🔧 <span id="hud-parts">0</span> Teile</div>
+      <div class="hud-stat">⚡ Motor Lv.<span id="hud-engine">1</span></div>
+    </div>
+    <div id="hud-right">
+      <div class="time-display" id="time-display">🌙 Nacht</div>
+    </div>
+  </div>
+  <div id="dialog-box" class="dialog-box hidden">
+    <div id="dialog-title"></div>
+    <div id="dialog-text"></div>
+    <div id="dialog-actions"></div>
+    <button id="dialog-close" class="btn-secondary">Schließen</button>
+  </div>
+</div>
+
+<div id="screen-race" class="screen">
+  <canvas id="canvas-race"></canvas>
+  <div id="hud-race">
+    <div id="race-lap">Runde 1/3</div>
+    <div id="race-pos">Pos: 1</div>
+    <div id="race-speed">0 km/h</div>
+    <div id="boost-bar"><div id="boost-fill"></div></div>
+  </div>
+  <div id="race-result" class="race-result hidden">
+    <h2 id="result-title"></h2>
+    <p id="result-text"></p>
+    <button id="btn-back-overworld" class="btn-main">← Zur Overworld</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+<script type="module" src="firebase.js"></script>
+<script src="game.js"></script>
+
+</body>
+</html>
