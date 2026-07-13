@@ -285,3 +285,113 @@ header h1 {
   .topic-grid { grid-template-columns: 1fr; }
   header h1 { font-size: 1.5rem; }
 }
+
+.fg-bereich {
+  margin-top: 32px;
+  padding: 24px;
+  border: 1px solid #2e5d50;
+  border-radius: 14px;
+  background: #f4faf7;
+}
+
+.fg-card {
+  margin-top: 22px;
+  padding: 24px;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+}
+
+.fg-kopf {
+  border-bottom: 1px solid #d9e6e0;
+  margin-bottom: 20px;
+}
+
+.fg-kopf h2 {
+  margin: 8px 0;
+}
+
+.fg-badge {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: #2e5d50;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.fg-text,
+.fg-auftrag {
+  white-space: pre-line;
+  line-height: 1.65;
+}
+
+.fg-auftrag {
+  padding: 14px;
+  border-left: 4px solid #2e5d50;
+  background: #eef7f2;
+  font-weight: 600;
+}
+
+#fg-notizen {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid #a8beb5;
+  border-radius: 8px;
+  font: inherit;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.fg-aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.fg-button {
+  padding: 11px 16px;
+  border: 0;
+  border-radius: 8px;
+  color: #ffffff;
+  background: #2e5d50;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fg-button:hover {
+  background: #20463b;
+}
+
+.fg-button-neu {
+  background: #365f8d;
+}
+
+.fg-button-neu:hover {
+  background: #26496d;
+}
+
+#fg-auswertung {
+  margin-top: 20px;
+  padding: 18px;
+  border-radius: 8px;
+  background: #fff8df;
+}
+
+#fg-auswertung li {
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.fg-hinweis {
+  margin-top: 18px;
+  padding: 12px;
+  border-radius: 6px;
+  background: #ffffff;
+  font-weight: 600;
+}
