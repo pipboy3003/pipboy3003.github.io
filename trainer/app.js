@@ -1,481 +1,510 @@
-const questions = [
-  // ---------------------------------------------------------
-  // TECHNIK
-  // ---------------------------------------------------------
-  {
-    id: 1,
-    bereich: "Technik",
-    frage: "Welche Kennzahl beschreibt den Anteil der tatsächlich verfügbaren Maschinenzeit an der planbaren Produktionszeit?",
-    antworten: [
-      "Maschinenverfügbarkeit",
-      "Arbeitsproduktivität",
-      "Ausschussquote",
-      "Lagerumschlagshäufigkeit"
-    ],
-    richtig: 0,
-    erklaerung: "Die Maschinenverfügbarkeit zeigt, wie viel der planbaren Zeit eine Maschine technisch einsatzbereit ist."
-  },
-  {
-    id: 2,
-    bereich: "Technik",
-    frage: "Eine CNC-Maschine fällt wiederholt wegen desselben Fehlers aus. Welcher erste Schritt ist für eine nachhaltige Instandhaltung am sinnvollsten?",
-    antworten: [
-      "Die Maschine bei jedem Ausfall sofort ersetzen",
-      "Die Störungsursache systematisch analysieren und dokumentieren",
-      "Die Wartungsintervalle vollständig streichen",
-      "Die Bediener ohne weitere Prüfung wechseln"
-    ],
-    richtig: 1,
-    erklaerung: "Wiederkehrende Störungen müssen zuerst systematisch erfasst und auf ihre Ursache zurückgeführt werden."
-  },
-  {
-    id: 3,
-    bereich: "Technik",
-    frage: "Welche Instandhaltungsart soll einen Ausfall verhindern, bevor eine Störung eintritt?",
-    antworten: [
-      "Ausfallbedingte Instandsetzung",
-      "Vorbeugende Wartung",
-      "Notfallreparatur",
-      "Fehleranalyse nach Stillstand"
-    ],
-    richtig: 1,
-    erklaerung: "Vorbeugende Wartung soll Funktionsverluste und ungeplante Stillstände vermeiden."
-  },
-  {
-    id: 4,
-    bereich: "Technik",
-    frage: "Welche Maßnahme steigert die Prozesssicherheit beim Rüsten einer Maschine am stärksten?",
-    antworten: [
-      "Rüstschritte nur mündlich weitergeben",
-      "Standardisierte Rüstanweisung mit Checkliste verwenden",
-      "Jede Schicht frei über den Ablauf entscheiden lassen",
-      "Erst nach der Serienproduktion die Einstellungen kontrollieren"
-    ],
-    richtig: 1,
-    erklaerung: "Standardisierte Rüstanweisungen und Checklisten reduzieren Bedienfehler und machen Abläufe reproduzierbar."
-  },
-  {
-    id: 5,
-    bereich: "Technik",
-    frage: "Was ist ein wesentliches Ziel der Wertstromanalyse?",
-    antworten: [
-      "Ausschließlich die Personalkosten erhöhen",
-      "Material- und Informationsflüsse sichtbar machen und Verschwendung erkennen",
-      "Die Anzahl der Produkte im Lager vergrößern",
-      "Nur die Maschinenstunden erfassen"
-    ],
-    richtig: 1,
-    erklaerung: "Die Wertstromanalyse betrachtet den gesamten Material- und Informationsfluss, um Verschwendung und Engpässe zu erkennen."
-  },
-  {
-    id: 6,
-    bereich: "Technik",
-    frage: "Welche Folge hat eine zu hohe Schnittgeschwindigkeit beim Zerspanen am ehesten?",
-    antworten: [
-      "Werkzeugverschleiß und thermische Belastung steigen",
-      "Die Werkzeugstandzeit steigt immer",
-      "Es entsteht grundsätzlich keine Wärme",
-      "Die Maßhaltigkeit verbessert sich unabhängig vom Werkstoff"
-    ],
-    richtig: 0,
-    erklaerung: "Eine überhöhte Schnittgeschwindigkeit kann zu starker Wärmeentwicklung, hohem Werkzeugverschleiß und Qualitätsproblemen führen."
-  },
-  {
-    id: 7,
-    bereich: "Technik",
-    frage: "Wofür steht die Abkürzung OEE im Produktionsumfeld?",
-    antworten: [
-      "Gesamtanlageneffektivität",
-      "Organisationseinheit Energie",
-      "Optimierte Einzelteilentwicklung",
-      "Elektronische Einsatzplanung"
-    ],
-    richtig: 0,
-    erklaerung: "OEE steht für Overall Equipment Effectiveness und bewertet Verfügbarkeit, Leistung und Qualität einer Anlage."
-  },
-  {
-    id: 8,
-    bereich: "Technik",
-    frage: "Welche drei Faktoren fließen typischerweise in die OEE ein?",
-    antworten: [
-      "Verfügbarkeit, Leistung und Qualität",
-      "Kosten, Umsatz und Gewinn",
-      "Personalzahl, Lagerbestand und Lieferzeit",
-      "Arbeitszeit, Pausenzeit und Urlaubszeit"
-    ],
-    richtig: 0,
-    erklaerung: "Die Gesamtanlageneffektivität setzt sich aus Verfügbarkeit, Leistungsgrad und Qualitätsrate zusammen."
-  },
-  {
-    id: 9,
-    bereich: "Technik",
-    frage: "Welche Aussage beschreibt eine Erstteilprüfung richtig?",
-    antworten: [
-      "Sie findet erst nach Abschluss der gesamten Serie statt",
-      "Sie prüft das erste gefertigte Teil vor der Serienfreigabe",
-      "Sie ersetzt alle weiteren Prüfungen vollständig",
-      "Sie wird nur bei Handmontage benötigt"
-    ],
-    richtig: 1,
-    erklaerung: "Mit der Erstteilprüfung wird geprüft, ob Maschine, Werkzeug und Einstellungen vor Serienbeginn korrekte Teile liefern."
-  },
-  {
-    id: 10,
-    bereich: "Technik",
-    frage: "Was ist bei einer Engpassmaschine in der Produktionsplanung besonders wichtig?",
-    antworten: [
-      "Sie möglichst oft ungeplant stillstehen zu lassen",
-      "Ihre Kapazität und Verfügbarkeit besonders sorgfältig zu planen",
-      "Nur Aufträge mit geringer Priorität einzuplanen",
-      "Sie unabhängig von den Folgeprozessen zu betrachten"
-    ],
-    richtig: 1,
-    erklaerung: "Der Engpass bestimmt häufig die Gesamtleistung des Systems und braucht daher eine besonders zuverlässige Planung."
-  },
-  {
-    id: 11,
-    bereich: "Technik",
-    frage: "Welche Aufgabe gehört zur Arbeitsvorbereitung?",
-    antworten: [
-      "Arbeitspläne, Arbeitsgänge und Vorgabezeiten festlegen",
-      "Lohnsteuerbescheinigungen ausstellen",
-      "Arbeitsverträge abschließen",
-      "Jahresabschlüsse erstellen"
-    ],
-    richtig: 0,
-    erklaerung: "Die Arbeitsvorbereitung plant und beschreibt unter anderem Arbeitsabläufe, Betriebsmittel, Zeiten und Arbeitspläne."
-  },
-  {
-    id: 12,
-    bereich: "Technik",
-    frage: "Welche Maßnahme reduziert Rüstzeiten im Sinne von SMED besonders wirksam?",
-    antworten: [
-      "Möglichst viele Tätigkeiten erst bei Maschinenstillstand erledigen",
-      "Interne Rüstvorgänge in externe Rüstvorgänge verlagern",
-      "Werkzeuge erst während des Stillstands suchen",
-      "Einstellungen nicht dokumentieren"
-    ],
-    richtig: 1,
-    erklaerung: "SMED zielt darauf, vorbereitende Tätigkeiten bei laufender Maschine durchzuführen und Stillstandszeit zu verringern."
-  },
+const BEREICHE = ["Technik", "Organisation", "Führung & Personal"];
+const SPEICHER_KEY = "imm-hq-trainer-antworten-v1";
 
-  // ---------------------------------------------------------
-  // ORGANISATION
-  // ---------------------------------------------------------
-  {
-    id: 13,
-    bereich: "Organisation",
-    frage: "Welche Kosten werden einem einzelnen Produkt direkt zugerechnet?",
-    antworten: [
-      "Einzelkosten",
-      "Gemeinkosten",
-      "Fixkosten",
-      "Kalkulatorische Kosten"
-    ],
-    richtig: 0,
-    erklaerung: "Einzelkosten können einem Kostenträger direkt zugeordnet werden, zum Beispiel Material für ein bestimmtes Produkt."
-  },
-  {
-    id: 14,
-    bereich: "Organisation",
-    frage: "Welche Aufgabe hat eine Kostenstelle in der Kostenrechnung?",
-    antworten: [
-      "Sie sammelt Gemeinkosten dort, wo sie entstehen",
-      "Sie ersetzt die Finanzbuchhaltung vollständig",
-      "Sie legt den Verkaufspreis verbindlich fest",
-      "Sie berechnet ausschließlich den Umsatz"
-    ],
-    richtig: 0,
-    erklaerung: "Kostenstellen erfassen Gemeinkosten nach Entstehungsbereichen, beispielsweise Fertigung, Verwaltung oder Material."
-  },
-  {
-    id: 15,
-    bereich: "Organisation",
-    frage: "Was zeigt der Deckungsbeitrag eines Produkts?",
-    antworten: [
-      "Umsatz abzüglich variabler Kosten",
-      "Umsatz abzüglich aller fixen Kosten",
-      "Materialkosten abzüglich Lohnkosten",
-      "Gewinn vor Abzug der variablen Kosten"
-    ],
-    richtig: 0,
-    erklaerung: "Der Deckungsbeitrag zeigt, welchen Betrag ein Produkt nach Abzug seiner variablen Kosten zur Deckung der Fixkosten leistet."
-  },
-  {
-    id: 16,
-    bereich: "Organisation",
-    frage: "Wann ist der Break-even-Point erreicht?",
-    antworten: [
-      "Wenn die Gesamterlöse den Gesamtkosten entsprechen",
-      "Wenn keine Fixkosten vorhanden sind",
-      "Wenn nur variable Kosten entstehen",
-      "Wenn der Lagerbestand maximal ist"
-    ],
-    richtig: 0,
-    erklaerung: "Am Break-even-Point sind Erlöse und Gesamtkosten gleich hoch; das Unternehmen macht weder Gewinn noch Verlust."
-  },
-  {
-    id: 17,
-    bereich: "Organisation",
-    frage: "Welche Aussage zur ABC-Analyse ist richtig?",
-    antworten: [
-      "A-Güter haben meist einen hohen Wertanteil und benötigen besondere Aufmerksamkeit",
-      "C-Güter verursachen immer den größten Beschaffungsaufwand",
-      "Alle Güter werden unabhängig von ihrem Wert gleich gesteuert",
-      "Die ABC-Analyse bewertet ausschließlich Arbeitssicherheit"
-    ],
-    richtig: 0,
-    erklaerung: "A-Güter besitzen in der Regel einen hohen Wertanteil und sollten besonders eng gesteuert werden."
-  },
-  {
-    id: 18,
-    bereich: "Organisation",
-    frage: "Was ist ein typisches Ziel der Produktionsplanung und -steuerung?",
-    antworten: [
-      "Termine, Kapazitäten, Material und Aufträge aufeinander abstimmen",
-      "Ausschließlich den Verkaufspreis erhöhen",
-      "Gesetzliche Pausenregelungen abschaffen",
-      "Nur Personalakten verwalten"
-    ],
-    richtig: 0,
-    erklaerung: "Die Produktionsplanung und -steuerung stimmt Aufträge, Termine, Personal, Maschinen und Material bedarfsgerecht ab."
-  },
-  {
-    id: 19,
-    bereich: "Organisation",
-    frage: "Welche Funktion hat ein Kanban-System?",
-    antworten: [
-      "Es steuert Material bedarfsorientiert nach dem Pull-Prinzip",
-      "Es ersetzt sämtliche Qualitätsprüfungen",
-      "Es berechnet Lohn- und Gehaltsabrechnungen",
-      "Es dient nur zur Archivierung alter Aufträge"
-    ],
-    richtig: 0,
-    erklaerung: "Kanban steuert Nachschub anhand des tatsächlichen Verbrauchs und unterstützt eine verbrauchsorientierte Materialversorgung."
-  },
-  {
-    id: 20,
-    bereich: "Organisation",
-    frage: "Was muss vor einer Tätigkeit mit erkennbaren Gefährdungen durchgeführt werden?",
-    antworten: [
-      "Eine Gefährdungsbeurteilung",
-      "Eine Kostenstellenrechnung",
-      "Eine Marktanalyse",
-      "Eine Inventur"
-    ],
-    richtig: 0,
-    erklaerung: "Die Gefährdungsbeurteilung ermittelt Gefahren, bewertet Risiken und leitet erforderliche Schutzmaßnahmen ab."
-  },
-  {
-    id: 21,
-    bereich: "Organisation",
-    frage: "Welche Rangfolge der Schutzmaßnahmen entspricht dem STOP-Prinzip?",
-    antworten: [
-      "Substitution, technische, organisatorische und persönliche Maßnahmen",
-      "Sicherheit, Termin, Organisation und Personal",
-      "Steuern, Teilen, Optimieren und Prüfen",
-      "Sofort handeln, Termine planen, Ordnung schaffen, Personal schulen"
-    ],
-    richtig: 0,
-    erklaerung: "Nach dem STOP-Prinzip haben Substitution sowie technische Maßnahmen Vorrang vor organisatorischen und persönlichen Maßnahmen."
-  },
-  {
-    id: 22,
-    bereich: "Organisation",
-    frage: "Welche Maßnahme ist ein Beispiel für technischen Arbeitsschutz?",
-    antworten: [
-      "Schutzgitter an einer Maschine anbringen",
-      "Eine Sicherheitsunterweisung dokumentieren",
-      "Mitarbeitende zur PSA-Nutzung verpflichten",
-      "Pausenzeiten im Schichtplan festlegen"
-    ],
-    richtig: 0,
-    erklaerung: "Ein Schutzgitter beseitigt oder vermindert Gefährdungen direkt an der technischen Quelle."
-  },
-  {
-    id: 23,
-    bereich: "Organisation",
-    frage: "Was beschreibt die Durchlaufzeit eines Auftrags?",
-    antworten: [
-      "Die Zeit vom Auftragsbeginn bis zur Fertigstellung",
-      "Nur die reine Bearbeitungszeit an einer Maschine",
-      "Nur die Transportzeit zwischen zwei Lagern",
-      "Die Dauer der jährlichen Inventur"
-    ],
-    richtig: 0,
-    erklaerung: "Die Durchlaufzeit umfasst typischerweise Bearbeitungs-, Warte-, Transport- und Liegezeiten eines Auftrags."
-  },
-  {
-    id: 24,
-    bereich: "Organisation",
-    frage: "Welche Kennzahl hilft, die Liefertreue zu beurteilen?",
-    antworten: [
-      "Anteil termingerecht ausgelieferter Aufträge",
-      "Anzahl der Arbeitsunfälle",
-      "Höhe des Eigenkapitals",
-      "Durchschnittliche Krankheitsdauer"
-    ],
-    richtig: 0,
-    erklaerung: "Liefertreue misst, wie viele Aufträge zum vereinbarten Termin geliefert werden."
-  },
+let ausgewaehlterBereich = "Alle";
+let aktuelleFrageIndex = 0;
+let antworten = {};
 
-  // ---------------------------------------------------------
-  // FÜHRUNG & PERSONAL
-  // ---------------------------------------------------------
-  {
-    id: 25,
-    bereich: "Führung & Personal",
-    frage: "Was ist bei einem Konflikt zwischen zwei Mitarbeitenden ein sinnvoller erster Schritt?",
-    antworten: [
-      "Beide Seiten getrennt anhören und die Fakten erfassen",
-      "Den Konflikt grundsätzlich ignorieren",
-      "Sofort eine Abmahnung ohne Gespräch aussprechen",
-      "Die Mitarbeitenden ohne Begründung in andere Abteilungen versetzen"
-    ],
-    richtig: 0,
-    erklaerung: "Zunächst sollten beide Sichtweisen angehört und die Ursachen sachlich ermittelt werden."
-  },
-  {
-    id: 26,
-    bereich: "Führung & Personal",
-    frage: "Was zeichnet ein wirksames Mitarbeitergespräch aus?",
-    antworten: [
-      "Klare Ziele, aktives Zuhören, konkrete Vereinbarungen und Rückmeldung",
-      "Ausschließlich Kritik ohne Lösungsvorschläge",
-      "Möglichst viele Unterbrechungen durch den Vorgesetzten",
-      "Keine Vorbereitung, damit das Gespräch spontan bleibt"
-    ],
-    richtig: 0,
-    erklaerung: "Ein wirksames Gespräch ist vorbereitet, respektvoll und endet mit nachvollziehbaren Vereinbarungen."
-  },
-  {
-    id: 27,
-    bereich: "Führung & Personal",
-    frage: "Was ist ein Ziel der Personalentwicklung?",
-    antworten: [
-      "Kompetenzen für aktuelle und zukünftige Aufgaben aufbauen",
-      "Mitarbeitende grundsätzlich austauschen",
-      "Ausschließlich Fehlzeiten dokumentieren",
-      "Nur Arbeitsverträge archivieren"
-    ],
-    richtig: 0,
-    erklaerung: "Personalentwicklung erweitert fachliche, methodische und soziale Kompetenzen für heutige und zukünftige Aufgaben."
-  },
-  {
-    id: 28,
-    bereich: "Führung & Personal",
-    frage: "Welches Instrument zeigt, welche Mitarbeitenden welche Maschinen oder Tätigkeiten sicher beherrschen?",
-    antworten: [
-      "Qualifikationsmatrix",
-      "Kostenartenrechnung",
-      "Liquiditätsplan",
-      "Materialstückliste"
-    ],
-    richtig: 0,
-    erklaerung: "Eine Qualifikationsmatrix macht vorhandene Kompetenzen und Qualifizierungsbedarf transparent."
-  },
-  {
-    id: 29,
-    bereich: "Führung & Personal",
-    frage: "Wie sollte ein Meister reagieren, wenn eine neue Mitarbeiterin bei einer sicherheitskritischen Tätigkeit unsicher ist?",
-    antworten: [
-      "Tätigkeit stoppen, unterweisen und erst nach Befähigungsnachweis freigeben",
-      "Die Mitarbeiterin ohne Begleitung weitermachen lassen",
-      "Die Unsicherheit ignorieren, um den Termin zu halten",
-      "Die Aufgabe dauerhaft ohne Erklärung entziehen"
-    ],
-    richtig: 0,
-    erklaerung: "Sicherheit geht vor. Eine Tätigkeit darf erst nach ausreichender Unterweisung und nachgewiesener Befähigung selbstständig ausgeführt werden."
-  },
-  {
-    id: 30,
-    bereich: "Führung & Personal",
-    frage: "Welche Führungsmaßnahme stärkt die Eigenverantwortung eines erfahrenen Teams?",
-    antworten: [
-      "Ziele und Entscheidungsrahmen klar vereinbaren und Verantwortung übertragen",
-      "Jeden einzelnen Arbeitsschritt dauerhaft vorgeben",
-      "Informationen nur an einzelne Personen weitergeben",
-      "Fehler grundsätzlich öffentlich bloßstellen"
-    ],
-    richtig: 0,
-    erklaerung: "Bei geeigneter Qualifikation stärkt ein klarer Entscheidungsrahmen mit Verantwortung die Eigenverantwortung."
-  },
-  {
-    id: 31,
-    bereich: "Führung & Personal",
-    frage: "Was beschreibt das Ziel eines betrieblichen Eingliederungsmanagements?",
-    antworten: [
-      "Arbeitsunfähigkeit überwinden, erneuter Arbeitsunfähigkeit vorbeugen und den Arbeitsplatz erhalten",
-      "Mitarbeitende nach längerer Krankheit automatisch kündigen",
-      "Krankmeldungen öffentlich bewerten",
-      "Überstunden für erkrankte Personen anordnen"
-    ],
-    richtig: 0,
-    erklaerung: "Das betriebliche Eingliederungsmanagement unterstützt eine nachhaltige Rückkehr und soll erneuter Arbeitsunfähigkeit vorbeugen."
-  },
-  {
-    id: 32,
-    bereich: "Führung & Personal",
-    frage: "Welche Aussage beschreibt Qualitätsmanagement zutreffend?",
-    antworten: [
-      "Es plant, lenkt, sichert und verbessert Qualität systematisch",
-      "Es prüft nur Endprodukte und verhindert keine Fehler",
-      "Es ist ausschließlich Aufgabe der Qualitätsabteilung",
-      "Es betrifft nur die Dokumentation, nicht die Prozesse"
-    ],
-    richtig: 0,
-    erklaerung: "Qualitätsmanagement umfasst präventive Planung, Lenkung, Sicherung und kontinuierliche Verbesserung von Qualität."
-  },
-  {
-    id: 33,
-    bereich: "Führung & Personal",
-    frage: "Wofür wird der PDCA-Zyklus im Qualitätsmanagement verwendet?",
-    antworten: [
-      "Für kontinuierliche Verbesserung durch Planen, Umsetzen, Prüfen und Handeln",
-      "Nur für die Lohnabrechnung",
-      "Für die Berechnung der Maschinenlaufzeit",
-      "Ausschließlich für Arbeitsschutzunterweisungen"
-    ],
-    richtig: 0,
-    erklaerung: "PDCA steht für Plan, Do, Check, Act und beschreibt einen wiederkehrenden Verbesserungsprozess."
-  },
-  {
-    id: 34,
-    bereich: "Führung & Personal",
-    frage: "Welche Maßnahme ist bei wiederholten Qualitätsfehlern am nachhaltigsten?",
-    antworten: [
-      "Ursache analysieren, Gegenmaßnahmen festlegen und deren Wirksamkeit prüfen",
-      "Fehlerhafte Teile ohne Analyse entsorgen",
-      "Nur die betroffene Person kritisieren",
-      "Die Prüfdokumentation abschaffen"
-    ],
-    richtig: 0,
-    erklaerung: "Nachhaltige Qualitätsverbesserung verlangt Ursachenanalyse, geeignete Maßnahmen und eine Wirksamkeitskontrolle."
-  },
-  {
-    id: 35,
-    bereich: "Führung & Personal",
-    frage: "Welche Wirkung hat konstruktives Feedback?",
-    antworten: [
-      "Es beschreibt beobachtbares Verhalten, zeigt Auswirkungen und ermöglicht Verbesserung",
-      "Es greift die Persönlichkeit der Person an",
-      "Es wird nur bei schwerwiegenden Fehlern gegeben",
-      "Es ersetzt Zielvereinbarungen vollständig"
-    ],
-    richtig: 0,
-    erklaerung: "Konstruktives Feedback bezieht sich auf beobachtbares Verhalten und unterstützt konkrete Weiterentwicklung."
-  },
-  {
-    id: 36,
-    bereich: "Führung & Personal",
-    frage: "Was gehört zu einer guten Unterweisung vor Aufnahme einer neuen Tätigkeit?",
-    antworten: [
-      "Arbeitsablauf, Gefährdungen, Schutzmaßnahmen und Verständnis kontrollieren",
-      "Nur eine Unterschrift ohne Erklärung einholen",
-      "Ausschließlich die Produktionsmenge erklären",
-      "Die Unterweisung erst nach dem ersten Unfall durchführen"
-    ],
-    richtig: 0,
-    erklaerung: "Eine wirksame Unterweisung erklärt Tätigkeit, Risiken und Schutzmaßnahmen und prüft, ob die Inhalte verstanden wurden."
+function bereichAnzeigename(wert) {
+  const text = String(wert || "").toLowerCase().trim();
+
+  if (text.includes("technik")) {
+    return "Technik";
   }
+
+  if (text.includes("organisation")) {
+    return "Organisation";
+  }
+
+  if (
+    text.includes("führung") ||
+    text.includes("fuhrung") ||
+    text.includes("personal") ||
+    text.includes("fachgespräch") ||
+    text.includes("fachgesprach")
+  ) {
+    return "Führung & Personal";
+  }
+
+  return "Organisation";
+}
+
+function frageText(frage) {
+  return frage.frage || frage.question || "";
+}
+
+function optionen(frage) {
+  return frage.optionen || frage.antworten || frage.answers || [];
+}
+
+function erklaerung(frage) {
+  return frage.antwort || frage.erklaerung || frage.explanation || "";
+}
+
+function richtigeAntwort(frage) {
+  const wert = frage.richtig ?? frage.correct ?? frage.correctAnswer ?? 0;
+
+  if (typeof wert === "number") {
+    return wert;
+  }
+
+  if (typeof wert === "string") {
+    const buchstaben = ["a", "b", "c", "d", "e", "f"];
+    const index = buchstaben.indexOf(wert.toLowerCase().trim());
+
+    if (index >= 0) {
+      return index;
+    }
+
+    const zahl = Number(wert);
+
+    if (!Number.isNaN(zahl)) {
+      return zahl;
+    }
+  }
+
+  return 0;
+}
+
+function vorhandeneFragenNormalisieren() {
+  const quelle = window.questions || window.fragen || [];
+
+  if (Array.isArray(quelle)) {
+    return quelle
+      .map((frage, index) => ({
+        id: frage.id || `frage-${index + 1}`,
+        art: "quiz",
+        bereich: bereichAnzeigename(frage.bereich || frage.thema || frage.category),
+        frage: frageText(frage),
+        optionen: optionen(frage),
+        richtig: richtigeAntwort(frage),
+        erklaerung: erklaerung(frage)
+      }))
+      .filter(frage => frage.frage && frage.optionen.length >= 2);
+  }
+
+  if (quelle && typeof quelle === "object") {
+    const ergebnis = [];
+
+    Object.entries(quelle).forEach(([thema, fragen]) => {
+      if (!Array.isArray(fragen)) {
+        return;
+      }
+
+      fragen.forEach((frage, index) => {
+        ergebnis.push({
+          id: frage.id || `${thema}-${index + 1}`,
+          art: "quiz",
+          bereich: bereichAnzeigename(frage.bereich || frage.thema || thema),
+          frage: frageText(frage),
+          optionen: optionen(frage),
+          richtig: richtigeAntwort(frage),
+          erklaerung: erklaerung(frage)
+        });
+      });
+    });
+
+    return ergebnis.filter(frage => frage.frage && frage.optionen.length >= 2);
+  }
+
+  return [];
+}
+
+function fachgespraechNormalisieren() {
+  const faelle = window.fachgespraechFaelle || [];
+
+  return faelle.map((fall, index) => ({
+    id: fall.id || `fachgespraech-${index + 1}`,
+    art: "fachgespraech",
+    bereich: "Führung & Personal",
+    titel: fall.titel || "Fachgespräch",
+    dauer: fall.dauer || "30 Minuten Vorbereitung · 15 Minuten Fachgespräch",
+    situation: fall.situation || "",
+    auftrag: fall.auftrag || "",
+    loesung: Array.isArray(fall.loesung) ? fall.loesung : [],
+    rueckfragen: Array.isArray(fall.rueckfragen) ? fall.rueckfragen : []
+  }));
+}
+
+const alleFragen = [
+  ...vorhandeneFragenNormalisieren(),
+  ...fachgespraechNormalisieren()
 ];
+
+function ladeAntworten() {
+  try {
+    antworten = JSON.parse(localStorage.getItem(SPEICHER_KEY)) || {};
+  } catch {
+    antworten = {};
+  }
+}
+
+function speichereAntworten() {
+  localStorage.setItem(SPEICHER_KEY, JSON.stringify(antworten));
+}
+
+function fragenFuerBereich(bereich = "Alle") {
+  if (bereich === "Alle") {
+    return alleFragen;
+  }
+
+  return alleFragen.filter(frage => frage.bereich === bereich);
+}
+
+function prozent(teil, gesamt) {
+  if (gesamt === 0) {
+    return 0;
+  }
+
+  return Math.round((teil / gesamt) * 100);
+}
+
+function fortschritt(bereich = "Alle") {
+  const fragen = fragenFuerBereich(bereich);
+  const quizFragen = fragen.filter(frage => frage.art === "quiz");
+
+  const beantwortet = quizFragen.filter(frage => Boolean(antworten[frage.id])).length;
+  const richtig = quizFragen.filter(frage => antworten[frage.id]?.istRichtig).length;
+
+  return {
+    gesamt: quizFragen.length,
+    beantwortet,
+    richtig,
+    prozent: prozent(beantwortet, quizFragen.length)
+  };
+}
+
+function renderFortschritt() {
+  const gesamt = fortschritt();
+
+  document.getElementById("total-progress-text").textContent =
+    `${gesamt.beantwortet} von ${gesamt.gesamt} beantwortet`;
+
+  document.getElementById("total-progress-percent").textContent =
+    `${gesamt.prozent} %`;
+
+  document.getElementById("total-progress-bar").style.width =
+    `${gesamt.prozent}%`;
+
+  document.getElementById("area-progress").innerHTML = BEREICHE.map(bereich => {
+    const daten = fortschritt(bereich);
+    const fachgespraechAnzahl = fragenFuerBereich(bereich)
+      .filter(frage => frage.art === "fachgespraech").length;
+
+    const zusatz =
+      fachgespraechAnzahl > 0
+        ? ` · ${fachgespraechAnzahl} Fachgespräch${fachgespraechAnzahl === 1 ? "" : "e"}`
+        : "";
+
+    return `
+      <article class="area-progress-item">
+        <span class="area-progress-title">${bereich}</span>
+        <span class="area-progress-number">
+          ${daten.beantwortet}/${daten.gesamt} beantwortet · ${daten.richtig} richtig${zusatz}
+        </span>
+        <div class="area-progress-track" aria-hidden="true">
+          <div class="area-progress-fill" style="width: ${daten.prozent}%"></div>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderFilter() {
+  const filter = ["Alle", ...BEREICHE];
+
+  document.getElementById("area-filters").innerHTML = filter.map(bereich => {
+    const aktiv = bereich === ausgewaehlterBereich ? "is-active" : "";
+    const anzahl = fragenFuerBereich(bereich).length;
+
+    return `
+      <button
+        class="filter-button ${aktiv}"
+        type="button"
+        data-bereich="${bereich}">
+        ${bereich} (${anzahl})
+      </button>
+    `;
+  }).join("");
+
+  document.querySelectorAll("[data-bereich]").forEach(button => {
+    button.addEventListener("click", () => {
+      ausgewaehlterBereich = button.dataset.bereich;
+      aktuelleFrageIndex = 0;
+      renderFilter();
+      renderFrage();
+    });
+  });
+}
+
+function escapeHtml(text) {
+  return String(text)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function renderQuizFrage(frage, nummer, gesamt) {
+  const gespeicherteAntwort = antworten[frage.id];
+  const buchstaben = ["A", "B", "C", "D", "E", "F"];
+
+  const antwortButtons = frage.optionen.map((antwort, index) => {
+    let klassen = "answer";
+
+    if (gespeicherteAntwort && index === frage.richtig) {
+      klassen += " is-solution";
+    }
+
+    if (gespeicherteAntwort && gespeicherteAntwort.auswahl === index) {
+      klassen += gespeicherteAntwort.istRichtig
+        ? " is-correct"
+        : " is-wrong";
+    }
+
+    return `
+      <button
+        class="${klassen}"
+        type="button"
+        data-answer-index="${index}"
+        ${gespeicherteAntwort ? "disabled" : ""}>
+        <span class="answer-letter">${buchstaben[index] || index + 1}</span>
+        <span class="answer-text">${escapeHtml(antwort)}</span>
+      </button>
+    `;
+  }).join("");
+
+  let feedback = "";
+
+  if (gespeicherteAntwort) {
+    const klasse = gespeicherteAntwort.istRichtig ? "correct" : "wrong";
+    const symbol = gespeicherteAntwort.istRichtig ? "✓" : "✕";
+    const text = gespeicherteAntwort.istRichtig
+      ? "Richtig beantwortet."
+      : "Leider nicht richtig. Die richtige Antwort ist grün markiert.";
+
+    feedback = `
+      <div class="feedback ${klasse}">
+        <span>${symbol}</span>
+        <span>${text} ${escapeHtml(frage.erklaerung)}</span>
+      </div>
+    `;
+  }
+
+  const statusKlasse = gespeicherteAntwort
+    ? gespeicherteAntwort.istRichtig ? "correct" : "wrong"
+    : "";
+
+  const statusText = gespeicherteAntwort
+    ? gespeicherteAntwort.istRichtig ? "Richtig" : "Falsch"
+    : "Noch offen";
+
+  return `
+    <div class="question-meta">
+      <span class="question-number">Frage ${nummer} von ${gesamt}</span>
+      <span class="question-area">${frage.bereich}</span>
+    </div>
+
+    <h2 class="question-title">${escapeHtml(frage.frage)}</h2>
+
+    <div class="answers">${antwortButtons}</div>
+
+    ${feedback}
+
+    <div class="question-footer">
+      <span class="answer-status">
+        <span class="status-dot ${statusKlasse}"></span>
+        ${statusText}
+      </span>
+
+      <div class="filter-buttons">
+        <button id="previous-question" class="button button-secondary" type="button">
+          Zurück
+        </button>
+        <button id="next-question" class="button" type="button">
+          Nächste Frage
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function renderFachgespraech(fall, nummer, gesamt) {
+  const loesungen = fall.loesung
+    .map(punkt => `<li>${escapeHtml(punkt)}</li>`)
+    .join("");
+
+  const rueckfragen = fall.rueckfragen
+    .map(frage => `<li>${escapeHtml(frage)}</li>`)
+    .join("");
+
+  return `
+    <div class="question-meta">
+      <span class="question-number">Fachgespräch ${nummer} von ${gesamt}</span>
+      <span class="question-area">Führung &amp; Personal</span>
+    </div>
+
+    <h2 class="question-title">${escapeHtml(fall.titel)}</h2>
+
+    <div class="feedback correct">
+      <span>⏱</span>
+      <span>${escapeHtml(fall.dauer)}</span>
+    </div>
+
+    <h3>Ausgangssituation</h3>
+    <p class="subtitle">${escapeHtml(fall.situation).replaceAll("\n", "<br>")}</p>
+
+    <h3>Ihr Handlungsauftrag</h3>
+    <div class="feedback">
+      <span>→</span>
+      <span>${escapeHtml(fall.auftrag)}</span>
+    </div>
+
+    <label for="fachgespraech-notizen" class="section-label">
+      Eigene Lösungsstruktur und Notizen
+    </label>
+
+    <textarea
+      id="fachgespraech-notizen"
+      rows="9"
+      style="width: 100%; margin-top: 8px; padding: 12px; border: 1px solid #e4e7ec; border-radius: 10px; font: inherit; line-height: 1.5; resize: vertical;"
+      placeholder="1. Situation analysieren&#10;2. Ziele festlegen&#10;3. Maßnahmen begründen&#10;4. Umsetzung und Kontrolle"></textarea>
+
+    <div class="filter-buttons" style="margin-top: 16px;">
+      <button id="show-solution" class="button" type="button">
+        Lösungsschwerpunkte anzeigen
+      </button>
+    </div>
+
+    <div id="fachgespraech-loesung" hidden>
+      <h3 style="margin-top: 24px;">Lösungsschwerpunkte</h3>
+      <ol>${loesungen}</ol>
+
+      <h3>Typische Prüfer-Rückfragen</h3>
+      <ol>${rueckfragen}</ol>
+
+      <div class="feedback correct">
+        <span>✓</span>
+        <span>
+          Selbstcheck: Ist Ihre Lösung strukturiert? Begründen Sie jede Maßnahme mit
+          Auswirkungen auf Mitarbeitende, Qualität, Termine, Kosten und Arbeitssicherheit.
+        </span>
+      </div>
+    </div>
+
+    <div class="question-footer">
+      <span class="answer-status">
+        <span class="status-dot"></span>
+        Mündliche Prüfungssimulation
+      </span>
+
+      <div class="filter-buttons">
+        <button id="previous-question" class="button button-secondary" type="button">
+          Zurück
+        </button>
+        <button id="next-question" class="button" type="button">
+          Nächster Fall
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function renderFrage() {
+  const fragen = fragenFuerBereich(ausgewaehlterBereich);
+  const quiz = document.getElementById("quiz-card");
+
+  if (fragen.length === 0) {
+    quiz.innerHTML = `
+      <div class="empty-state">
+        Für diesen Bereich sind noch keine Fragen hinterlegt.
+      </div>
+    `;
+    return;
+  }
+
+  if (aktuelleFrageIndex >= fragen.length) {
+    aktuelleFrageIndex = 0;
+  }
+
+  const frage = fragen[aktuelleFrageIndex];
+
+  quiz.innerHTML = frage.art === "fachgespraech"
+    ? renderFachgespraech(frage, aktuelleFrageIndex + 1, fragen.length)
+    : renderQuizFrage(frage, aktuelleFrageIndex + 1, fragen.length);
+
+  if (frage.art === "quiz") {
+    document.querySelectorAll("[data-answer-index]").forEach(button => {
+      button.addEventListener("click", () => {
+        beantworteFrage(frage, Number(button.dataset.answerIndex));
+      });
+    });
+  }
+
+  const loesungButton = document.getElementById("show-solution");
+
+  if (loesungButton) {
+    loesungButton.addEventListener("click", () => {
+      document.getElementById("fachgespraech-loesung").hidden = false;
+      loesungButton.disabled = true;
+      loesungButton.textContent = "Lösungsschwerpunkte eingeblendet";
+    });
+  }
+
+  document.getElementById("previous-question").addEventListener("click", () => {
+    aktuelleFrageIndex =
+      (aktuelleFrageIndex - 1 + fragen.length) % fragen.length;
+
+    renderFrage();
+  });
+
+  document.getElementById("next-question").addEventListener("click", () => {
+    aktuelleFrageIndex = (aktuelleFrageIndex + 1) % fragen.length;
+    renderFrage();
+  });
+}
+
+function beantworteFrage(frage, auswahl) {
+  if (antworten[frage.id]) {
+    return;
+  }
+
+  antworten[frage.id] = {
+    auswahl,
+    istRichtig: auswahl === frage.richtig
+  };
+
+  speichereAntworten();
+  renderFortschritt();
+  renderFrage();
+}
+
+function resetTraining() {
+  const bestaetigt = window.confirm(
+    "Möchtest du alle gespeicherten Antworten und Fortschritte wirklich löschen?"
+  );
+
+  if (!bestaetigt) {
+    return;
+  }
+
+  antworten = {};
+  speichereAntworten();
+  aktuelleFrageIndex = 0;
+  renderFortschritt();
+  renderFrage();
+}
+
+function start() {
+  ladeAntworten();
+  renderFortschritt();
+  renderFilter();
+  renderFrage();
+
+  document
+    .getElementById("reset-button")
+    .addEventListener("click", resetTraining);
+}
+
+document.addEventListener("DOMContentLoaded", start);
