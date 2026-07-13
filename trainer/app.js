@@ -1,176 +1,296 @@
-// ============================================================
-// INDUSTRIEMEISTER TRAINER - App Logic
-// ============================================================
+const BEREICHE = [
+  "Technik",
+  "Organisation",
+  "Führung & Personal"
+];
 
-let currentTopic = '';
-let currentMode = '';
-let currentIndex = 0;
-let sessionQuestions = [];
-let sessionCorrect = 0;
-let sessionWrong = 0;
-let totalCorrect = parseInt(localStorage.getItem('im_correct') || '0');
-let totalWrong = parseInt(localStorage.getItem('im_wrong') || '0');
-let cardFlipped = false;
+let ausgewaehlterBereich = "Alle";
+let aktuelleFrageIndex = 0;
+let antworten = {};
 
-function updateStatsDisplay() {
-  document.getElementById('stat-correct').textContent = `✅ ${totalCorrect} Richtig`;
-  document.getElementById('stat-wrong').textContent = `❌ ${totalWrong} Falsch`;
+function normalisiereFragen() {
+  const quelle =
+    window.questions ||
+    window.fragen ||
+    window.quizQuestions ||
+    [];
+
+  return quelle.map((item, index) => ({
+    id: item.id ?? index + 1,
+    bereich: item.bereich ?? item.category ?? "Technik",
+    frage: item.frage ?? item.question ?? "",
+    antworten: item.antworten ?? item.answers ?? [],
+    richtig: item.richtig ?? item.correct ?? item.correctAnswer ?? 0,
+    erklaerung: item.erklaerung ?? item.explanation ?? ""
+  }));
 }
 
-function resetStats() {
-  totalCorrect = 0;
-  totalWrong = 0;
-  localStorage.removeItem('im_correct');
-  localStorage.removeItem('im_wrong');
-  updateStatsDisplay();
+const alleFragen = normalisiereFragen();
+
+function ladeAntworten() {
+  try {
+    antworten = JSON.parse(localStorage.getItem("hq-trainer-antworten")) || {};
+  } catch {
+    antworten = {};
+  }
 }
 
-function shuffle(arr) {
-  return [...arr].sort(() => Math.random() - 0.5);
+function speichereAntworten() {
+  localStorage.setItem("hq-trainer-antworten", JSON.stringify(antworten));
 }
 
-function showScreen(id) {
-  ['start-screen', 'trainer-screen', 'result-screen'].forEach(s => {
-    document.getElementById(s).classList.add('hidden');
+function gefilterteFragen() {
+  if (ausgewaehlterBereich === "Alle") return alleFragen;
+  return alleFragen.filter(frage => frage.bereich === ausgewaehlterBereich);
+}
+
+function prozent(teil, gesamt) {
+  return gesamt === 0 ? 0 : Math.round((teil / gesamt) * 100);
+}
+
+function fortschritt(bereich = "Alle") {
+  const fragen = bereich === "Alle"
+    ? alleFragen
+    : alleFragen.filter(frage => frage.bereich === bereich);
+
+  const beantwortet = fragen.filter(frage => antworten[frage.id]).length;
+  const richtig = fragen.filter(frage => antworten[frage.id]?.istRichtig).length;
+
+  return {
+    gesamt: fragen.length,
+    beantwortet,
+    richtig,
+    prozent: prozent(beantwortet, fragen.length)
+  };
+}
+
+function renderFortschritt() {
+  const gesamt = fortschritt();
+
+  document.getElementById("total-progress-text").textContent =
+    `${gesamt.beantwortet} von ${gesamt.gesamt} beantwortet`;
+
+  document.getElementById("total-progress-percent").textContent =
+    `${gesamt.prozent} %`;
+
+  document.getElementById("total-progress-bar").style.width =
+    `${gesamt.prozent}%`;
+
+  document.getElementById("area-progress").innerHTML = BEREICHE.map(bereich => {
+    const daten = fortschritt(bereich);
+
+    return `
+      <article class="area-progress-item">
+        <span class="area-progress-title">${bereich}</span>
+        <span class="area-progress-number">
+          ${daten.beantwortet}/${daten.gesamt} beantwortet · ${daten.richtig} richtig
+        </span>
+        <div class="area-progress-track" aria-hidden="true">
+          <div class="area-progress-fill" style="width: ${daten.prozent}%"></div>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderFilter() {
+  const filter = ["Alle", ...BEREICHE];
+
+  document.getElementById("area-filters").innerHTML = filter.map(bereich => {
+    const aktiv = bereich === ausgewaehlterBereich ? "is-active" : "";
+    const anzahl = bereich === "Alle"
+      ? alleFragen.length
+      : alleFragen.filter(frage => frage.bereich === bereich).length;
+
+    return `
+      <button
+        class="filter-button ${aktiv}"
+        type="button"
+        data-bereich="${bereich}">
+        ${bereich} (${anzahl})
+      </button>
+    `;
+  }).join("");
+
+  document.querySelectorAll("[data-bereich]").forEach(button => {
+    button.addEventListener("click", () => {
+      ausgewaehlterBereich = button.dataset.bereich;
+      aktuelleFrageIndex = 0;
+      renderFilter();
+      renderFrage();
+    });
   });
-  document.getElementById(id).classList.remove('hidden');
 }
 
-function startSession(topic, mode) {
-  currentTopic = topic;
-  currentMode = mode;
-  currentIndex = 0;
-  sessionCorrect = 0;
-  sessionWrong = 0;
-  sessionQuestions = shuffle(QUESTIONS[topic]);
-  document.getElementById('trainer-title').textContent =
-    (topic === 'organisation' ? '🗂️ Organisation' : '🔧 Technik') +
-    ' · ' + (mode === 'karteikarte' ? 'Karteikarten' : 'Multiple Choice');
-  showScreen('trainer-screen');
-  document.getElementById('mode-karteikarte').classList.add('hidden');
-  document.getElementById('mode-multiple').classList.add('hidden');
-  document.getElementById('mode-' + mode).classList.remove('hidden');
-  loadQuestion();
+function antwortText(antwort) {
+  if (typeof antwort === "string") return antwort;
+  return antwort.text ?? antwort.antwort ?? "";
 }
 
-function retrySession() {
-  startSession(currentTopic, currentMode);
-}
+function istRichtigeAntwort(frage, index) {
+  if (Array.isArray(frage.richtig)) return frage.richtig.includes(index);
 
-function loadQuestion() {
-  const total = sessionQuestions.length;
-  const q = sessionQuestions[currentIndex];
-  document.getElementById('progress-indicator').textContent = `${currentIndex + 1} / ${total}`;
-
-  if (currentMode === 'karteikarte') {
-    cardFlipped = false;
-    const inner = document.getElementById('card-inner');
-    inner.classList.remove('flipped');
-    document.getElementById('card-question').textContent = q.frage;
-    document.getElementById('card-answer').textContent = q.antwort;
-  } else {
-    loadMCQuestion(q);
+  if (typeof frage.richtig === "string") {
+    const buchstaben = ["a", "b", "c", "d"];
+    return buchstaben.indexOf(frage.richtig.toLowerCase()) === index;
   }
+
+  return Number(frage.richtig) === index;
 }
 
-// ===== KARTEIKARTE =====
-function flipCard() {
-  const inner = document.getElementById('card-inner');
-  cardFlipped = !cardFlipped;
-  inner.classList.toggle('flipped', cardFlipped);
-}
+function renderFrage() {
+  const fragen = gefilterteFragen();
+  const quiz = document.getElementById("quiz-card");
 
-function markCard(correct) {
-  if (correct) {
-    sessionCorrect++;
-    totalCorrect++;
-  } else {
-    sessionWrong++;
-    totalWrong++;
+  if (!fragen.length) {
+    quiz.innerHTML = `
+      <div class="empty-state">
+        Für diesen Bereich sind noch keine Fragen hinterlegt.
+      </div>
+    `;
+    return;
   }
-  localStorage.setItem('im_correct', totalCorrect);
-  localStorage.setItem('im_wrong', totalWrong);
-  updateStatsDisplay();
-  nextQuestion();
-}
 
-// ===== MULTIPLE CHOICE =====
-function loadMCQuestion(q) {
-  document.getElementById('mc-question').textContent = q.frage;
-  const container = document.getElementById('mc-options');
-  container.innerHTML = '';
-  const feedback = document.getElementById('mc-feedback');
-  feedback.className = 'mc-feedback hidden';
-  feedback.textContent = '';
-  document.getElementById('mc-next-btn').classList.add('hidden');
+  if (aktuelleFrageIndex >= fragen.length) aktuelleFrageIndex = 0;
+  const frage = fragen[aktuelleFrageIndex];
+  const gespeicherteAntwort = antworten[frage.id];
+  const buchstaben = ["A", "B", "C", "D", "E", "F"];
 
-  const opts = q.optionen.map((text, i) => ({ text, i }));
-  // shuffle options while tracking correct answer
-  const shuffled = shuffle(opts);
+  const antwortButtons = frage.antworten.map((antwort, index) => {
+    let klassen = "answer";
+    const bereitsBeantwortet = Boolean(gespeicherteAntwort);
 
-  shuffled.forEach(opt => {
-    const btn = document.createElement('button');
-    btn.className = 'mc-option';
-    btn.textContent = opt.text;
-    btn.addEventListener('click', () => handleMCAnswer(opt.i === q.richtig, btn, shuffled, q));
-    container.appendChild(btn);
+    if (bereitsBeantwortet && istRichtigeAntwort(frage, index)) {
+      klassen += " is-solution";
+    }
+
+    if (bereitsBeantwortet && gespeicherteAntwort.auswahl === index) {
+      klassen += gespeicherteAntwort.istRichtig
+        ? " is-correct"
+        : " is-wrong";
+    }
+
+    return `
+      <button
+        class="${klassen}"
+        type="button"
+        data-answer-index="${index}"
+        ${bereitsBeantwortet ? "disabled" : ""}>
+        <span class="answer-letter">${buchstaben[index]}</span>
+        <span class="answer-text">${antwortText(antwort)}</span>
+      </button>
+    `;
+  }).join("");
+
+  let feedback = "";
+  if (gespeicherteAntwort) {
+    const klasse = gespeicherteAntwort.istRichtig ? "correct" : "wrong";
+    const symbol = gespeicherteAntwort.istRichtig ? "✓" : "✕";
+    const text = gespeicherteAntwort.istRichtig
+      ? "Richtig beantwortet."
+      : "Leider nicht richtig. Die richtige Antwort ist grün markiert.";
+
+    feedback = `
+      <div class="feedback ${klasse}">
+        <span>${symbol}</span>
+        <span>${text}${frage.erklaerung ? ` ${frage.erklaerung}` : ""}</span>
+      </div>
+    `;
+  }
+
+  const statusKlasse = gespeicherteAntwort
+    ? gespeicherteAntwort.istRichtig ? "correct" : "wrong"
+    : "";
+
+  const statusText = gespeicherteAntwort
+    ? gespeicherteAntwort.istRichtig ? "Richtig" : "Falsch"
+    : "Noch offen";
+
+  quiz.innerHTML = `
+    <div class="question-meta">
+      <span class="question-number">
+        Frage ${aktuelleFrageIndex + 1} von ${fragen.length}
+      </span>
+      <span class="question-area">${frage.bereich}</span>
+    </div>
+
+    <h2 class="question-title">${frage.frage}</h2>
+
+    <div class="answers">${antwortButtons}</div>
+
+    ${feedback}
+
+    <div class="question-footer">
+      <span class="answer-status">
+        <span class="status-dot ${statusKlasse}"></span>
+        ${statusText}
+      </span>
+
+      <div class="fg-aktionen">
+        <button id="previous-question" class="button button-secondary" type="button">
+          Zurück
+        </button>
+        <button id="next-question" class="button" type="button">
+          Nächste Frage
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.querySelectorAll("[data-answer-index]").forEach(button => {
+    button.addEventListener("click", () => {
+      beantworteFrage(frage, Number(button.dataset.answerIndex));
+    });
+  });
+
+  document.getElementById("previous-question").addEventListener("click", () => {
+    aktuelleFrageIndex =
+      (aktuelleFrageIndex - 1 + fragen.length) % fragen.length;
+    renderFrage();
+  });
+
+  document.getElementById("next-question").addEventListener("click", () => {
+    aktuelleFrageIndex = (aktuelleFrageIndex + 1) % fragen.length;
+    renderFrage();
   });
 }
 
-function handleMCAnswer(isCorrect, clickedBtn, shuffled, q) {
-  const container = document.getElementById('mc-options');
-  const allBtns = container.querySelectorAll('.mc-option');
-  const feedback = document.getElementById('mc-feedback');
+function beantworteFrage(frage, auswahl) {
+  if (antworten[frage.id]) return;
 
-  allBtns.forEach((btn, idx) => {
-    btn.classList.add('disabled');
-    if (shuffled[idx].i === q.richtig) btn.classList.add('correct');
-  });
+  antworten[frage.id] = {
+    auswahl,
+    istRichtig: istRichtigeAntwort(frage, auswahl)
+  };
 
-  if (isCorrect) {
-    clickedBtn.classList.add('correct');
-    feedback.textContent = '✅ Richtig!';
-    feedback.className = 'mc-feedback correct-fb';
-    sessionCorrect++;
-    totalCorrect++;
-  } else {
-    clickedBtn.classList.add('wrong');
-    feedback.textContent = '❌ Falsch! Richtige Antwort ist markiert.';
-    feedback.className = 'mc-feedback wrong-fb';
-    sessionWrong++;
-    totalWrong++;
-  }
-
-  localStorage.setItem('im_correct', totalCorrect);
-  localStorage.setItem('im_wrong', totalWrong);
-  updateStatsDisplay();
-  document.getElementById('mc-next-btn').classList.remove('hidden');
+  speichereAntworten();
+  renderFortschritt();
+  renderFrage();
 }
 
-// ===== NAVIGATION =====
-function nextQuestion() {
-  currentIndex++;
-  if (currentIndex >= sessionQuestions.length) {
-    showResult();
-  } else {
-    loadQuestion();
-  }
+function resetTraining() {
+  const bestaetigt = window.confirm(
+    "Möchtest du alle gespeicherten Antworten und Fortschritte wirklich löschen?"
+  );
+
+  if (!bestaetigt) return;
+
+  antworten = {};
+  speichereAntworten();
+  aktuelleFrageIndex = 0;
+  renderFortschritt();
+  renderFrage();
 }
 
-function showResult() {
-  showScreen('result-screen');
-  const pct = Math.round((sessionCorrect / sessionQuestions.length) * 100);
-  let emoji = pct >= 80 ? '🏆' : pct >= 60 ? '👍' : '📚';
-  document.getElementById('result-details').innerHTML =
-    `${emoji} <strong>${pct}%</strong> richtig<br>
-    ✅ ${sessionCorrect} Richtig &nbsp; ❌ ${sessionWrong} Falsch<br>
-    Gesamt: ${sessionQuestions.length} Fragen`;
+function start() {
+  ladeAntworten();
+  renderFortschritt();
+  renderFilter();
+  renderFrage();
+
+  document
+    .getElementById("reset-button")
+    .addEventListener("click", resetTraining);
 }
 
-function goHome() {
-  showScreen('start-screen');
-  updateStatsDisplay();
-}
-
-// Init
-updateStatsDisplay();
+document.addEventListener("DOMContentLoaded", start);
