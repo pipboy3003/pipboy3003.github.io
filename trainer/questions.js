@@ -3,7 +3,7 @@
 // Themenbereiche: Organisation HQ | Technik HQ
 // ============================================================
 
-const QUESTIONS = {
+window.questions = [
 
   // ============================================================
   // ORGANISATION - Hauptqualifikation
