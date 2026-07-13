@@ -1,107 +1,59 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Industriemeister Trainer</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HQ Trainer | Industriemeister Metall</title>
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <div id="app">
-    <header>
-      <h1>⚙️ Industriemeister Trainer</h1>
-      <p class="subtitle">Prüfungsvorbereitung · Metall</p>
+  <main class="app-shell">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Industriemeister Metall · HQ</p>
+        <h1>Prüfungstrainer</h1>
+        <p class="subtitle">
+          Trainiere Technik, Organisation sowie Führung &amp; Personal.
+        </p>
+      </div>
+
+      <button id="reset-button" class="button button-secondary" type="button">
+        Training zurücksetzen
+      </button>
     </header>
 
-    <!-- STARTSCREEN -->
-    <section id="start-screen">
-      <div class="topic-grid">
-        <div class="topic-card" onclick="startSession('organisation','karteikarte')">
-          <div class="topic-icon">🗂️</div>
-          <h2>Organisation</h2>
-          <p>Hauptqualifikation</p>
-          <div class="mode-label">Karteikarten</div>
+    <section class="progress-card" aria-label="Trainingsfortschritt">
+      <div class="progress-head">
+        <div>
+          <p class="section-label">Gesamtfortschritt</p>
+          <strong id="total-progress-text">0 von 0 beantwortet</strong>
         </div>
-        <div class="topic-card" onclick="startSession('organisation','multiple')">
-          <div class="topic-icon">🗂️</div>
-          <h2>Organisation</h2>
-          <p>Hauptqualifikation</p>
-          <div class="mode-label mc">Multiple Choice</div>
-        </div>
-        <div class="topic-card" onclick="startSession('technik','karteikarte')">
-          <div class="topic-icon">🔧</div>
-          <h2>Technik</h2>
-          <p>Hauptqualifikation</p>
-          <div class="mode-label">Karteikarten</div>
-        </div>
-        <div class="topic-card" onclick="startSession('technik','multiple')">
-          <div class="topic-icon">🔧</div>
-          <h2>Technik</h2>
-          <p>Hauptqualifikation</p>
-          <div class="mode-label mc">Multiple Choice</div>
-        </div>
+        <strong id="total-progress-percent">0 %</strong>
       </div>
-      <div class="stats-bar" id="stats-bar">
-        <span id="stat-correct">✅ 0 Richtig</span>
-        <span id="stat-wrong">❌ 0 Falsch</span>
-        <button onclick="resetStats()" class="btn-reset">Reset</button>
+
+      <div class="progress-track" aria-hidden="true">
+        <div id="total-progress-bar" class="progress-fill"></div>
       </div>
+
+      <div id="area-progress" class="area-progress"></div>
     </section>
 
-    <!-- TRAINER SCREEN -->
-    <section id="trainer-screen" class="hidden">
-      <div class="trainer-header">
-        <button onclick="goHome()" class="btn-back">← Zurück</button>
-        <span id="trainer-title"></span>
-        <span id="progress-indicator"></span>
-      </div>
-
-      <!-- Karteikarte Mode -->
-      <div id="mode-karteikarte" class="hidden">
-        <div class="card" id="flashcard" onclick="flipCard()">
-          <div class="card-inner" id="card-inner">
-            <div class="card-front">
-              <p class="card-label">FRAGE</p>
-              <p id="card-question"></p>
-              <p class="flip-hint">Tippen zum Umdrehen</p>
-            </div>
-            <div class="card-back">
-              <p class="card-label">ANTWORT</p>
-              <p id="card-answer"></p>
-            </div>
-          </div>
-        </div>
-        <div class="card-actions">
-          <button onclick="markCard(false)" class="btn-wrong">❌ Falsch</button>
-          <button onclick="markCard(true)" class="btn-correct">✅ Richtig</button>
+    <section class="filter-card" aria-label="Bereich auswählen">
+      <div class="filter-head">
+        <div>
+          <p class="section-label">Prüfungsbereich</p>
+          <h2>Fragen filtern</h2>
         </div>
       </div>
 
-      <!-- Multiple Choice Mode -->
-      <div id="mode-multiple" class="hidden">
-        <div class="mc-card">
-          <p class="card-label">FRAGE</p>
-          <p id="mc-question"></p>
-        </div>
-        <div id="mc-options" class="mc-options"></div>
-        <div id="mc-feedback" class="mc-feedback hidden"></div>
-        <button id="mc-next-btn" class="btn-next hidden" onclick="nextQuestion()">Nächste Frage →</button>
-      </div>
+      <div id="area-filters" class="filter-buttons"></div>
     </section>
 
-    <!-- RESULT SCREEN -->
-    <section id="result-screen" class="hidden">
-      <div class="result-box">
-        <h2>🏁 Runde abgeschlossen!</h2>
-        <div id="result-details"></div>
-        <button onclick="goHome()" class="btn-home">🏠 Zurück zur Übersicht</button>
-        <button onclick="retrySession()" class="btn-retry">🔄 Nochmal</button>
-      </div>
-    </section>
-  </div>
+    <section id="quiz-card" class="quiz-card" aria-live="polite"></section>
+  </main>
 
   <script src="questions.js"></script>
   <script src="app.js"></script>
-  <script src="fachgespraech.js"></script>
 </body>
 </html>
