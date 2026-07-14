@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AT Learning – IHK Weiterbildung & Industriemeister</title>
+<link rel="stylesheet" href="style.css">
+  <link rel="icon" href="favicon.ico">
+</head>
+<body>
+
+<header class="header" id="header">
+  <div class="container header-inner">
+    <a href="#" class="logo-link"><img src="logo.png" alt="AT Learning" class="header-logo"></a>
+    <nav class="nav" id="nav">
+      <a href="#kurse">Kurse</a>
+      <a href="#foerderung">Förderung</a>
+      <a href="#voraussetzungen">Voraussetzungen</a>
+      <a href="#erfolg">Erfolgsquote</a>
+      <a href="#kontakt">Kontakt</a>
+    </nav>
+    <a href="#anmeldung" class="btn btn-primary nav-cta">Jetzt anmelden</a>
+    <button class="burger" id="burger" aria-label="Menü öffnen">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container hero-inner">
+    <h1>Ihr Weg zum <span>IHK-Abschluss</span>.<br>Zertifiziert. Anerkannt. Erfolgreich.</h1>
+    <p>Seit über 15 Jahren begleiten wir Fach- und Führungskräfte auf dem Weg zum Industriemeister IHK, Technischen Betriebswirt IHK und weiteren anerkannten Abschlüssen.</p>
+    <div class="hero-actions">
+      <a href="#kurse" class="btn btn-primary">Kursangebot ansehen</a>
+      <a href="#kontakt" class="btn btn-outline">Beratungstermin sichern</a>
+    </div>
+    <div class="hero-stats">
+      <div><strong>15+</strong><span>Jahre Erfahrung</span></div>
+      <div><strong>ISO 9001</strong><span>Zertifiziert</span></div>
+      <div><strong>Top</strong><span>Bestehensquote</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="kurse">
+  <div class="container">
+    <h2 class="section-title">Unsere Lehrgänge</h2>
+    <p class="section-sub">Alle Industriemeister-, Fachwirt- und Betriebswirt-Kurse inklusive Ausbildereignungsschein. Start neuer Kurse ab November 2025 und Mai 2026.</p>
+    <div class="grid grid-3" id="courseGrid">
+
+      <div class="card">
+        <span class="card-tag">IM25SP20/23/24/25</span>
+        <h3>Gepr. Industriemeister(in) Metall</h3>
+        <p>Supersprint am Wochenende (Teilzeit), 850 UE, Plochingen</p>
+        <ul class="card-meta">
+          <li><strong>Beginn:</strong> 15.11.2025</li>
+          <li><strong>Ende:</strong> 14.11.2026</li>
+          <li><strong>Zeiten:</strong> Sa 8-16:30 Uhr, So 8-13:15 Uhr</li>
+        </ul>
+        <a href="tel:+4971536191221" class="card-link">Beratung: 07153/6191-221 →</a>
+      </div>
+
+      <div class="card">
+        <span class="card-tag">IME25SP21/26</span>
+        <h3>Gepr. Industriemeister(in) Elektro</h3>
+        <p>Supersprint am Wochenende (Teilzeit), 850 UE, Plochingen</p>
+        <ul class="card-meta">
+          <li><strong>Beginn:</strong> 15.11.2025</li>
+          <li><strong>Ende:</strong> 14.11.2026</li>
+          <li><strong>Zeiten:</strong> Sa 8-16:30 Uhr, So 8-13:15 Uhr</li>
+        </ul>
+        <a href="tel:+4971536191221" class="card-link">Beratung: 07153/6191-221 →</a>
+      </div>
+
+      <div class="card">
+        <span class="card-tag">IML25SP22</span>
+        <h3>Gepr. Logistikmeister(in)</h3>
+        <p>Supersprint am Wochenende (Teilzeit), 850 UE, Plochingen</p>
+        <ul class="card-meta">
+          <li><strong>Beginn:</strong> 15.11.2025</li>
+          <li><strong>Ende:</strong> 14.11.2026</li>
+          <li><strong>Zeiten:</strong> Sa 8-16:30 Uhr, So 8-13:15 Uhr</li>
+        </ul>
+        <a href="tel:+4971536191221" class="card-link">Beratung: 07153/6191-221 →</a>
+      </div>
+
+      <div class="card">
+        <span class="card-tag">TBW25SP20</span>
+        <h3>Gepr. Techn. Betriebswirt(in)</h3>
+        <p>Supersprint am Wochenende (Teilzeit), 480 UE, Plochingen</p>
+        <ul class="card-meta">
+          <li><strong>Beginn:</strong> 13.09.2025</li>
+          <li><strong>Ende:</strong> 22.02.2026</li>
+          <li><strong>Zeiten:</strong> Sa 8-16:30 Uhr, So 8-13:15 Uhr</li>
+        </ul>
+        <a href="tel:+4971536191220" class="card-link">Beratung: 07153/6191-220 →</a>
+      </div>
+
+      <div class="card">
+        <span class="card-tag">TFW25SP20</span>
+        <h3>Gepr. Technische(r) Fachwirt(in)</h3>
+        <p>Supersprint am Wochenende (Teilzeit), 750 UE, Plochingen</p>
+        <ul class="card-meta">
+          <li><strong>Beginn:</strong> 22.11.2025</li>
+          <li><strong>Ende:</strong> 29.11.2026</li>
+          <li><strong>Zeiten:</strong> Sa 8-16:30 Uhr, So 8-13:15 Uhr</li>
+        </ul>
+        <a href="tel:+4971536191221" class="card-link">Beratung: 07153/6191-221 →</a>
+      </div>
+
+      <div class="card card-highlight">
+        <span class="card-tag">IM26SP10-15</span>
+        <h3>Kombikurs: Metall, Elektro & Logistik</h3>
+        <p>Supersprint am Wochenende (Teilzeit), 850 UE, Plochingen – nächster Kursstart</p>
+        <ul class="card-meta">
+          <li><strong>Beginn:</strong> 16.05.2026</li>
+          <li><strong>Ende:</strong> 16.05.2027</li>
+          <li><strong>Zeiten:</strong> Sa 8-16:30 Uhr, So 8-13:15 Uhr</li>
+        </ul>
+        <a href="tel:+4971536191221" class="card-link">Beratung: 07153/6191-221 →</a>
+      </div>
+
+    </div>
+    <p class="ue-note">Eine Unterrichtseinheit (UE) entspricht 45 Minuten. An Feiertagen finden zusätzlich 10 UE von 8:00 bis 16:30 Uhr statt.</p>
+  </div>
+</section>
+
+<section class="section section-alt" id="voraussetzungen">
+  <div class="container">
+    <h2 class="section-title">Zulassungsvoraussetzungen & Unterlagen</h2>
+    <p class="section-sub">Übersicht der Fortbildungsmöglichkeiten (IHK) und was Sie zur Anmeldung benötigen.</p>
+    <div class="grid grid-2">
+      <div class="feature-list">
+        <h3>Zulassungsfähige Abschlüsse</h3>
+        <ul class="checklist">
+          <li>Geprüfte(r) Industriemeister(in) Metall</li>
+          <li>Geprüfte(r) Industriemeister(in) Elektro</li>
+          <li>Geprüfte(r) Logistikmeister(in)</li>
+          <li>Geprüfte(r) Technischer Betriebswirt(in)</li>
+          <li>Geprüfte(r) Technische(r) Fachwirt(in)</li>
+        </ul>
+      </div>
+      <div class="feature-list">
+        <h3>Unterlagen zur Anmeldung</h3>
+        <ul class="checklist">
+          <li>Aktueller tabellarischer Lebenslauf mit Lichtbild und Unterschrift</li>
+          <li>Facharbeiterbrief oder Gesellenbrief (alternativ Abschlusszeugnis)</li>
+          <li>Arbeitsbescheinigung des Arbeitgebers (nicht nötig beim TBW)</li>
+          <li>Personalausweis oder Reisepass</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" id="foerderung">
+  <div class="container">
+    <h2 class="section-title">Förderung Ihrer Weiterbildung</h2>
+    <p class="section-sub">Im Regelfall übernimmt der Staat 75 % Ihrer Kurskosten – Ihr Eigenanteil liegt bei nur 25 %.</p>
+    <div class="grid grid-3">
+      <div class="feature">
+        <h3>Meister-BAföG</h3>
+        <p>Seit August 2020 wurde der Zuschuss von 40 % auf 50 % erhöht, zusätzlich sind die Freibeträge gestiegen.</p>
+      </div>
+      <div class="feature">
+        <h3>KfW-Darlehen</h3>
+        <p>Zinsgünstige Finanzierung des restlichen Eigenanteils über die KfW-Bank, ergänzend zum Meister-BAföG.</p>
+      </div>
+      <div class="feature">
+        <h3>Weiterbildungsstipendium</h3>
+        <p>Zusätzliche Förderung für besonders leistungsstarke Fachkräfte durch die IHK.</p>
+      </div>
+    </div>
+    <p class="ue-note">Alle Preise erfragen Sie gern individuell im Beratungsgespräch – wir unterstützen Sie zudem aktiv bei den IHK/BAföG-Anträgen.</p>
+  </div>
+</section>
+
+<section class="section" id="erfolg">
+  <div class="container erfolg-inner">
+    <div class="erfolg-text">
+      <h2 class="section-title left">Eine der besten Bestehensquoten in Deutschland</h2>
+      <p>Unser Erfolg basiert auf kleinen Lerngruppen, erfahrenen Dozenten und praxisnaher Prüfungsvorbereitung. Deshalb erreichen unsere Teilnehmer überdurchschnittlich häufig ihren IHK-Abschluss.</p>
+      <ul class="checklist">
+        <li>Erfahrene Dozenten aus der Praxis</li>
+        <li>Zertifiziert nach DIN EN ISO 9001:2015</li>
+        <li>Individuelle Prüfungsvorbereitung</li>
+      </ul>
+    </div>
+    <div class="erfolg-stat">
+      <span class="stat-number">Top</span>
+      <span class="stat-label">Bestehensquote bundesweit</span>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" id="kontakt">
+  <div class="container kontakt-inner">
+    <div>
+      <h2 class="section-title left">Kontakt & Öffnungszeiten</h2>
+      <p>Persönliche Anmeldungen und Beratungen sind aktuell an Wochenenden möglich. Alternativ erreichen Sie uns jederzeit über das Kontaktformular oder telefonisch.</p>
+      <table class="hours-table">
+        <tr><td>Adresse</td><td>Robert-Bosch-Straße 7-9, 73207 Plochingen</td></tr>
+        <tr><td>Telefon</td><td><a href="tel:+4971536191220">07153 / 6191-220</a> oder <a href="tel:+4971536191221">-221</a></td></tr>
+        <tr><td>E-Mail</td><td><a href="mailto:info@at-learning.de">info@at-learning.de</a></td></tr>
+        <tr><td>Mo – Fr</td><td>Nach Vereinbarung</td></tr>
+        <tr><td>Sa / So</td><td>Beratung & Anmeldung</td></tr>
+      </table>
+    </div>
+    <form class="contact-form" id="anmeldung" action="https://formsubmit.co/info@at-learning.de" method="POST">
+      <h3>Beratung anfragen</h3>
+      <input type="hidden" name="_subject" value="Neue Anfrage über die Website">
+      <input type="hidden" name="_template" value="table">
+      <input type="hidden" name="_captcha" value="true">
+      <input type="text" name="Name" placeholder="Ihr Name" required>
+      <input type="email" name="E-Mail" placeholder="Ihre E-Mail" required>
+      <input type="tel" name="Telefon" placeholder="Ihre Telefonnummer (optional)">
+      <select name="Interesse">
+        <option>Industriemeister IHK</option>
+        <option>Technischer Betriebswirt IHK</option>
+        <option>Sonstiges</option>
+      </select>
+      <textarea name="Nachricht" placeholder="Ihre Nachricht" rows="4" required></textarea>
+      <label class="consent">
+        <input type="checkbox" required>
+        Ich stimme der Verarbeitung meiner Daten gemäß der <a href="datenschutz.html" target="_blank">Datenschutzerklärung</a> zu.
+      </label>
+      <button type="submit" class="btn btn-primary">Absenden</button>
+      <p class="form-note" id="formNote"></p>
+    </form>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <p>© <span id="year">2026</span> AT Learning – Tim Ohnmeiss – Robert-Bosch-Straße 7-9, 73207 Plochingen <a href="admin-login.html" class="admin-access" title="Interner Bereich">•</a></p>
+    <div class="footer-links">
+      <a href="impressum.html">Impressum</a>
+      <a href="datenschutz.html">Datenschutz</a>
+    </div>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+<script src="courses-loader.js"></script>
+</body>
+</html>
