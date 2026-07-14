@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin – AT Learning</title>
+<link rel="icon" href="favicon.ico"><link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="header">
+  <div class="container header-inner">
+    <a href="index.html" class="logo-link"><img src="logo.png" alt="AT Learning" class="header-logo"></a>
+    <nav class="nav" id="adminNav">
+      <a href="#kalender-verwalten">Kalender</a>
+      <a href="#kurse-verwalten">Kurse</a>
+      <a href="#nutzer-verwalten">Nutzer</a>
+      <a href="#einstellungen">Einstellungen</a>
+    </nav>
+    <button id="logoutBtn" class="btn btn-outline nav-cta">Abmelden</button>
+    <button class="burger" id="burger" aria-label="Menü öffnen"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<section class="admin-hero">
+  <div class="container"><h1>Admin-Bereich</h1><p>Änderungen erscheinen sofort auf der Website und lösen automatisch Benachrichtigungen aus.</p></div>
+</section>
+
+<section class="section" id="kalender-verwalten">
+  <div class="container">
+    <div class="admin-section-head">
+      <h2 class="section-title left">Kalender verwalten</h2>
+      <button id="newTerminBtn" class="btn btn-primary">+ Neuer Termin</button>
+    </div>
+    <div id="adminKalenderContainer"></div>
+    <div class="admin-form-wrap hidden" id="terminFormWrap">
+      <form id="terminForm" class="admin-form">
+        <input type="hidden" id="terminId">
+        <div class="form-row">
+          <select id="terminKlasse" required><option value="" disabled selected>Klasse auswählen…</option></select>
+          <input type="date" id="terminDatum" required>
+        </div>
+        <div class="form-row">
+          <input type="text" id="terminZeit" placeholder="Uhrzeit / UE (z. B. 08:00 - 16:30)">
+          <input type="text" id="terminRaum" placeholder="Raum">
+        </div>
+        <div class="form-row">
+          <input type="text" id="terminThema" placeholder="Thema / Fach" required>
+          <input type="text" id="terminDozent" placeholder="Dozent">
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:.9rem;"><input type="checkbox" id="terminAbgesagt" style="width:auto;"> Termin abgesagt</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:.9rem;"><input type="checkbox" id="terminWiederholen" style="width:auto;"> Wöchentlich wiederholen bis Enddatum</label>
+        <input type="date" id="terminWiederholenBis" class="hidden">
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Speichern & Klasse benachrichtigen</button>
+          <button type="button" class="btn btn-outline" id="cancelTerminBtn">Abbrechen</button>
+        </div>
+        <p class="form-note" id="terminFormNote"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" id="kurse-verwalten">
+  <div class="container">
+    <div class="admin-section-head">
+      <h2 class="section-title left">Kurse verwalten</h2>
+      <button id="newCourseBtn" class="btn btn-primary">+ Neuer Kurs</button>
+    </div>
+    <div id="courseList" class="admin-course-list"><p class="loading-note">Kurse werden geladen…</p></div>
+    <div class="admin-form-wrap hidden" id="courseFormWrap">
+      <form id="courseForm" class="admin-form">
+        <input type="hidden" id="courseId">
+        <div class="form-row">
+          <input type="text" id="courseTitle" placeholder="Kurstitel" required>
+          <input type="text" id="courseTag" placeholder="Tag (z. B. Start November 2025)">
+        </div>
+        <div class="form-row">
+          <input type="date" id="courseStart" placeholder="Start">
+          <input type="date" id="courseEnd" placeholder="Ende">
+        </div>
+        <div class="form-row">
+          <input type="text" id="courseUE" placeholder="Unterrichtseinheiten">
+          <input type="text" id="coursePhone" placeholder="Kontakt-Telefon">
+        </div>
+        <textarea id="courseDesc" placeholder="Kursbeschreibung" rows="3"></textarea>
+        <label style="display:flex;align-items:center;gap:8px;font-size:.9rem;"><input type="checkbox" id="courseHighlight" style="width:auto;"> Als Highlight anzeigen</label>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Speichern</button>
+          <button type="button" class="btn btn-outline" id="cancelFormBtn">Abbrechen</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="nutzer-verwalten">
+  <div class="container">
+    <div class="admin-section-head">
+      <h2 class="section-title left">Nutzer verwalten (Lehrer & Schüler)</h2>
+      <button id="newNutzerBtn" class="btn btn-primary">+ Neuer Nutzer</button>
+    </div>
+    <div id="nutzerListe" class="admin-course-list"><p class="loading-note">Nutzer werden geladen…</p></div>
+    <div class="admin-form-wrap hidden" id="nutzerFormWrap">
+      <form id="nutzerForm" class="admin-form">
+        <div class="form-row">
+          <input type="text" id="nutzerName" placeholder="Vor- und Nachname" required>
+          <select id="nutzerRolle" required>
+            <option value="" disabled selected>Rolle wählen…</option>
+            <option value="schueler">Schüler</option>
+            <option value="lehrer">Lehrer</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <input type="email" id="nutzerEmail" placeholder="E-Mail-Adresse" required>
+          <input type="password" id="nutzerPasswort" placeholder="Initiales Passwort" required>
+        </div>
+        <div id="nutzerKlasseWrap">
+          <select id="nutzerKlasse"><option value="" disabled selected>Klasse zuweisen…</option></select>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Nutzer anlegen</button>
+          <button type="button" class="btn btn-outline" id="cancelNutzerBtn">Abbrechen</button>
+        </div>
+        <p class="form-note" id="nutzerFormNote"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" id="einstellungen">
+  <div class="container">
+    <h2 class="section-title left">Einstellungen</h2>
+    <form id="settingsForm" class="admin-form" style="max-width:600px;">
+      <input type="text" id="setPhone1" placeholder="Telefon 1">
+      <input type="text" id="setPhone2" placeholder="Telefon 2">
+      <input type="email" id="setEmail" placeholder="E-Mail">
+      <input type="text" id="setAddress" placeholder="Adresse">
+      <input type="text" id="setHours" placeholder="Öffnungszeiten">
+      <button type="submit" class="btn btn-primary">Speichern</button>
+      <p class="form-note" id="settingsNote"></p>
+    </form>
+  </div>
+</section>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="calendar.js"></script>
+<script src="admin.js"></script>
+</body></html>

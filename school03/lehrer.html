@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lehrerbereich – AT Learning</title>
+<link rel="icon" href="favicon.ico"><link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="header">
+  <div class="container header-inner">
+    <a href="index.html" class="logo-link"><img src="logo.png" alt="AT Learning" class="header-logo"></a>
+    <nav class="nav" id="lehrerNav"><a href="#klassen">Meine Klassen</a><a href="#kalender">Kalender</a></nav>
+    <button id="lehrerLogoutBtn" class="btn btn-outline nav-cta">Abmelden</button>
+    <button class="burger" id="burger" aria-label="Menü öffnen"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<section class="admin-hero">
+  <div class="container"><h1 id="lehrerName">Lehrerbereich</h1><p>Übersicht Ihrer Klassen, Stundenpläne und Anwesenheiten.</p></div>
+</section>
+
+<section class="section" id="klassen">
+  <div class="container">
+    <div class="lehrer-benachrichtigung hidden" id="benachrichtigungBox">
+      <span id="benachrichtigungText"></span>
+      <button class="btn btn-small btn-outline" id="benachrichtigungSchliessen">Verstanden</button>
+    </div>
+    <h2 class="section-title left">Meine Klassen</h2>
+    <div id="lehrerKlassenListe" class="lehrer-klassen-list"><p class="loading-note">Klassen werden geladen…</p></div>
+  </div>
+</section>
+
+<section class="section section-alt" id="kalender">
+  <div class="container">
+    <h2 class="section-title left">Stundenplan (alle meine Klassen)</h2>
+    <div id="lehrerKalenderContainer"></div>
+  </div>
+</section>
+
+<section class="section hidden" id="klasseDetailSection">
+  <div class="container">
+    <button class="btn btn-outline btn-small" id="zurueckZurUebersicht">← Zurück zur Übersicht</button>
+    <h2 class="section-title left" id="klasseDetailTitel">Klasse</h2>
+    <div id="klasseDetailKalender"></div>
+    <h3 style="margin-top:40px;">Anwesenheitsliste (Abmeldungen)</h3>
+    <table class="schueler-liste-table">
+      <thead><tr><th>Name</th><th>Status</th></tr></thead>
+      <tbody id="anwesenheitTableBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="calendar.js"></script>
+<script src="lehrer.js"></script>
+</body></html>

@@ -1,0 +1,114 @@
+[
+  {
+    "id": "im25sp10",
+    "name": "Gepr. Industriemeister(in) Metall – IM25SP10",
+    "start": "2025-11-08",
+    "end": "2026-05-31",
+    "material": [
+      {
+        "titel": "HQ-Trainer – Organisation & Technik",
+        "typ": "trainer",
+        "link": "https://pipboy3003.github.io/trainer"
+      },
+      {
+        "titel": "Soll-/Ist-Stundenübersicht IM25SP10",
+        "typ": "pdf",
+        "link": "#"
+      },
+      {
+        "titel": "AEVO Prüfungsvorbereitung",
+        "typ": "pdf",
+        "link": "#"
+      }
+    ],
+    "termine": [
+      {
+        "datum": "2025-11-08",
+        "zeit": "10 UE",
+        "thema": "Fertigungstechnik",
+        "dozent": "Nannt"
+      },
+      {
+        "datum": "2025-11-09",
+        "zeit": "7 UE",
+        "thema": "ADA",
+        "dozent": "Jordan"
+      },
+      {
+        "datum": "2025-11-15",
+        "zeit": "10 UE",
+        "thema": "Instandhaltung",
+        "dozent": "Dragojlovic"
+      },
+      {
+        "datum": "2025-11-16",
+        "zeit": "7 UE",
+        "thema": "Personalführung/-entwicklung",
+        "dozent": "Fr. Eisele"
+      },
+      {
+        "datum": "2025-11-22",
+        "zeit": "10 UE",
+        "thema": "Qualitätsmanagement",
+        "dozent": "Waldhier"
+      },
+      {
+        "datum": "2025-11-23",
+        "zeit": "7 UE",
+        "thema": "Montagetechnik",
+        "dozent": "Holzwarth"
+      }
+    ]
+  },
+  {
+    "id": "im25sp20",
+    "name": "Industriemeister Metall – IM25SP20",
+    "start": "2025-11-15",
+    "end": "2026-11-14",
+    "material": [
+      {
+        "titel": "HQ-Trainer – Organisation & Technik",
+        "typ": "trainer",
+        "link": "https://pipboy3003.github.io/trainer"
+      }
+    ],
+    "termine": [
+      {
+        "datum": "2026-07-18",
+        "zeit": "08:00 - 16:30",
+        "thema": "Qualitätsmanagement – Prozessfähigkeit (cpk)",
+        "dozent": "Hr. Weber",
+        "raum": "Raum 1"
+      },
+      {
+        "datum": "2026-07-19",
+        "zeit": "08:00 - 13:15",
+        "thema": "KVP & Poka-Yoke",
+        "dozent": "Hr. Weber",
+        "raum": "Raum 1"
+      }
+    ]
+  },
+  {
+    "id": "ime25sp21",
+    "name": "Industriemeister Elektro – IME25SP21",
+    "start": "2025-11-15",
+    "end": "2026-11-14",
+    "material": [
+      {
+        "titel": "HQ-Trainer – Organisation & Technik",
+        "typ": "trainer",
+        "link": "https://pipboy3003.github.io/trainer"
+      }
+    ],
+    "termine": [
+      {
+        "datum": "2026-07-18",
+        "zeit": "08:00 - 16:30",
+        "thema": "Elektrische Antriebstechnik",
+        "dozent": "Hr. Fischer",
+        "raum": "Raum 3"
+      }
+    ]
+  }
+]
