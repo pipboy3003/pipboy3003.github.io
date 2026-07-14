@@ -3,7 +3,7 @@
 // Themenbereiche: Organisation HQ | Technik HQ
 // ============================================================
 
-window.questions = [
+window.questions = {
 
   // ============================================================
   // ORGANISATION - Hauptqualifikation
@@ -171,6 +171,51 @@ window.questions = [
         "Die längste Vorgangskette ohne Puffer – Verzögerung hier verzögert das gesamte Projekt",
         "Der Projektabschnitt mit dem höchsten Risiko",
         "Die kürzeste mögliche Projektdurchführungszeit"
+      ],
+      richtig: 1
+    },
+    {
+      frage: "Was kann aus verölten Metallspänen recycelt bzw. aufbereitet werden?",
+      antwort: "Die gereinigten Späne können als Schrott verwertet werden, das abgetrennte Öl dient als Rohstoff für Kühlschmierstoffe (KSS).",
+      optionen: [
+        "Nur Entsorgung als Sondermüll möglich",
+        "Späne als Schrott, Öl als Rohstoff für KSS",
+        "Verwendung als Brennstoff im Heizkraftwerk",
+        "Weiterverwendung ohne jegliche Trennung von Öl und Metall"
+      ],
+      richtig: 1
+    },
+    {
+      frage: "Was ist der Zweck der Gemeinkostenzuschlagsätze in der Kostenrechnung?",
+      antwort: "Gemeinkosten können nicht direkt einem Produkt zugerechnet werden, da sie für alle Erzeugnisse einer Periode gemeinsam anfallen. Sie werden daher indirekt über einen Verteilungsschlüssel (Zuschlagssatz) den Kostenträgern zugeschlagen.",
+      optionen: [
+        "Sie dienen ausschließlich der Berechnung von Boni für Meister",
+        "Sie ermöglichen die indirekte Verteilung nicht direkt zurechenbarer Kosten auf Kostenträger",
+        "Sie ersetzen die Materialeinzelkosten vollständig",
+        "Sie werden nur für den Export relevanter Produkte benötigt"
+      ],
+      richtig: 1
+    },
+    {
+      frage: "Welche Voraussetzungen sind für eine sinnvolle Just-in-Time-Anlieferung notwendig?",
+      antwort: "Der Hersteller muss zuverlässig und kontinuierlich liefern können, ein kontinuierlicher Transport muss gewährleistet sein, die Transportkosten müssen im rentablen Bereich liegen und der optimale Lieferzyklus muss ermittelt werden.",
+      optionen: [
+        "Nur ein großes Zentrallager wird benötigt",
+        "Zuverlässige, kontinuierliche Lieferung, gesicherter Transport und wirtschaftliche Transportkosten",
+        "Just-in-Time funktioniert unabhängig von der Lieferantenzuverlässigkeit",
+        "Es sind ausschließlich lange Vertragslaufzeiten notwendig"
+      ],
+      richtig: 1
+    },
+    {
+      frage: "Welche Stufe folgt im Konfliktlösungsmodell nach der Identifikation des Konflikts?",
+      antwort: "Nach der Identifikation und Definition des Konflikts (Stufe 1) werden in Stufe 2 unter Einbeziehung aller Beteiligten mögliche Lösungsmöglichkeiten entwickelt.",
+      antwort: "Nach der Identifikation und Definition des Konflikts (Stufe 1) werden in Stufe 2 unter Einbeziehung aller Beteiligten mögliche Lösungsmöglichkeiten entwickelt.",
+      optionen: [
+        "Sofortige disziplinarische Maßnahme gegen den Verursacher",
+        "Entwicklung von Lösungsmöglichkeiten unter Einbeziehung aller Beteiligten",
+        "Direkte Eskalation an die Geschäftsleitung",
+        "Abschluss und Dokumentation des Falls ohne weitere Schritte"
       ],
       richtig: 1
     }
@@ -344,6 +389,40 @@ window.questions = [
         "Kraftschluss ist nur für temporäre Verbindungen geeignet"
       ],
       richtig: 1
+    },
+    {
+      frage: "Welche Bauteile gehören zu einer Wartungseinheit der Druckluftaufbereitung?",
+      antwort: "Filter (reinigt von festen Bestandteilen und Feuchtigkeit), Druckregelventil mit Manometer (hält und zeigt den Arbeitsdruck) sowie ggf. ein Öler (schmiert die Pneumatik-Elemente).",
+      optionen: [
+        "Nur ein einzelner Kompressor",
+        "Filter, Druckregelventil mit Manometer und ggf. Öler",
+        "Ausschließlich ein Sicherheitsventil",
+        "Nur ein Wasserabscheider ohne weitere Bauteile"
+      ],
+      richtig: 1
+    },
+    {
+      frage: "Welche Vorteile bietet ein Gleitlager mit hydrodynamischer Schmierung?",
+      antwort: "Verschleißarmer Dauerbetrieb, geeignet für hohe Drehzahlen, verträgt hohe stoßartige Belastungen und besitzt eine hohe Wärmeleitfähigkeit.",
+      optionen: [
+        "Hohes Anlaufmoment und geringe Lebensdauer",
+        "Verschleißarmer Dauerbetrieb, hohe Drehzahlen und hohe Wärmeleitfähigkeit",
+        "Nur für niedrige Drehzahlen ohne Stoßbelastung geeignet",
+        "Erfordert keine Schmierung im laufenden Betrieb"
+      ],
+      richtig: 1
+    },
+    {
+      frage: "Welche zerstörungsfreien Prüfverfahren werden in der Fertigung eingesetzt?",
+      antwort: "Wirbelstromprüfung, Magnetpulverprüfung, Eindringprüfung, Röntgen-/Gammaprüfung, Ultraschallprüfung und hydrostatische Prüfung.",
+      optionen: [
+        "Ausschließlich der Zugversuch",
+        "Wirbelstrom-, Magnetpulver-, Eindring-, Röntgen-/Gamma-, Ultraschall- und hydrostatische Prüfung",
+        "Nur die Sichtprüfung mit dem bloßen Auge",
+        "Nur die Härteprüfung nach Brinell"
+      ],
+      richtig: 1
     }
   ]
+
 };
