@@ -10,6 +10,8 @@ window.questions = {
   // ============================================================
   organisation: [
     {
+      id: "orga-kvp-001",
+      bereich: "Organisation",
       frage: "Was versteht man unter dem Begriff 'Kontinuierlicher Verbesserungsprozess' (KVP)?",
       antwort: "KVP ist ein systematischer Ansatz zur ständigen schrittweisen Verbesserung von Prozessen, Produkten und Dienstleistungen durch alle Mitarbeiter.",
       optionen: [
@@ -21,8 +23,10 @@ window.questions = {
       richtig: 1
     },
     {
+      id: "orga-pdca-001",
+      bereich: "Organisation",
       frage: "Welche 4 Phasen hat der PDCA-Zyklus?",
-      antwort: "Plan (Planen), Do (Ausführen), Check (Überprüfen), Act (Handeln/Verbessern).",
+      antwort: "Plan (Planen), Do (Ausführen), Check (Überprüfen), Act (Handeln und Verbessern).",
       optionen: [
         "Planen, Delegieren, Kontrollieren, Abschließen",
         "Plan, Do, Check, Act",
@@ -32,6 +36,8 @@ window.questions = {
       richtig: 1
     },
     {
+      id: "orga-arbeitsschutz-001",
+      bereich: "Organisation",
       frage: "Was ist die Aufgabe des Industriemeisters im Rahmen des Arbeitsschutzes?",
       antwort: "Der Meister ist verantwortlich für die Umsetzung und Überwachung von Arbeitsschutzmaßnahmen, Unterweisungen der Mitarbeiter und die Gefährdungsbeurteilung.",
       optionen: [
@@ -43,6 +49,8 @@ window.questions = {
       richtig: 2
     },
     {
+      id: "orga-oee-001",
+      bereich: "Organisation",
       frage: "Was bedeutet OEE (Overall Equipment Effectiveness)?",
       antwort: "OEE ist eine Kennzahl zur Bewertung der Gesamtanlageneffektivität. OEE = Verfügbarkeit × Leistungsgrad × Qualitätsrate.",
       optionen: [
@@ -54,6 +62,8 @@ window.questions = {
       richtig: 1
     },
     {
+      id: "orga-fmea-001",
+      bereich: "Organisation",
       frage: "Was ist eine FMEA (Failure Mode and Effects Analysis)?",
       antwort: "FMEA ist eine systematische Methode zur präventiven Erkennung, Bewertung und Vermeidung von Fehlern und deren Auswirkungen in Produkten oder Prozessen.",
       optionen: [
@@ -65,19 +75,23 @@ window.questions = {
       richtig: 1
     },
     {
+      id: "orga-fuehrungsstile-001",
+      bereich: "Organisation",
       frage: "Welche Führungsstile unterscheidet man grundlegend?",
-      antwort: "Autoritärer (direktiver), kooperativer (demokratischer) und Laissez-faire Führungsstil sind die klassischen Grundtypen nach Lewin.",
+      antwort: "Autoritärer, kooperativer und Laissez-faire Führungsstil sind klassische Grundtypen nach Lewin.",
       optionen: [
         "Aktiver, passiver und neutraler Führungsstil",
         "Autoritärer, kooperativer und Laissez-faire Führungsstil",
-        "Formeller, informeller und hybride Führungsstil",
+        "Formeller, informeller und hybrider Führungsstil",
         "Technischer, kaufmännischer und sozialer Führungsstil"
       ],
       richtig: 1
     },
     {
-      frage: "Was versteht man unter 'Lean Management'?",
-      antwort: "Lean Management ist eine Unternehmensphilosophie zur Minimierung von Verschwendung (Muda) in allen Prozessen bei gleichzeitiger Maximierung des Kundennutzens.",
+      id: "orga-lean-001",
+      bereich: "Organisation",
+      frage: "Was versteht man unter Lean Management?",
+      antwort: "Lean Management ist eine Unternehmensphilosophie zur Minimierung von Verschwendung bei gleichzeitiger Maximierung des Kundennutzens.",
       optionen: [
         "Reduzierung der Mitarbeiterzahl zur Kostensenkung",
         "Philosophie zur Minimierung von Verschwendung bei maximiertem Kundennutzen",
@@ -87,8 +101,10 @@ window.questions = {
       richtig: 1
     },
     {
+      id: "orga-muda-001",
+      bereich: "Organisation",
       frage: "Was sind die 7 Verschwendungsarten (Muda) im Lean Management?",
-      antwort: "Überproduktion, Wartezeiten, Transport, überflüssige Prozesse, Bestände, Bewegungen, Fehler/Nacharbeit.",
+      antwort: "Überproduktion, Wartezeiten, Transport, überflüssige Prozesse, Bestände, Bewegungen sowie Fehler und Nacharbeit.",
       optionen: [
         "Planung, Einkauf, Produktion, Lager, Versand, Service, Verwaltung",
         "Überproduktion, Wartezeiten, Transport, Prozesse, Bestände, Bewegungen, Fehler",
@@ -98,6 +114,8 @@ window.questions = {
       richtig: 1
     },
     {
+      id: "orga-stellenbeschreibung-001",
+      bereich: "Organisation",
       frage: "Was ist der Unterschied zwischen einer Stellen- und einer Funktionsbeschreibung?",
       antwort: "Eine Stellenbeschreibung definiert Aufgaben, Kompetenzen und Verantwortung einer konkreten Stelle. Eine Funktionsbeschreibung beschreibt die Aufgaben einer Funktion unabhängig von der Person.",
       optionen: [
@@ -109,8 +127,10 @@ window.questions = {
       richtig: 1
     },
     {
-      frage: "Was versteht man unter 'Betrieblichem Vorschlagswesen'?",
-      antwort: "Das betriebliche Vorschlagswesen ist ein System, das Mitarbeiter dazu motiviert, Verbesserungsideen einzubringen. Angenommene Vorschläge werden prämiert.",
+      id: "orga-bvw-001",
+      bereich: "Organisation",
+      frage: "Was versteht man unter betrieblichem Vorschlagswesen?",
+      antwort: "Das betriebliche Vorschlagswesen motiviert Mitarbeiter, Verbesserungsideen einzubringen. Angenommene Vorschläge können prämiert werden.",
       optionen: [
         "Formelle Beschwerdestelle für Mitarbeiter",
         "System zur Prämierung von Verbesserungsvorschlägen durch Mitarbeiter",
@@ -120,30 +140,36 @@ window.questions = {
       richtig: 1
     },
     {
+      id: "orga-mbo-001",
+      bereich: "Organisation",
       frage: "Was ist der Unterschied zwischen Führen mit Zielen (MbO) und situativem Führen?",
-      antwort: "MbO (Management by Objectives) setzt gemeinsam vereinbarte Ziele als Steuerungsinstrument. Situatives Führen passt den Führungsstil an den Reifegrad und die Situation des Mitarbeiters an.",
+      antwort: "MbO setzt gemeinsam vereinbarte Ziele als Steuerungsinstrument. Situatives Führen passt den Führungsstil an Reifegrad und Situation des Mitarbeiters an.",
       optionen: [
-        "MbO ist moderner, situatives Führen veraltet",
+        "MbO ist moderner, situatives Führen ist veraltet",
         "MbO nutzt Ziele als Steuerung; situatives Führen passt den Stil an Mitarbeiter und Situation an",
         "Beide Methoden sind identisch",
-        "Situatives Führen betrifft nur Krisen, MbO den Normalzustand"
+        "Situatives Führen betrifft nur Krisen"
       ],
       richtig: 1
     },
     {
-      frage: "Was sind Cp und Cpk Werte und was sagen sie aus?",
-      antwort: "Cp (Prozessfähigkeitsindex) misst die potenzielle Fähigkeit eines Prozesses. Cpk berücksichtigt zusätzlich die Prozesslage (Mittelwertverschiebung). Cp/Cpk ≥ 1,33 gilt als fähig.",
+      id: "orga-cpk-001",
+      bereich: "Organisation",
+      frage: "Was sagen Cp- und Cpk-Werte aus?",
+      antwort: "Cp misst die potenzielle Prozessfähigkeit. Cpk berücksichtigt zusätzlich die Prozesslage beziehungsweise Mittelwertverschiebung.",
       optionen: [
         "Cp misst Kundenzufriedenheit, Cpk die Lieferzeit",
-        "Cp = potenzielle Prozessfähigkeit; Cpk = Prozessfähigkeit unter Berücksichtigung der Lage; ≥1,33 = fähig",
+        "Cp = potenzielle Prozessfähigkeit; Cpk = Prozessfähigkeit unter Berücksichtigung der Lage",
         "Beide Kennzahlen messen die Anlagenverfügbarkeit",
         "Cp und Cpk sind identische Kennzahlen"
       ],
       richtig: 1
     },
     {
+      id: "orga-betriebsrat-001",
+      bereich: "Organisation",
       frage: "Welche Rechte und Pflichten hat der Betriebsrat laut BetrVG?",
-      antwort: "Der Betriebsrat hat Informations-, Beratungs-, Anhörungs- und Mitbestimmungsrechte. Pflichten sind u.a. Verschwiegenheit, Interessenvertretung aller Mitarbeiter und Einhaltung von Betriebsvereinbarungen.",
+      antwort: "Der Betriebsrat hat Informations-, Beratungs-, Anhörungs- und Mitbestimmungsrechte. Er vertritt die Interessen der Mitarbeiter und ist zur Verschwiegenheit verpflichtet.",
       optionen: [
         "Nur Informationsrecht, keine Mitbestimmung",
         "Informations-, Beratungs-, Anhörungs- und Mitbestimmungsrechte; Pflicht zur Verschwiegenheit und Interessenvertretung",
@@ -153,8 +179,10 @@ window.questions = {
       richtig: 1
     },
     {
+      id: "orga-gantt-001",
+      bereich: "Organisation",
       frage: "Was ist ein Gantt-Diagramm und wofür wird es eingesetzt?",
-      antwort: "Ein Gantt-Diagramm ist ein Balkendiagramm zur Projektplanung. Es zeigt Aufgaben, deren Dauer und zeitliche Abfolge übersichtlich auf einer Zeitachse.",
+      antwort: "Ein Gantt-Diagramm ist ein Balkendiagramm zur Projektplanung. Es zeigt Aufgaben, Dauer und zeitliche Abfolge auf einer Zeitachse.",
       optionen: [
         "Kreisdiagramm zur Kostenverteilung in Projekten",
         "Balkendiagramm zur Visualisierung von Projektaufgaben, Dauer und Zeitplanung",
@@ -164,58 +192,67 @@ window.questions = {
       richtig: 1
     },
     {
-      frage: "Was versteht man unter dem 'kritischen Pfad' in der Netzplantechnik?",
-      antwort: "Der kritische Pfad ist die längste Vorgangskette im Netzplan ohne Pufferzeiten. Eine Verzögerung eines Vorgangs auf dem kritischen Pfad verzögert das Gesamtprojekt.",
+      id: "orga-kritischer-pfad-001",
+      bereich: "Organisation",
+      frage: "Was versteht man unter dem kritischen Pfad in der Netzplantechnik?",
+      antwort: "Der kritische Pfad ist die längste Vorgangskette ohne Pufferzeiten. Eine Verzögerung eines kritischen Vorgangs verzögert das Gesamtprojekt.",
       optionen: [
         "Der teuerste Teilbereich eines Projekts",
-        "Die längste Vorgangskette ohne Puffer – Verzögerung hier verzögert das gesamte Projekt",
+        "Die längste Vorgangskette ohne Puffer; Verzögerung hier verzögert das Gesamtprojekt",
         "Der Projektabschnitt mit dem höchsten Risiko",
         "Die kürzeste mögliche Projektdurchführungszeit"
       ],
       richtig: 1
     },
     {
-      frage: "Was kann aus verölten Metallspänen recycelt bzw. aufbereitet werden?",
-      antwort: "Die gereinigten Späne können als Schrott verwertet werden, das abgetrennte Öl dient als Rohstoff für Kühlschmierstoffe (KSS).",
+      id: "orga-recycling-spaene-001",
+      bereich: "Organisation",
+      frage: "Was kann aus verölten Metallspänen recycelt beziehungsweise aufbereitet werden?",
+      antwort: "Gereinigte Späne können als Schrott verwertet werden. Das abgetrennte Öl kann als Rohstoff für Kühlschmierstoffe dienen.",
       optionen: [
         "Nur Entsorgung als Sondermüll möglich",
-        "Späne als Schrott, Öl als Rohstoff für KSS",
+        "Späne als Schrott, Öl als Rohstoff für Kühlschmierstoffe",
         "Verwendung als Brennstoff im Heizkraftwerk",
-        "Weiterverwendung ohne jegliche Trennung von Öl und Metall"
+        "Weiterverwendung ohne Trennung von Öl und Metall"
       ],
       richtig: 1
     },
     {
-      frage: "Was ist der Zweck der Gemeinkostenzuschlagsätze in der Kostenrechnung?",
-      antwort: "Gemeinkosten können nicht direkt einem Produkt zugerechnet werden, da sie für alle Erzeugnisse einer Periode gemeinsam anfallen. Sie werden daher indirekt über einen Verteilungsschlüssel (Zuschlagssatz) den Kostenträgern zugeschlagen.",
+      id: "orga-gemeinkosten-001",
+      bereich: "Organisation",
+      frage: "Was ist der Zweck von Gemeinkostenzuschlagsätzen in der Kostenrechnung?",
+      antwort: "Sie verteilen Gemeinkosten, die nicht direkt einem Produkt zugerechnet werden können, indirekt über einen Verteilungsschlüssel auf Kostenträger.",
       optionen: [
         "Sie dienen ausschließlich der Berechnung von Boni für Meister",
         "Sie ermöglichen die indirekte Verteilung nicht direkt zurechenbarer Kosten auf Kostenträger",
         "Sie ersetzen die Materialeinzelkosten vollständig",
-        "Sie werden nur für den Export relevanter Produkte benötigt"
+        "Sie werden nur für Exportprodukte benötigt"
       ],
       richtig: 1
     },
     {
+      id: "orga-jit-001",
+      bereich: "Organisation",
       frage: "Welche Voraussetzungen sind für eine sinnvolle Just-in-Time-Anlieferung notwendig?",
-      antwort: "Der Hersteller muss zuverlässig und kontinuierlich liefern können, ein kontinuierlicher Transport muss gewährleistet sein, die Transportkosten müssen im rentablen Bereich liegen und der optimale Lieferzyklus muss ermittelt werden.",
+      antwort: "Der Hersteller muss zuverlässig liefern können, der Transport muss gesichert und wirtschaftlich sein, und der optimale Lieferzyklus muss festgelegt werden.",
       optionen: [
         "Nur ein großes Zentrallager wird benötigt",
-        "Zuverlässige, kontinuierliche Lieferung, gesicherter Transport und wirtschaftliche Transportkosten",
+        "Zuverlässige Lieferung, gesicherter Transport und wirtschaftliche Transportkosten",
         "Just-in-Time funktioniert unabhängig von der Lieferantenzuverlässigkeit",
         "Es sind ausschließlich lange Vertragslaufzeiten notwendig"
       ],
       richtig: 1
     },
     {
+      id: "orga-konflikt-001",
+      bereich: "Organisation",
       frage: "Welche Stufe folgt im Konfliktlösungsmodell nach der Identifikation des Konflikts?",
-      antwort: "Nach der Identifikation und Definition des Konflikts (Stufe 1) werden in Stufe 2 unter Einbeziehung aller Beteiligten mögliche Lösungsmöglichkeiten entwickelt.",
-      antwort: "Nach der Identifikation und Definition des Konflikts (Stufe 1) werden in Stufe 2 unter Einbeziehung aller Beteiligten mögliche Lösungsmöglichkeiten entwickelt.",
+      antwort: "Nach der Identifikation und Definition des Konflikts werden unter Einbeziehung aller Beteiligten Lösungsmöglichkeiten entwickelt.",
       optionen: [
         "Sofortige disziplinarische Maßnahme gegen den Verursacher",
         "Entwicklung von Lösungsmöglichkeiten unter Einbeziehung aller Beteiligten",
         "Direkte Eskalation an die Geschäftsleitung",
-        "Abschluss und Dokumentation des Falls ohne weitere Schritte"
+        "Abschluss und Dokumentation ohne weitere Schritte"
       ],
       richtig: 1
     }
@@ -226,6 +263,8 @@ window.questions = {
   // ============================================================
   technik: [
     {
+      id: "technik-cnc-001",
+      bereich: "Technik",
       frage: "Was versteht man unter CNC (Computerized Numerical Control)?",
       antwort: "CNC bezeichnet die rechnergestützte numerische Steuerung von Werkzeugmaschinen. Bewegungen und Bearbeitungsabläufe werden durch NC-Programme gesteuert.",
       optionen: [
@@ -237,30 +276,36 @@ window.questions = {
       richtig: 1
     },
     {
+      id: "technik-passung-001",
+      bereich: "Technik",
       frage: "Was ist der Unterschied zwischen ISO-Toleranz und Passungssystem?",
-      antwort: "ISO-Toleranzen legen zulässige Maßabweichungen fest. Das Passungssystem (Einheitsbohrung/Einheitswelle) definiert das Zusammenspiel zweier Bauteile (Spiel-, Übermaß- oder Übergangspassung).",
+      antwort: "ISO-Toleranzen legen zulässige Maßabweichungen fest. Das Passungssystem definiert das Zusammenspiel zweier Bauteile.",
       optionen: [
         "Kein Unterschied, beide Begriffe sind identisch",
         "ISO-Toleranz = zulässige Maßabweichung; Passungssystem = Zusammenspiel zweier Bauteile",
         "ISO-Toleranz gilt nur für Längenmaße, Passungssystem nur für Winkel",
-        "Passungssystem ist veraltet und wird durch ISO-Toleranz ersetzt"
+        "Passungssystem ist veraltet"
       ],
       richtig: 1
     },
     {
+      id: "technik-schweissverfahren-001",
+      bereich: "Technik",
       frage: "Welche Schweißverfahren gibt es und wie unterscheiden sie sich?",
-      antwort: "Hauptverfahren: MIG/MAG (Metallschutzgasschweißen), WIG (Wolfram-Inertgas), E-Hand, Laserschweißen, Widerstandsschweißen. Unterschied: Wärmequelle, Schutzgas, Einsatzbereich.",
+      antwort: "Beispiele sind MIG/MAG, WIG, E-Hand, Laser- und Widerstandsschweißen. Sie unterscheiden sich insbesondere durch Wärmequelle, Schutzgas und Einsatzbereich.",
       optionen: [
         "Es gibt nur thermisches und mechanisches Schweißen",
-        "MIG/MAG, WIG, E-Hand, Laser, Widerstandsschweißen – unterscheiden sich in Wärmequelle, Schutzgas und Anwendungsbereich",
+        "MIG/MAG, WIG, E-Hand, Laser und Widerstandsschweißen unterscheiden sich in Wärmequelle, Schutzgas und Einsatzbereich",
         "Alle Verfahren verwenden identische Elektroden",
         "Schweißverfahren werden nur nach Materialstärke unterschieden"
       ],
       richtig: 1
     },
     {
+      id: "technik-zerspanung-001",
+      bereich: "Technik",
       frage: "Was ist der Unterschied zwischen Drehen, Fräsen und Schleifen?",
-      antwort: "Drehen: rotierendes Werkstück, stehendes Werkzeug. Fräsen: rotierendes Werkzeug, stehendes/geführtes Werkstück. Schleifen: geometrisch unbestimmte Schneide, Feinbearbeitung.",
+      antwort: "Beim Drehen rotiert das Werkstück, beim Fräsen rotiert das Werkzeug. Schleifen ist Spanen mit geometrisch unbestimmten Schneiden.",
       optionen: [
         "Alle drei sind identische spanende Verfahren",
         "Drehen: rotierendes Werkstück; Fräsen: rotierendes Werkzeug; Schleifen: geometrisch unbestimmte Schneide",
@@ -270,8 +315,10 @@ window.questions = {
       richtig: 1
     },
     {
-      frage: "Was ist eine Härtekurve (Zeit-Temperatur-Umwandlungsdiagramm, ZTU)?",
-      antwort: "Das ZTU-Diagramm zeigt die Umwandlungen im Stahl in Abhängigkeit von Zeit und Temperatur. Es dient zur Auswahl der richtigen Abkühlgeschwindigkeit beim Härten.",
+      id: "technik-zta-001",
+      bereich: "Technik",
+      frage: "Was ist ein Zeit-Temperatur-Umwandlungsdiagramm (ZTU-Diagramm)?",
+      antwort: "Das ZTU-Diagramm zeigt Gefügeumwandlungen im Stahl in Abhängigkeit von Zeit und Temperatur und hilft bei der Wahl der Abkühlgeschwindigkeit.",
       optionen: [
         "Diagramm zur Schmelzpunktbestimmung von Legierungen",
         "Diagramm, das Gefügeumwandlungen in Stahl abhängig von Zeit und Temperatur zeigt",
@@ -281,8 +328,10 @@ window.questions = {
       richtig: 1
     },
     {
+      id: "technik-sps-001",
+      bereich: "Technik",
       frage: "Was versteht man unter SPS (Speicherprogrammierbare Steuerung)?",
-      antwort: "SPS ist ein digitales Steuergerät zur Automatisierung von Maschinen und Anlagen. Es ersetzt klassische Relaissteuerungen und ist frei programmierbar.",
+      antwort: "Eine SPS ist ein digitales, frei programmierbares Steuergerät zur Automatisierung von Maschinen und Anlagen.",
       optionen: [
         "Analoge Steuerung durch Relais und Schütze",
         "Digitales, frei programmierbares Steuergerät für Maschinen und Anlagen",
@@ -292,134 +341,158 @@ window.questions = {
       richtig: 1
     },
     {
+      id: "technik-beanspruchung-001",
+      bereich: "Technik",
       frage: "Was ist der Unterschied zwischen Zug-, Druck- und Scherbeanspruchung?",
-      antwort: "Zugbeanspruchung: Kräfte ziehen auseinander. Druckbeanspruchung: Kräfte drücken zusammen. Scherbeanspruchung: Kräfte wirken parallel versetzt (Abscherung).",
+      antwort: "Zugkräfte ziehen auseinander, Druckkräfte drücken zusammen und Scherkräfte wirken parallel versetzt aufeinander.",
       optionen: [
-        "Zug und Druck sind identisch, nur Richtung unterschiedlich; Scher ist eine Kombination",
+        "Zug und Druck sind identisch; Scher ist eine Kombination",
         "Zug = Kräfte auseinander; Druck = Kräfte zusammen; Scher = parallele versetzte Kräfte",
-        "Alle drei Beanspruchungsarten haben identische Auswirkungen",
-        "Scherbeanspruchung tritt nur bei Schraubenverbindungen auf"
+        "Alle Beanspruchungsarten haben identische Auswirkungen",
+        "Scherbeanspruchung tritt nur bei Schrauben auf"
       ],
       richtig: 1
     },
     {
+      id: "technik-waerme-001",
+      bereich: "Technik",
       frage: "Was ist der Unterschied zwischen Wärmeleitfähigkeit und Wärmekapazität?",
-      antwort: "Wärmeleitfähigkeit (λ) beschreibt, wie gut ein Stoff Wärme leitet. Wärmekapazität (c) beschreibt, wie viel Energie nötig ist, um einen Stoff um 1 K zu erwärmen.",
+      antwort: "Wärmeleitfähigkeit beschreibt, wie gut ein Stoff Wärme leitet. Wärmekapazität beschreibt die Energie, die für eine Temperaturerhöhung benötigt wird.",
       optionen: [
-        "Beide Begriffe sind gleichwertig und beschreiben dasselbe",
-        "Wärmeleitfähigkeit = Güte der Wärmeleitung; Wärmekapazität = benötigte Energie je K Temperaturerhöhung",
+        "Beide Begriffe beschreiben dasselbe",
+        "Wärmeleitfähigkeit = Güte der Wärmeleitung; Wärmekapazität = Energie für Temperaturerhöhung",
         "Wärmekapazität gilt nur für Gase",
         "Wärmeleitfähigkeit wird nur in der Elektrotechnik verwendet"
       ],
       richtig: 1
     },
     {
+      id: "technik-strom-001",
+      bereich: "Technik",
       frage: "Was ist der Unterschied zwischen Gleichstrom (DC) und Wechselstrom (AC)?",
-      antwort: "Gleichstrom (DC) fließt konstant in eine Richtung. Wechselstrom (AC) wechselt seine Richtung periodisch (in Deutschland 50 Hz).",
+      antwort: "Gleichstrom fließt konstant in eine Richtung. Wechselstrom wechselt seine Richtung periodisch.",
       optionen: [
-        "DC hat höhere Spannung als AC",
-        "DC fließt konstant in eine Richtung; AC wechselt periodisch die Richtung (50 Hz in DE)",
+        "DC hat grundsätzlich höhere Spannung als AC",
+        "DC fließt konstant in eine Richtung; AC wechselt periodisch die Richtung",
         "AC wird nur in Batterien verwendet",
         "DC und AC sind physikalisch identisch"
       ],
       richtig: 1
     },
     {
+      id: "technik-werkstoffpruefung-001",
+      bereich: "Technik",
       frage: "Was versteht man unter Werkstoffprüfung und welche Verfahren gibt es?",
-      antwort: "Werkstoffprüfung ermittelt mechanische, physikalische und chemische Eigenschaften. Verfahren: Zugversuch, Härteprüfung (Brinell/Vickers/Rockwell), Kerbschlagbiegeversuch, Zerstörungsfreie Prüfung (RT, UT, MT, PT).",
+      antwort: "Werkstoffprüfung ermittelt mechanische, physikalische und chemische Eigenschaften, etwa durch Zugversuch, Härteprüfung, Kerbschlagbiegeversuch und zerstörungsfreie Prüfungen.",
       optionen: [
         "Nur visuelle Kontrolle der Oberfläche",
-        "Ermittlung von Eigenschaften durch Zugversuch, Härteprüfung, Kerbschlag, ZfP-Verfahren",
+        "Ermittlung von Eigenschaften durch Zugversuch, Härteprüfung, Kerbschlag und zerstörungsfreie Prüfverfahren",
         "Ausschließlich chemische Analyse",
         "Nur Maßkontrolle mit Messmitteln"
       ],
       richtig: 1
     },
     {
-      frage: "Was bedeutet IP-Schutzart (z.B. IP67)?",
-      antwort: "IP (Ingress Protection) gibt den Schutz eines Gehäuses gegen Eindringen von Fremdkörpern (1. Ziffer) und Wasser (2. Ziffer) an. IP67 = staubdicht, Schutz gegen zeitweiliges Untertauchen.",
+      id: "technik-ip-001",
+      bereich: "Technik",
+      frage: "Was bedeutet die IP-Schutzart IP67?",
+      antwort: "IP67 bedeutet: staubdicht und geschützt gegen zeitweiliges Untertauchen in Wasser.",
       optionen: [
         "Kennzeichnung der Internetprotokoll-Version",
-        "Schutzklasse: 1. Ziffer = Schutz gegen Fremdkörper; 2. Ziffer = Schutz gegen Wasser; IP67 = staubdicht + Untertauchen",
+        "Schutzklasse: staubdicht und Schutz gegen zeitweiliges Untertauchen",
         "Industriestandard für Netzwerkverbindungen",
-        "Kennzahl für die Produktionspräzision"
+        "Kennzahl für Produktionspräzision"
       ],
       richtig: 1
     },
     {
+      id: "technik-kraft-arbeit-leistung-001",
+      bereich: "Technik",
       frage: "Was ist der Unterschied zwischen Kraft, Arbeit und Leistung?",
-      antwort: "Kraft (F) = Masse × Beschleunigung [N]. Arbeit (W) = Kraft × Weg [J]. Leistung (P) = Arbeit / Zeit [W]. Leistung beschreibt, wie schnell Arbeit verrichtet wird.",
+      antwort: "Kraft ist Masse mal Beschleunigung, Arbeit ist Kraft mal Weg, und Leistung ist Arbeit pro Zeit.",
       optionen: [
         "Kraft, Arbeit und Leistung sind synonyme Begriffe",
-        "F = m×a [N]; W = F×s [J]; P = W/t [W] – Leistung = Arbeit pro Zeit",
+        "F = m × a; W = F × s; P = W / t; Leistung ist Arbeit pro Zeit",
         "Leistung ist die Summe aus Kraft und Arbeit",
-        "Kraft und Arbeit sind identisch, Leistung ist deren Verhältnis zur Masse"
+        "Kraft und Arbeit sind identisch"
       ],
       richtig: 1
     },
     {
-      frage: "Was sind Getriebebauarten und wofür werden sie eingesetzt?",
-      antwort: "Haupttypen: Stirnradgetriebe, Kegelradgetriebe, Planetengetriebe, Schneckengetriebe, Riemengetriebe. Einsatz: Drehzahl- und Drehmomentanpassung zwischen Antrieb und Abtrieb.",
+      id: "technik-getriebe-001",
+      bereich: "Technik",
+      frage: "Wofür werden Getriebe eingesetzt?",
+      antwort: "Getriebe dienen zur Anpassung von Drehzahl und Drehmoment zwischen Antrieb und Abtrieb.",
       optionen: [
         "Es gibt nur Zahnrad- und Riemengetriebe",
-        "Stirnrad, Kegelrad, Planeten, Schnecke, Riemen – zur Drehzahl- und Drehmomentwandlung",
+        "Stirnrad-, Kegelrad-, Planeten-, Schnecken- und Riemengetriebe dienen der Drehzahl- und Drehmomentanpassung",
         "Getriebe werden nur zur Drehzahlerhöhung genutzt",
         "Getriebebauarten unterscheiden sich nur im Material"
       ],
       richtig: 1
     },
     {
-      frage: "Was versteht man unter Pneumatik und Hydraulik? Was sind die wesentlichen Unterschiede?",
-      antwort: "Pneumatik nutzt Druckluft als Druckmedium (schnell, sauber, kompressibel). Hydraulik nutzt Öl (hohe Kräfte, inkompressibel, präzise). Pneumatik: bis ~10 bar; Hydraulik: bis >300 bar.",
+      id: "technik-pneumatik-hydraulik-001",
+      bereich: "Technik",
+      frage: "Was sind die wesentlichen Unterschiede zwischen Pneumatik und Hydraulik?",
+      antwort: "Pneumatik nutzt kompressible Druckluft und eignet sich für schnelle Bewegungen. Hydraulik nutzt Öl und ermöglicht hohe, präzise Kräfte.",
       optionen: [
-        "Beide sind identisch, nur das Medium unterscheidet sich minimal",
-        "Pneumatik = Druckluft (schnell, kompressibel, bis ~10 bar); Hydraulik = Öl (hohe Kraft, inkompressibel, bis >300 bar)",
-        "Hydraulik ist veraltet und wird von Pneumatik ersetzt",
+        "Beide Systeme sind identisch",
+        "Pneumatik nutzt Druckluft; Hydraulik nutzt Öl für hohe Kräfte und präzise Bewegungen",
+        "Hydraulik ist vollständig durch Pneumatik ersetzt",
         "Pneumatik wird nur für große Kräfte eingesetzt"
       ],
       richtig: 1
     },
     {
+      id: "technik-fuegeverbindungen-001",
+      bereich: "Technik",
       frage: "Was ist der Unterschied zwischen formschlüssiger, kraftschlüssiger und stoffschlüssiger Verbindung?",
-      antwort: "Formschluss: Hintergreifen (z.B. Passfeder, Stift). Kraftschluss: Reibung durch Anpresskraft (z.B. Schraube, Presspassung). Stoffschluss: Materialverbindung (z.B. Schweißen, Kleben, Löten).",
+      antwort: "Formschluss entsteht durch Hintergreifen, Kraftschluss durch Reibung und Anpresskraft, Stoffschluss durch eine Materialverbindung.",
       optionen: [
-        "Alle drei Verbindungsarten sind lösbare Verbindungen",
-        "Formschluss = Hintergreifen; Kraftschluss = Reibung/Anpresskraft; Stoffschluss = Materialverbindung",
-        "Stoffschluss ist die schwächste Verbindungsart",
+        "Alle drei Verbindungsarten sind lösbar",
+        "Formschluss = Hintergreifen; Kraftschluss = Reibung; Stoffschluss = Materialverbindung",
+        "Stoffschluss ist grundsätzlich die schwächste Verbindung",
         "Kraftschluss ist nur für temporäre Verbindungen geeignet"
       ],
       richtig: 1
     },
     {
+      id: "technik-wartungseinheit-001",
+      bereich: "Technik",
       frage: "Welche Bauteile gehören zu einer Wartungseinheit der Druckluftaufbereitung?",
-      antwort: "Filter (reinigt von festen Bestandteilen und Feuchtigkeit), Druckregelventil mit Manometer (hält und zeigt den Arbeitsdruck) sowie ggf. ein Öler (schmiert die Pneumatik-Elemente).",
+      antwort: "Eine Wartungseinheit besteht aus Filter, Druckregelventil mit Manometer und gegebenenfalls einem Öler.",
       optionen: [
         "Nur ein einzelner Kompressor",
-        "Filter, Druckregelventil mit Manometer und ggf. Öler",
+        "Filter, Druckregelventil mit Manometer und gegebenenfalls Öler",
         "Ausschließlich ein Sicherheitsventil",
-        "Nur ein Wasserabscheider ohne weitere Bauteile"
+        "Nur ein Wasserabscheider"
       ],
       richtig: 1
     },
     {
+      id: "technik-gleitlager-001",
+      bereich: "Technik",
       frage: "Welche Vorteile bietet ein Gleitlager mit hydrodynamischer Schmierung?",
-      antwort: "Verschleißarmer Dauerbetrieb, geeignet für hohe Drehzahlen, verträgt hohe stoßartige Belastungen und besitzt eine hohe Wärmeleitfähigkeit.",
+      antwort: "Es ermöglicht verschleißarmen Dauerbetrieb, eignet sich für hohe Drehzahlen, verträgt Stoßbelastungen und besitzt eine gute Wärmeleitfähigkeit.",
       optionen: [
         "Hohes Anlaufmoment und geringe Lebensdauer",
         "Verschleißarmer Dauerbetrieb, hohe Drehzahlen und hohe Wärmeleitfähigkeit",
         "Nur für niedrige Drehzahlen ohne Stoßbelastung geeignet",
-        "Erfordert keine Schmierung im laufenden Betrieb"
+        "Es benötigt keine Schmierung"
       ],
       richtig: 1
     },
     {
+      id: "technik-zfp-001",
+      bereich: "Technik",
       frage: "Welche zerstörungsfreien Prüfverfahren werden in der Fertigung eingesetzt?",
-      antwort: "Wirbelstromprüfung, Magnetpulverprüfung, Eindringprüfung, Röntgen-/Gammaprüfung, Ultraschallprüfung und hydrostatische Prüfung.",
+      antwort: "Beispiele sind Wirbelstromprüfung, Magnetpulverprüfung, Eindringprüfung, Röntgen- oder Gammaprüfung, Ultraschallprüfung und hydrostatische Prüfung.",
       optionen: [
         "Ausschließlich der Zugversuch",
         "Wirbelstrom-, Magnetpulver-, Eindring-, Röntgen-/Gamma-, Ultraschall- und hydrostatische Prüfung",
-        "Nur die Sichtprüfung mit dem bloßen Auge",
-        "Nur die Härteprüfung nach Brinell"
+        "Nur Sichtprüfung mit dem bloßen Auge",
+        "Nur Härteprüfung nach Brinell"
       ],
       richtig: 1
     }
