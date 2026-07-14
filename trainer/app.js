@@ -1,9 +1,10 @@
 const BEREICHE = ["Technik", "Organisation", "Führung & Personal"];
-const SPEICHER_KEY = "imm-hq-trainer-antworten-v1";
+const SPEICHER_KEY = "imm-hq-trainer-antworten-v2";
 
 let ausgewaehlterBereich = "Alle";
 let aktuelleFrageIndex = 0;
 let antworten = {};
+let alleFragen = [];
 
 function bereichAnzeigename(wert) {
   const text = String(wert || "").toLowerCase().trim();
@@ -126,10 +127,16 @@ function fachgespraechNormalisieren() {
   }));
 }
 
-const alleFragen = [
-  ...vorhandeneFragenNormalisieren(),
-  ...fachgespraechNormalisieren()
-];
+async function ladeAlleFragen() {
+  if (typeof ladeFragenAusText === "function") {
+    await ladeFragenAusText();
+  }
+
+  alleFragen = [
+    ...vorhandeneFragenNormalisieren(),
+    ...fachgespraechNormalisieren()
+  ];
+}
 
 function ladeAntworten() {
   try {
@@ -496,7 +503,9 @@ function resetTraining() {
   renderFrage();
 }
 
-function start() {
+async function start() {
+  await ladeAlleFragen();
+
   ladeAntworten();
   renderFortschritt();
   renderFilter();
