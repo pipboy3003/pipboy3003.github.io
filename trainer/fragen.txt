@@ -1,0 +1,301 @@
+[Organisation]
+
+F: Was versteht man unter dem Begriff 'Kontinuierlicher Verbesserungsprozess' (KVP)?
+A: Einmaliges Optimierungsprojekt durch externe Berater
+B: Systematischer Ansatz zur ständigen schrittweisen Verbesserung durch alle Mitarbeiter
+C: Automatisches Software-Update-System
+D: Jährliche Unternehmensrevision durch den Vorstand
+R: B
+E: KVP ist ein systematischer Ansatz zur ständigen schrittweisen Verbesserung von Prozessen, Produkten und Dienstleistungen durch alle Mitarbeiter.
+---
+F: Welche 4 Phasen hat der PDCA-Zyklus?
+A: Planen, Delegieren, Kontrollieren, Abschließen
+B: Plan, Do, Check, Act
+C: Prepare, Design, Create, Assess
+D: Planen, Durchführen, Checken, Auswerten
+R: B
+E: Plan (Planen), Do (Ausführen), Check (Überprüfen), Act (Handeln und Verbessern).
+---
+F: Was ist die Aufgabe des Industriemeisters im Rahmen des Arbeitsschutzes?
+A: Nur administrative Dokumentation führen
+B: Ausschließlich den Betriebsarzt informieren
+C: Umsetzung und Überwachung von Schutzmaßnahmen sowie Unterweisungen durchführen
+D: Schutzmaßnahmen durch den Betriebsrat umsetzen lassen
+R: C
+E: Der Meister ist verantwortlich für die Umsetzung und Überwachung von Arbeitsschutzmaßnahmen, Unterweisungen der Mitarbeiter und die Gefährdungsbeurteilung.
+---
+F: Was bedeutet OEE (Overall Equipment Effectiveness)?
+A: Kennzahl für den Umsatz einer Anlage pro Jahr
+B: Kennzahl: Verfügbarkeit × Leistungsgrad × Qualitätsrate
+C: Messung der Mitarbeitereffektivität
+D: Kennzahl für den Energieverbrauch einer Anlage
+R: B
+E: OEE ist eine Kennzahl zur Bewertung der Gesamtanlageneffektivität. OEE = Verfügbarkeit × Leistungsgrad × Qualitätsrate.
+---
+F: Was ist eine FMEA (Failure Mode and Effects Analysis)?
+A: Nachträgliche Fehleranalyse nach einem Produktionsstopp
+B: Systematische präventive Methode zur Erkennung und Bewertung möglicher Fehler
+C: Finanzielle Analyse der Maschinenausfallkosten
+D: Methode zur Lieferantenbewertung
+R: B
+E: FMEA ist eine systematische Methode zur präventiven Erkennung, Bewertung und Vermeidung von Fehlern und deren Auswirkungen in Produkten oder Prozessen.
+---
+F: Welche Führungsstile unterscheidet man grundlegend?
+A: Aktiver, passiver und neutraler Führungsstil
+B: Autoritärer, kooperativer und Laissez-faire Führungsstil
+C: Formeller, informeller und hybrider Führungsstil
+D: Technischer, kaufmännischer und sozialer Führungsstil
+R: B
+E: Autoritärer, kooperativer und Laissez-faire Führungsstil sind die klassischen Grundtypen nach Lewin.
+---
+F: Was versteht man unter Lean Management?
+A: Reduzierung der Mitarbeiterzahl zur Kostensenkung
+B: Philosophie zur Minimierung von Verschwendung bei maximiertem Kundennutzen
+C: Einsatz schlanker IT-Systeme im Büro
+D: Optimierung der Lieferkette durch externe Partner
+R: B
+E: Lean Management ist eine Unternehmensphilosophie zur Minimierung von Verschwendung (Muda) bei gleichzeitiger Maximierung des Kundennutzens.
+---
+F: Was sind die 7 Verschwendungsarten (Muda) im Lean Management?
+A: Planung, Einkauf, Produktion, Lager, Versand, Service, Verwaltung
+B: Überproduktion, Wartezeiten, Transport, Prozesse, Bestände, Bewegungen, Fehler
+C: Kosten, Zeit, Qualität, Energie, Personal, Fläche, Material
+D: Rohstoffe, Halbzeuge, Fertigteile, Werkzeuge, Maschinen, Energie, Zeit
+R: B
+E: Überproduktion, Wartezeiten, Transport, überflüssige Prozesse, Bestände, Bewegungen, Fehler und Nacharbeit.
+---
+F: Was ist der Unterschied zwischen einer Stellen- und einer Funktionsbeschreibung?
+A: Kein Unterschied, beide Begriffe sind synonym
+B: Stellenbeschreibung ist personenbezogen, Funktionsbeschreibung ist stellenunabhängig
+C: Funktionsbeschreibung gilt nur für Führungskräfte
+D: Stellenbeschreibung gilt nur für Produktionsmitarbeiter
+R: B
+E: Eine Stellenbeschreibung definiert Aufgaben, Kompetenzen und Verantwortung einer konkreten Stelle. Eine Funktionsbeschreibung beschreibt die Aufgaben einer Funktion unabhängig von der Person.
+---
+F: Was versteht man unter 'Betrieblichem Vorschlagswesen'?
+A: Formelle Beschwerdestelle für Mitarbeiter
+B: System zur Prämierung von Verbesserungsvorschlägen durch Mitarbeiter
+C: Intranet-basiertes Informationssystem
+D: Regelmäßiges Mitarbeitergespräch zur Leistungsbewertung
+R: B
+E: Das betriebliche Vorschlagswesen motiviert Mitarbeiter, Verbesserungsideen einzubringen. Angenommene Vorschläge werden prämiert.
+---
+F: Was ist der Unterschied zwischen Führen mit Zielen (MbO) und situativem Führen?
+A: MbO ist moderner, situatives Führen veraltet
+B: MbO nutzt Ziele als Steuerung; situatives Führen passt den Stil an Mitarbeiter und Situation an
+C: Beide Methoden sind identisch
+D: Situatives Führen betrifft nur Krisen, MbO den Normalzustand
+R: B
+E: MbO setzt gemeinsam vereinbarte Ziele als Steuerungsinstrument. Situatives Führen passt den Führungsstil an den Reifegrad und die Situation des Mitarbeiters an.
+---
+F: Was sind Cp und Cpk Werte und was sagen sie aus?
+A: Cp misst Kundenzufriedenheit, Cpk die Lieferzeit
+B: Cp = potenzielle Prozessfähigkeit; Cpk = Prozessfähigkeit unter Berücksichtigung der Lage; ≥1,33 = fähig
+C: Beide Kennzahlen messen die Anlagenverfügbarkeit
+D: Cp und Cpk sind identische Kennzahlen
+R: B
+E: Cp (Prozessfähigkeitsindex) misst die potenzielle Fähigkeit eines Prozesses. Cpk berücksichtigt zusätzlich die Prozesslage. Cp/Cpk ≥ 1,33 gilt als fähig.
+---
+F: Welche Rechte und Pflichten hat der Betriebsrat laut BetrVG?
+A: Nur Informationsrecht, keine Mitbestimmung
+B: Informations-, Beratungs-, Anhörungs- und Mitbestimmungsrechte; Pflicht zur Verschwiegenheit und Interessenvertretung
+C: Vollständiges Vetorecht bei allen unternehmerischen Entscheidungen
+D: Nur Recht auf jährliche Betriebsversammlung
+R: B
+E: Der Betriebsrat hat Informations-, Beratungs-, Anhörungs- und Mitbestimmungsrechte. Pflichten sind u.a. Verschwiegenheit und Interessenvertretung aller Mitarbeiter.
+---
+F: Was ist ein Gantt-Diagramm und wofür wird es eingesetzt?
+A: Kreisdiagramm zur Kostenverteilung in Projekten
+B: Balkendiagramm zur Visualisierung von Projektaufgaben, Dauer und Zeitplanung
+C: Netzplan zur Darstellung von Materialflüssen
+D: Liniendiagramm zur Qualitätsentwicklung
+R: B
+E: Ein Gantt-Diagramm ist ein Balkendiagramm zur Projektplanung. Es zeigt Aufgaben, deren Dauer und zeitliche Abfolge auf einer Zeitachse.
+---
+F: Was versteht man unter dem 'kritischen Pfad' in der Netzplantechnik?
+A: Der teuerste Teilbereich eines Projekts
+B: Die längste Vorgangskette ohne Puffer – Verzögerung hier verzögert das gesamte Projekt
+C: Der Projektabschnitt mit dem höchsten Risiko
+D: Die kürzeste mögliche Projektdurchführungszeit
+R: B
+E: Der kritische Pfad ist die längste Vorgangskette im Netzplan ohne Pufferzeiten. Eine Verzögerung eines Vorgangs auf dem kritischen Pfad verzögert das Gesamtprojekt.
+---
+F: Was kann aus verölten Metallspänen recycelt werden?
+A: Nur Entsorgung als Sondermüll möglich
+B: Späne als Schrott, Öl als Rohstoff für KSS
+C: Verwendung als Brennstoff im Heizkraftwerk
+D: Weiterverwendung ohne jegliche Trennung von Öl und Metall
+R: B
+E: Die gereinigten Späne können als Schrott verwertet werden, das abgetrennte Öl dient als Rohstoff für Kühlschmierstoffe (KSS).
+---
+F: Was ist der Zweck der Gemeinkostenzuschlagsätze in der Kostenrechnung?
+A: Sie dienen ausschließlich der Berechnung von Boni für Meister
+B: Sie ermöglichen die indirekte Verteilung nicht direkt zurechenbarer Kosten auf Kostenträger
+C: Sie ersetzen die Materialeinzelkosten vollständig
+D: Sie werden nur für den Export relevanter Produkte benötigt
+R: B
+E: Gemeinkosten können nicht direkt einem Produkt zugerechnet werden, da sie für alle Erzeugnisse einer Periode gemeinsam anfallen. Sie werden indirekt über einen Verteilungsschlüssel den Kostenträgern zugeschlagen.
+---
+F: Welche Voraussetzungen sind für eine sinnvolle Just-in-Time-Anlieferung notwendig?
+A: Nur ein großes Zentrallager wird benötigt
+B: Zuverlässige, kontinuierliche Lieferung, gesicherter Transport und wirtschaftliche Transportkosten
+C: Just-in-Time funktioniert unabhängig von der Lieferantenzuverlässigkeit
+D: Es sind ausschließlich lange Vertragslaufzeiten notwendig
+R: B
+E: Der Hersteller muss zuverlässig und kontinuierlich liefern können, ein kontinuierlicher Transport muss gewährleistet sein, die Transportkosten müssen rentabel sein und der optimale Lieferzyklus muss ermittelt werden.
+---
+F: Welche Stufe folgt im Konfliktlösungsmodell nach der Identifikation des Konflikts?
+A: Sofortige disziplinarische Maßnahme gegen den Verursacher
+B: Entwicklung von Lösungsmöglichkeiten unter Einbeziehung aller Beteiligten
+C: Direkte Eskalation an die Geschäftsleitung
+D: Abschluss und Dokumentation des Falls ohne weitere Schritte
+R: B
+E: Nach der Identifikation und Definition des Konflikts werden in Stufe 2 unter Einbeziehung aller Beteiligten mögliche Lösungsmöglichkeiten entwickelt.
+---
+
+[Technik]
+
+F: Was versteht man unter CNC (Computerized Numerical Control)?
+A: Manuelle Steuerung von Maschinen durch eine Steuerkonsole
+B: Rechnergestützte numerische Steuerung von Werkzeugmaschinen durch NC-Programme
+C: Computerbasiertes Qualitätskontrollsystem
+D: Netzwerkbasiertes Kommunikationssystem in der Fertigung
+R: B
+E: CNC bezeichnet die rechnergestützte numerische Steuerung von Werkzeugmaschinen. Bewegungen und Bearbeitungsabläufe werden durch NC-Programme gesteuert.
+---
+F: Was ist der Unterschied zwischen ISO-Toleranz und Passungssystem?
+A: Kein Unterschied, beide Begriffe sind identisch
+B: ISO-Toleranz = zulässige Maßabweichung; Passungssystem = Zusammenspiel zweier Bauteile
+C: ISO-Toleranz gilt nur für Längenmaße, Passungssystem nur für Winkel
+D: Passungssystem ist veraltet und wird durch ISO-Toleranz ersetzt
+R: B
+E: ISO-Toleranzen legen zulässige Maßabweichungen fest. Das Passungssystem definiert das Zusammenspiel zweier Bauteile (Spiel-, Übermaß- oder Übergangspassung).
+---
+F: Welche Schweißverfahren gibt es und wie unterscheiden sie sich?
+A: Es gibt nur thermisches und mechanisches Schweißen
+B: MIG/MAG, WIG, E-Hand, Laser, Widerstandsschweißen – unterscheiden sich in Wärmequelle, Schutzgas und Anwendungsbereich
+C: Alle Verfahren verwenden identische Elektroden
+D: Schweißverfahren werden nur nach Materialstärke unterschieden
+R: B
+E: Hauptverfahren: MIG/MAG, WIG, E-Hand, Laserschweißen, Widerstandsschweißen. Unterschied: Wärmequelle, Schutzgas, Einsatzbereich.
+---
+F: Was ist der Unterschied zwischen Drehen, Fräsen und Schleifen?
+A: Alle drei sind identische spanende Verfahren
+B: Drehen: rotierendes Werkstück; Fräsen: rotierendes Werkzeug; Schleifen: geometrisch unbestimmte Schneide
+C: Drehen und Fräsen sind spanlos, Schleifen ist spanend
+D: Schleifen ist nur zum Entfernen von Rost geeignet
+R: B
+E: Drehen: rotierendes Werkstück, stehendes Werkzeug. Fräsen: rotierendes Werkzeug. Schleifen: geometrisch unbestimmte Schneide, Feinbearbeitung.
+---
+F: Was ist ein Zeit-Temperatur-Umwandlungsdiagramm (ZTU)?
+A: Diagramm zur Schmelzpunktbestimmung von Legierungen
+B: Diagramm, das Gefügeumwandlungen in Stahl abhängig von Zeit und Temperatur zeigt
+C: Diagramm zur Berechnung von Biegemomenten
+D: Tabelle mit Härtewerten verschiedener Materialien
+R: B
+E: Das ZTU-Diagramm zeigt die Umwandlungen im Stahl in Abhängigkeit von Zeit und Temperatur. Es dient zur Auswahl der richtigen Abkühlgeschwindigkeit beim Härten.
+---
+F: Was versteht man unter SPS (Speicherprogrammierbare Steuerung)?
+A: Analoge Steuerung durch Relais und Schütze
+B: Digitales, frei programmierbares Steuergerät für Maschinen und Anlagen
+C: Software zur ERP-Verwaltung in der Fertigung
+D: Hydraulisches Steuerungssystem für Pressen
+R: B
+E: SPS ist ein digitales Steuergerät zur Automatisierung von Maschinen und Anlagen. Es ersetzt klassische Relaissteuerungen und ist frei programmierbar.
+---
+F: Was ist der Unterschied zwischen Zug-, Druck- und Scherbeanspruchung?
+A: Zug und Druck sind identisch, nur Richtung unterschiedlich; Scher ist eine Kombination
+B: Zug = Kräfte auseinander; Druck = Kräfte zusammen; Scher = parallele versetzte Kräfte
+C: Alle drei Beanspruchungsarten haben identische Auswirkungen
+D: Scherbeanspruchung tritt nur bei Schraubenverbindungen auf
+R: B
+E: Zugbeanspruchung: Kräfte ziehen auseinander. Druckbeanspruchung: Kräfte drücken zusammen. Scherbeanspruchung: Kräfte wirken parallel versetzt.
+---
+F: Was ist der Unterschied zwischen Wärmeleitfähigkeit und Wärmekapazität?
+A: Beide Begriffe sind gleichwertig und beschreiben dasselbe
+B: Wärmeleitfähigkeit = Güte der Wärmeleitung; Wärmekapazität = benötigte Energie je K Temperaturerhöhung
+C: Wärmekapazität gilt nur für Gase
+D: Wärmeleitfähigkeit wird nur in der Elektrotechnik verwendet
+R: B
+E: Wärmeleitfähigkeit (λ) beschreibt, wie gut ein Stoff Wärme leitet. Wärmekapazität (c) beschreibt, wie viel Energie nötig ist, um einen Stoff um 1 K zu erwärmen.
+---
+F: Was ist der Unterschied zwischen Gleichstrom (DC) und Wechselstrom (AC)?
+A: DC hat höhere Spannung als AC
+B: DC fließt konstant in eine Richtung; AC wechselt periodisch die Richtung (50 Hz in DE)
+C: AC wird nur in Batterien verwendet
+D: DC und AC sind physikalisch identisch
+R: B
+E: Gleichstrom (DC) fließt konstant in eine Richtung. Wechselstrom (AC) wechselt seine Richtung periodisch.
+---
+F: Was versteht man unter Werkstoffprüfung und welche Verfahren gibt es?
+A: Nur visuelle Kontrolle der Oberfläche
+B: Ermittlung von Eigenschaften durch Zugversuch, Härteprüfung, Kerbschlag, ZfP-Verfahren
+C: Ausschließlich chemische Analyse
+D: Nur Maßkontrolle mit Messmitteln
+R: B
+E: Werkstoffprüfung ermittelt mechanische, physikalische und chemische Eigenschaften. Verfahren: Zugversuch, Härteprüfung, Kerbschlagbiegeversuch, zerstörungsfreie Prüfung.
+---
+F: Was bedeutet IP-Schutzart (z.B. IP67)?
+A: Kennzeichnung der Internetprotokoll-Version
+B: Schutzklasse: 1. Ziffer = Fremdkörper; 2. Ziffer = Wasser; IP67 = staubdicht + Untertauchen
+C: Industriestandard für Netzwerkverbindungen
+D: Kennzahl für die Produktionspräzision
+R: B
+E: IP (Ingress Protection) gibt den Schutz eines Gehäuses gegen Eindringen von Fremdkörpern und Wasser an. IP67 = staubdicht, Schutz gegen zeitweiliges Untertauchen.
+---
+F: Was ist der Unterschied zwischen Kraft, Arbeit und Leistung?
+A: Kraft, Arbeit und Leistung sind synonyme Begriffe
+B: F = m×a [N]; W = F×s [J]; P = W/t [W] – Leistung ist Arbeit pro Zeit
+C: Leistung ist die Summe aus Kraft und Arbeit
+D: Kraft und Arbeit sind identisch, Leistung ist deren Verhältnis zur Masse
+R: B
+E: Kraft (F) = Masse × Beschleunigung. Arbeit (W) = Kraft × Weg. Leistung (P) = Arbeit / Zeit.
+---
+F: Was sind Getriebebauarten und wofür werden sie eingesetzt?
+A: Es gibt nur Zahnrad- und Riemengetriebe
+B: Stirnrad, Kegelrad, Planeten, Schnecke, Riemen – zur Drehzahl- und Drehmomentwandlung
+C: Getriebe werden nur zur Drehzahlerhöhung genutzt
+D: Getriebebauarten unterscheiden sich nur im Material
+R: B
+E: Haupttypen: Stirnradgetriebe, Kegelradgetriebe, Planetengetriebe, Schneckengetriebe, Riemengetriebe. Einsatz: Drehzahl- und Drehmomentanpassung.
+---
+F: Was sind die wesentlichen Unterschiede zwischen Pneumatik und Hydraulik?
+A: Beide sind identisch, nur das Medium unterscheidet sich minimal
+B: Pneumatik = Druckluft (schnell, kompressibel, bis ~10 bar); Hydraulik = Öl (hohe Kraft, bis >300 bar)
+C: Hydraulik ist veraltet und wird von Pneumatik ersetzt
+D: Pneumatik wird nur für große Kräfte eingesetzt
+R: B
+E: Pneumatik nutzt Druckluft als Druckmedium. Hydraulik nutzt Öl für hohe Kräfte und Präzision.
+---
+F: Was ist der Unterschied zwischen formschlüssiger, kraftschlüssiger und stoffschlüssiger Verbindung?
+A: Alle drei Verbindungsarten sind lösbare Verbindungen
+B: Formschluss = Hintergreifen; Kraftschluss = Reibung/Anpresskraft; Stoffschluss = Materialverbindung
+C: Stoffschluss ist die schwächste Verbindungsart
+D: Kraftschluss ist nur für temporäre Verbindungen geeignet
+R: B
+E: Formschluss: Hintergreifen (Passfeder, Stift). Kraftschluss: Reibung (Schraube). Stoffschluss: Materialverbindung (Schweißen, Kleben, Löten).
+---
+F: Welche Bauteile gehören zu einer Wartungseinheit der Druckluftaufbereitung?
+A: Nur ein einzelner Kompressor
+B: Filter, Druckregelventil mit Manometer und ggf. Öler
+C: Ausschließlich ein Sicherheitsventil
+D: Nur ein Wasserabscheider ohne weitere Bauteile
+R: B
+E: Filter reinigt von festen Bestandteilen und Feuchtigkeit, Druckregelventil mit Manometer hält und zeigt den Arbeitsdruck, ggf. ein Öler schmiert die Pneumatik-Elemente.
+---
+F: Welche Vorteile bietet ein Gleitlager mit hydrodynamischer Schmierung?
+A: Hohes Anlaufmoment und geringe Lebensdauer
+B: Verschleißarmer Dauerbetrieb, hohe Drehzahlen und hohe Wärmeleitfähigkeit
+C: Nur für niedrige Drehzahlen ohne Stoßbelastung geeignet
+D: Erfordert keine Schmierung im laufenden Betrieb
+R: B
+E: Verschleißarmer Dauerbetrieb, geeignet für hohe Drehzahlen, verträgt hohe stoßartige Belastungen und besitzt eine hohe Wärmeleitfähigkeit.
+---
+F: Welche zerstörungsfreien Prüfverfahren werden in der Fertigung eingesetzt?
+A: Ausschließlich der Zugversuch
+B: Wirbelstrom-, Magnetpulver-, Eindring-, Röntgen-/Gamma-, Ultraschall- und hydrostatische Prüfung
+C: Nur die Sichtprüfung mit dem bloßen Auge
+D: Nur die Härteprüfung nach Brinell
+R: B
+E: Wirbelstromprüfung, Magnetpulverprüfung, Eindringprüfung, Röntgen-/Gammaprüfung, Ultraschallprüfung und hydrostatische Prüfung.
+---
