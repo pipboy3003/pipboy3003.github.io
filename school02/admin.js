@@ -3,12 +3,12 @@
 // (data/courses.json, data/settings.json) zu aktualisieren.
 
 if(sessionStorage.getItem('at_admin_auth') !== 'true'){
-  window.location.href = "admin-login.html";
+  window.location.href = "login.html";
 }
 
 document.getElementById('logoutBtn').addEventListener('click', function(){
   sessionStorage.removeItem('at_admin_auth');
-  window.location.href = "admin-login.html";
+  window.location.href = "login.html";
 });
 
 document.getElementById('burger').addEventListener('click', function(){

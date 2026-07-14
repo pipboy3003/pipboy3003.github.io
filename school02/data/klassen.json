@@ -1,0 +1,504 @@
+[
+  {
+    "id": "im25sp20",
+    "name": "Industriemeister Metall – IM25SP20",
+    "password": "metall2025",
+    "start": "2025-11-15",
+    "end": "2026-11-14",
+    "stundenplan": [
+      {
+        "datum": "2026-07-18",
+        "tag": "Samstag",
+        "zeit": "08:00 - 16:30",
+        "thema": "Qualitätsmanagement – Prozessfähigkeit (cpk)",
+        "dozent": "Hr. Weber",
+        "raum": "Raum 1"
+      },
+      {
+        "datum": "2026-07-19",
+        "tag": "Sonntag",
+        "zeit": "08:00 - 13:15",
+        "thema": "KVP & Poka-Yoke",
+        "dozent": "Hr. Weber",
+        "raum": "Raum 1"
+      },
+      {
+        "datum": "2026-08-01",
+        "tag": "Samstag",
+        "zeit": "08:00 - 16:30",
+        "thema": "Mitarbeiterführung – Grundlagen",
+        "dozent": "Fr. Klein",
+        "raum": "Raum 2"
+      },
+      {
+        "datum": "2026-08-02",
+        "tag": "Sonntag",
+        "zeit": "08:00 - 13:15",
+        "thema": "Kommunikation im Betrieb",
+        "dozent": "Fr. Klein",
+        "raum": "Raum 2"
+      }
+    ],
+    "material": [
+      {
+        "titel": "HQ-Trainer – Organisation & Technik",
+        "typ": "trainer",
+        "link": "https://pipboy3003.github.io/trainer"
+      },
+      {
+        "titel": "Skript: Qualitätsmanagement",
+        "typ": "pdf",
+        "link": "#"
+      },
+      {
+        "titel": "Formelsammlung Cpk/Cp",
+        "typ": "pdf",
+        "link": "#"
+      },
+      {
+        "titel": "Musterprüfung IHK 2025",
+        "typ": "pdf",
+        "link": "#"
+      }
+    ]
+  },
+  {
+    "id": "ime25sp21",
+    "name": "Industriemeister Elektro – IME25SP21",
+    "password": "elektro2025",
+    "start": "2025-11-15",
+    "end": "2026-11-14",
+    "stundenplan": [
+      {
+        "datum": "2026-07-18",
+        "tag": "Samstag",
+        "zeit": "08:00 - 16:30",
+        "thema": "Elektrische Antriebstechnik",
+        "dozent": "Hr. Fischer",
+        "raum": "Raum 3"
+      },
+      {
+        "datum": "2026-07-19",
+        "tag": "Sonntag",
+        "zeit": "08:00 - 13:15",
+        "thema": "Steuerungstechnik",
+        "dozent": "Hr. Fischer",
+        "raum": "Raum 3"
+      }
+    ],
+    "material": [
+      {
+        "titel": "HQ-Trainer – Organisation & Technik",
+        "typ": "trainer",
+        "link": "https://pipboy3003.github.io/trainer"
+      },
+      {
+        "titel": "Skript: Steuerungstechnik",
+        "typ": "pdf",
+        "link": "#"
+      }
+    ]
+  },
+  {
+    "id": "im25sp10",
+    "name": "Gepr. Industriemeister(in) Metall – IM25SP10",
+    "password": "metall2025",
+    "start": "2025-11-08",
+    "end": "2026-05-31",
+    "stundenplan": [
+      {
+        "datum": "2025-11-08",
+        "tag": "Sa",
+        "zeit": "10 UE",
+        "thema": "Fertigungstechnik",
+        "dozent": "Nannt"
+      },
+      {
+        "datum": "2025-11-09",
+        "tag": "So",
+        "zeit": "7 UE",
+        "thema": "ADA",
+        "dozent": "Jordan"
+      },
+      {
+        "datum": "2025-11-15",
+        "tag": "Sa",
+        "zeit": "10 UE",
+        "thema": "Instandhaltung",
+        "dozent": "Dragojlovic"
+      },
+      {
+        "datum": "2025-11-16",
+        "tag": "So",
+        "zeit": "7 UE",
+        "thema": "Personalführung/-entwicklung",
+        "dozent": "Fr. Eisele"
+      },
+      {
+        "datum": "2025-11-22",
+        "tag": "Sa",
+        "zeit": "10 UE",
+        "thema": "Qualitätsmanagement",
+        "dozent": "Waldhier"
+      },
+      {
+        "datum": "2025-11-23",
+        "tag": "So",
+        "zeit": "7 UE",
+        "thema": "Montagetechnik",
+        "dozent": "Holzwarth"
+      },
+      {
+        "datum": "2025-11-29",
+        "tag": "Sa",
+        "zeit": "6+4 UE",
+        "thema": "Werkstofftechnologie / Fertigungstechnik CNC",
+        "dozent": "Nannt / Schwab"
+      },
+      {
+        "datum": "2025-11-30",
+        "tag": "So",
+        "zeit": "7 UE",
+        "thema": "Arbeits-, Umwelt-, Gesundheitsschutz",
+        "dozent": "Hertel"
+      },
+      {
+        "datum": "2025-12-06",
+        "tag": "Sa",
+        "zeit": "7+3 UE",
+        "thema": "Zeitwirtschaft / PSK",
+        "dozent": "Reiss / Reiss"
+      },
+      {
+        "datum": "2025-12-07",
+        "tag": "So",
+        "zeit": "7 UE",
+        "thema": "Montagetechnik",
+        "dozent": "Holzwarth"
+      },
+      {
+        "datum": "2025-12-13",
+        "tag": "Sa",
+        "zeit": "10 UE",
+        "thema": "Arbeits-, Umwelt-, Gesundheitsschutz",
+        "dozent": "Hertel"
+      },
+      {
+        "datum": "2025-12-14",
+        "tag": "So",
+        "zeit": "7 UE",
+        "thema": "Fertigungstechnik CNC",
+        "dozent": "Schwab"
+      },
+      {
+        "datum": "2025-12-20",
+        "tag": "Sa",
+        "zeit": "6+4 UE",
+        "thema": "Werkstofftechnologie / Fertigungstechnik CNC",
+        "dozent": "Nannt / Schwab"
+      },
+      {
+        "datum": "2025-12-21",
+        "tag": "So",
+        "zeit": "7 UE",
+        "thema": "Fertigungstechnik CNC / Personalführung",
+        "dozent": "Schwab / Fr. Eisele"
+      },
+      {
+        "datum": "2026-01-06",
+        "tag": "Di (Feiertag)",
+        "zeit": "6 UE",
+        "thema": "ADA",
+        "dozent": "Jordan"
+      },
+      {
+        "datum": "2026-01-10",
+        "tag": "Sa",
+        "zeit": "10 UE",
+        "thema": "Instandhaltung",
+        "dozent": "Dragojlovic"
+      },
+      {
+        "datum": "2026-01-11",
+        "tag": "So",
+        "zeit": "7 UE",
+        "thema": "ADA",
+        "dozent": "Jordan"
+      },
+      {
+        "datum": "2026-01-17",
+        "tag": "Sa",
+        "zeit": "10 UE",
+        "thema": "Montagetechnik",
+        "dozent": "Holzwarth"
+      },
+      {
+        "datum": "2026-01-18",
+        "tag": "So",
+        "zeit": "7 UE",
+        "thema": "ADA",
+        "dozent": "Jordan"
+      },
+      {
+        "datum": "2026-01-24",
+        "tag": "Sa",
+        "zeit": "4+6 UE",
+        "thema": "Montagetechnik / Personalführung",
+        "dozent": "Holzwarth / Fr. Eisele"
+      },
+      {
+        "datum": "2026-01-25",
+        "tag": "So",
+        "zeit": "7 UE",
+        "thema": "ADA",
+        "dozent": "Jordan"
+      },
+      {
+        "datum": "2026-01-31",
+        "tag": "Sa",
+        "zeit": "10 UE",
+        "thema": "ADA",
+        "dozent": "Jordan"
+      },
+      {
+        "datum": "2026-02-01",
+        "tag": "So",
+        "zeit": "7 UE",
+        "thema": "ADA",
+        "dozent": "Jordan"
+      },
+      {
+        "datum": "2026-02-03",
+        "tag": "Di",
+        "zeit": "-",
+        "thema": "AEVO Prüfung schriftlich",
+        "dozent": "-"
+      },
+      {
+        "datum": "2026-02-07",
+        "tag": "Sa",
+        "zeit": "6+4 UE",
+        "thema": "Werkstofftechnologie / Fertigungstechnik CNC",
+        "dozent": "Nannt / Schwab"
+      },
+      {
+        "datum": "2026-02-08",
+        "tag": "So",
+        "zeit": "7 UE",
+        "thema": "Personalführung/-entwicklung",
+        "dozent": "Fr. Eisele"
+      },
+      {
+        "datum": "2026-02-15",
+        "tag": "So",
+        "zeit": "7 UE",
+        "thema": "Montagetechnik",
+        "dozent": "Holzwarth"
+      },
+      {
+        "datum": "2026-02-21",
+        "tag": "Sa",
+        "zeit": "10 UE",
+        "thema": "Qualitätsmanagement",
+        "dozent": "Waldhier"
+      },
+      {
+        "datum": "2026-02-22",
+        "tag": "So",
+        "zeit": "7 UE",
+        "thema": "Personalführung/-entwicklung",
+        "dozent": "Fr. Eisele"
+      },
+      {
+        "datum": "2026-02-28",
+        "tag": "Sa",
+        "zeit": "6+4 UE",
+        "thema": "Werkstofftechnologie / Fertigungstechnik CNC",
+        "dozent": "Nannt / Schwab"
+      },
+      {
+        "datum": "2026-03-01",
+        "tag": "So",
+        "zeit": "7 UE",
+        "thema": "Betriebliches Kostenrechnen",
+        "dozent": "Stolz"
+      },
+      {
+        "datum": "2026-03-08",
+        "tag": "So",
+        "zeit": "7 UE",
+        "thema": "Personalführung/-entwicklung",
+        "dozent": "Fr. Eisele"
+      },
+      {
+        "datum": "2026-03-14",
+        "tag": "Sa",
+        "zeit": "10 UE",
+        "thema": "Zeitwirtschaft",
+        "dozent": "Reiss"
+      },
+      {
+        "datum": "2026-03-15",
+        "tag": "So",
+        "zeit": "3+4 UE",
+        "thema": "Instandhaltung / Training Fertigungstechnik",
+        "dozent": "Dragojlovic / Nannt"
+      },
+      {
+        "datum": "2026-03-21",
+        "tag": "Sa",
+        "zeit": "10 UE",
+        "thema": "Betriebliches Kostenrechnen",
+        "dozent": "Stolz"
+      },
+      {
+        "datum": "2026-03-22",
+        "tag": "So",
+        "zeit": "7 UE",
+        "thema": "Training Montagetechnik",
+        "dozent": "Holzwarth"
+      },
+      {
+        "datum": "2026-03-28",
+        "tag": "Sa",
+        "zeit": "10 UE",
+        "thema": "Montagetechnik",
+        "dozent": "Holzwarth"
+      },
+      {
+        "datum": "2026-03-29",
+        "tag": "So",
+        "zeit": "7 UE",
+        "thema": "Betriebliches Kostenrechnen",
+        "dozent": "Stolz"
+      },
+      {
+        "datum": "2026-04-03",
+        "tag": "Fr (Feiertag)",
+        "zeit": "10 UE",
+        "thema": "Instandhaltung",
+        "dozent": "Dragojlovic"
+      },
+      {
+        "datum": "2026-04-04",
+        "tag": "Sa",
+        "zeit": "6+4 UE",
+        "thema": "Werkstofftechnologie / Fertigungstechnik CNC",
+        "dozent": "Nannt / Schwab"
+      },
+      {
+        "datum": "2026-04-05",
+        "tag": "So",
+        "zeit": "4+3 UE",
+        "thema": "Personalführung / Training Personalführung",
+        "dozent": "Fr. Eisele / Fr. Eisele"
+      },
+      {
+        "datum": "2026-04-06",
+        "tag": "Mo (Feiertag)",
+        "zeit": "10 UE",
+        "thema": "Instandhaltung",
+        "dozent": "Dragojlovic"
+      },
+      {
+        "datum": "2026-04-11",
+        "tag": "Sa",
+        "zeit": "6+4 UE",
+        "thema": "Montagetechnik / Training Betriebstechnik",
+        "dozent": "Holzwarth / Dragojlovic"
+      },
+      {
+        "datum": "2026-04-12",
+        "tag": "So",
+        "zeit": "7 UE",
+        "thema": "Betriebliches Kostenrechnen",
+        "dozent": "Stolz"
+      },
+      {
+        "datum": "2026-04-18",
+        "tag": "Sa",
+        "zeit": "10 UE",
+        "thema": "Betriebliches Kostenrechnen",
+        "dozent": "Stolz"
+      },
+      {
+        "datum": "2026-04-19",
+        "tag": "So",
+        "zeit": "7 UE",
+        "thema": "Betriebliches Kostenrechnen",
+        "dozent": "Stolz"
+      },
+      {
+        "datum": "2026-04-25",
+        "tag": "Sa",
+        "zeit": "6+4 UE",
+        "thema": "Arbeits-,Umwelt-,Gesundheitsschutz / Training Qualitätsmanagement",
+        "dozent": "Hertel / Hertel"
+      },
+      {
+        "datum": "2026-05-01",
+        "tag": "Fr (Feiertag)",
+        "zeit": "6+4 UE",
+        "thema": "Betriebliches Kostenrechnen / Training Planungs-Steuerungssysteme",
+        "dozent": "Stolz / Reiss"
+      },
+      {
+        "datum": "2026-05-02",
+        "tag": "Sa",
+        "zeit": "6+4 UE",
+        "thema": "Werkstofftechnologie / Training Betriebl. Kostenrechnen",
+        "dozent": "Nannt / Stolz"
+      },
+      {
+        "datum": "2026-05-03",
+        "tag": "So",
+        "zeit": "3+4 UE",
+        "thema": "PSK / Training Qualitätsmanagement",
+        "dozent": "Reiss / Hertel"
+      },
+      {
+        "datum": "2026-05-19",
+        "tag": "Di",
+        "zeit": "-",
+        "thema": "Handlungsteil-Prüfung Technik",
+        "dozent": "-"
+      },
+      {
+        "datum": "2026-05-20",
+        "tag": "Mi",
+        "zeit": "-",
+        "thema": "Handlungsteil-Prüfung Organisation",
+        "dozent": "-"
+      },
+      {
+        "datum": "2026-05-31",
+        "tag": "So, 14 Uhr",
+        "zeit": "3 UE",
+        "thema": "Vorbereitung Fachgespräch",
+        "dozent": "-"
+      }
+    ],
+    "material": [
+      {
+        "titel": "HQ-Trainer – Organisation & Technik",
+        "typ": "trainer",
+        "link": "https://pipboy3003.github.io/trainer"
+      },
+      {
+        "titel": "Soll-/Ist-Stundenübersicht IM25SP10",
+        "typ": "pdf",
+        "link": "#"
+      },
+      {
+        "titel": "AEVO Prüfungsvorbereitung",
+        "typ": "pdf",
+        "link": "#"
+      },
+      {
+        "titel": "Musterprüfung Handlungsteil Technik",
+        "typ": "pdf",
+        "link": "#"
+      }
+    ]
+  }
+]

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Klassenbereich – AT Learning</title>
+<link rel="icon" href="favicon.ico">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="header">
+  <div class="container header-inner">
+    <a href="index.html" class="logo-link"><img src="logo.png" alt="AT Learning" class="header-logo"></a>
+    <nav class="nav" id="klasseNav">
+      <a href="#stundenplan">Stundenplan</a>
+      <a href="#material">Trainingsmaterial</a>
+    </nav>
+    <button id="klasseLogoutBtn" class="btn btn-outline nav-cta">Abmelden</button>
+    <button class="burger" id="burger" aria-label="Menü öffnen">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<section class="admin-hero">
+  <div class="container">
+    <h1 id="klasseName">Klassenbereich</h1>
+    <p id="klasseZeitraum">Lädt…</p>
+  </div>
+</section>
+
+<section class="section" id="stundenplan">
+  <div class="container">
+    <h2 class="section-title left">Nächste Termine</h2>
+    <div id="stundenplanList" class="admin-course-list">
+      <p class="loading-note">Stundenplan wird geladen…</p>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" id="material">
+  <div class="container">
+    <h2 class="section-title left">Trainingsmaterial</h2>
+    <div id="materialGrid" class="grid grid-3">
+      <p class="loading-note">Material wird geladen…</p>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <p>© 2026 AT Learning – Klassenbereich</p>
+  </div>
+</footer>
+
+<script src="klasse.js"></script>
+</body>
+</html>
