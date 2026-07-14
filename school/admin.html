@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin-Bereich – AT Learning</title>
+<link rel="icon" href="favicon.ico">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="header">
+  <div class="container header-inner">
+    <a href="index.html" class="logo-link"><img src="logo.png" alt="AT Learning" class="header-logo"></a>
+    <nav class="nav" id="adminNav">
+      <a href="#kurse-verwalten">Kurse</a>
+      <a href="#einstellungen">Einstellungen</a>
+    </nav>
+    <button id="logoutBtn" class="btn btn-outline nav-cta">Abmelden</button>
+    <button class="burger" id="burger" aria-label="Menü öffnen">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<section class="admin-hero">
+  <div class="container">
+    <h1>Admin-Bereich</h1>
+    <p>Kurse, Termine und Kontaktdaten zentral verwalten – Änderungen erscheinen sofort auf der Website.</p>
+  </div>
+</section>
+
+<section class="section" id="kurse-verwalten">
+  <div class="container">
+    <div class="admin-section-head">
+      <h2 class="section-title left">Kurse verwalten</h2>
+      <button id="newCourseBtn" class="btn btn-primary">+ Neuer Kurs</button>
+    </div>
+
+    <div id="courseFormWrap" class="admin-form-wrap hidden">
+      <form id="courseForm" class="admin-form">
+        <input type="hidden" id="courseId">
+        <div class="form-row">
+          <input type="text" id="courseTitle" placeholder="Kurstitel (z. B. Gepr. Industriemeister(in) Metall)" required>
+          <input type="text" id="courseTag" placeholder="Kursnummer (z. B. IM25SP20)" required>
+        </div>
+        <div class="form-row">
+          <input type="date" id="courseStart" required>
+          <input type="date" id="courseEnd" required>
+        </div>
+        <div class="form-row">
+          <input type="text" id="courseUE" placeholder="Umfang (z. B. 850 UE)">
+          <input type="text" id="coursePhone" placeholder="Beratungstelefon (z. B. 07153/6191-221)">
+        </div>
+        <textarea id="courseDesc" placeholder="Kurzbeschreibung" rows="2"></textarea>
+        <label class="consent">
+          <input type="checkbox" id="courseHighlight">
+          Als "nächster Kursstart" hervorheben
+        </label>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Speichern</button>
+          <button type="button" id="cancelFormBtn" class="btn btn-outline">Abbrechen</button>
+        </div>
+        <p class="form-note" id="courseFormNote"></p>
+      </form>
+    </div>
+
+    <div id="courseList" class="admin-course-list">
+      <p class="loading-note">Kurse werden geladen…</p>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" id="einstellungen">
+  <div class="container">
+    <h2 class="section-title left">Kontakt & Öffnungszeiten</h2>
+    <form id="settingsForm" class="admin-form">
+      <div class="form-row">
+        <input type="text" id="setPhone1" placeholder="Telefon 1">
+        <input type="text" id="setPhone2" placeholder="Telefon 2">
+      </div>
+      <input type="email" id="setEmail" placeholder="Kontakt-E-Mail">
+      <textarea id="setAddress" placeholder="Adresse" rows="2"></textarea>
+      <textarea id="setHours" placeholder="Öffnungszeiten (frei formulierbar)" rows="3"></textarea>
+      <button type="submit" class="btn btn-primary">Einstellungen speichern</button>
+      <p class="form-note" id="settingsNote"></p>
+    </form>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <p>© 2026 AT Learning – Admin-Bereich</p>
+  </div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
