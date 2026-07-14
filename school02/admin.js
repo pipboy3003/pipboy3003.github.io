@@ -1,113 +1,246 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin-Bereich – AT Learning</title>
-<link rel="icon" href="favicon.ico">
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
+// Admin-Bereich ohne Firebase: Daten werden im Browser (localStorage) gespeichert
+// und lassen sich als JSON-Datei exportieren/importieren, um sie auf der Website
+// (data/courses.json, data/settings.json) zu aktualisieren.
 
-<header class="header">
-  <div class="container header-inner">
-    <a href="index.html" class="logo-link"><img src="logo.png" alt="AT Learning" class="header-logo"></a>
-    <nav class="nav" id="adminNav">
-      <a href="#kurse-verwalten">Kurse</a>
-      <a href="#einstellungen">Einstellungen</a>
-    </nav>
-    <button id="logoutBtn" class="btn btn-outline nav-cta">Abmelden</button>
-    <button class="burger" id="burger" aria-label="Menü öffnen">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
-</header>
+if(sessionStorage.getItem('at_admin_auth') !== 'true'){
+  window.location.href = "admin-login.html";
+}
 
-<section class="admin-hero">
-  <div class="container">
-    <h1>Admin-Bereich</h1>
-    <p>Kurse, Termine und Kontaktdaten zentral verwalten – Änderungen erscheinen sofort auf der Website.</p>
-  </div>
-</section>
+document.getElementById('logoutBtn').addEventListener('click', function(){
+  sessionStorage.removeItem('at_admin_auth');
+  window.location.href = "admin-login.html";
+});
 
-<section class="section" id="kurse-verwalten">
-  <div class="container">
-    <div class="admin-section-head">
-      <h2 class="section-title left">Kurse verwalten</h2>
-      <button id="newCourseBtn" class="btn btn-primary">+ Neuer Kurs</button>
-    </div>
+document.getElementById('burger').addEventListener('click', function(){
+  document.getElementById('adminNav').classList.toggle('open');
+});
 
-    <div id="courseFormWrap" class="admin-form-wrap hidden">
-      <form id="courseForm" class="admin-form">
-        <input type="hidden" id="courseId">
-        <div class="form-row">
-          <input type="text" id="courseTitle" placeholder="Kurstitel (z. B. Gepr. Industriemeister(in) Metall)" required>
-          <input type="text" id="courseTag" placeholder="Kursnummer (z. B. IM25SP20)" required>
-        </div>
-        <div class="form-row">
-          <input type="date" id="courseStart" required>
-          <input type="date" id="courseEnd" required>
-        </div>
-        <div class="form-row">
-          <input type="text" id="courseUE" placeholder="Umfang (z. B. 850 UE)">
-          <input type="text" id="coursePhone" placeholder="Beratungstelefon (z. B. 07153/6191-221)">
-        </div>
-        <textarea id="courseDesc" placeholder="Kurzbeschreibung" rows="2"></textarea>
-        <label class="consent">
-          <input type="checkbox" id="courseHighlight">
-          Als "nächster Kursstart" hervorheben
-        </label>
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary">Speichern</button>
-          <button type="button" id="cancelFormBtn" class="btn btn-outline">Abbrechen</button>
-        </div>
-        <p class="form-note" id="courseFormNote"></p>
-      </form>
-    </div>
+const COURSES_KEY = 'at_learning_courses';
+const SETTINGS_KEY = 'at_learning_settings';
 
-    <div id="courseList" class="admin-course-list">
-      <p class="loading-note">Kurse werden geladen…</p>
-    </div>
+function loadCourses(){
+  const raw = localStorage.getItem(COURSES_KEY);
+  if(raw) return JSON.parse(raw);
+  return [];
+}
+function saveCourses(courses){
+  localStorage.setItem(COURSES_KEY, JSON.stringify(courses));
+}
+function loadSettings(){
+  const raw = localStorage.getItem(SETTINGS_KEY);
+  if(raw) return JSON.parse(raw);
+  return {};
+}
+function saveSettings(settings){
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
 
-    <div class="admin-export-bar">
-      <button id="exportCoursesBtn" class="btn btn-outline btn-small">⬇ Kurse als JSON exportieren</button>
-      <label class="btn btn-outline btn-small import-label">
-        ⬆ Kurse importieren
-        <input type="file" id="importCoursesInput" accept="application/json" hidden>
-      </label>
-    </div>
-    <p class="export-hint">Wichtig: Nach dem Speichern hier auf "Exportieren" klicken und die heruntergeladene <strong>courses.json</strong> in den <strong>data/</strong>-Ordner deiner Website hochladen (z. B. per GitHub), damit die Änderungen live auf der Seite sichtbar werden.</p>
-  </div>
-</section>
+// Beim allerersten Öffnen: bestehende data/courses.json als Startbestand laden
+async function initCourses(){
+  let courses = loadCourses();
+  if(courses.length === 0){
+    try{
+      const res = await fetch('data/courses.json');
+      if(res.ok){
+        courses = await res.json();
+        saveCourses(courses);
+      }
+    }catch(e){ console.warn('Konnte data/courses.json nicht laden:', e); }
+  }
+  renderCourses(courses);
+}
 
-<section class="section section-alt" id="einstellungen">
-  <div class="container">
-    <h2 class="section-title left">Kontakt & Öffnungszeiten</h2>
-    <form id="settingsForm" class="admin-form">
-      <div class="form-row">
-        <input type="text" id="setPhone1" placeholder="Telefon 1">
-        <input type="text" id="setPhone2" placeholder="Telefon 2">
+async function initSettings(){
+  let settings = loadSettings();
+  if(Object.keys(settings).length === 0){
+    try{
+      const res = await fetch('data/settings.json');
+      if(res.ok){
+        settings = await res.json();
+        saveSettings(settings);
+      }
+    }catch(e){ console.warn('Konnte data/settings.json nicht laden:', e); }
+  }
+  document.getElementById('setPhone1').value = settings.phone1 || '';
+  document.getElementById('setPhone2').value = settings.phone2 || '';
+  document.getElementById('setEmail').value = settings.email || '';
+  document.getElementById('setAddress').value = settings.address || '';
+  document.getElementById('setHours').value = settings.hours || '';
+}
+
+const courseForm = document.getElementById('courseForm');
+const courseFormWrap = document.getElementById('courseFormWrap');
+const courseList = document.getElementById('courseList');
+const courseFormNote = document.getElementById('courseFormNote');
+
+document.getElementById('newCourseBtn').addEventListener('click', function(){
+  courseForm.reset();
+  document.getElementById('courseId').value = '';
+  courseFormWrap.classList.remove('hidden');
+  courseFormWrap.scrollIntoView({behavior:'smooth'});
+});
+
+document.getElementById('cancelFormBtn').addEventListener('click', function(){
+  courseFormWrap.classList.add('hidden');
+});
+
+function formatDate(dateStr){
+  if(!dateStr) return '-';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('de-DE');
+}
+
+function renderCourses(courses){
+  courseList.innerHTML = '';
+  if(!courses || courses.length === 0){
+    courseList.innerHTML = '<p class="loading-note">Noch keine Kurse angelegt.</p>';
+    return;
+  }
+  courses.sort((a,b) => (a.start || '').localeCompare(b.start || ''));
+  courses.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'admin-course-card' + (c.highlight ? ' card-highlight' : '');
+    card.innerHTML = `
+      <div>
+        <span class="card-tag">${c.tag || ''}</span>
+        <h3>${c.title || ''}</h3>
+        <p>${c.description || ''}</p>
+        <ul class="card-meta">
+          <li><strong>Beginn:</strong> ${formatDate(c.start)}</li>
+          <li><strong>Ende:</strong> ${formatDate(c.end)}</li>
+          <li><strong>Umfang:</strong> ${c.ue || '-'}</li>
+          <li><strong>Telefon:</strong> ${c.phone || '-'}</li>
+        </ul>
       </div>
-      <input type="email" id="setEmail" placeholder="Kontakt-E-Mail">
-      <textarea id="setAddress" placeholder="Adresse" rows="2"></textarea>
-      <textarea id="setHours" placeholder="Öffnungszeiten (frei formulierbar)" rows="3"></textarea>
-      <button type="submit" class="btn btn-primary">Einstellungen speichern</button>
-      <p class="form-note" id="settingsNote"></p>
-    </form>
-    <div class="admin-export-bar">
-      <button id="exportSettingsBtn" class="btn btn-outline btn-small">⬇ Einstellungen als JSON exportieren</button>
-    </div>
-    <p class="export-hint">Die heruntergeladene <strong>settings.json</strong> ebenfalls in den <strong>data/</strong>-Ordner hochladen.</p>
-  </div>
-</section>
+      <div class="admin-course-actions">
+        <button class="btn btn-outline btn-small edit-btn" data-id="${c.id}">Bearbeiten</button>
+        <button class="btn btn-danger btn-small delete-btn" data-id="${c.id}">Löschen</button>
+      </div>
+    `;
+    courseList.appendChild(card);
+  });
 
-<footer class="footer">
-  <div class="container footer-inner">
-    <p>© 2026 AT Learning – Admin-Bereich</p>
-  </div>
-</footer>
+  document.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => editCourse(btn.dataset.id));
+  });
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => deleteCourse(btn.dataset.id));
+  });
+}
 
-<script src="admin-config.js"></script>
-<script src="admin.js"></script>
-</body>
-</html>
+function editCourse(id){
+  const courses = loadCourses();
+  const c = courses.find(x => x.id === id);
+  if(!c) return;
+  document.getElementById('courseId').value = c.id;
+  document.getElementById('courseTitle').value = c.title || '';
+  document.getElementById('courseTag').value = c.tag || '';
+  document.getElementById('courseStart').value = c.start || '';
+  document.getElementById('courseEnd').value = c.end || '';
+  document.getElementById('courseUE').value = c.ue || '';
+  document.getElementById('coursePhone').value = c.phone || '';
+  document.getElementById('courseDesc').value = c.description || '';
+  document.getElementById('courseHighlight').checked = !!c.highlight;
+  courseFormWrap.classList.remove('hidden');
+  courseFormWrap.scrollIntoView({behavior:'smooth'});
+}
+
+function deleteCourse(id){
+  if(!confirm('Diesen Kurs wirklich löschen?')) return;
+  let courses = loadCourses();
+  courses = courses.filter(c => c.id !== id);
+  saveCourses(courses);
+  renderCourses(courses);
+}
+
+courseForm.addEventListener('submit', function(e){
+  e.preventDefault();
+  const id = document.getElementById('courseId').value;
+  let courses = loadCourses();
+
+  const data = {
+    id: id || 'c' + Date.now(),
+    title: document.getElementById('courseTitle').value,
+    tag: document.getElementById('courseTag').value,
+    start: document.getElementById('courseStart').value,
+    end: document.getElementById('courseEnd').value,
+    ue: document.getElementById('courseUE').value,
+    phone: document.getElementById('coursePhone').value,
+    description: document.getElementById('courseDesc').value,
+    highlight: document.getElementById('courseHighlight').checked
+  };
+
+  if(id){
+    courses = courses.map(c => c.id === id ? data : c);
+  } else {
+    courses.push(data);
+  }
+
+  saveCourses(courses);
+  renderCourses(courses);
+
+  courseFormNote.textContent = 'Gespeichert! Nicht vergessen: unten auf "Als JSON exportieren" klicken, um die Website zu aktualisieren.';
+  courseFormNote.className = 'form-note success';
+  courseForm.reset();
+  setTimeout(() => {
+    courseFormWrap.classList.add('hidden');
+    courseFormNote.textContent = '';
+  }, 2500);
+});
+
+document.getElementById('settingsForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  const note = document.getElementById('settingsNote');
+  const data = {
+    phone1: document.getElementById('setPhone1').value,
+    phone2: document.getElementById('setPhone2').value,
+    email: document.getElementById('setEmail').value,
+    address: document.getElementById('setAddress').value,
+    hours: document.getElementById('setHours').value
+  };
+  saveSettings(data);
+  note.textContent = 'Einstellungen gespeichert! Nicht vergessen: unten exportieren.';
+  note.className = 'form-note success';
+});
+
+document.getElementById('exportCoursesBtn').addEventListener('click', function(){
+  const courses = loadCourses();
+  downloadJSON(courses, 'courses.json');
+});
+
+document.getElementById('exportSettingsBtn').addEventListener('click', function(){
+  const settings = loadSettings();
+  downloadJSON(settings, 'settings.json');
+});
+
+function downloadJSON(data, filename){
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('importCoursesInput').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    try{
+      const imported = JSON.parse(evt.target.result);
+      saveCourses(imported);
+      renderCourses(imported);
+      alert('Kurse erfolgreich importiert!');
+    }catch(err){
+      alert('Fehler beim Importieren: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+});
+
+initCourses();
+initSettings();

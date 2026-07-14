@@ -1,0 +1,68 @@
+[
+  {
+    "id": "c1",
+    "tag": "IM25SP20/23/24/25",
+    "title": "Gepr. Industriemeister(in) Metall",
+    "description": "Supersprint am Wochenende (Teilzeit), 850 UE, Plochingen",
+    "start": "2025-11-15",
+    "end": "2026-11-14",
+    "ue": "Sa 8-16:30 Uhr, So 8-13:15 Uhr",
+    "phone": "07153/6191-221",
+    "highlight": false
+  },
+  {
+    "id": "c2",
+    "tag": "IME25SP21/26",
+    "title": "Gepr. Industriemeister(in) Elektro",
+    "description": "Supersprint am Wochenende (Teilzeit), 850 UE, Plochingen",
+    "start": "2025-11-15",
+    "end": "2026-11-14",
+    "ue": "Sa 8-16:30 Uhr, So 8-13:15 Uhr",
+    "phone": "07153/6191-221",
+    "highlight": false
+  },
+  {
+    "id": "c3",
+    "tag": "IML25SP22",
+    "title": "Gepr. Logistikmeister(in)",
+    "description": "Supersprint am Wochenende (Teilzeit), 850 UE, Plochingen",
+    "start": "2025-11-15",
+    "end": "2026-11-14",
+    "ue": "Sa 8-16:30 Uhr, So 8-13:15 Uhr",
+    "phone": "07153/6191-221",
+    "highlight": false
+  },
+  {
+    "id": "c4",
+    "tag": "TBW25SP20",
+    "title": "Gepr. Techn. Betriebswirt(in)",
+    "description": "Supersprint am Wochenende (Teilzeit), 480 UE, Plochingen",
+    "start": "2025-09-13",
+    "end": "2026-02-22",
+    "ue": "Sa 8-16:30 Uhr, So 8-13:15 Uhr",
+    "phone": "07153/6191-220",
+    "highlight": false
+  },
+  {
+    "id": "c5",
+    "tag": "TFW25SP20",
+    "title": "Gepr. Technische(r) Fachwirt(in)",
+    "description": "Supersprint am Wochenende (Teilzeit), 750 UE, Plochingen",
+    "start": "2025-11-22",
+    "end": "2026-11-29",
+    "ue": "Sa 8-16:30 Uhr, So 8-13:15 Uhr",
+    "phone": "07153/6191-221",
+    "highlight": false
+  },
+  {
+    "id": "c6",
+    "tag": "IM26SP10-15",
+    "title": "Kombikurs: Metall, Elektro & Logistik",
+    "description": "Supersprint am Wochenende (Teilzeit), 850 UE, Plochingen – nächster Kursstart",
+    "start": "2026-05-16",
+    "end": "2027-05-16",
+    "ue": "Sa 8-16:30 Uhr, So 8-13:15 Uhr",
+    "phone": "07153/6191-221",
+    "highlight": true
+  }
+]

@@ -1,74 +1,80 @@
-// Lädt Kurse und Einstellungen aus lokalen JSON-Dateien (data/courses.json, data/settings.json)
-// statt aus einer Datenbank. Perfekt für eine Website ohne eigenes Backend:
-// der Admin-Bereich exportiert diese JSON-Dateien, du lädst sie einfach ins data/-Verzeichnis.
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Datenschutzerklärung – AT Learning</title>
+<link rel="stylesheet" href="style.css">
+  <link rel="icon" href="favicon.ico">
+</head>
+<body>
 
-function formatDateDe(dateStr){
-  if(!dateStr) return '-';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('de-DE');
-}
+<header class="header" id="header">
+  <div class="container header-inner">
+    <a href="index.html" class="logo-link"><img src="logo.png" alt="AT Learning" class="header-logo"></a>
+    <nav class="nav" id="nav">
+      <a href="index.html#kurse">Kurse</a>
+      <a href="index.html#foerderung">Förderung</a>
+      <a href="index.html#voraussetzungen">Voraussetzungen</a>
+      <a href="index.html#erfolg">Erfolgsquote</a>
+      <a href="index.html#kontakt">Kontakt</a>
+    </nav>
+    <a href="index.html#anmeldung" class="btn btn-primary nav-cta">Jetzt anmelden</a>
+    <button class="burger" id="burger" aria-label="Menü öffnen">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
 
-fetch('data/courses.json')
-  .then(res => {
-    if(!res.ok) throw new Error('Keine courses.json gefunden');
-    return res.json();
-  })
-  .then(courses => {
-    if(!courses || courses.length === 0) return;
-    const grid = document.getElementById('courseGrid');
-    if(!grid) return;
-    grid.innerHTML = '';
+<section class="legal-page">
+  <div class="container">
+    <h1>Datenschutzerklärung</h1>
 
-    courses.sort((a,b) => (a.start || '').localeCompare(b.start || ''));
-    courses.forEach(c => {
-      const card = document.createElement('div');
-      card.className = 'card' + (c.highlight ? ' card-highlight' : '');
-      card.innerHTML = `
-        <span class="card-tag">${c.tag || ''}</span>
-        <h3>${c.title || ''}</h3>
-        <p>${c.description || ''}</p>
-        <ul class="card-meta">
-          <li><strong>Beginn:</strong> ${formatDateDe(c.start)}</li>
-          <li><strong>Ende:</strong> ${formatDateDe(c.end)}</li>
-          <li><strong>Zeiten:</strong> ${c.ue || ''}</li>
-        </ul>
-        <a href="tel:+49${(c.phone || '').replace(/\D/g,'').replace(/^49/,'')}" class="card-link">Beratung: ${c.phone || ''} →</a>
-      `;
-      grid.appendChild(card);
-    });
-  })
-  .catch(err => {
-    console.warn('Kurse konnten nicht aus data/courses.json geladen werden, zeige statische Fallback-Daten:', err);
-  });
+    <h2>1. Verantwortlicher</h2>
+    <p>
+      @Learning, Inhaber: Tim Ohnmeiss<br>
+      Robert-Bosch-Straße 7-9, 73207 Plochingen<br>
+      E-Mail: <a href="mailto:info@at-learning.de">info@at-learning.de</a><br>
+      Telefon: 07153 / 6191-220
+    </p>
 
-fetch('data/settings.json')
-  .then(res => {
-    if(!res.ok) throw new Error('Keine settings.json gefunden');
-    return res.json();
-  })
-  .then(s => {
-    const table = document.querySelector('.hours-table');
-    if(!table) return;
+    <h2>2. Erhebung und Verarbeitung personenbezogener Daten</h2>
+    <p>Soweit auf unseren Seiten personenbezogene Daten (beispielsweise Name, Anschrift oder E-Mail-Adresse) erhoben werden, erfolgt dies stets auf freiwilliger Basis, insbesondere im Rahmen der Nutzung unseres Kontaktformulars. Die Nutzung unserer Website ist grundsätzlich auch ohne Angabe personenbezogener Daten möglich.</p>
 
-    if(s.address){
-      const addrCell = table.querySelector('tr:nth-child(1) td:nth-child(2)');
-      if(addrCell) addrCell.textContent = s.address;
-    }
-    if(s.phone1){
-      const phoneCell = table.querySelector('tr:nth-child(2) td:nth-child(2)');
-      const tel1 = 'tel:+49' + s.phone1.replace(/\D/g,'').replace(/^49/,'');
-      let html = `<a href="${tel1}">${s.phone1}</a>`;
-      if(s.phone2){
-        const tel2 = 'tel:+49' + s.phone2.replace(/\D/g,'').replace(/^49/,'');
-        html += ` oder <a href="${tel2}">${s.phone2}</a>`;
-      }
-      if(phoneCell) phoneCell.innerHTML = html;
-    }
-    if(s.email){
-      const emailCell = table.querySelector('tr:nth-child(3) td:nth-child(2)');
-      if(emailCell) emailCell.innerHTML = `<a href="mailto:${s.email}">${s.email}</a>`;
-    }
-  })
-  .catch(err => {
-    console.warn('Einstellungen konnten nicht aus data/settings.json geladen werden:', err);
-  });
+    <h2>3. Kontaktformular</h2>
+    <p>Wenn Sie uns per Kontaktformular Anfragen zukommen lassen, werden Ihre Angaben aus dem Formular inklusive der von Ihnen dort angegebenen Kontaktdaten zwecks Bearbeitung der Anfrage und für den Fall von Anschlussfragen bei uns gespeichert. Diese Daten geben wir nicht ohne Ihre Einwilligung weiter.</p>
+    <p>Die Verarbeitung der in das Kontaktformular eingegebenen Daten erfolgt auf Grundlage Ihrer Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Zur technischen Übermittlung nutzen wir den Dienst FormSubmit; die Daten werden direkt per E-Mail an <strong>info@at-learning.de</strong> weitergeleitet und nicht dauerhaft auf fremden Servern gespeichert.</p>
+    <p>Sie können diese Einwilligung jederzeit widerrufen. Dazu reicht eine formlose Mitteilung per E-Mail an uns. Die Rechtmäßigkeit der bis zum Widerruf erfolgten Datenverarbeitungsvorgänge bleibt vom Widerruf unberührt.</p>
+
+    <h2>4. Datenübertragung im Internet</h2>
+    <p>Wir weisen darauf hin, dass die Datenübertragung im Internet (z. B. bei der Kommunikation per E-Mail) Sicherheitslücken aufweisen kann. Ein lückenloser Schutz der Daten vor dem Zugriff durch Dritte ist nicht möglich.</p>
+
+    <h2>5. Widerspruch gegen Werbe-E-Mails</h2>
+    <p>Der Nutzung von im Rahmen der Impressumspflicht veröffentlichten Kontaktdaten durch Dritte zur Übersendung von nicht ausdrücklich angeforderter Werbung und Informationsmaterialien wird hiermit ausdrücklich widersprochen. Die Betreiber der Seiten behalten sich ausdrücklich rechtliche Schritte im Falle der unverlangten Zusendung von Werbeinformationen vor.</p>
+
+    <h2>6. Ihre Rechte</h2>
+    <ul>
+      <li>Recht auf Auskunft über Ihre gespeicherten Daten (Art. 15 DSGVO)</li>
+      <li>Recht auf Berichtigung unrichtiger Daten (Art. 16 DSGVO)</li>
+      <li>Recht auf Löschung Ihrer Daten (Art. 17 DSGVO)</li>
+      <li>Recht auf Einschränkung der Verarbeitung (Art. 18 DSGVO)</li>
+      <li>Recht auf Datenübertragbarkeit (Art. 20 DSGVO)</li>
+      <li>Recht auf Widerruf einer erteilten Einwilligung (Art. 7 Abs. 3 DSGVO)</li>
+    </ul>
+
+    <a href="index.html" class="back-link">← Zurück zur Startseite</a>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <p>© <span id="year">2026</span> AT Learning – Tim Ohnmeiss – Robert-Bosch-Straße 7-9, 73207 Plochingen <a href="admin-login.html" class="admin-access" title="Interner Bereich">•</a></p>
+    <div class="footer-links">
+      <a href="impressum.html">Impressum</a>
+      <a href="datenschutz.html">Datenschutz</a>
+    </div>
+  </div>
+</footer>
+<script src="script.js"></script>
+</body>
+</html>
