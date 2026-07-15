@@ -299,3 +299,164 @@ D: Nur die Härteprüfung nach Brinell
 R: B
 E: Wirbelstromprüfung, Magnetpulverprüfung, Eindringprüfung, Röntgen-/Gammaprüfung, Ultraschallprüfung und hydrostatische Prüfung.
 ---
+
+F: Welche 6 Hauptgruppen der Fertigungsverfahren unterscheidet die DIN 8580?
+A: Trennen, Fügen, Beschichten, Prüfen, Verpacken, Lagern
+B: Urformen, Umformen, Trennen, Fügen, Beschichten, Stoffeigenschaft ändern
+C: Drehen, Fräsen, Bohren, Schleifen, Hobeln, Sägen
+D: Gießen, Schmieden, Walzen, Pressen, Ziehen, Biegen
+R: B
+E: Die DIN 8580 unterteilt alle Fertigungsverfahren in sechs Hauptgruppen: Urformen, Umformen, Trennen, Fügen, Beschichten und Stoffeigenschaft ändern.
+---
+F: Was versteht man unter der neutralen Faser beim Biegen eines Werkstücks?
+A: Die Außenkante des Werkstücks, die beim Biegen am stärksten gestaucht wird
+B: Die Schicht im Werkstückquerschnitt, die beim Biegen weder gestreckt noch gestaucht wird
+C: Die Mittelachse des Biegewerkzeugs
+D: Die Zone, die beim Biegen am stärksten erwärmt werden muss
+R: B
+E: Die neutrale Faser liegt im Werkstückquerschnitt und bleibt beim Biegen in ihrer ursprünglichen Länge erhalten. Material außerhalb wird gestreckt, innerhalb wird es gestaucht.
+---
+F: Worin liegt der wesentliche Unterschied zwischen Inertgas- und Aktivgas-Schweißen (WIG/MIG gegenüber MAG)?
+A: Beim Inertgas-Verfahren wird kein Schutzgas verwendet
+B: Aktivgase wie CO2 nehmen aktiv am Schmelzprozess teil, Inertgase wie Argon bleiben chemisch neutral
+C: Inertgas-Verfahren funktionieren nur bei Aluminium
+D: Aktivgas-Verfahren werden ausschließlich beim Löten eingesetzt
+R: B
+E: Beim MIG-Verfahren wird ein reaktionsträges Inertgas wie Argon verwendet. Beim MAG-Verfahren kommt ein Aktivgas wie CO2 zum Einsatz, das aktiv in den Schweißprozess eingreift.
+---
+F: Was versteht man unter Adhäsion und Kohäsion beim Kleben?
+A: Adhäsion ist die Haftung des Klebstoffs am Werkstoff, Kohäsion ist der innere Zusammenhalt des Klebstoffs selbst
+B: Adhäsion und Kohäsion sind zwei Bezeichnungen für denselben physikalischen Effekt
+C: Kohäsion beschreibt nur die Aushärtezeit des Klebstoffs
+D: Adhäsion tritt nur bei Metallklebungen auf, Kohäsion nur bei Kunststoffen
+R: A
+E: Adhäsion bezeichnet die Haftkraft zwischen Klebstoff und Fügeteiloberfläche. Kohäsion beschreibt die innere Festigkeit des ausgehärteten Klebstoffs selbst.
+---
+F: Welchen wesentlichen Vorteil bietet das Kleben gegenüber dem Schweißen?
+A: Höhere erreichbare Verbindungsfestigkeit bei allen Werkstoffkombinationen
+B: Keine thermische Beeinflussung des Werkstoffgefüges und Verbindung unterschiedlicher Materialien möglich
+C: Deutlich kürzere Aushärtezeiten als beim Schweißen
+D: Unbegrenzte Temperaturbeständigkeit der Klebeverbindung
+R: B
+E: Kleben erfolgt ohne nennenswerten Wärmeeintrag, wodurch das Gefüge der Fügeteile nicht verändert wird. Zudem lassen sich artungleiche Werkstoffe wie Metall und Kunststoff verbinden.
+---
+F: Welche Einflussgrößen sind bei der Wahl der Schnittgeschwindigkeit beim Drehen zu berücksichtigen?
+A: Nur die Drehzahl der Spindel und die Werkstücklänge
+B: Werkstoff, Schneidstoff, Kühlschmierung, geforderte Oberflächengüte und Leistungsfähigkeit der Maschine
+C: Ausschließlich die Härte des Werkstoffs
+D: Nur der Preis des eingesetzten Schneidwerkzeugs
+R: B
+E: Die Schnittgeschwindigkeit richtet sich nach dem zu bearbeitenden Werkstoff, dem verwendeten Schneidstoff, der Kühlschmierung, der geforderten Oberflächengüte sowie der Leistungsfähigkeit der Drehmaschine.
+---
+F: Wie werden Vorschub und Schnittgeschwindigkeit beim Schlichten eines Werkstücks sinnvoll gewählt?
+A: Großer Vorschub und niedrige Schnittgeschwindigkeit für maximale Zerspanungsleistung
+B: Kleiner Vorschub und hohe Schnittgeschwindigkeit für eine feine Oberflächengüte
+C: Vorschub und Schnittgeschwindigkeit spielen beim Schlichten keine Rolle
+D: Beide Werte müssen identisch mit dem Schruppen gewählt werden
+R: B
+E: Beim Schlichten wird ein kleiner Vorschub mit hoher Schnittgeschwindigkeit kombiniert, um eine feine, gleichmäßige Oberfläche mit geringem Rz-Wert zu erzielen.
+---
+F: Welchen Vorteil hat das Gleichlauffräsen gegenüber dem Gegenlauffräsen beim Umfangsfräsen?
+A: Das Werkstück wird während der Bearbeitung von der Unterlage abgehoben
+B: Das Werkstück wird auf die Unterlage gedrückt, wodurch eine höhere Oberflächengüte entsteht
+C: Gleichlauffräsen erfordert keine Kühlschmierung
+D: Gleichlauffräsen ist ausschließlich für Kunststoffe geeignet
+R: B
+E: Beim Gleichlauffräsen drückt die Schnittkraft das Werkstück auf die Unterlage, was zu einer ruhigeren Zerspanung und besseren Oberflächengüte führt. Gegenlauffräsen eignet sich besser bei harten Randzonen.
+---
+F: Welche Aufgabe hat die Bindung einer Schleifscheibe?
+A: Sie bestimmt ausschließlich die Farbe der Schleifscheibe
+B: Sie hält die Schleifkörner zusammen und beeinflusst deren Selbstschärfung
+C: Sie dient nur zur Kühlung des Werkstücks
+D: Sie hat keinen Einfluss auf das Schleifergebnis
+R: B
+E: Die Bindung hält die Schleifkörner im Verbund und bestimmt, wann stumpf gewordene Körner ausbrechen und neue, scharfe Körner freigelegt werden (Selbstschärfung).
+---
+F: Warum werden für harte Werkstoffe weiche Schleifscheiben und für weiche Werkstoffe harte Schleifscheiben eingesetzt?
+A: Weiche Scheiben splittern bei harten Werkstoffen sofort, deshalb ist diese Regel falsch
+B: Weiche Bindungen lassen bei harten Werkstoffen stumpfe Körner schneller ausbrechen und neue Schneiden freilegen; harte Bindungen verhindern bei weichen Werkstoffen ein zu schnelles Verschleißen der Scheibe
+C: Die Bindungshärte hat keinen Zusammenhang mit der Werkstoffhärte
+D: Diese Zuordnung gilt nur für Kunstharzbindungen
+R: B
+E: Bei harten Werkstoffen sorgt eine weiche Bindung dafür, dass stumpfe Körner rechtzeitig ausbrechen. Bei weichen Werkstoffen verhindert eine harte Bindung einen zu schnellen Scheibenverschleiß.
+---
+F: Welchen zentralen Vorteil bietet die NC-Fertigung gegenüber der konventionellen Fertigung?
+A: Geringere Anschaffungskosten der Maschinen
+B: Hohe Wiederholgenauigkeit, Flexibilität bei Werkstückwechsel und geringerer Personalbedarf je Maschine
+C: Vollständiger Verzicht auf Werkzeugwechsel
+D: Keine Notwendigkeit einer Maschinenwartung
+R: B
+E: NC-Maschinen ermöglichen eine hohe Wiederholgenauigkeit, lassen sich durch neue Programme flexibel auf andere Werkstücke umstellen und benötigen im Vergleich zur konventionellen Fertigung weniger Bedienpersonal pro Maschine.
+---
+F: Was ist eine flexible Fertigungszelle im Unterschied zu einer Fertigungsinsel?
+A: Beide Begriffe beschreiben identische Organisationsformen
+B: Eine Fertigungszelle ist automatisiert und rüstet sich selbstständig um, eine Fertigungsinsel wird überwiegend von Mitarbeitern manuell betrieben
+C: Fertigungsinseln kommen nur in der Einzelfertigung vor
+D: Fertigungszellen benötigen grundsätzlich keine Steuerungstechnik
+R: B
+E: Eine flexible Fertigungszelle besteht aus automatisierten, NC-gesteuerten Maschinen mit automatischem Werkzeug- und Werkstückwechsel. Eine Fertigungsinsel wird dagegen von einer Mitarbeitergruppe eigenverantwortlich und überwiegend manuell betrieben.
+---
+F: Wodurch unterscheiden sich die vier klassischen Roboterbauarten grundsätzlich?
+A: Ausschließlich durch die verwendete Antriebsart (elektrisch, pneumatisch, hydraulisch)
+B: Durch die Anordnung ihrer Achsen und die Form ihres Arbeitsraums, z.B. Portal-, Gelenkarm-, Scara- und Zylinderroboter
+C: Nur durch den Hersteller und die Farbe der Verkleidung
+D: Es gibt keine wesentlichen Unterschiede zwischen den Bauarten
+R: B
+E: Die Roboterbauarten unterscheiden sich vor allem durch Achsanordnung und Arbeitsraumform. Typisch sind unter anderem Portalroboter, Gelenkarmroboter, Scara-Roboter und Zylinderroboter, die jeweils für unterschiedliche Bewegungsaufgaben geeignet sind.
+---
+F: Welche Fördersysteme werden typischerweise in der Industrie eingesetzt?
+A: Nur handbetriebene Gabelhubwagen
+B: Rollenbahnen, Bandförderer, Kettenförderer und fahrerlose Transportsysteme, je nach Stückgut und Streckenanforderung
+C: Ausschließlich Kranbahnen für sämtliche Materialflüsse
+D: Fördersysteme werden in modernen Betrieben nicht mehr benötigt
+R: B
+E: Je nach Art des Guts und der Transportstrecke kommen unterschiedliche Fördersysteme zum Einsatz, etwa Rollenbahnen und Bandförderer für Stückgut, Kettenförderer für schwere Lasten sowie fahrerlose Transportsysteme für flexible innerbetriebliche Transporte.
+---
+F: Welche wesentlichen Vorteile bietet die Pneumatik in der Fertigungstechnik?
+A: Sehr hohe erreichbare Kräfte bei minimalem Bauraum
+B: Schnelle Bewegungen, geringe Umweltbelastung bei Leckage und einfacher Aufbau der Bauteile
+C: Vollständige Positionsgenauigkeit ohne zusätzliche Sensorik
+D: Keine Notwendigkeit einer Druckluftaufbereitung
+R: B
+E: Pneumatische Systeme ermöglichen schnelle Bewegungsabläufe, sind bei Leckagen unkritisch für die Umwelt, da nur Luft entweicht, und besitzen einen vergleichsweise einfachen, robusten Aufbau.
+---
+F: Welchen wesentlichen Nachteil hat die Hydraulik gegenüber der Pneumatik?
+A: Hydraulik erreicht grundsätzlich geringere Kräfte
+B: Bei Leckagen tritt Öl aus, was Umweltrisiken birgt und Reinigungsaufwand verursacht
+C: Hydrauliksysteme können keine hohen Drücke erzeugen
+D: Hydrauliksysteme benötigen keine Wartung
+R: B
+E: Im Gegensatz zur Pneumatik verwendet die Hydraulik Öl als Druckmedium. Bei Leckagen entstehen dadurch Umweltbelastungen und zusätzlicher Reinigungs- und Entsorgungsaufwand.
+---
+F: Was versteht man in der Montagetechnik unter der Taktzeit?
+A: Die Gesamtdauer, die ein Produkt von der Rohstoffbeschaffung bis zur Auslieferung benötigt
+B: Die vorgegebene Zeitspanne, nach der ein Werkstück jede Montagestation durchläuft und zur nächsten weitergegeben wird
+C: Die Zeit, die ein Mitarbeiter für eine komplette Schicht benötigt
+D: Die Zeit zwischen zwei Wartungsintervallen einer Anlage
+R: B
+E: Die Taktzeit legt fest, in welchem festen Zeitabstand ein Werkstück jede Station einer Fließmontage verlässt. Sie bestimmt damit die Ausbringungsmenge der gesamten Montagelinie.
+---
+F: Wodurch unterscheidet sich die intermittierende von der kontinuierlichen Fließmontage?
+A: Bei der intermittierenden Fließmontage steht das Band während der Bearbeitung, bei der kontinuierlichen läuft es ständig weiter
+B: Beide Varianten sind technisch identisch
+C: Kontinuierliche Fließmontage kommt nur in der Einzelfertigung vor
+D: Intermittierende Fließmontage benötigt keine Taktzeitvorgabe
+R: A
+E: Bei der intermittierenden Fließmontage bleibt das Band während der Bearbeitungszeit an jeder Station stehen. Bei der kontinuierlichen Fließmontage bewegt sich das Band ständig, und die Mitarbeiter arbeiten während der Bewegung am Werkstück.
+---
+F: Was ist die zentrale Zielsetzung der CE-Kennzeichnung bei Maschinen und Anlagen?
+A: Sie bestätigt ausschließlich die Herkunft eines Produkts aus der Europäischen Union
+B: Sie bestätigt, dass eine Maschine die grundlegenden Sicherheits- und Gesundheitsanforderungen der EU erfüllt und rechtmäßig in Verkehr gebracht werden darf
+C: Sie ist eine freiwillige Qualitätsauszeichnung ohne rechtliche Bedeutung
+D: Sie ersetzt die Betriebsanleitung des Herstellers vollständig
+R: B
+E: Die CE-Kennzeichnung ist eine verpflichtende Erklärung des Herstellers, dass die Maschine alle einschlägigen EU-Sicherheits- und Gesundheitsanforderungen erfüllt. Ohne CE-Kennzeichnung darf eine Maschine in der EU nicht in Verkehr gebracht werden.
+---
+F: Welche grundlegende Bedeutung hat das MTM-Verfahren (Methods-Time Measurement) in der Montagetechnik?
+A: Es dient zur Berechnung von Materialkosten pro Bauteil
+B: Es ermöglicht die Ermittlung von Vorgabezeiten für Bewegungsabläufe anhand vordefinierter Grundbewegungen
+C: Es beschreibt ausschließlich die Wartungsintervalle von Montageanlagen
+D: Es ersetzt die Notwendigkeit einer Arbeitsplatzgestaltung
+R: B
+E: MTM zerlegt Arbeitsabläufe in standardisierte Grundbewegungen mit hinterlegten Zeitwerten. Daraus lassen sich objektive Vorgabezeiten für Montagetätigkeiten ableiten, ohne dass eine Zeitaufnahme am Arbeitsplatz erforderlich ist.
+---
