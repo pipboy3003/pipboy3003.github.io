@@ -171,3 +171,18 @@ h1,h2,h3{color:var(--heading);line-height:1.3;font-weight:700;}
 @media(max-width:768px){
   .calendar-grid{gap:3px;} .calendar-day{min-height:60px;padding:4px;font-size:.68rem;} .calendar-event{font-size:.62rem;padding:2px 4px;}
 }
+
+
+/* Login-Popup (Modal) */
+.login-modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:300;padding:20px;}
+.login-modal{background:#fff;border-radius:var(--radius);padding:40px 34px;max-width:380px;width:100%;text-align:center;position:relative;animation:loginModalIn .2s ease;}
+@keyframes loginModalIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+.login-modal-logo{height:44px;margin-bottom:16px;}
+.login-modal h2{font-size:1.4rem;margin-bottom:6px;}
+.login-modal-sub{color:var(--text-dim);font-size:.88rem;margin-bottom:22px;}
+.login-modal form{display:flex;flex-direction:column;gap:13px;}
+.login-modal input{padding:12px;border:1px solid var(--border);border-radius:7px;background:var(--blue-50);font-family:inherit;}
+.login-modal input:focus{outline:none;border-color:var(--blue-500);}
+.login-modal-close{position:absolute;top:14px;right:18px;cursor:pointer;font-size:1.5rem;color:var(--text-dim);line-height:1;}
+.login-modal-close:hover{color:var(--heading);}
+.nav-mein-bereich{display:flex;align-items:center;gap:5px;}

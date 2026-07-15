@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stundenplan-Import – AT Learning</title>
+<link rel="icon" href="favicon.ico"><link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="header">
+  <div class="container header-inner">
+    <a href="index.html" class="logo-link"><img src="logo.png" alt="AT Learning" class="header-logo"></a>
+    <nav class="nav" id="adminNav"><a href="admin.html">← Zurück zum Admin-Bereich</a></nav>
+  </div>
+</header>
+
+<section class="admin-hero">
+  <div class="container"><h1>Stundenplan-Import</h1><p>Ganze Stundenpläne auf einmal einfügen, statt jeden Termin einzeln anzulegen.</p></div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="admin-form" style="max-width:900px;margin:0 auto;">
+      <label style="font-weight:600;">Zielklasse</label>
+      <select id="importKlasse" required><option value="" disabled selected>Klasse auswählen…</option></select>
+
+      <label style="font-weight:600;margin-top:10px;">Termine einfügen (eine Zeile pro Termin)</label>
+      <p style="color:var(--text-dim);font-size:.85rem;">
+        Format pro Zeile, mit Semikolon getrennt:<br>
+        <code>Datum;Zeit;Thema;Dozent;Raum</code><br>
+        Beispiel: <code>2025-11-08;08:00 - 16:30;Fertigungstechnik;Nannt;Raum 1</code><br>
+        Raum ist optional und kann weggelassen werden.
+      </p>
+      <textarea id="importText" rows="14" placeholder="2025-11-08;10 UE;Fertigungstechnik;Nannt
+2025-11-09;7 UE;ADA;Jordan
+2025-11-15;10 UE;Instandhaltung;Dragojlovic"></textarea>
+
+      <div class="form-actions" style="margin-top:16px;">
+        <button id="importBtn" class="btn btn-primary">Termine importieren</button>
+        <button id="previewBtn" class="btn btn-outline">Vorschau anzeigen</button>
+      </div>
+      <p class="form-note" id="importNote"></p>
+    </div>
+
+    <div id="importPreview" style="margin-top:30px;"></div>
+  </div>
+</section>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="admin-import.js"></script>
+</body></html>
