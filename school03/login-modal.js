@@ -1,6 +1,7 @@
 // Wiederverwendbares Login-Popup (Modal). Wird auf allen öffentlichen Seiten eingebunden.
 // Erzeugt das Modal-HTML dynamisch, damit es nicht auf jeder Seite von Hand eingefügt werden muss.
 
+
 function erzeugeLoginModal(){
   if(document.getElementById('loginModalOverlay')) return;
 
