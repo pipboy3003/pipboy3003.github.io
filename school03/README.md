@@ -117,3 +117,28 @@ zwingend mit auf GitHub Pages landen, kann aber zur Versionierung mit hochgelade
 - **Admin**: Kann Termine, Kurse, Nutzer und Einstellungen bearbeiten.
 - **Lehrer**: Sieht nur seine zugeordneten Klassen, Stundenplan und Anwesenheitsliste (nur eigene Klassen, DSGVO-konform).
 - **Schüler**: Sieht nur seinen eigenen Kalender, kann sich jederzeit bis Unterrichtsbeginn ab- und wieder anmelden.
+
+
+## 7. Dozenten verwalten
+
+Im Admin-Bereich unter "Kalender verwalten" gibt es jetzt eine kleine Dozentenverwaltung.
+Dort kannst du neue Dozenten per Textfeld hinzufügen – sie erscheinen danach automatisch im
+Dropdown-Menü bei der Terminerstellung, sodass du beim Eintragen von Terminen nicht mehr tippen,
+sondern nur noch auswählen musst. Folgende Dozenten sind bereits als Beispieldaten vorbereitet
+(aus `firebase/dozenten-seed.json`, kann bei Bedarf ähnlich wie die Klassen importiert werden):
+Nannt, Jordan, Dragojlovic, Fr. Eisele, Waldhier, Holzwarth, Hr. Weber, Hr. Fischer.
+
+## 8. Zufallspasswörter & Willkommens-E-Mails
+
+Beim Anlegen eines neuen Nutzers (Schüler oder Lehrer) wird jetzt automatisch ein zufälliges,
+10-stelliges Startpasswort generiert – ein manuelles Eintippen ist nicht mehr nötig.
+
+**Solange noch kein E-Mail-Versand eingerichtet ist:** Das generierte Passwort wird dir direkt
+nach dem Anlegen im Admin-Bereich angezeigt. Du musst es in diesem Fall händisch an den jeweiligen
+Nutzer weitergeben (z. B. per WhatsApp oder persönlich).
+
+**Sobald der SMTP-Versand eingerichtet ist** (siehe Punkt 5, Cloud Function `onTerminChange`):
+Die zusätzliche Cloud Function `sendeWillkommensmail` ist bereits vorbereitet und verschickt das
+Passwort automatisch per E-Mail an den neuen Nutzer, sobald sie zusammen mit den anderen Functions
+deployed wird (`firebase deploy --only functions`). Es ist keine zusätzliche Konfiguration nötig –
+sie nutzt dieselben SMTP-Zugangsdaten wie die Termin-Benachrichtigungen.

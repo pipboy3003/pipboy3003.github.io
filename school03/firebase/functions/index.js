@@ -57,3 +57,26 @@ exports.onTerminChange = functions.firestore
       zeitstempel: admin.firestore.FieldValue.serverTimestamp()
     });
   });
+
+
+// Sendet automatisch das Startpasswort an neu angelegte Nutzer, sobald ein neuer Eintrag in
+// "ausstehendeWillkommensmails" erscheint. Setzt voraus, dass SMTP konfiguriert ist (siehe oben).
+exports.sendeWillkommensmail = functions.firestore
+  .document('ausstehendeWillkommensmails/{mailId}')
+  .onCreate(async (snap, context) => {
+    const daten = snap.data();
+    const betreff = 'Ihr Zugang zum AT Learning Klassenbereich';
+    const text = `Hallo ${daten.name},\n\nIhr persönlicher Zugang zum Klassenbereich wurde angelegt.\n\n` +
+      `E-Mail: ${daten.email}\nStartpasswort: ${daten.passwort}\n\n` +
+      `Bitte melden Sie sich über "Mein Bereich" auf der Website an. Aus Sicherheitsgründen empfehlen ` +
+      `wir, das Passwort nach der ersten Anmeldung zu ändern.\n\nViele Grüße\nAT Learning`;
+
+    await transporter.sendMail({
+      from: '"AT Learning" <' + functions.config().smtp.user + '>',
+      to: daten.email,
+      subject: betreff,
+      text: text
+    });
+
+    await snap.ref.update({ versendet: true, versendetAm: admin.firestore.FieldValue.serverTimestamp() });
+  });

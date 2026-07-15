@@ -33,7 +33,7 @@ async function initAdmin(){
   nutzerKlasseSelect.innerHTML = '<option value="" disabled selected>Klasse zuweisen…</option>';
   alleKlassen.forEach(k => { const o=document.createElement('option'); o.value=k.id; o.textContent=k.name; nutzerKlasseSelect.appendChild(o); });
 
-  ladeNutzerListe(); ladeKurse(); ladeEinstellungen();
+  ladeNutzerListe(); ladeKurse(); ladeEinstellungen(); ladeDozenten();
 }
 
 const terminForm = document.getElementById('terminForm');
@@ -108,7 +108,8 @@ document.getElementById('nutzerForm').addEventListener('submit', async function(
   const note = document.getElementById('nutzerFormNote');
   const name = document.getElementById('nutzerName').value;
   const email = document.getElementById('nutzerEmail').value;
-  const passwort = document.getElementById('nutzerPasswort').value;
+  const passwort = generiereZufallsPasswort();
+  document.getElementById('nutzerPasswortAnzeige').value = passwort;
   const rolle = document.getElementById('nutzerRolle').value;
   const klasseId = document.getElementById('nutzerKlasse').value;
   try{
@@ -119,8 +120,17 @@ document.getElementById('nutzerForm').addEventListener('submit', async function(
     if(rolle==='lehrer') profil.klassenIds = [klasseId];
     await db.collection('users').doc(cred.user.uid).set(profil);
     await secondaryApp.auth().signOut();
-    note.textContent = 'Nutzer erfolgreich angelegt!'; note.className = 'form-note success';
-    setTimeout(() => { document.getElementById('nutzerFormWrap').classList.add('hidden'); note.textContent=''; ladeNutzerListe(); }, 1800);
+
+    // Hinweis: Sobald der E-Mail-Versand (SMTP) eingerichtet ist, übernimmt eine Cloud Function
+    // automatisch den Versand dieses Passworts an den Nutzer. Bis dahin manuell weitergeben.
+    await db.collection('ausstehendeWillkommensmails').add({
+      name, email, passwort, rolle, erstelltAm: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    note.innerHTML = `Nutzer erfolgreich angelegt!<br><strong>Startpasswort: ${passwort}</strong><br>
+      <span style="color:var(--text-dim);font-weight:400;">Da noch kein E-Mail-Versand eingerichtet ist, bitte dieses Passwort manuell an ${name} weitergeben.</span>`;
+    note.className = 'form-note success';
+    setTimeout(() => { document.getElementById('nutzerFormWrap').classList.add('hidden'); note.innerHTML=''; ladeNutzerListe(); }, 8000);
   } catch(err){ note.textContent = 'Fehler: ' + err.message; note.className = 'form-note error'; }
 });
 
@@ -190,4 +200,57 @@ async function ladeEinstellungen(){
   document.getElementById('setEmail').value = s.email||'';
   document.getElementById('setAddress').value = s.address||'';
   document.getElementById('setHours').value = s.hours||'';
+}
+
+
+let alleDozenten = [];
+
+async function ladeDozenten(){
+  const snap = await db.collection('dozenten').orderBy('name').get();
+  alleDozenten = snap.docs.map(d => ({id: d.id, ...d.data()}));
+
+  const select = document.getElementById('terminDozent');
+  select.innerHTML = '<option value="" disabled selected>Dozent auswählen…</option>';
+  alleDozenten.forEach(dz => { const o = document.createElement('option'); o.value = dz.name; o.textContent = dz.name; select.appendChild(o); });
+  const neuOpt = document.createElement('option'); neuOpt.value = '__neu__'; neuOpt.textContent = '+ Neuen Dozenten hinzufügen…';
+  select.appendChild(neuOpt);
+
+  const liste = document.getElementById('dozentenListe');
+  liste.innerHTML = '';
+  alleDozenten.forEach(dz => {
+    const chip = document.createElement('span');
+    chip.className = 'klasse-chip active';
+    chip.style.background = 'var(--blue-600)'; chip.style.borderColor = 'var(--blue-600)';
+    chip.textContent = dz.name;
+    liste.appendChild(chip);
+  });
+}
+
+document.getElementById('terminDozent').addEventListener('change', async function(){
+  if(this.value === '__neu__'){
+    const name = prompt('Name des neuen Dozenten:');
+    if(name && name.trim()){
+      await db.collection('dozenten').add({name: name.trim()});
+      await ladeDozenten();
+      document.getElementById('terminDozent').value = name.trim();
+    } else {
+      this.value = '';
+    }
+  }
+});
+
+document.getElementById('neuerDozentBtn').addEventListener('click', async function(){
+  const input = document.getElementById('neuerDozentName');
+  const name = input.value.trim();
+  if(!name) return;
+  await db.collection('dozenten').add({name});
+  input.value = '';
+  await ladeDozenten();
+});
+
+function generiereZufallsPasswort(){
+  const zeichen = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  let passwort = '';
+  for(let i = 0; i < 10; i++) passwort += zeichen.charAt(Math.floor(Math.random() * zeichen.length));
+  return passwort;
 }

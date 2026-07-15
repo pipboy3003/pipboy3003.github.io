@@ -24,6 +24,13 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+    match /dozenten/{dozentId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    match /ausstehendeWillkommensmails/{mailId} {
+      allow read, write: if isAdmin();
+    }
     match /klassen/{klasseId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();

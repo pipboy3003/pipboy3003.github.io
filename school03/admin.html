@@ -32,6 +32,16 @@
       <a href="admin-import.html" class="btn btn-outline">📋 Stundenplan-Import (viele Termine auf einmal)</a>
     </div>
     <div id="adminKalenderContainer"></div>
+    
+    <div class="admin-form" style="max-width:600px;margin-top:24px;">
+      <h3 style="margin-bottom:10px;font-size:1.05rem;">Dozenten verwalten</h3>
+      <div class="form-row">
+        <input type="text" id="neuerDozentName" placeholder="Name des Dozenten">
+        <button type="button" id="neuerDozentBtn" class="btn btn-outline">+ Hinzufügen</button>
+      </div>
+      <div id="dozentenListe" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;"></div>
+    </div>
+
     <div class="admin-form-wrap hidden" id="terminFormWrap">
       <form id="terminForm" class="admin-form">
         <input type="hidden" id="terminId">
@@ -45,7 +55,10 @@
         </div>
         <div class="form-row">
           <input type="text" id="terminThema" placeholder="Thema / Fach" required>
-          <input type="text" id="terminDozent" placeholder="Dozent">
+          <select id="terminDozent">
+            <option value="" disabled selected>Dozent auswählen…</option>
+            <option value="__neu__">+ Neuen Dozenten hinzufügen…</option>
+          </select>
         </div>
         <label style="display:flex;align-items:center;gap:8px;font-size:.9rem;"><input type="checkbox" id="terminAbgesagt" style="width:auto;"> Termin abgesagt</label>
         <label style="display:flex;align-items:center;gap:8px;font-size:.9rem;"><input type="checkbox" id="terminWiederholen" style="width:auto;"> Wöchentlich wiederholen bis Enddatum</label>
@@ -112,8 +125,9 @@
         </div>
         <div class="form-row">
           <input type="email" id="nutzerEmail" placeholder="E-Mail-Adresse" required>
-          <input type="password" id="nutzerPasswort" placeholder="Initiales Passwort" required>
+          <input type="text" id="nutzerPasswortAnzeige" placeholder="Passwort wird automatisch generiert" disabled>
         </div>
+        <p style="color:var(--text-dim);font-size:.82rem;">Das Startpasswort wird beim Anlegen automatisch zufällig erzeugt. Solange noch kein E-Mail-Versand eingerichtet ist, wird es dir direkt nach dem Anlegen hier angezeigt, damit du es manuell weitergeben kannst.</p>
         <div id="nutzerKlasseWrap">
           <select id="nutzerKlasse"><option value="" disabled selected>Klasse zuweisen…</option></select>
         </div>
