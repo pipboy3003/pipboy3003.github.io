@@ -1,4 +1,7 @@
 /*
+[2026-07-16 21:10 CEST] Delete-Dialog in App-State verdrahtet.
+- Custom-Delete-Dialog an Character-Modul übergeben.
+- Escape-Handling für Delete-Dialog ergänzt.
 [2026-07-16 21:07 CEST] Auth-UI logisch nach Login-State getrennt.
 - Gäste sehen nur Login/Registrieren.
 - Eingeloggte User sehen nur Account-Status und Logout.
@@ -69,7 +72,9 @@ const elements = {
   characterForm: document.getElementById("characterForm"),
   characterNameInput: document.getElementById("characterNameInput"),
   characterClassInput: document.getElementById("characterClassInput"),
-  characterFeedback: document.getElementById("characterFeedback")
+  characterFeedback: document.getElementById("characterFeedback"),
+  deleteDialog: document.getElementById("deleteCharacterDialog"),
+  deleteDialogText: document.getElementById("deleteDialogText")
 };
 
 const log = (message) => appendLog(elements.systemLog, message);
@@ -89,6 +94,8 @@ const characterModule = createCharacterModule({
   characterNameInput: elements.characterNameInput,
   characterClassInput: elements.characterClassInput,
   characterFeedback: elements.characterFeedback,
+  deleteDialog: elements.deleteDialog,
+  deleteDialogText: elements.deleteDialogText,
   showModal,
   hideModal,
   log,
