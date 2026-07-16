@@ -1,4 +1,8 @@
 /*
+[2026-07-16 21:07 CEST] Auth-Zustände visuell getrennt.
+- Eingeloggt-Ansicht für Account-Status ergänzt.
+- Logout steht nun allein in einem sauberen User-State.
+- Gast- und User-View teilen sich kein widersprüchliches UI mehr.
 [2026-07-16 11:48 CEST] Komponenten-Styling in eigene Datei ausgelagert.
 - Panels, Buttons, Slots, Modals, HUD und Log-Bereich getrennt.
 - Delete-Button und aktive Slots bleiben vollständig erhalten.
@@ -291,6 +295,26 @@
   width: min(520px, 100%);
 }
 
+.signed-in-box {
+  display: grid;
+  gap: 0.6rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.signed-in-box h3 {
+  margin: 0;
+  font-family: "Cinzel", serif;
+  letter-spacing: 0.02em;
+}
+
+.auth-user-actions {
+  margin-top: 1rem;
+  justify-content: flex-start;
+}
+
 .modal-head {
   display: flex;
   align-items: flex-start;
@@ -388,6 +412,10 @@
   .modal-footer > *,
   .hero-actions > * {
     flex: 1 1 100%;
+  }
+
+  .auth-user-actions {
+    justify-content: stretch;
   }
 }
 
