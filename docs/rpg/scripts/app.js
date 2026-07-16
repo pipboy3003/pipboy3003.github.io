@@ -1,4 +1,8 @@
 /*
+[2026-07-16 08:30 CEST] Delete-Flow für Character-Slots ergänzt.
+- Gefüllte Slots können gelöscht werden.
+- Aktiver Held wird beim Löschen automatisch zurückgesetzt, falls nötig.
+- Slot-Delete ist gegen versehentliche Auslösung per Confirm abgesichert.
 [2026-07-16 08:24 CEST] Phase 2 implementiert.
 - Character-Slots werden aus Firebase geladen.
 - Character-Creation-Modal mit Name und Klasse ergänzt.
@@ -305,10 +309,12 @@ function renderCharacterSlots() {
     const badge = button.querySelector(".slot-badge");
     const name = button.querySelector(".slot-name");
     const meta = button.querySelector(".slot-meta");
+    const deleteButton = button.querySelector(".slot-delete");
 
     badge.textContent = SLOT_LABELS[slotKey];
     button.classList.toggle("active-slot", isActive);
     button.classList.toggle("filled-slot", Boolean(data));
+    deleteButton.classList.toggle("visible", Boolean(data));
 
     if (data) {
       name.textContent = data.name;
@@ -367,6 +373,27 @@ async function saveCharacterToSlot(slotKey, payload) {
   await update(userRef, updates);
 }
 
+async function deleteCharacterFromSlot(slotKey) {
+  if (!state.currentUser) {
+    throw new Error("Du musst eingeloggt sein.");
+  }
+
+  const existingCharacter = state.characterSlots[slotKey];
+  if (!existingCharacter) {
+    return;
+  }
+
+  const userRef = ref(database, `users/${state.currentUser.uid}`);
+  const updates = {};
+  updates[`characterSlots/${slotKey}`] = null;
+
+  if (state.activeCharacter === slotKey) {
+    updates["activeCharacter"] = null;
+  }
+
+  await update(userRef, updates);
+}
+
 async function setActiveCharacter(slotKey) {
   if (!state.currentUser) {
     throw new Error("Du musst eingeloggt sein.");
@@ -386,6 +413,11 @@ async function setActiveCharacter(slotKey) {
 }
 
 function handleSlotClick(event) {
+  const deleteTrigger = event.target.closest("[data-delete-slot]");
+  if (deleteTrigger) {
+    return;
+  }
+
   const button = event.target.closest(".slot-card");
   if (!button) {
     return;
@@ -406,6 +438,35 @@ function handleSlotClick(event) {
     });
   } else {
     openCharacterModal(slotKey);
+  }
+}
+
+async function handleDeleteSlot(slotKey) {
+  if (!state.currentUser) {
+    openAuthModal();
+    appendLog("Login benötigt, um einen Slot zu löschen.");
+    return;
+  }
+
+  const slotData = state.characterSlots[slotKey];
+  if (!slotData) {
+    return;
+  }
+
+  const confirmed = window.confirm(
+    `${slotData.name} aus ${SLOT_LABELS[slotKey]} wirklich löschen?`
+  );
+
+  if (!confirmed) {
+    appendLog("Löschung abgebrochen.");
+    return;
+  }
+
+  try {
+    await deleteCharacterFromSlot(slotKey);
+    appendLog(`${slotData.name} aus ${SLOT_LABELS[slotKey]} gelöscht.`);
+  } catch (error) {
+    appendLog(`Delete-Fehler: ${error?.message || "Unbekannter Fehler"}`);
   }
 }
 
@@ -744,6 +805,17 @@ function bindEvents() {
   elements.authForm.addEventListener("submit", handleAuthSubmit);
   elements.characterForm.addEventListener("submit", handleCharacterSubmit);
   elements.slotGrid.addEventListener("click", handleSlotClick);
+
+  elements.slotGrid.addEventListener("click", (event) => {
+    const deleteTrigger = event.target.closest("[data-delete-slot]");
+    if (!deleteTrigger) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    handleDeleteSlot(deleteTrigger.dataset.deleteSlot);
+  });
 
   elements.closeCharacterBtn.addEventListener("click", closeCharacterModal);
 
