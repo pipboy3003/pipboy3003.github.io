@@ -1,4 +1,8 @@
 /*
+[2026-07-16 07:26 CEST] Layout-Fix für World Preview.
+- Grid-Stretching reduziert, damit das World-Preview-Panel nicht über Nachbarhöhen mitwächst.
+- Game-Container auf feste Höhe stabilisiert.
+- Panels in der Content-Zeile auf Start-Ausrichtung gesetzt.
 [2026-07-16 07:22 CEST] Phase 1 erweitert.
 - Game-Container stabilisiert.
 - World Preview feste Höhe und kontrolliertes Canvas-Verhalten.
@@ -172,6 +176,7 @@ button {
   grid-template-columns: minmax(0, 1.6fr) minmax(260px, 0.8fr);
   gap: 1.5rem;
   padding: 1.5rem;
+  align-items: start;
 }
 
 .hero-copy h2 {
@@ -207,7 +212,7 @@ button {
   border-radius: 1.25rem;
   border: 1px solid var(--color-border);
   background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
-  align-self: stretch;
+  align-self: start;
   display: grid;
   gap: 0.85rem;
 }
@@ -242,14 +247,24 @@ button {
   display: grid;
   grid-template-columns: 0.95fr 1.35fr;
   gap: 1.5rem;
+  align-items: start;
 }
 
 .lower-grid {
   grid-template-columns: 1fr 0.9fr;
+  align-items: start;
 }
 
 .panel {
   padding: 1.25rem;
+  align-self: start;
+}
+
+.character-panel,
+.world-panel,
+.hud-panel,
+.log-panel {
+  align-self: start;
 }
 
 .panel-header {
@@ -316,17 +331,22 @@ button {
   font-size: 0.95rem;
 }
 
+.world-panel {
+  display: flex;
+  flex-direction: column;
+}
+
 .game-container {
   width: 100%;
-  aspect-ratio: 16 / 7;
+  height: 420px;
   min-height: 420px;
   max-height: 420px;
   border-radius: 1.2rem;
   border: 1px solid var(--color-border);
   overflow: hidden;
   position: relative;
-  display: grid;
-  place-items: center;
+  display: block;
+  flex: 0 0 auto;
   background:
     linear-gradient(180deg, rgba(17, 22, 29, 0.36), rgba(17, 22, 29, 0.86)),
     radial-gradient(circle at center, rgba(89, 185, 172, 0.08), transparent 35%),
@@ -335,8 +355,8 @@ button {
 
 .game-container canvas {
   display: block;
-  max-width: 100%;
-  max-height: 100%;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .hud-preview {
@@ -389,6 +409,7 @@ button {
 
 .system-log {
   min-height: 190px;
+  max-height: 260px;
   padding: 1rem;
   border: 1px solid var(--color-border);
   border-radius: 1rem;
@@ -528,6 +549,13 @@ button {
   .lower-grid {
     grid-template-columns: 1fr;
   }
+
+  .game-container {
+    width: 100%;
+    height: 420px;
+    min-height: 420px;
+    max-height: 420px;
+  }
 }
 
 @media (max-width: 720px) {
@@ -556,6 +584,7 @@ button {
   }
 
   .game-container {
+    height: 320px;
     min-height: 320px;
     max-height: 320px;
   }
