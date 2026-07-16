@@ -1,4 +1,11 @@
 <!--
+[2026-07-16 08:24 CEST] Phase 2 implementiert.
+- Character-Slots mit aktivem Status vorbereitet.
+- Character-Creation-Modal ergänzt.
+- Enter-World-Button an aktiven Charakter gekoppelt.
+[2026-07-16 07:22 CEST] Phase 1 erweitert.
+- SVG-Favicon eingebunden.
+- Kopfbereich für GitHub-/Browser-Favicon vorbereitet.
 [2026-07-16 06:19 CEST] Phase 1 initial erstellt.
 - Browserbasierter RPG-Starter mit Landing UI, Auth-Modal, HUD und Phaser-Canvas.
 - Firebase-Web-SDK per CDN vorbereitet.
@@ -10,13 +17,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RPG Online - Phase 1</title>
-  <link rel="icon" href="./assets/ui/favicon.svg" type="image/svg+xml" sizes="any" />
-  <link rel="alternate icon" href="./assets/ui/favicon.svg" type="image/svg+xml" />
+  <title>RPG Online - Phase 2</title>
   <meta
     name="description"
-    content="Phase-1-Starter für ein browserbasiertes Online-RPG mit GitHub Pages, Phaser und Firebase."
+    content="Phase-2-Starter für ein browserbasiertes Online-RPG mit GitHub Pages, Phaser und Firebase."
   />
+
+  <link rel="icon" href="./assets/ui/favicon.svg" type="image/svg+xml" sizes="any" />
+  <link rel="alternate icon" href="./assets/ui/favicon.svg" type="image/svg+xml" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -50,45 +58,45 @@
         <button id="themeToggle" class="icon-button" type="button" aria-label="Theme umschalten">
           <span aria-hidden="true">◐</span>
         </button>
-        <button id="openAuthBtn" class="primary-button" type="button">Enter World</button>
+        <button id="openAuthBtn" class="primary-button" type="button">Account</button>
       </div>
     </header>
 
     <main id="main-content" class="main-layout">
       <section class="hero-panel">
         <div class="hero-copy">
-          <p class="section-label">Phase 1 Foundation Build</p>
-          <h2>Ein stylisches Browser-RPG, bereit für Login, Charaktere und Multiplayer.</h2>
+          <p class="section-label">Phase 2 Character Build</p>
+          <h2>Wähle deinen Helden, speichere ihn online und betrete die Welt.</h2>
           <p class="hero-text">
-            Diese erste Version setzt das Fundament für dein Game: starke Oberfläche,
-            Firebase-Authentifizierung, Charakter-Slots, HUD und ein Phaser-Game-Viewport.
+            Deine Charakter-Slots sind jetzt an Firebase gebunden. Du kannst Helden anlegen,
+            Klassen wählen und einen aktiven Charakter für den Weltbeitritt setzen.
           </p>
 
           <div class="hero-actions">
-            <button id="heroAuthBtn" class="primary-button" type="button">Jetzt starten</button>
-            <button id="guestPreviewBtn" class="secondary-button" type="button">UI ansehen</button>
+            <button id="enterWorldBtn" class="primary-button" type="button" disabled>Enter World</button>
+            <button id="guestPreviewBtn" class="secondary-button" type="button">World Preview</button>
           </div>
 
           <ul class="feature-list" role="list">
-            <li>Phaser 3 Canvas als Spielkern</li>
-            <li>Firebase Auth vorbereitet</li>
-            <li>GitHub Pages kompatibel</li>
-            <li>Dunkle Fantasy-Tech UI</li>
+            <li>3 persistente Character-Slots</li>
+            <li>Aktiver Held wird gespeichert</li>
+            <li>Firebase Realtime Sync</li>
+            <li>Mobile-ready UI</li>
           </ul>
         </div>
 
         <div class="status-card">
           <div class="status-row">
             <span class="status-label">Build</span>
-            <span class="status-value online">Phase 1 Ready</span>
+            <span class="status-value online">Phase 2 Ready</span>
           </div>
           <div class="status-row">
             <span class="status-label">Auth</span>
             <span id="authStatusText" class="status-value">Nicht angemeldet</span>
           </div>
           <div class="status-row">
-            <span class="status-label">Engine</span>
-            <span class="status-value">Phaser 3</span>
+            <span class="status-label">Aktiver Held</span>
+            <span id="activeCharacterText" class="status-value">Keiner</span>
           </div>
           <div class="status-row">
             <span class="status-label">Backend</span>
@@ -104,18 +112,23 @@
             <h3>Heldenauswahl</h3>
           </div>
 
-          <div class="slot-grid">
-            <button class="slot-card" type="button">
-              <span class="slot-name">Slot I</span>
-              <span class="slot-meta">Leer · Neuer Held</span>
+          <div id="slotGrid" class="slot-grid">
+            <button class="slot-card" type="button" data-slot="slot1">
+              <span class="slot-badge">Slot I</span>
+              <span class="slot-name">Leer</span>
+              <span class="slot-meta">Neuen Helden erstellen</span>
             </button>
-            <button class="slot-card" type="button">
-              <span class="slot-name">Slot II</span>
-              <span class="slot-meta">Leer · Neuer Held</span>
+
+            <button class="slot-card" type="button" data-slot="slot2">
+              <span class="slot-badge">Slot II</span>
+              <span class="slot-name">Leer</span>
+              <span class="slot-meta">Neuen Helden erstellen</span>
             </button>
-            <button class="slot-card" type="button">
-              <span class="slot-name">Slot III</span>
-              <span class="slot-meta">Leer · Neuer Held</span>
+
+            <button class="slot-card" type="button" data-slot="slot3">
+              <span class="slot-badge">Slot III</span>
+              <span class="slot-name">Leer</span>
+              <span class="slot-meta">Neuen Helden erstellen</span>
             </button>
           </div>
         </article>
@@ -211,8 +224,41 @@
     </section>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+  <div id="characterModal" class="modal-backdrop hidden" aria-hidden="true">
+    <section class="auth-modal character-modal" role="dialog" aria-modal="true" aria-labelledby="characterModalTitle">
+      <div class="modal-head">
+        <div>
+          <p class="section-label">Character Creation</p>
+          <h2 id="characterModalTitle">Neuen Helden erstellen</h2>
+        </div>
+        <button id="closeCharacterBtn" class="icon-button" type="button" aria-label="Dialog schließen">✕</button>
+      </div>
 
+      <form id="characterForm" class="auth-form">
+        <label class="field">
+          <span>Heldenname</span>
+          <input id="characterNameInput" name="characterName" type="text" maxlength="20" placeholder="z. B. Arkon" required />
+        </label>
+
+        <label class="field">
+          <span>Klasse</span>
+          <select id="characterClassInput" name="characterClass" class="select-field" required>
+            <option value="warrior">Warrior</option>
+            <option value="mage">Mage</option>
+            <option value="ranger">Ranger</option>
+          </select>
+        </label>
+
+        <button id="saveCharacterBtn" class="primary-button submit-button" type="submit">Charakter speichern</button>
+      </form>
+
+      <div class="modal-footer">
+        <p id="characterFeedback" class="auth-feedback">Wähle Namen und Klasse.</p>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
   <script type="module" src="./scripts/app.js"></script>
 </body>
 </html>
