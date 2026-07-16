@@ -1,10 +1,12 @@
 /*
+[2026-07-16 07:28 CEST] Hard-Fix für World Preview Wachstum.
+- Phaser Scale Mode von FIT auf NONE umgestellt.
+- Canvas wird nicht mehr vom Scale Manager dynamisch neu skaliert.
+- Feste Spielgröße und einmalige CSS-Synchronisierung eingebaut.
+- Realtime Database, Login und Presence bleiben erhalten.
 [2026-07-16 07:22 CEST] Phase 1 erweitert.
 - Phaser-Instanz gegen Doppelinitialisierung abgesichert.
 - Game-Container wird vor neuem Mount bereinigt.
-- Realtime Database integriert.
-- Userdaten und Presence werden bei Login automatisch angelegt bzw. aktualisiert.
-[2026-07-16 06:35 CEST] Phase 1 erweitert.
 - Realtime Database integriert.
 - Userdaten und Presence werden bei Login automatisch angelegt bzw. aktualisiert.
 */
@@ -24,6 +26,9 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
 import { database } from "./firebase-init.js";
+
+const GAME_WIDTH = 960;
+const GAME_HEIGHT = 420;
 
 const state = {
   authMode: "login",
@@ -174,6 +179,21 @@ async function initializePlayerData(user) {
   }
 }
 
+function syncCanvasToContainer() {
+  if (!state.gameInstance) {
+    return;
+  }
+
+  const canvas = elements.gameContainer.querySelector("canvas");
+  if (!canvas) {
+    return;
+  }
+
+  canvas.style.width = "100%";
+  canvas.style.height = "100%";
+  canvas.style.display = "block";
+}
+
 function mountPhaserGame() {
   if (!window.Phaser) {
     appendLog("Phaser konnte nicht geladen werden.");
@@ -286,24 +306,29 @@ function mountPhaserGame() {
       }).setOrigin(0.5);
 
       appendLog("Phaser-Viewport erfolgreich initialisiert.");
+      syncCanvasToContainer();
     }
   }
 
   const config = {
     type: Phaser.AUTO,
     parent: "gameContainer",
-    width: 960,
-    height: 420,
+    width: GAME_WIDTH,
+    height: GAME_HEIGHT,
     backgroundColor: "#081019",
     scene: [LobbyScene],
     scale: {
-      mode: Phaser.Scale.FIT,
-      autoCenter: Phaser.Scale.CENTER_BOTH
-    }
+      mode: Phaser.Scale.NONE,
+      width: GAME_WIDTH,
+      height: GAME_HEIGHT
+    },
+    autoRound: true
   };
 
   state.gameInstance = new Phaser.Game(config);
   state.gameReady = true;
+
+  window.addEventListener("resize", syncCanvasToContainer, { passive: true });
 }
 
 async function handleAuthSubmit(event) {
