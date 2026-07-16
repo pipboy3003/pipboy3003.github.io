@@ -1,6 +1,7 @@
 /*
-[2026-07-16 06:19 CEST] Phase 1 initial erstellt.
-- UI-Steuerung, Theme-Toggle, Auth-Modal, Firebase-Loginfluss und Phaser-Szene.
+[2026-07-16 06:35 CEST] Phase 1 erweitert.
+- Realtime Database integriert.
+- Userdaten und Presence werden bei Login automatisch angelegt bzw. aktualisiert.
 */
 
 import {
@@ -9,6 +10,15 @@ import {
   logoutUser,
   watchAuthState
 } from "./auth.js";
+
+import {
+  ref,
+  get,
+  set,
+  update
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+
+import { database } from "./firebase-init.js";
 
 const state = {
   authMode: "login",
@@ -102,6 +112,62 @@ function validateAuthInputs(email, password) {
   }
 }
 
+async function ensureUserRecord(user) {
+  const userRef = ref(database, `users/${user.uid}`);
+  const snapshot = await get(userRef);
+
+  if (!snapshot.exists()) {
+    await set(userRef, {
+      profile: {
+        name: user.email?.split("@")[0] || "Abenteurer",
+        class: "warrior",
+        level: 1,
+        createdAt: Date.now()
+      },
+      settings: {
+        music: true,
+        sfx: true
+      },
+      characterSlots: {
+        slot1: {
+          name: "Neuer Held",
+          class: "warrior",
+          level: 1
+        },
+        slot2: null,
+        slot3: null
+      }
+    });
+
+    appendLog("Neue Userstruktur automatisch angelegt.");
+  } else {
+    appendLog("Userstruktur bereits vorhanden.");
+  }
+}
+
+async function updatePresence(user) {
+  const presenceRef = ref(database, `presence/${user.uid}`);
+
+  await update(presenceRef, {
+    online: true,
+    zone: "starter-town",
+    x: 12,
+    y: 8,
+    updatedAt: Date.now()
+  });
+
+  appendLog("Presence erfolgreich aktualisiert.");
+}
+
+async function initializePlayerData(user) {
+  try {
+    await ensureUserRecord(user);
+    await updatePresence(user);
+  } catch (error) {
+    appendLog(`Datenbankfehler: ${error?.message || "Unbekannter Fehler"}`);
+  }
+}
+
 function mountPhaserGame() {
   if (state.gameReady || !window.Phaser) {
     return;
@@ -120,12 +186,12 @@ function mountPhaserGame() {
       background.fillGradientStyle(0x081019, 0x081019, 0x132437, 0x132437, 1);
       background.fillRect(0, 0, width, height);
 
-      const stars = this.add.graphics({ lineStyle: { width: 1, color: 0x2f7f85, alpha: 0.25 } });
+      const rings = this.add.graphics({ lineStyle: { width: 1, color: 0x2f7f85, alpha: 0.22 } });
       for (let i = 0; i < 22; i += 1) {
         const x = Phaser.Math.Between(20, width - 20);
         const y = Phaser.Math.Between(20, height - 20);
-        const r = Phaser.Math.Between(20, 90);
-        stars.strokeCircle(x, y, r);
+        const r = Phaser.Math.Between(18, 88);
+        rings.strokeCircle(x, y, r);
       }
 
       const title = this.add.text(width / 2, 88, "RPG ONLINE", {
@@ -134,7 +200,7 @@ function mountPhaserGame() {
         color: "#f1d79a"
       }).setOrigin(0.5);
 
-      const subtitle = this.add.text(width / 2, 132, "Phase 1 · Foundation Realm", {
+      this.add.text(width / 2, 132, "Phase 1 · Foundation Realm", {
         fontFamily: "Inter, sans-serif",
         fontSize: "16px",
         color: "#96a3b4"
@@ -147,7 +213,7 @@ function mountPhaserGame() {
       const player = this.add.rectangle(width / 2, height / 2 + 28, 26, 42, 0xd4b878, 1);
       const playerHead = this.add.circle(width / 2, height / 2 - 6, 12, 0xf4dfb0, 1);
 
-      const hint = this.add.text(
+      this.add.text(
         width / 2,
         height - 64,
         "Hier entsteht deine erste Stadt, dein HUD und dein Multiplayer-Layer.",
@@ -274,8 +340,16 @@ function bindEvents() {
   elements.loginTabBtn.addEventListener("click", () => setAuthMode("login"));
   elements.registerTabBtn.addEventListener("click", () => setAuthMode("register"));
   elements.themeToggle.addEventListener("click", setTheme);
+
   elements.logoutBtn.addEventListener("click", async () => {
     try {
+      if (state.currentUser) {
+        await update(ref(database, `presence/${state.currentUser.uid}`), {
+          online: false,
+          updatedAt: Date.now()
+        });
+      }
+
       await logoutUser();
       appendLog("Benutzer erfolgreich ausgeloggt.");
     } catch (error) {
@@ -303,8 +377,12 @@ function init() {
   bindEvents();
   mountPhaserGame();
 
-  watchAuthState((user) => {
+  watchAuthState(async (user) => {
     updateAuthUI(user);
+
+    if (user) {
+      await initializePlayerData(user);
+    }
   });
 
   appendLog("Phase 1 initialisiert.");
