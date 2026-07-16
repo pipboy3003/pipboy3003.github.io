@@ -1,4 +1,8 @@
 /*
+[2026-07-16 08:30 CEST] Delete-Button für Character-Slots ergänzt.
+- Slot-Header mit Badge und Delete-Aktion ergänzt.
+- Delete-Button nur bei gefüllten Slots sichtbar.
+- Löschaktion mobil tappbar gestaltet.
 [2026-07-16 08:24 CEST] Phase 2 Character-UI ergänzt.
 - Aktive und gefüllte Character-Slots gestylt.
 - Character-Creation-Modal und Select-Feld ergänzt.
@@ -21,7 +25,7 @@
   --color-primary: #9d7a32;
   --color-primary-strong: #7f6226;
   --color-accent: #1f7a72;
-  --color-danger: #9f4f4f;
+  --color-danger: #c45f5f;
   --color-shadow: rgba(33, 23, 10, 0.16);
   --gradient-hero: radial-gradient(circle at top, rgba(157, 122, 50, 0.18), transparent 44%);
 }
@@ -291,7 +295,8 @@ button {
     border-color 180ms ease,
     background 180ms ease,
     color 180ms ease,
-    box-shadow 180ms ease;
+    box-shadow 180ms ease,
+    opacity 180ms ease;
 }
 
 .slot-card {
@@ -335,11 +340,45 @@ button {
   box-shadow: 0 12px 32px rgba(0,0,0,0.18);
 }
 
+.slot-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
 .slot-badge {
   font-size: 0.76rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-text-muted);
+}
+
+.slot-delete {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-danger);
+  background: rgba(221, 127, 127, 0.08);
+  border: 1px solid rgba(221, 127, 127, 0.2);
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.slot-delete.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.slot-delete:hover,
+.slot-delete:focus-visible {
+  background: rgba(221, 127, 127, 0.16);
+  border-color: rgba(221, 127, 127, 0.4);
+  outline: none;
 }
 
 .slot-name {
@@ -701,8 +740,13 @@ button {
   }
 
   .slot-card {
-    min-height: 84px;
+    min-height: 92px;
     padding: 0.95rem;
+  }
+
+  .slot-delete {
+    width: 36px;
+    height: 36px;
   }
 
   .world-panel,
