@@ -1,15 +1,13 @@
 /*
+[2026-07-16 07:34 CEST] Diagnose- und Stabilitätsfix für World Preview.
+- World Preview hart auf feste Pixelgröße fixiert.
+- Canvas nicht mehr responsiv mitskalierend.
+- Container und Panel oben fixiert.
+- Layout für Diagnose bewusst strenger gemacht.
 [2026-07-16 07:28 CEST] Hard-Fix für World Preview Wachstum.
 - Canvas-Skalierung vollständig unter CSS-Kontrolle.
 - Fester Parent ohne Padding-Einfluss auf Phaser Scale-Verhalten.
 - Log-Höhe begrenzt, Grid oben ausgerichtet.
-[2026-07-16 07:26 CEST] Layout-Fix für World Preview.
-- Grid-Stretching reduziert, damit das World-Preview-Panel nicht über Nachbarhöhen mitwächst.
-- Game-Container auf feste Höhe stabilisiert.
-- Panels in der Content-Zeile auf Start-Ausrichtung gesetzt.
-[2026-07-16 06:19 CEST] Phase 1 initial erstellt.
-- Komplettes Theme für Landing, Panels, Modal, HUD und Game-Viewport.
-- Dunkle Fantasy-Tech Anmutung für ein browserbasiertes RPG.
 */
 
 :root,
@@ -246,9 +244,10 @@ button {
 
 .content-grid {
   display: grid;
-  grid-template-columns: 0.95fr 1.35fr;
+  grid-template-columns: 260px 960px;
   gap: 1.5rem;
   align-items: start;
+  justify-content: start;
 }
 
 .lower-grid {
@@ -335,10 +334,15 @@ button {
 .world-panel {
   display: flex;
   flex-direction: column;
+  width: 960px;
+  min-width: 960px;
+  max-width: 960px;
 }
 
 .game-container {
-  width: 100%;
+  width: 960px;
+  min-width: 960px;
+  max-width: 960px;
   height: 420px;
   min-height: 420px;
   max-height: 420px;
@@ -357,8 +361,12 @@ button {
 
 .game-container canvas {
   display: block;
-  width: 100% !important;
-  height: 100% !important;
+  width: 960px !important;
+  min-width: 960px !important;
+  max-width: 960px !important;
+  height: 420px !important;
+  min-height: 420px !important;
+  max-height: 420px !important;
   margin: 0 !important;
 }
 
@@ -546,11 +554,17 @@ button {
   outline-offset: 3px;
 }
 
-@media (max-width: 1100px) {
-  .hero-panel,
-  .content-grid,
-  .lower-grid {
+@media (max-width: 1350px) {
+  .content-grid {
     grid-template-columns: 1fr;
+  }
+
+  .world-panel,
+  .game-container,
+  .game-container canvas {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
   }
 
   .game-container {
@@ -585,10 +599,11 @@ button {
     font-size: 1.9rem;
   }
 
-  .game-container {
-    height: 320px;
-    min-height: 320px;
-    max-height: 320px;
+  .game-container,
+  .game-container canvas {
+    height: 320px !important;
+    min-height: 320px !important;
+    max-height: 320px !important;
   }
 
   .hud-bar {
