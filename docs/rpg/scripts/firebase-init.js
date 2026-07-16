@@ -1,7 +1,7 @@
 /*
-[2026-07-16 06:28 CEST] Firebase Setup erweitert.
+[2026-07-16 06:35 CEST] Firebase Setup erweitert.
 - Auth und Realtime Database initialisiert.
-- Phase 1 für Login und spätere Multiplayer-Daten vorbereitet.
+- Für automatische User- und Presence-Anlage vorbereitet.
 */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
@@ -15,7 +15,7 @@ const firebaseConfig = {
   storageBucket: "rpg01-793eb.firebasestorage.app",
   messagingSenderId: "381934095221",
   appId: "1:381934095221:web:71007bb26d223de0a7213c",
-  databaseURL: "https://rpg01-793eb-default-rtdb.europe-west1.firebasedatabase.app/"
+  databaseURL: "https://rpg01-793eb-default-rtdb.europe-west1.firebasedatabase.app"
 };
 
 const app = initializeApp(firebaseConfig);
