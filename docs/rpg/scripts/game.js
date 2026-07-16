@@ -1,224 +1,319 @@
 /*
-[2026-07-16 11:44 CEST] Phaser- und Preview-Logik ausgelagert.
-- World-Preview in eigenes Modul verschoben.
-- Canvas-Sync und Resize-Logging getrennt vom App-Entry.
+[2026-07-16 21:23 CEST] Phase 3 gestartet: echte Starter-Town als Datenwelt ergänzt.
+- Tilemap-JSON wird geladen und als Map gerendert.
+- Spawnpoint, Kollision und Kamera an Weltgröße gekoppelt.
+- Dummy-Preview durch strukturierte Weltbasis ersetzt.
+[2026-07-16 11:44 CEST] Game-Preview in eigenes Modul ausgelagert.
 */
 
-const GAME_WIDTH = 960;
-const GAME_HEIGHT = 420;
+export function createGameModule({
+  gameContainer,
+  worldPanel,
+  log
+}) {
+  let gameInstance = null;
 
-export function createGameModule({ gameContainer, worldPanel, log }) {
-  const state = {
-    gameInstance: null,
-    resizeObserver: null,
-    lastSizes: {
-      panel: "",
-      container: "",
-      canvas: ""
-    }
+  const WORLD = {
+    key: "starter-town",
+    tileSize: 32,
+    width: 24,
+    height: 18
   };
 
-  function syncCanvasToContainer() {
-    const canvas = gameContainer.querySelector("canvas");
-    if (!canvas) {
-      return;
-    }
-
-    canvas.width = GAME_WIDTH;
-    canvas.height = GAME_HEIGHT;
-    canvas.style.width = `${GAME_WIDTH}px`;
-    canvas.style.height = `${GAME_HEIGHT}px`;
-    canvas.style.maxWidth = "none";
-    canvas.style.maxHeight = "none";
-    canvas.style.display = "block";
-    canvas.style.margin = "0 auto";
+  function injectWorldAssets(scene) {
+    scene.load.tilemapTiledJSON("starter-town-map", "./assets/maps/starter-town.json");
   }
 
-  function observeWorldPreviewSizes() {
-    if (!window.ResizeObserver || state.resizeObserver) {
-      return;
-    }
+  function createFallbackTilesTexture(scene) {
+    const tileSize = WORLD.tileSize;
+    const canvas = scene.textures.createCanvas("starter-town-tiles", tileSize * 4, tileSize * 3);
+    const ctx = canvas.context;
 
-    const canvas = gameContainer.querySelector("canvas");
-    if (!canvas || !worldPanel || !gameContainer) {
-      return;
-    }
+    const paintTile = (index, draw) => {
+      const col = index % 4;
+      const row = Math.floor(index / 4);
+      const x = col * tileSize;
+      const y = row * tileSize;
 
-    state.resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const target = entry.target;
-        const width = Math.round(entry.contentRect.width);
-        const height = Math.round(entry.contentRect.height);
+      ctx.clearRect(x, y, tileSize, tileSize);
+      draw(ctx, x, y, tileSize);
+    };
 
-        let key = "";
-        let label = "";
+    paintTile(0, (c, x, y, s) => {
+      c.fillStyle = "#5b4631";
+      c.fillRect(x, y, s, s);
+      c.fillStyle = "#7e6242";
+      c.fillRect(x + 2, y + 2, s - 4, s - 4);
+    });
 
-        if (target === worldPanel) {
-          key = "panel";
-          label = "WorldPanel";
-        } else if (target === gameContainer) {
-          key = "container";
-          label = "GameContainer";
-        } else if (target === canvas) {
-          key = "canvas";
-          label = "Canvas";
-        }
-
-        if (!key) {
-          continue;
-        }
-
-        const value = `${width}x${height}`;
-        if (state.lastSizes[key] !== value) {
-          state.lastSizes[key] = value;
-          log(`${label} Größe: ${value}`);
-        }
+    paintTile(1, (c, x, y, s) => {
+      c.fillStyle = "#6f8f4e";
+      c.fillRect(x, y, s, s);
+      c.fillStyle = "#7ea55b";
+      for (let i = 0; i < 24; i += 1) {
+        c.fillRect(x + ((i * 11) % s), y + ((i * 7) % s), 3, 3);
       }
     });
 
-    state.resizeObserver.observe(worldPanel);
-    state.resizeObserver.observe(gameContainer);
-    state.resizeObserver.observe(canvas);
+    paintTile(2, (c, x, y, s) => {
+      c.fillStyle = "#8d7750";
+      c.fillRect(x, y, s, s);
+      c.fillStyle = "#9f8961";
+      c.fillRect(x, y + s / 2 - 3, s, 6);
+      c.fillRect(x + s / 2 - 3, y, 6, s);
+    });
+
+    paintTile(3, (c, x, y, s) => {
+      c.fillStyle = "#3f6e3a";
+      c.fillRect(x, y, s, s);
+      c.fillStyle = "#295127";
+      c.beginPath();
+      c.arc(x + s / 2, y + s / 2, 9, 0, Math.PI * 2);
+      c.fill();
+    });
+
+    paintTile(4, (c, x, y, s) => {
+      c.fillStyle = "#8a6845";
+      c.fillRect(x, y, s, s);
+      c.fillStyle = "#6d4e32";
+      c.fillRect(x + 4, y + 4, s - 8, s - 8);
+    });
+
+    paintTile(5, (c, x, y, s) => {
+      c.fillStyle = "#7d6856";
+      c.fillRect(x, y, s, s);
+      c.fillStyle = "#9a8572";
+      c.fillRect(x + 3, y + 3, s - 6, s - 6);
+    });
+
+    paintTile(6, (c, x, y, s) => {
+      c.fillStyle = "#a99177";
+      c.fillRect(x, y, s, s);
+      c.fillStyle = "#c2ac94";
+      c.fillRect(x + 5, y + 5, s - 10, s - 10);
+    });
+
+    paintTile(7, (c, x, y, s) => {
+      c.fillStyle = "#c6ab77";
+      c.fillRect(x, y, s, s);
+      c.fillStyle = "#e3ca94";
+      c.fillRect(x + 6, y + 6, s - 12, s - 12);
+    });
+
+    paintTile(8, (c, x, y, s) => {
+      c.fillStyle = "#8b7455";
+      c.fillRect(x, y, s, s);
+      c.fillStyle = "#d3bc8d";
+      c.fillRect(x + s / 2 - 4, y, 8, s);
+    });
+
+    paintTile(9, (c, x, y, s) => {
+      c.fillStyle = "rgba(0,0,0,0)";
+      c.clearRect(x, y, s, s);
+      c.fillStyle = "rgba(180, 70, 70, 0.35)";
+      c.fillRect(x, y, s, s);
+    });
+
+    paintTile(10, (c, x, y, s) => {
+      c.fillStyle = "rgba(170, 120, 80, 0.5)";
+      c.fillRect(x, y, s, s);
+    });
+
+    paintTile(11, (c, x, y, s) => {
+      c.fillStyle = "rgba(200, 160, 90, 0.5)";
+      c.fillRect(x, y, s, s);
+    });
+
+    canvas.refresh();
   }
 
-  function mountPhaserGame() {
-    if (!window.Phaser) {
-      log("Phaser konnte nicht geladen werden.");
-      return;
-    }
+  function createPlayerTexture(scene) {
+    const size = 28;
+    const canvas = scene.textures.createCanvas("player-token", size, size);
+    const ctx = canvas.context;
 
-    if (state.gameInstance) {
-      return;
-    }
+    ctx.clearRect(0, 0, size, size);
+    ctx.fillStyle = "#d4b878";
+    ctx.beginPath();
+    ctx.arc(size / 2, 9, 6, 0, Math.PI * 2);
+    ctx.fill();
 
-    gameContainer.innerHTML = "";
+    ctx.fillStyle = "#2a4058";
+    ctx.fillRect(8, 15, 12, 9);
 
-    class LobbyScene extends Phaser.Scene {
+    ctx.fillStyle = "#59b9ac";
+    ctx.fillRect(10, 17, 8, 5);
+
+    canvas.refresh();
+  }
+
+  function createWorldScene() {
+    return class WorldScene extends Phaser.Scene {
       constructor() {
-        super("LobbyScene");
+        super("world-scene");
+        this.player = null;
+        this.cursors = null;
+        this.map = null;
+        this.collisionLayer = null;
+        this.spawnPoint = { x: 384, y: 448 };
+        this.statusText = null;
+      }
+
+      preload() {
+        injectWorldAssets(this);
       }
 
       create() {
-        const width = GAME_WIDTH;
-        const height = GAME_HEIGHT;
+        createFallbackTilesTexture(this);
+        createPlayerTexture(this);
 
-        const background = this.add.graphics();
-        background.fillGradientStyle(0x081019, 0x081019, 0x132437, 0x132437, 1);
-        background.fillRect(0, 0, width, height);
+        this.map = this.make.tilemap({ key: "starter-town-map" });
 
-        const rings = this.add.graphics({ lineStyle: { width: 1, color: 0x2f7f85, alpha: 0.22 } });
-        for (let i = 0; i < 22; i += 1) {
-          const x = Phaser.Math.Between(20, width - 20);
-          const y = Phaser.Math.Between(20, height - 20);
-          const r = Phaser.Math.Between(18, 88);
-          rings.strokeCircle(x, y, r);
+        const tiles = this.map.addTilesetImage("starter-town-tiles", "starter-town-tiles", 32, 32, 0, 0);
+
+        const groundLayer = this.map.createLayer("Ground", tiles, 0, 0);
+        this.collisionLayer = this.map.createLayer("Collision", tiles, 0, 0);
+
+        if (groundLayer) {
+          groundLayer.setDepth(0);
         }
 
-        const title = this.add.text(width / 2, 88, "RPG ONLINE", {
-          fontFamily: "Cinzel, serif",
-          fontSize: "36px",
-          color: "#f1d79a"
-        }).setOrigin(0.5);
+        if (this.collisionLayer) {
+          this.collisionLayer.setDepth(1);
+          this.collisionLayer.setVisible(false);
+          this.collisionLayer.setCollisionByExclusion([-1, 0], true);
+        }
 
-        this.add.text(width / 2, 132, "Phase 2 · Character Selection Realm", {
-          fontFamily: "Inter, sans-serif",
-          fontSize: "16px",
-          color: "#96a3b4"
-        }).setOrigin(0.5);
-
-        const portal = this.add.circle(width / 2, height / 2 + 28, 74, 0x183d52, 0.9);
-        const portalRing = this.add.circle(width / 2, height / 2 + 28, 108);
-        portalRing.setStrokeStyle(4, 0xd4b878, 0.85);
-
-        const player = this.add.rectangle(width / 2, height / 2 + 28, 26, 42, 0xd4b878, 1);
-        const playerHead = this.add.circle(width / 2, height / 2 - 6, 12, 0xf4dfb0, 1);
-
-        this.add.text(
-          width / 2,
-          height - 64,
-          "Wähle deinen Helden und betrete bald die erste persistente Zone.",
-          {
-            fontFamily: "Inter, sans-serif",
-            fontSize: "15px",
-            color: "#d9e1ea",
-            align: "center",
-            wordWrap: { width: width - 80 }
+        const objectLayer = this.map.getObjectLayer("Objects");
+        if (objectLayer?.objects?.length) {
+          const spawnObject = objectLayer.objects.find((obj) => obj.name === "spawn");
+          if (spawnObject) {
+            this.spawnPoint = {
+              x: spawnObject.x + 16,
+              y: spawnObject.y - 16
+            };
           }
-        ).setOrigin(0.5);
 
-        this.tweens.add({
-          targets: [portal, portalRing],
-          scale: { from: 0.97, to: 1.03 },
-          alpha: { from: 0.85, to: 1 },
-          duration: 1800,
-          yoyo: true,
-          repeat: -1,
-          ease: "Sine.easeInOut"
-        });
+          objectLayer.objects.forEach((obj) => {
+            if (obj.type === "safe-zone") {
+              this.add.rectangle(obj.x, obj.y - obj.height, obj.width, obj.height, 0x59b9ac, 0.12)
+                .setOrigin(0, 0)
+                .setDepth(2);
+            }
 
-        this.tweens.add({
-          targets: [player, playerHead],
-          y: "-=10",
-          duration: 1600,
-          yoyo: true,
-          repeat: -1,
-          ease: "Sine.easeInOut"
-        });
+            if (obj.type === "poi") {
+              this.add.circle(obj.x + 16, obj.y - 16, 7, 0xd4b878, 0.8).setDepth(3);
+            }
+          });
+        }
 
-        this.tweens.add({
-          targets: title,
-          alpha: { from: 0.72, to: 1 },
-          duration: 1500,
-          yoyo: true,
-          repeat: -1,
-          ease: "Sine.easeInOut"
-        });
+        this.physics.world.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
 
-        this.add.text(24, 24, "Viewport live", {
+        this.player = this.physics.add.sprite(this.spawnPoint.x, this.spawnPoint.y, "player-token");
+        this.player.setCollideWorldBounds(true);
+        this.player.setDepth(4);
+        this.player.body.setSize(18, 20);
+        this.player.body.setOffset(5, 6);
+
+        if (this.collisionLayer) {
+          this.physics.add.collider(this.player, this.collisionLayer);
+        }
+
+        this.cameras.main.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
+        this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
+        this.cameras.main.setZoom(1.6);
+
+        this.cursors = this.input.keyboard.createCursorKeys();
+        const wasd = this.input.keyboard.addKeys("W,A,S,D");
+
+        this.inputKeys = {
+          up: [this.cursors.up, wasd.W],
+          down: [this.cursors.down, wasd.S],
+          left: [this.cursors.left, wasd.A],
+          right: [this.cursors.right, wasd.D]
+        };
+
+        this.statusText = this.add.text(12, 12, "Starter Town", {
           fontFamily: "Inter, sans-serif",
           fontSize: "14px",
-          color: "#59b9ac"
-        });
+          color: "#eef2f7",
+          backgroundColor: "rgba(9, 12, 17, 0.72)",
+          padding: { x: 10, y: 6 }
+        }).setScrollFactor(0).setDepth(10);
 
-        this.add.text(width - 24, 24, "GitHub + Firebase", {
-          fontFamily: "Inter, sans-serif",
-          fontSize: "14px",
-          color: "#d4b878"
-        }).setOrigin(1, 0);
-
-        this.add.text(width / 2, height / 2 + 160, "Choose Hero Soon", {
-          fontFamily: "Cinzel, serif",
-          fontSize: "22px",
-          color: "#f0d79e"
-        }).setOrigin(0.5);
-
-        log("Phaser-Viewport erfolgreich initialisiert.");
-        syncCanvasToContainer();
-        observeWorldPreviewSizes();
+        log("Phase 3 geladen: Starter Town aktiv.");
       }
+
+      update() {
+        if (!this.player) {
+          return;
+        }
+
+        const speed = 150;
+        let velocityX = 0;
+        let velocityY = 0;
+
+        const isDown = (keys) => keys.some((key) => key?.isDown);
+
+        if (isDown(this.inputKeys.left)) {
+          velocityX = -speed;
+        } else if (isDown(this.inputKeys.right)) {
+          velocityX = speed;
+        }
+
+        if (isDown(this.inputKeys.up)) {
+          velocityY = -speed;
+        } else if (isDown(this.inputKeys.down)) {
+          velocityY = speed;
+        }
+
+        this.player.setVelocity(velocityX, velocityY);
+
+        if (velocityX !== 0 && velocityY !== 0) {
+          this.player.body.velocity.normalize().scale(speed);
+        }
+
+        const tileX = Math.floor(this.player.x / WORLD.tileSize);
+        const tileY = Math.floor(this.player.y / WORLD.tileSize);
+
+        if (this.statusText) {
+          this.statusText.setText([
+            "Starter Town",
+            `Position: ${tileX}, ${tileY}`,
+            "Move: WASD / Pfeiltasten"
+          ]);
+        }
+      }
+    };
+  }
+
+  function mountPhaserGame() {
+    if (gameInstance || typeof Phaser === "undefined") {
+      return;
     }
 
     const config = {
-      type: Phaser.CANVAS,
-      parent: gameContainer.id,
-      width: GAME_WIDTH,
-      height: GAME_HEIGHT,
-      backgroundColor: "#081019",
-      scene: [LobbyScene],
+      type: Phaser.AUTO,
+      parent: gameContainer,
+      width: WORLD.width * WORLD.tileSize,
+      height: WORLD.height * WORLD.tileSize,
+      backgroundColor: "#0b1016",
+      pixelArt: true,
       scale: {
-        mode: Phaser.Scale.NONE,
-        width: GAME_WIDTH,
-        height: GAME_HEIGHT
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH
       },
-      autoRound: true,
-      render: {
-        antialias: true,
-        pixelArt: false,
-        roundPixels: false
-      }
+      physics: {
+        default: "arcade",
+        arcade: {
+          debug: false
+        }
+      },
+      scene: createWorldScene()
     };
 
-    state.gameInstance = new Phaser.Game(config);
+    gameInstance = new Phaser.Game(config);
+    worldPanel.dataset.worldReady = "true";
   }
 
   return {
