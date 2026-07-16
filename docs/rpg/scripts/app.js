@@ -1,14 +1,14 @@
 /*
+[2026-07-16 07:34 CEST] Diagnose- und Stabilitätsfix für World Preview.
+- Phaser vollständig ohne Auto-Scaling betrieben.
+- Canvas mit festen Pixelmaßen erzeugt.
+- ResizeObserver für Panel, Container und Canvas hinzugefügt.
+- Loggt Größenänderungen sichtbar ins System-Log.
+- Realtime Database, Login und Presence bleiben erhalten.
 [2026-07-16 07:28 CEST] Hard-Fix für World Preview Wachstum.
 - Phaser Scale Mode von FIT auf NONE umgestellt.
 - Canvas wird nicht mehr vom Scale Manager dynamisch neu skaliert.
 - Feste Spielgröße und einmalige CSS-Synchronisierung eingebaut.
-- Realtime Database, Login und Presence bleiben erhalten.
-[2026-07-16 07:22 CEST] Phase 1 erweitert.
-- Phaser-Instanz gegen Doppelinitialisierung abgesichert.
-- Game-Container wird vor neuem Mount bereinigt.
-- Realtime Database integriert.
-- Userdaten und Presence werden bei Login automatisch angelegt bzw. aktualisiert.
 */
 
 import {
@@ -34,7 +34,13 @@ const state = {
   authMode: "login",
   currentUser: null,
   gameReady: false,
-  gameInstance: null
+  gameInstance: null,
+  resizeObserver: null,
+  lastSizes: {
+    panel: "",
+    container: "",
+    canvas: ""
+  }
 };
 
 const elements = {
@@ -54,7 +60,8 @@ const elements = {
   registerTabBtn: document.getElementById("registerTabBtn"),
   themeToggle: document.getElementById("themeToggle"),
   systemLog: document.getElementById("systemLog"),
-  gameContainer: document.getElementById("gameContainer")
+  gameContainer: document.getElementById("gameContainer"),
+  worldPanel: document.querySelector(".world-panel")
 };
 
 function appendLog(message) {
@@ -180,18 +187,65 @@ async function initializePlayerData(user) {
 }
 
 function syncCanvasToContainer() {
-  if (!state.gameInstance) {
-    return;
-  }
-
   const canvas = elements.gameContainer.querySelector("canvas");
   if (!canvas) {
     return;
   }
 
-  canvas.style.width = "100%";
-  canvas.style.height = "100%";
+  canvas.width = GAME_WIDTH;
+  canvas.height = GAME_HEIGHT;
+  canvas.style.width = `${GAME_WIDTH}px`;
+  canvas.style.height = `${GAME_HEIGHT}px`;
+  canvas.style.maxWidth = "none";
+  canvas.style.maxHeight = "none";
   canvas.style.display = "block";
+  canvas.style.margin = "0 auto";
+}
+
+function observeWorldPreviewSizes() {
+  if (!window.ResizeObserver || state.resizeObserver) {
+    return;
+  }
+
+  const canvas = elements.gameContainer.querySelector("canvas");
+  if (!canvas || !elements.worldPanel || !elements.gameContainer) {
+    return;
+  }
+
+  state.resizeObserver = new ResizeObserver((entries) => {
+    for (const entry of entries) {
+      const target = entry.target;
+      const width = Math.round(entry.contentRect.width);
+      const height = Math.round(entry.contentRect.height);
+      let key = "";
+      let label = "";
+
+      if (target === elements.worldPanel) {
+        key = "panel";
+        label = "WorldPanel";
+      } else if (target === elements.gameContainer) {
+        key = "container";
+        label = "GameContainer";
+      } else if (target === canvas) {
+        key = "canvas";
+        label = "Canvas";
+      }
+
+      if (!key) {
+        continue;
+      }
+
+      const value = `${width}x${height}`;
+      if (state.lastSizes[key] !== value) {
+        state.lastSizes[key] = value;
+        appendLog(`${label} Größe: ${value}`);
+      }
+    }
+  });
+
+  state.resizeObserver.observe(elements.worldPanel);
+  state.resizeObserver.observe(elements.gameContainer);
+  state.resizeObserver.observe(canvas);
 }
 
 function mountPhaserGame() {
@@ -212,8 +266,8 @@ function mountPhaserGame() {
     }
 
     create() {
-      const width = this.scale.width;
-      const height = this.scale.height;
+      const width = GAME_WIDTH;
+      const height = GAME_HEIGHT;
 
       const background = this.add.graphics();
       background.fillGradientStyle(0x081019, 0x081019, 0x132437, 0x132437, 1);
@@ -307,11 +361,12 @@ function mountPhaserGame() {
 
       appendLog("Phaser-Viewport erfolgreich initialisiert.");
       syncCanvasToContainer();
+      observeWorldPreviewSizes();
     }
   }
 
   const config = {
-    type: Phaser.AUTO,
+    type: Phaser.CANVAS,
     parent: "gameContainer",
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
@@ -322,13 +377,16 @@ function mountPhaserGame() {
       width: GAME_WIDTH,
       height: GAME_HEIGHT
     },
-    autoRound: true
+    autoRound: true,
+    render: {
+      antialias: true,
+      pixelArt: false,
+      roundPixels: false
+    }
   };
 
   state.gameInstance = new Phaser.Game(config);
   state.gameReady = true;
-
-  window.addEventListener("resize", syncCanvasToContainer, { passive: true });
 }
 
 async function handleAuthSubmit(event) {
