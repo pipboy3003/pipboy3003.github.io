@@ -1,14 +1,14 @@
 /*
+[2026-07-16 08:24 CEST] Phase 2 implementiert.
+- Character-Slots werden aus Firebase geladen.
+- Character-Creation-Modal mit Name und Klasse ergänzt.
+- Aktiver Charakter wird gespeichert und UI-seitig hervorgehoben.
+- Enter World erst mit aktivem Charakter freigegeben.
 [2026-07-16 07:34 CEST] Diagnose- und Stabilitätsfix für World Preview.
 - Phaser vollständig ohne Auto-Scaling betrieben.
 - Canvas mit festen Pixelmaßen erzeugt.
 - ResizeObserver für Panel, Container und Canvas hinzugefügt.
 - Loggt Größenänderungen sichtbar ins System-Log.
-- Realtime Database, Login und Presence bleiben erhalten.
-[2026-07-16 07:28 CEST] Hard-Fix für World Preview Wachstum.
-- Phaser Scale Mode von FIT auf NONE umgestellt.
-- Canvas wird nicht mehr vom Scale Manager dynamisch neu skaliert.
-- Feste Spielgröße und einmalige CSS-Synchronisierung eingebaut.
 */
 
 import {
@@ -22,13 +22,40 @@ import {
   ref,
   get,
   set,
-  update
+  update,
+  onValue,
+  off
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
 import { database } from "./firebase-init.js";
 
 const GAME_WIDTH = 960;
 const GAME_HEIGHT = 420;
+const DEFAULT_CLASS = "warrior";
+
+const CLASS_DATA = {
+  warrior: {
+    label: "Warrior",
+    hp: 140,
+    mana: 40
+  },
+  mage: {
+    label: "Mage",
+    hp: 80,
+    mana: 140
+  },
+  ranger: {
+    label: "Ranger",
+    hp: 100,
+    mana: 90
+  }
+};
+
+const SLOT_LABELS = {
+  slot1: "Slot I",
+  slot2: "Slot II",
+  slot3: "Slot III"
+};
 
 const state = {
   authMode: "login",
@@ -36,6 +63,15 @@ const state = {
   gameReady: false,
   gameInstance: null,
   resizeObserver: null,
+  selectedSlot: null,
+  activeCharacter: null,
+  characterSlots: {
+    slot1: null,
+    slot2: null,
+    slot3: null
+  },
+  userCharactersRef: null,
+  userCharactersCallback: null,
   lastSizes: {
     panel: "",
     container: "",
@@ -46,7 +82,6 @@ const state = {
 const elements = {
   authModal: document.getElementById("authModal"),
   openAuthBtn: document.getElementById("openAuthBtn"),
-  heroAuthBtn: document.getElementById("heroAuthBtn"),
   guestPreviewBtn: document.getElementById("guestPreviewBtn"),
   closeAuthBtn: document.getElementById("closeAuthBtn"),
   authForm: document.getElementById("authForm"),
@@ -61,7 +96,16 @@ const elements = {
   themeToggle: document.getElementById("themeToggle"),
   systemLog: document.getElementById("systemLog"),
   gameContainer: document.getElementById("gameContainer"),
-  worldPanel: document.querySelector(".world-panel")
+  worldPanel: document.querySelector(".world-panel"),
+  slotGrid: document.getElementById("slotGrid"),
+  enterWorldBtn: document.getElementById("enterWorldBtn"),
+  activeCharacterText: document.getElementById("activeCharacterText"),
+  characterModal: document.getElementById("characterModal"),
+  closeCharacterBtn: document.getElementById("closeCharacterBtn"),
+  characterForm: document.getElementById("characterForm"),
+  characterNameInput: document.getElementById("characterNameInput"),
+  characterClassInput: document.getElementById("characterClassInput"),
+  characterFeedback: document.getElementById("characterFeedback")
 };
 
 function appendLog(message) {
@@ -76,14 +120,29 @@ function appendLog(message) {
   elements.systemLog.prepend(entry);
 }
 
-function openModal() {
+function openAuthModal() {
   elements.authModal.classList.remove("hidden");
   elements.authModal.setAttribute("aria-hidden", "false");
 }
 
-function closeModal() {
+function closeAuthModal() {
   elements.authModal.classList.add("hidden");
   elements.authModal.setAttribute("aria-hidden", "true");
+}
+
+function openCharacterModal(slotKey) {
+  state.selectedSlot = slotKey;
+  elements.characterModal.classList.remove("hidden");
+  elements.characterModal.setAttribute("aria-hidden", "false");
+  elements.characterNameInput.value = "";
+  elements.characterClassInput.value = DEFAULT_CLASS;
+  elements.characterFeedback.textContent = `${SLOT_LABELS[slotKey]} wird erstellt.`;
+  elements.characterNameInput.focus();
+}
+
+function closeCharacterModal() {
+  elements.characterModal.classList.add("hidden");
+  elements.characterModal.setAttribute("aria-hidden", "true");
 }
 
 function setAuthMode(mode) {
@@ -106,6 +165,22 @@ function setTheme() {
   appendLog(`Theme gewechselt: ${next}.`);
 }
 
+function sanitizeCharacterName(name) {
+  return name.trim().replace(/\s+/g, " ").slice(0, 20);
+}
+
+function getClassLabel(classKey) {
+  return CLASS_DATA[classKey]?.label ?? "Unknown";
+}
+
+function getCharacterSummary(character) {
+  if (!character) {
+    return "Keiner";
+  }
+
+  return `${character.name} · ${getClassLabel(character.class)} · Lvl ${character.level}`;
+}
+
 function updateAuthUI(user) {
   state.currentUser = user;
 
@@ -116,6 +191,7 @@ function updateAuthUI(user) {
   } else {
     elements.authStatusText.textContent = "Nicht angemeldet";
     elements.authFeedback.textContent = "Noch nicht verbunden.";
+    elements.activeCharacterText.textContent = "Keiner";
     appendLog("Kein Benutzer angemeldet.");
   }
 }
@@ -130,6 +206,20 @@ function validateAuthInputs(email, password) {
   }
 }
 
+function validateCharacterInputs(name, classKey) {
+  if (!name) {
+    throw new Error("Bitte einen Heldennamen eingeben.");
+  }
+
+  if (name.length < 3) {
+    throw new Error("Der Heldenname muss mindestens 3 Zeichen lang sein.");
+  }
+
+  if (!CLASS_DATA[classKey]) {
+    throw new Error("Bitte eine gültige Klasse wählen.");
+  }
+}
+
 async function ensureUserRecord(user) {
   const userRef = ref(database, `users/${user.uid}`);
   const snapshot = await get(userRef);
@@ -138,7 +228,7 @@ async function ensureUserRecord(user) {
     await set(userRef, {
       profile: {
         name: user.email?.split("@")[0] || "Abenteurer",
-        class: "warrior",
+        class: DEFAULT_CLASS,
         level: 1,
         createdAt: Date.now()
       },
@@ -146,12 +236,9 @@ async function ensureUserRecord(user) {
         music: true,
         sfx: true
       },
+      activeCharacter: null,
       characterSlots: {
-        slot1: {
-          name: "Neuer Held",
-          class: "warrior",
-          level: 1
-        },
+        slot1: null,
         slot2: null,
         slot3: null
       }
@@ -159,7 +246,27 @@ async function ensureUserRecord(user) {
 
     appendLog("Neue Userstruktur automatisch angelegt.");
   } else {
-    appendLog("Userstruktur bereits vorhanden.");
+    const data = snapshot.val() || {};
+    const updates = {};
+
+    if (!Object.prototype.hasOwnProperty.call(data, "activeCharacter")) {
+      updates["activeCharacter"] = null;
+    }
+
+    if (!data.characterSlots) {
+      updates["characterSlots"] = {
+        slot1: null,
+        slot2: null,
+        slot3: null
+      };
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await update(userRef, updates);
+      appendLog("Userstruktur für Phase 2 ergänzt.");
+    } else {
+      appendLog("Userstruktur bereits vorhanden.");
+    }
   }
 }
 
@@ -181,8 +288,124 @@ async function initializePlayerData(user) {
   try {
     await ensureUserRecord(user);
     await updatePresence(user);
+    attachCharacterListener(user.uid);
   } catch (error) {
     appendLog(`Datenbankfehler: ${error?.message || "Unbekannter Fehler"}`);
+  }
+}
+
+function renderCharacterSlots() {
+  const buttons = elements.slotGrid.querySelectorAll(".slot-card");
+
+  buttons.forEach((button) => {
+    const slotKey = button.dataset.slot;
+    const data = state.characterSlots[slotKey];
+    const isActive = state.activeCharacter === slotKey;
+
+    const badge = button.querySelector(".slot-badge");
+    const name = button.querySelector(".slot-name");
+    const meta = button.querySelector(".slot-meta");
+
+    badge.textContent = SLOT_LABELS[slotKey];
+    button.classList.toggle("active-slot", isActive);
+    button.classList.toggle("filled-slot", Boolean(data));
+
+    if (data) {
+      name.textContent = data.name;
+      meta.textContent = `${getClassLabel(data.class)} · Level ${data.level}`;
+    } else {
+      name.textContent = "Leer";
+      meta.textContent = "Neuen Helden erstellen";
+    }
+  });
+
+  const activeData = state.activeCharacter ? state.characterSlots[state.activeCharacter] : null;
+  elements.activeCharacterText.textContent = getCharacterSummary(activeData);
+  elements.enterWorldBtn.disabled = !activeData;
+}
+
+function attachCharacterListener(uid) {
+  detachCharacterListener();
+
+  state.userCharactersRef = ref(database, `users/${uid}`);
+
+  state.userCharactersCallback = (snapshot) => {
+    const data = snapshot.val() || {};
+    state.characterSlots = {
+      slot1: data.characterSlots?.slot1 ?? null,
+      slot2: data.characterSlots?.slot2 ?? null,
+      slot3: data.characterSlots?.slot3 ?? null
+    };
+    state.activeCharacter = data.activeCharacter ?? null;
+
+    renderCharacterSlots();
+    appendLog("Character-Slots synchronisiert.");
+  };
+
+  onValue(state.userCharactersRef, state.userCharactersCallback);
+}
+
+function detachCharacterListener() {
+  if (state.userCharactersRef && state.userCharactersCallback) {
+    off(state.userCharactersRef, "value", state.userCharactersCallback);
+  }
+
+  state.userCharactersRef = null;
+  state.userCharactersCallback = null;
+}
+
+async function saveCharacterToSlot(slotKey, payload) {
+  if (!state.currentUser) {
+    throw new Error("Du musst eingeloggt sein.");
+  }
+
+  const userRef = ref(database, `users/${state.currentUser.uid}`);
+  const updates = {};
+  updates[`characterSlots/${slotKey}`] = payload;
+  updates["activeCharacter"] = slotKey;
+
+  await update(userRef, updates);
+}
+
+async function setActiveCharacter(slotKey) {
+  if (!state.currentUser) {
+    throw new Error("Du musst eingeloggt sein.");
+  }
+
+  const slotData = state.characterSlots[slotKey];
+  if (!slotData) {
+    openCharacterModal(slotKey);
+    return;
+  }
+
+  await update(ref(database, `users/${state.currentUser.uid}`), {
+    activeCharacter: slotKey
+  });
+
+  appendLog(`${slotData.name} als aktiver Held gesetzt.`);
+}
+
+function handleSlotClick(event) {
+  const button = event.target.closest(".slot-card");
+  if (!button) {
+    return;
+  }
+
+  if (!state.currentUser) {
+    openAuthModal();
+    appendLog("Login benötigt, um Character-Slots zu nutzen.");
+    return;
+  }
+
+  const slotKey = button.dataset.slot;
+  const slotData = state.characterSlots[slotKey];
+
+  if (slotData) {
+    setActiveCharacter(slotKey).catch((error) => {
+      appendLog(`Slot-Fehler: ${error?.message || "Unbekannter Fehler"}`);
+    });
+  } else {
+    openCharacterModal(slotKey);
   }
 }
 
@@ -287,7 +510,7 @@ function mountPhaserGame() {
         color: "#f1d79a"
       }).setOrigin(0.5);
 
-      this.add.text(width / 2, 132, "Phase 1 · Foundation Realm", {
+      this.add.text(width / 2, 132, "Phase 2 · Character Selection Realm", {
         fontFamily: "Inter, sans-serif",
         fontSize: "16px",
         color: "#96a3b4"
@@ -303,7 +526,7 @@ function mountPhaserGame() {
       this.add.text(
         width / 2,
         height - 64,
-        "Hier entsteht deine erste Stadt, dein HUD und dein Multiplayer-Layer.",
+        "Wähle deinen Helden und betrete bald die erste persistente Zone.",
         {
           fontFamily: "Inter, sans-serif",
           fontSize: "15px",
@@ -353,7 +576,7 @@ function mountPhaserGame() {
         color: "#d4b878"
       }).setOrigin(1, 0);
 
-      this.add.text(width / 2, height / 2 + 160, "Enter World Soon", {
+      this.add.text(width / 2, height / 2 + 160, "Choose Hero Soon", {
         fontFamily: "Cinzel, serif",
         fontSize: "22px",
         color: "#f0d79e"
@@ -410,7 +633,7 @@ async function handleAuthSubmit(event) {
       appendLog("Registrierung erfolgreich ausgeführt.");
     }
 
-    closeModal();
+    closeAuthModal();
   } catch (error) {
     const message = error?.message || "Authentifizierung fehlgeschlagen.";
     elements.authFeedback.textContent = message;
@@ -420,18 +643,78 @@ async function handleAuthSubmit(event) {
   }
 }
 
+async function handleCharacterSubmit(event) {
+  event.preventDefault();
+
+  const rawName = elements.characterNameInput.value;
+  const characterName = sanitizeCharacterName(rawName);
+  const characterClass = elements.characterClassInput.value;
+
+  try {
+    validateCharacterInputs(characterName, characterClass);
+
+    if (!state.selectedSlot) {
+      throw new Error("Kein Character-Slot ausgewählt.");
+    }
+
+    elements.characterFeedback.textContent = "Charakter wird gespeichert ...";
+
+    const classData = CLASS_DATA[characterClass];
+    const payload = {
+      name: characterName,
+      class: characterClass,
+      level: 1,
+      stats: {
+        hp: classData.hp,
+        mana: classData.mana
+      },
+      createdAt: Date.now()
+    };
+
+    await saveCharacterToSlot(state.selectedSlot, payload);
+
+    elements.characterFeedback.textContent = "Charakter erfolgreich gespeichert.";
+    appendLog(`${characterName} in ${SLOT_LABELS[state.selectedSlot]} gespeichert.`);
+    closeCharacterModal();
+  } catch (error) {
+    const message = error?.message || "Charakter konnte nicht gespeichert werden.";
+    elements.characterFeedback.textContent = message;
+    appendLog(`Character-Fehler: ${message}`);
+  }
+}
+
+function handleEnterWorld() {
+  if (!state.currentUser) {
+    openAuthModal();
+    appendLog("Login benötigt, bevor du die Welt betreten kannst.");
+    return;
+  }
+
+  const activeCharacter = state.activeCharacter
+    ? state.characterSlots[state.activeCharacter]
+    : null;
+
+  if (!activeCharacter) {
+    appendLog("Bitte zuerst einen aktiven Charakter auswählen.");
+    return;
+  }
+
+  appendLog(`Weltbeitritt vorbereitet für ${activeCharacter.name}.`);
+}
+
 function bindEvents() {
-  elements.openAuthBtn.addEventListener("click", openModal);
-  elements.heroAuthBtn.addEventListener("click", openModal);
-  elements.closeAuthBtn.addEventListener("click", closeModal);
+  elements.openAuthBtn.addEventListener("click", openAuthModal);
+  elements.closeAuthBtn.addEventListener("click", closeAuthModal);
 
   elements.guestPreviewBtn.addEventListener("click", () => {
-    appendLog("Gastvorschau geöffnet.");
-    document.getElementById("gameContainer")?.scrollIntoView({
+    appendLog("World Preview geöffnet.");
+    elements.gameContainer?.scrollIntoView({
       behavior: "smooth",
       block: "center"
     });
   });
+
+  elements.enterWorldBtn.addEventListener("click", handleEnterWorld);
 
   elements.loginTabBtn.addEventListener("click", () => setAuthMode("login"));
   elements.registerTabBtn.addEventListener("click", () => setAuthMode("register"));
@@ -446,6 +729,11 @@ function bindEvents() {
         });
       }
 
+      detachCharacterListener();
+      state.characterSlots = { slot1: null, slot2: null, slot3: null };
+      state.activeCharacter = null;
+      renderCharacterSlots();
+
       await logoutUser();
       appendLog("Benutzer erfolgreich ausgeloggt.");
     } catch (error) {
@@ -454,22 +742,37 @@ function bindEvents() {
   });
 
   elements.authForm.addEventListener("submit", handleAuthSubmit);
+  elements.characterForm.addEventListener("submit", handleCharacterSubmit);
+  elements.slotGrid.addEventListener("click", handleSlotClick);
+
+  elements.closeCharacterBtn.addEventListener("click", closeCharacterModal);
 
   elements.authModal.addEventListener("click", (event) => {
     if (event.target === elements.authModal) {
-      closeModal();
+      closeAuthModal();
+    }
+  });
+
+  elements.characterModal.addEventListener("click", (event) => {
+    if (event.target === elements.characterModal) {
+      closeCharacterModal();
     }
   });
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !elements.authModal.classList.contains("hidden")) {
-      closeModal();
+      closeAuthModal();
+    }
+
+    if (event.key === "Escape" && !elements.characterModal.classList.contains("hidden")) {
+      closeCharacterModal();
     }
   });
 }
 
 function init() {
   setAuthMode("login");
+  renderCharacterSlots();
   bindEvents();
   mountPhaserGame();
 
@@ -478,10 +781,15 @@ function init() {
 
     if (user) {
       await initializePlayerData(user);
+    } else {
+      detachCharacterListener();
+      state.characterSlots = { slot1: null, slot2: null, slot3: null };
+      state.activeCharacter = null;
+      renderCharacterSlots();
     }
   });
 
-  appendLog("Phase 1 initialisiert.");
+  appendLog("Phase 2 initialisiert.");
 }
 
 init();
