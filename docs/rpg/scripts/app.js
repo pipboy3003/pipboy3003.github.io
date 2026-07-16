@@ -1,4 +1,9 @@
 /*
+[2026-07-16 07:22 CEST] Phase 1 erweitert.
+- Phaser-Instanz gegen Doppelinitialisierung abgesichert.
+- Game-Container wird vor neuem Mount bereinigt.
+- Realtime Database integriert.
+- Userdaten und Presence werden bei Login automatisch angelegt bzw. aktualisiert.
 [2026-07-16 06:35 CEST] Phase 1 erweitert.
 - Realtime Database integriert.
 - Userdaten und Presence werden bei Login automatisch angelegt bzw. aktualisiert.
@@ -23,7 +28,8 @@ import { database } from "./firebase-init.js";
 const state = {
   authMode: "login",
   currentUser: null,
-  gameReady: false
+  gameReady: false,
+  gameInstance: null
 };
 
 const elements = {
@@ -169,9 +175,16 @@ async function initializePlayerData(user) {
 }
 
 function mountPhaserGame() {
-  if (state.gameReady || !window.Phaser) {
+  if (!window.Phaser) {
+    appendLog("Phaser konnte nicht geladen werden.");
     return;
   }
+
+  if (state.gameInstance) {
+    return;
+  }
+
+  elements.gameContainer.innerHTML = "";
 
   class LobbyScene extends Phaser.Scene {
     constructor() {
@@ -289,7 +302,7 @@ function mountPhaserGame() {
     }
   };
 
-  new Phaser.Game(config);
+  state.gameInstance = new Phaser.Game(config);
   state.gameReady = true;
 }
 
