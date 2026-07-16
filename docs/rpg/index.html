@@ -1,4 +1,8 @@
 <!--
+[2026-07-16 21:10 CEST] Eigenes Delete-Dialogfenster im Spielstil ergänzt.
+- Browser-confirm wird durch ein natives <dialog>-Modal ersetzt.
+- Delete-Confirmation folgt jetzt dem visuellen Stil des Spiels.
+- Löschaktionen laufen vollständig über In-Game-UI.
 [2026-07-16 21:07 CEST] Auth-Modal logisch in Gast- und Login-Zustände getrennt.
 - Auth-Form und Tabs werden nur für ausgeloggte User gezeigt.
 - Logout-Bereich ist jetzt ein eigener eingeloggter Zustand.
@@ -284,6 +288,29 @@
       </div>
     </section>
   </div>
+
+  <dialog id="deleteCharacterDialog" class="game-dialog" aria-labelledby="deleteDialogTitle">
+    <form method="dialog" class="game-dialog-inner">
+      <div class="modal-head">
+        <div>
+          <p class="section-label">Character Delete</p>
+          <h2 id="deleteDialogTitle">Helden wirklich löschen?</h2>
+        </div>
+        <button id="closeDeleteDialogBtn" class="icon-button" type="submit" value="cancel" aria-label="Dialog schließen">✕</button>
+      </div>
+
+      <div class="signed-in-box danger-box">
+        <p id="deleteDialogText" class="auth-feedback">
+          Dieser Charakter wird dauerhaft gelöscht.
+        </p>
+      </div>
+
+      <div class="modal-footer dialog-actions">
+        <button id="cancelDeleteBtn" class="secondary-button" type="submit" value="cancel">Abbrechen</button>
+        <button id="confirmDeleteBtn" class="danger-button" type="submit" value="confirm" autofocus>Löschen</button>
+      </div>
+    </form>
+  </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
   <script type="module" src="./scripts/app.js"></script>
