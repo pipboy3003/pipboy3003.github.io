@@ -1,11 +1,4 @@
-/*
-[2026-07-16 06:35 CEST] Firebase Setup erweitert.
-- Auth und Realtime Database initialisiert.
-- Für automatische User- und Presence-Anlage vorbereitet.
-*/
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 import { getDatabase } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
 const firebaseConfig = {
@@ -18,8 +11,5 @@ const firebaseConfig = {
   databaseURL: "https://rpg01-793eb-default-rtdb.europe-west1.firebasedatabase.app"
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const database = getDatabase(app);
-
-export { app, auth, database };
+export const app = initializeApp(firebaseConfig);
+export const database = getDatabase(app);
