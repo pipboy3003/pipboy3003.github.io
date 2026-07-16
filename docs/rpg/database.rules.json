@@ -1,0 +1,72 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "profile": {
+          ".validate": "newData.hasChildren(['name', 'class', 'level', 'createdAt'])",
+          "name": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 20"
+          },
+          "class": {
+            ".validate": "newData.isString() && (newData.val() === 'warrior' || newData.val() === 'mage' || newData.val() === 'ranger')"
+          },
+          "level": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 999"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber()"
+          }
+        },
+        "settings": {
+          ".validate": "newData.hasChildren(['music', 'sfx'])",
+          "music": {
+            ".validate": "newData.isBoolean()"
+          },
+          "sfx": {
+            ".validate": "newData.isBoolean()"
+          }
+        },
+        "activeCharacter": {
+          ".validate": "newData.val() === null || newData.val() === 'slot1' || newData.val() === 'slot2' || newData.val() === 'slot3'"
+        },
+        "characterSlots": {
+          "slot1": {
+            ".validate": "newData.val() === null || (newData.hasChildren(['name', 'class', 'level', 'stats', 'createdAt']) && newData.child('name').isString() && newData.child('name').val().length >= 3 && newData.child('name').val().length <= 20 && (newData.child('class').val() === 'warrior' || newData.child('class').val() === 'mage' || newData.child('class').val() === 'ranger') && newData.child('level').isNumber() && newData.child('level').val() >= 1 && newData.child('level').val() <= 999 && newData.child('stats').hasChildren(['hp', 'mana']) && newData.child('stats/hp').isNumber() && newData.child('stats/mana').isNumber() && newData.child('createdAt').isNumber())"
+          },
+          "slot2": {
+            ".validate": "newData.val() === null || (newData.hasChildren(['name', 'class', 'level', 'stats', 'createdAt']) && newData.child('name').isString() && newData.child('name').val().length >= 3 && newData.child('name').val().length <= 20 && (newData.child('class').val() === 'warrior' || newData.child('class').val() === 'mage' || newData.child('class').val() === 'ranger') && newData.child('level').isNumber() && newData.child('level').val() >= 1 && newData.child('level').val() <= 999 && newData.child('stats').hasChildren(['hp', 'mana']) && newData.child('stats/hp').isNumber() && newData.child('stats/mana').isNumber() && newData.child('createdAt').isNumber())"
+          },
+          "slot3": {
+            ".validate": "newData.val() === null || (newData.hasChildren(['name', 'class', 'level', 'stats', 'createdAt']) && newData.child('name').isString() && newData.child('name').val().length >= 3 && newData.child('name').val().length <= 20 && (newData.child('class').val() === 'warrior' || newData.child('class').val() === 'mage' || newData.child('class').val() === 'ranger') && newData.child('level').isNumber() && newData.child('level').val() >= 1 && newData.child('level').val() <= 999 && newData.child('stats').hasChildren(['hp', 'mana']) && newData.child('stats/hp').isNumber() && newData.child('stats/mana').isNumber() && newData.child('createdAt').isNumber())"
+          }
+        }
+      }
+    },
+    "presence": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.hasChildren(['online', 'zone', 'x', 'y', 'updatedAt'])",
+        "online": {
+          ".validate": "newData.isBoolean()"
+        },
+        "zone": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40"
+        },
+        "x": {
+          ".validate": "newData.isNumber()"
+        },
+        "y": {
+          ".validate": "newData.isNumber()"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber()"
+        }
+      }
+    }
+  }
+}
