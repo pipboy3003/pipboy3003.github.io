@@ -1,4 +1,8 @@
 /*
+[2026-07-16 21:10 CEST] Eigenes Delete-Dialogfenster integriert.
+- Browser-confirm entfernt.
+- Löschbestätigung läuft jetzt über ein gestyltes <dialog>-Modal.
+- Delete-Flow bleibt modular und spielkonsistent.
 [2026-07-16 11:44 CEST] Character-Logik in eigenes Modul ausgelagert.
 - Slot-Rendering, Create, Delete und Active-Character handling separiert.
 */
@@ -35,6 +39,8 @@ export function createCharacterModule({
   characterNameInput,
   characterClassInput,
   characterFeedback,
+  deleteDialog,
+  deleteDialogText,
   showModal,
   hideModal,
   log,
@@ -44,6 +50,7 @@ export function createCharacterModule({
   const state = {
     selectedSlot: null,
     activeCharacter: null,
+    pendingDeleteSlot: null,
     characterSlots: {
       slot1: null,
       slot2: null,
@@ -118,6 +125,24 @@ export function createCharacterModule({
 
   function closeCharacterModal() {
     hideModal(characterModal);
+  }
+
+  function openDeleteDialog(slotKey) {
+    const slotData = state.characterSlots[slotKey];
+    if (!slotData) {
+      return;
+    }
+
+    state.pendingDeleteSlot = slotKey;
+    deleteDialogText.textContent = `${slotData.name} aus ${SLOT_LABELS[slotKey]} wird dauerhaft gelöscht.`;
+    deleteDialog.showModal();
+  }
+
+  function closeDeleteDialog() {
+    state.pendingDeleteSlot = null;
+    if (deleteDialog.open) {
+      deleteDialog.close("cancel");
+    }
   }
 
   function detachCharacterListener() {
@@ -238,7 +263,7 @@ export function createCharacterModule({
     }
   }
 
-  async function handleDeleteSlot(slotKey) {
+  function handleDeleteSlot(slotKey) {
     const currentUser = getCurrentUser();
 
     if (!currentUser) {
@@ -252,12 +277,18 @@ export function createCharacterModule({
       return;
     }
 
-    const confirmed = window.confirm(
-      `${slotData.name} aus ${SLOT_LABELS[slotKey]} wirklich löschen?`
-    );
+    openDeleteDialog(slotKey);
+  }
 
-    if (!confirmed) {
-      log("Löschung abgebrochen.");
+  async function confirmDelete() {
+    const slotKey = state.pendingDeleteSlot;
+    if (!slotKey) {
+      return;
+    }
+
+    const slotData = state.characterSlots[slotKey];
+    if (!slotData) {
+      closeDeleteDialog();
       return;
     }
 
@@ -266,6 +297,8 @@ export function createCharacterModule({
       log(`${slotData.name} aus ${SLOT_LABELS[slotKey]} gelöscht.`);
     } catch (error) {
       log(`Delete-Fehler: ${error?.message || "Unbekannter Fehler"}`);
+    } finally {
+      closeDeleteDialog();
     }
   }
 
@@ -312,12 +345,14 @@ export function createCharacterModule({
     detachCharacterListener();
     state.selectedSlot = null;
     state.activeCharacter = null;
+    state.pendingDeleteSlot = null;
     state.characterSlots = {
       slot1: null,
       slot2: null,
       slot3: null
     };
     renderCharacterSlots();
+    closeDeleteDialog();
   }
 
   function getActiveCharacter() {
@@ -337,6 +372,15 @@ export function createCharacterModule({
       event.stopPropagation();
       handleDeleteSlot(deleteTrigger.dataset.deleteSlot);
     });
+
+    deleteDialog.addEventListener("close", () => {
+      if (deleteDialog.returnValue === "confirm") {
+        confirmDelete();
+      } else {
+        state.pendingDeleteSlot = null;
+        log("Löschung abgebrochen.");
+      }
+    });
   }
 
   renderCharacterSlots();
@@ -349,6 +393,7 @@ export function createCharacterModule({
     handleCharacterSubmit,
     openCharacterModal,
     closeCharacterModal,
+    closeDeleteDialog,
     getActiveCharacter
   };
 }
