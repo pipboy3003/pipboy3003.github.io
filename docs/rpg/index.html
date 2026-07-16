@@ -1,4 +1,8 @@
 <!--
+[2026-07-16 08:30 CEST] Delete-Flow für Character-Slots ergänzt.
+- Slot-Karten enthalten jetzt einen Delete-Button.
+- Gefüllte Slots können gezielt gelöscht werden.
+- Aktiver Held kann beim Löschen automatisch zurückgesetzt werden.
 [2026-07-16 08:24 CEST] Phase 2 implementiert.
 - Character-Slots mit aktivem Status vorbereitet.
 - Character-Creation-Modal ergänzt.
@@ -69,7 +73,7 @@
           <h2>Wähle deinen Helden, speichere ihn online und betrete die Welt.</h2>
           <p class="hero-text">
             Deine Charakter-Slots sind jetzt an Firebase gebunden. Du kannst Helden anlegen,
-            Klassen wählen und einen aktiven Charakter für den Weltbeitritt setzen.
+            Klassen wählen, löschen und einen aktiven Charakter für den Weltbeitritt setzen.
           </p>
 
           <div class="hero-actions">
@@ -80,8 +84,8 @@
           <ul class="feature-list" role="list">
             <li>3 persistente Character-Slots</li>
             <li>Aktiver Held wird gespeichert</li>
+            <li>Slots können gelöscht werden</li>
             <li>Firebase Realtime Sync</li>
-            <li>Mobile-ready UI</li>
           </ul>
         </div>
 
@@ -114,19 +118,28 @@
 
           <div id="slotGrid" class="slot-grid">
             <button class="slot-card" type="button" data-slot="slot1">
-              <span class="slot-badge">Slot I</span>
+              <span class="slot-actions">
+                <span class="slot-badge">Slot I</span>
+                <span class="slot-delete" data-delete-slot="slot1" role="button" tabindex="0" aria-label="Slot I löschen">✕</span>
+              </span>
               <span class="slot-name">Leer</span>
               <span class="slot-meta">Neuen Helden erstellen</span>
             </button>
 
             <button class="slot-card" type="button" data-slot="slot2">
-              <span class="slot-badge">Slot II</span>
+              <span class="slot-actions">
+                <span class="slot-badge">Slot II</span>
+                <span class="slot-delete" data-delete-slot="slot2" role="button" tabindex="0" aria-label="Slot II löschen">✕</span>
+              </span>
               <span class="slot-name">Leer</span>
               <span class="slot-meta">Neuen Helden erstellen</span>
             </button>
 
             <button class="slot-card" type="button" data-slot="slot3">
-              <span class="slot-badge">Slot III</span>
+              <span class="slot-actions">
+                <span class="slot-badge">Slot III</span>
+                <span class="slot-delete" data-delete-slot="slot3" role="button" tabindex="0" aria-label="Slot III löschen">✕</span>
+              </span>
               <span class="slot-name">Leer</span>
               <span class="slot-meta">Neuen Helden erstellen</span>
             </button>
