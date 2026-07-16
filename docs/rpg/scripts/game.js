@@ -1,4 +1,8 @@
 /*
+[2026-07-16 21:32 CEST] Phase 3 Fehlerbehebung: Array-Tilemap statt fehlerhaftem Tiled-JSON.
+- Leerer Spielbereich durch ungültige Tileset-Zuordnung behoben.
+- Weltdefinition direkt in game.js überführt.
+- Ground, Collision, Spawn, Safe-Zone und POI sauber als Datenstruktur angelegt.
 [2026-07-16 21:23 CEST] Phase 3 gestartet: echte Starter-Town als Datenwelt ergänzt.
 - Tilemap-JSON wird geladen und als Map gerendert.
 - Spawnpoint, Kollision und Kamera an Weltgröße gekoppelt.
@@ -17,12 +21,55 @@ export function createGameModule({
     key: "starter-town",
     tileSize: 32,
     width: 24,
-    height: 18
+    height: 18,
+    spawn: { x: 12, y: 14 },
+    safeZones: [
+      { x: 11, y: 8, width: 2, height: 1 }
+    ],
+    pointsOfInterest: [
+      { x: 12, y: 2, label: "North Gate" }
+    ],
+    groundData: [
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+      [1,2,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,2,1],
+      [1,2,3,4,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,4,3,2,1],
+      [1,2,3,3,3,2,2,2,2,5,5,5,5,5,2,2,2,2,2,3,3,3,2,1],
+      [1,2,2,2,2,2,2,2,2,5,6,6,6,5,2,2,2,2,2,2,2,2,2,1],
+      [1,2,2,2,2,2,2,2,2,5,6,7,6,5,2,2,2,2,2,2,2,2,2,1],
+      [1,2,2,2,2,2,2,2,2,5,6,6,6,5,2,2,2,2,2,2,2,2,2,1],
+      [1,2,2,2,2,2,2,2,2,5,5,8,5,5,2,2,2,2,2,2,2,2,2,1],
+      [1,2,2,2,2,2,2,2,2,2,2,8,2,2,2,2,2,2,2,2,2,2,2,1],
+      [1,2,2,2,2,2,2,2,2,2,2,8,2,2,2,2,2,2,2,2,2,2,2,1],
+      [1,2,2,2,2,2,2,2,2,2,2,8,2,2,2,2,2,2,2,2,2,2,2,1],
+      [1,2,2,2,2,2,2,2,2,2,2,8,2,2,2,2,2,2,2,2,2,2,2,1],
+      [1,2,2,2,2,2,2,2,2,2,2,8,2,2,2,2,2,2,2,2,2,2,2,1],
+      [1,2,2,2,2,2,2,2,2,2,2,8,2,2,2,2,2,2,2,2,2,2,2,1],
+      [1,2,2,2,2,2,2,2,2,2,2,8,2,2,2,2,2,2,2,2,2,2,2,1],
+      [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ],
+    collisionData: [
+      [9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9],
+      [9,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,9],
+      [9,0,10,10,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,10,0,9],
+      [9,0,10,0,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,0,10,0,9],
+      [9,0,10,10,10,0,0,0,0,11,11,11,11,11,0,0,0,0,0,10,10,10,0,9],
+      [9,0,0,0,0,0,0,0,0,11,0,0,0,11,0,0,0,0,0,0,0,0,0,9],
+      [9,0,0,0,0,0,0,0,0,11,0,0,0,11,0,0,0,0,0,0,0,0,0,9],
+      [9,0,0,0,0,0,0,0,0,11,0,0,0,11,0,0,0,0,0,0,0,0,0,9],
+      [9,0,0,0,0,0,0,0,0,11,11,0,11,11,0,0,0,0,0,0,0,0,0,9],
+      [9,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,9],
+      [9,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,9],
+      [9,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,9],
+      [9,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,9],
+      [9,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,9],
+      [9,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,9],
+      [9,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,9],
+      [9,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,9],
+      [9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9]
+    ]
   };
-
-  function injectWorldAssets(scene) {
-    scene.load.tilemapTiledJSON("starter-town-map", "./assets/maps/starter-town.json");
-  }
 
   function createFallbackTilesTexture(scene) {
     const tileSize = WORLD.tileSize;
@@ -34,8 +81,6 @@ export function createGameModule({
       const row = Math.floor(index / 4);
       const x = col * tileSize;
       const y = row * tileSize;
-
-      ctx.clearRect(x, y, tileSize, tileSize);
       draw(ctx, x, y, tileSize);
     };
 
@@ -108,7 +153,6 @@ export function createGameModule({
     });
 
     paintTile(9, (c, x, y, s) => {
-      c.fillStyle = "rgba(0,0,0,0)";
       c.clearRect(x, y, s, s);
       c.fillStyle = "rgba(180, 70, 70, 0.35)";
       c.fillRect(x, y, s, s);
@@ -153,71 +197,93 @@ export function createGameModule({
         super("world-scene");
         this.player = null;
         this.cursors = null;
+        this.inputKeys = null;
         this.map = null;
         this.collisionLayer = null;
-        this.spawnPoint = { x: 384, y: 448 };
         this.statusText = null;
       }
 
-      preload() {
-        injectWorldAssets(this);
-      }
+      preload() {}
 
       create() {
         createFallbackTilesTexture(this);
         createPlayerTexture(this);
 
-        this.map = this.make.tilemap({ key: "starter-town-map" });
+        this.map = this.make.tilemap({
+          data: WORLD.groundData,
+          tileWidth: WORLD.tileSize,
+          tileHeight: WORLD.tileSize
+        });
 
-        const tiles = this.map.addTilesetImage("starter-town-tiles", "starter-town-tiles", 32, 32, 0, 0);
+        const tileset = this.map.addTilesetImage(
+          "starter-town-tiles",
+          "starter-town-tiles",
+          WORLD.tileSize,
+          WORLD.tileSize,
+          0,
+          0,
+          1
+        );
 
-        const groundLayer = this.map.createLayer("Ground", tiles, 0, 0);
-        this.collisionLayer = this.map.createLayer("Collision", tiles, 0, 0);
+        const groundLayer = this.map.createLayer(0, tileset, 0, 0);
+        groundLayer.setDepth(0);
 
-        if (groundLayer) {
-          groundLayer.setDepth(0);
-        }
+        const collisionMap = this.make.tilemap({
+          data: WORLD.collisionData,
+          tileWidth: WORLD.tileSize,
+          tileHeight: WORLD.tileSize
+        });
 
-        if (this.collisionLayer) {
-          this.collisionLayer.setDepth(1);
-          this.collisionLayer.setVisible(false);
-          this.collisionLayer.setCollisionByExclusion([-1, 0], true);
-        }
+        const collisionTileset = collisionMap.addTilesetImage(
+          "starter-town-tiles",
+          "starter-town-tiles",
+          WORLD.tileSize,
+          WORLD.tileSize,
+          0,
+          0,
+          1
+        );
 
-        const objectLayer = this.map.getObjectLayer("Objects");
-        if (objectLayer?.objects?.length) {
-          const spawnObject = objectLayer.objects.find((obj) => obj.name === "spawn");
-          if (spawnObject) {
-            this.spawnPoint = {
-              x: spawnObject.x + 16,
-              y: spawnObject.y - 16
-            };
-          }
+        this.collisionLayer = collisionMap.createLayer(0, collisionTileset, 0, 0);
+        this.collisionLayer.setDepth(1);
+        this.collisionLayer.setVisible(false);
+        this.collisionLayer.setCollision([9, 10, 11]);
 
-          objectLayer.objects.forEach((obj) => {
-            if (obj.type === "safe-zone") {
-              this.add.rectangle(obj.x, obj.y - obj.height, obj.width, obj.height, 0x59b9ac, 0.12)
-                .setOrigin(0, 0)
-                .setDepth(2);
-            }
+        WORLD.safeZones.forEach((zone) => {
+          this.add.rectangle(
+            zone.x * WORLD.tileSize,
+            zone.y * WORLD.tileSize,
+            zone.width * WORLD.tileSize,
+            zone.height * WORLD.tileSize,
+            0x59b9ac,
+            0.16
+          )
+            .setOrigin(0, 0)
+            .setDepth(2);
+        });
 
-            if (obj.type === "poi") {
-              this.add.circle(obj.x + 16, obj.y - 16, 7, 0xd4b878, 0.8).setDepth(3);
-            }
-          });
-        }
+        WORLD.pointsOfInterest.forEach((poi) => {
+          this.add.circle(
+            poi.x * WORLD.tileSize + WORLD.tileSize / 2,
+            poi.y * WORLD.tileSize + WORLD.tileSize / 2,
+            7,
+            0xd4b878,
+            0.88
+          ).setDepth(3);
+        });
+
+        const spawnX = WORLD.spawn.x * WORLD.tileSize + WORLD.tileSize / 2;
+        const spawnY = WORLD.spawn.y * WORLD.tileSize + WORLD.tileSize / 2;
 
         this.physics.world.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
 
-        this.player = this.physics.add.sprite(this.spawnPoint.x, this.spawnPoint.y, "player-token");
+        this.player = this.physics.add.sprite(spawnX, spawnY, "player-token");
         this.player.setCollideWorldBounds(true);
         this.player.setDepth(4);
         this.player.body.setSize(18, 20);
         this.player.body.setOffset(5, 6);
 
-        if (this.collisionLayer) {
-          this.physics.add.collider(this.player, this.collisionLayer);
-        }
+        this.physics.add.collider(this.player, this.collisionLayer);
 
         this.cameras.main.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
         this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
@@ -276,13 +342,11 @@ export function createGameModule({
         const tileX = Math.floor(this.player.x / WORLD.tileSize);
         const tileY = Math.floor(this.player.y / WORLD.tileSize);
 
-        if (this.statusText) {
-          this.statusText.setText([
-            "Starter Town",
-            `Position: ${tileX}, ${tileY}`,
-            "Move: WASD / Pfeiltasten"
-          ]);
-        }
+        this.statusText.setText([
+          "Starter Town",
+          `Position: ${tileX}, ${tileY}`,
+          "Move: WASD / Pfeiltasten"
+        ]);
       }
     };
   }
