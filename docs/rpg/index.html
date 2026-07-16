@@ -1,19 +1,11 @@
 <!--
+[2026-07-16 11:44 CEST] Phase-2-Refactor in modulare Dateien vorbereitet.
+- HTML auf schlanke Struktur reduziert.
+- CSS und JS in kleinere Teilmodule ausgelagert.
+- Character- und UI-Bereiche für getrennte Logik stabil benannt.
 [2026-07-16 08:30 CEST] Delete-Flow für Character-Slots ergänzt.
-- Slot-Karten enthalten jetzt einen Delete-Button.
-- Gefüllte Slots können gezielt gelöscht werden.
-- Aktiver Held kann beim Löschen automatisch zurückgesetzt werden.
 [2026-07-16 08:24 CEST] Phase 2 implementiert.
-- Character-Slots mit aktivem Status vorbereitet.
-- Character-Creation-Modal ergänzt.
-- Enter-World-Button an aktiven Charakter gekoppelt.
-[2026-07-16 07:22 CEST] Phase 1 erweitert.
-- SVG-Favicon eingebunden.
-- Kopfbereich für GitHub-/Browser-Favicon vorbereitet.
 [2026-07-16 06:19 CEST] Phase 1 initial erstellt.
-- Browserbasierter RPG-Starter mit Landing UI, Auth-Modal, HUD und Phaser-Canvas.
-- Firebase-Web-SDK per CDN vorbereitet.
-- Phaser 3 per CDN eingebunden.
 -->
 
 <!DOCTYPE html>
@@ -24,7 +16,7 @@
   <title>RPG Online - Phase 2</title>
   <meta
     name="description"
-    content="Phase-2-Starter für ein browserbasiertes Online-RPG mit GitHub Pages, Phaser und Firebase."
+    content="Modularer Phase-2-Starter für ein browserbasiertes Online-RPG mit GitHub Pages, Phaser und Firebase."
   />
 
   <link rel="icon" href="./assets/ui/favicon.svg" type="image/svg+xml" sizes="any" />
@@ -38,6 +30,7 @@
   />
 
   <link rel="stylesheet" href="./styles/main.css" />
+  <link rel="stylesheet" href="./styles/components.css" />
 </head>
 <body>
   <a class="skip-link" href="#main-content">Zum Inhalt springen</a>
@@ -47,11 +40,12 @@
       <div class="brand-wrap">
         <div class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 64 64" role="img" aria-label="RPG Online Logo">
-            <path d="M32 6 52 18v28L32 58 12 46V18Z" fill="none" stroke="currentColor" stroke-width="3"/>
-            <path d="M32 15 44 22v14L32 43 20 36V22Z" fill="none" stroke="currentColor" stroke-width="2.5"/>
-            <path d="M32 23v12M26 29h12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M32 6 52 18v28L32 58 12 46V18Z" fill="none" stroke="currentColor" stroke-width="3"></path>
+            <path d="M32 15 44 22v14L32 43 20 36V22Z" fill="none" stroke="currentColor" stroke-width="2.5"></path>
+            <path d="M32 23v12M26 29h12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
           </svg>
         </div>
+
         <div>
           <p class="eyebrow">GitHub Browser MMORPG Prototype</p>
           <h1>RPG Online</h1>
@@ -72,7 +66,7 @@
           <p class="section-label">Phase 2 Character Build</p>
           <h2>Wähle deinen Helden, speichere ihn online und betrete die Welt.</h2>
           <p class="hero-text">
-            Deine Charakter-Slots sind jetzt an Firebase gebunden. Du kannst Helden anlegen,
+            Deine Charakter-Slots sind an Firebase gebunden. Du kannst Helden anlegen,
             Klassen wählen, löschen und einen aktiven Charakter für den Weltbeitritt setzen.
           </p>
 
