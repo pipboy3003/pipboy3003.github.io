@@ -1,4 +1,7 @@
 /*
+[2026-07-16 20:52 CEST] Character-Menü für ausgeloggte User ausgeblendet.
+- Character-Panel wird über den Auth-State ein- und ausgeblendet.
+- Beim Logout bleibt der Bereich vollständig verborgen.
 [2026-07-16 11:44 CEST] App-Einstieg modularisiert.
 - UI, Character-Handling und Game-Preview in Teilmodule zerlegt.
 - app.js dient nur noch als Orchestrator.
@@ -48,6 +51,7 @@ const elements = {
   systemLog: document.getElementById("systemLog"),
   gameContainer: document.getElementById("gameContainer"),
   worldPanel: document.querySelector(".world-panel"),
+  characterPanel: document.getElementById("characterPanel"),
   slotGrid: document.getElementById("slotGrid"),
   enterWorldBtn: document.getElementById("enterWorldBtn"),
   activeCharacterText: document.getElementById("activeCharacterText"),
@@ -91,6 +95,10 @@ function closeAuthModal() {
   hideModal(elements.authModal);
 }
 
+function setCharacterPanelVisibility(isVisible) {
+  elements.characterPanel.hidden = !isVisible;
+}
+
 function setAuthMode(mode) {
   state.authMode = mode;
 
@@ -119,11 +127,13 @@ function updateAuthUI(user) {
   if (user) {
     elements.authStatusText.textContent = user.email || `UID ${user.uid}`;
     elements.authFeedback.textContent = `Willkommen, ${user.email ?? user.uid}.`;
+    setCharacterPanelVisibility(true);
     log(`Benutzer angemeldet: ${user.email ?? user.uid}`);
   } else {
     elements.authStatusText.textContent = "Nicht angemeldet";
     elements.authFeedback.textContent = "Noch nicht verbunden.";
     elements.activeCharacterText.textContent = "Keiner";
+    setCharacterPanelVisibility(false);
     log("Kein Benutzer angemeldet.");
   }
 }
@@ -279,6 +289,7 @@ function bindEvents() {
       }
 
       characterModule.resetCharacterState();
+      setCharacterPanelVisibility(false);
       await logoutUser();
       log("Benutzer erfolgreich ausgeloggt.");
     } catch (error) {
@@ -314,6 +325,7 @@ function bindEvents() {
 
 function init() {
   setAuthMode("login");
+  setCharacterPanelVisibility(false);
   bindEvents();
   gameModule.mountPhaserGame();
 
