@@ -15,7 +15,7 @@ const firebaseConfig = {
   storageBucket: "rpg01-793eb.firebasestorage.app",
   messagingSenderId: "381934095221",
   appId: "1:381934095221:web:71007bb26d223de0a7213c",
-  databaseURL: "HIER_DEINE_RTDB_URL_EINTRAGEN"
+  databaseURL: "https://rpg01-793eb-default-rtdb.europe-west1.firebasedatabase.app/"
 };
 
 const app = initializeApp(firebaseConfig);
