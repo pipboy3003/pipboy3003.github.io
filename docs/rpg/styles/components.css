@@ -1,0 +1,415 @@
+/*
+[2026-07-16 11:48 CEST] Komponenten-Styling in eigene Datei ausgelagert.
+- Panels, Buttons, Slots, Modals, HUD und Log-Bereich getrennt.
+- Delete-Button und aktive Slots bleiben vollständig erhalten.
+[2026-07-16 08:30 CEST] Delete-Button für Character-Slots ergänzt.
+[2026-07-16 08:24 CEST] Phase 2 Character-UI ergänzt.
+*/
+
+.topbar,
+.hero-panel,
+.panel {
+  border: 1px solid var(--color-border);
+  background: var(--color-panel);
+  backdrop-filter: blur(18px);
+  border-radius: 1.5rem;
+  box-shadow: 0 18px 48px var(--color-shadow);
+}
+
+.brand-mark {
+  border-radius: 1rem;
+  border: 1px solid var(--color-border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+  color: var(--color-primary);
+}
+
+.feature-list li {
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.status-card {
+  border-radius: 1.25rem;
+  border: 1px solid var(--color-border);
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+}
+
+.status-row {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.status-row:last-child {
+  border-bottom: none;
+}
+
+.slot-card,
+.hud-skill,
+.tab-button,
+.icon-button,
+.primary-button,
+.secondary-button,
+.ghost-button {
+  border: 1px solid var(--color-border);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease;
+}
+
+.slot-card {
+  width: 100%;
+  min-height: 88px;
+  text-align: left;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-text);
+  display: grid;
+  gap: 0.35rem;
+}
+
+.slot-card.filled-slot {
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+}
+
+.slot-card.active-slot {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px rgba(212, 184, 120, 0.22), 0 12px 32px rgba(0, 0, 0, 0.18);
+  background: linear-gradient(180deg, rgba(212, 184, 120, 0.12), rgba(255, 255, 255, 0.03));
+}
+
+.slot-card:hover,
+.slot-card:focus-visible,
+.hud-skill:hover,
+.hud-skill:focus-visible,
+.tab-button:hover,
+.tab-button:focus-visible,
+.icon-button:hover,
+.icon-button:focus-visible,
+.primary-button:hover,
+.primary-button:focus-visible,
+.secondary-button:hover,
+.secondary-button:focus-visible,
+.ghost-button:hover,
+.ghost-button:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--color-primary);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.slot-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.slot-badge {
+  font-size: 0.76rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.slot-delete {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-danger);
+  background: rgba(221, 127, 127, 0.08);
+  border: 1px solid rgba(221, 127, 127, 0.2);
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.slot-delete.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.slot-delete:hover,
+.slot-delete:focus-visible {
+  background: rgba(221, 127, 127, 0.16);
+  border-color: rgba(221, 127, 127, 0.4);
+  outline: none;
+}
+
+.slot-name {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 0.1rem;
+}
+
+.slot-meta {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.game-container {
+  border-radius: 1.2rem;
+  border: 1px solid var(--color-border);
+  background:
+    linear-gradient(180deg, rgba(17, 22, 29, 0.36), rgba(17, 22, 29, 0.86)),
+    radial-gradient(circle at center, rgba(89, 185, 172, 0.08), transparent 35%),
+    #0b1016;
+}
+
+.bar-track {
+  height: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--color-border);
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.bar-fill.hp {
+  width: 100%;
+  background: linear-gradient(90deg, #8f2f37, #d06464);
+}
+
+.bar-fill.mana {
+  width: 80%;
+  background: linear-gradient(90deg, #1d4f91, #67a6f1);
+}
+
+.hud-skill {
+  width: 56px;
+  height: 56px;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text);
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+
+.system-log {
+  min-height: 190px;
+  max-height: 260px;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  background: rgba(0, 0, 0, 0.18);
+  overflow: auto;
+}
+
+.system-log p {
+  margin: 0 0 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.primary-button,
+.secondary-button,
+.ghost-button,
+.icon-button,
+.tab-button {
+  border-radius: 0.95rem;
+}
+
+.primary-button,
+.secondary-button,
+.ghost-button {
+  min-height: 48px;
+  padding: 0.9rem 1.15rem;
+}
+
+.primary-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.primary-button {
+  background: linear-gradient(180deg, var(--color-primary-strong), var(--color-primary));
+  color: #140f08;
+  font-weight: 800;
+}
+
+.secondary-button {
+  background: transparent;
+  color: var(--color-text);
+}
+
+.ghost-button {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-text-muted);
+}
+
+.icon-button,
+.tab-button {
+  min-height: 44px;
+  padding: 0.75rem 0.95rem;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-text);
+}
+
+.tab-button.active {
+  background: rgba(212, 184, 120, 0.12);
+  color: var(--color-primary-strong);
+  border-color: var(--color-primary);
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(4, 8, 14, 0.68);
+  backdrop-filter: blur(10px);
+}
+
+.modal-backdrop.hidden {
+  display: none;
+}
+
+.auth-modal {
+  width: min(560px, 100%);
+  padding: 1.4rem;
+  border-radius: 1.5rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+}
+
+.character-modal {
+  width: min(520px, 100%);
+}
+
+.modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.auth-form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.field span {
+  font-size: 0.92rem;
+  color: var(--color-text-muted);
+}
+
+.field input,
+.select-field {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.95rem 1rem;
+  color: var(--color-text);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 0.95rem;
+  outline: none;
+}
+
+.field input:focus,
+.select-field:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(212, 184, 120, 0.14);
+}
+
+.submit-button {
+  margin-top: 0.25rem;
+}
+
+.auth-feedback {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 720px) {
+  .topbar,
+  .hero-panel,
+  .panel,
+  .auth-modal {
+    border-radius: 1.1rem;
+  }
+
+  .slot-card {
+    min-height: 92px;
+    padding: 0.95rem;
+  }
+
+  .slot-delete {
+    width: 36px;
+    height: 36px;
+  }
+
+  .hud-skill {
+    width: 52px;
+    height: 52px;
+  }
+
+  .system-log {
+    min-height: 160px;
+    max-height: 220px;
+  }
+
+  .auth-modal {
+    padding: 1rem;
+  }
+
+  .modal-head {
+    align-items: flex-start;
+  }
+
+  .auth-tabs,
+  .modal-footer,
+  .hero-actions {
+    flex-wrap: wrap;
+  }
+
+  .auth-tabs > *,
+  .modal-footer > *,
+  .hero-actions > * {
+    flex: 1 1 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .feature-list li,
+  .status-card,
+  .panel,
+  .auth-modal {
+    padding-left: 0.9rem;
+    padding-right: 0.9rem;
+  }
+
+  .primary-button,
+  .secondary-button,
+  .ghost-button,
+  .tab-button,
+  .icon-button {
+    width: 100%;
+  }
+
+  .hud-skill {
+    width: 48px;
+    height: 48px;
+  }
+}
