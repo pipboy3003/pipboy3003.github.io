@@ -1,11 +1,12 @@
 /*
+[2026-07-16 07:28 CEST] Hard-Fix für World Preview Wachstum.
+- Canvas-Skalierung vollständig unter CSS-Kontrolle.
+- Fester Parent ohne Padding-Einfluss auf Phaser Scale-Verhalten.
+- Log-Höhe begrenzt, Grid oben ausgerichtet.
 [2026-07-16 07:26 CEST] Layout-Fix für World Preview.
 - Grid-Stretching reduziert, damit das World-Preview-Panel nicht über Nachbarhöhen mitwächst.
 - Game-Container auf feste Höhe stabilisiert.
 - Panels in der Content-Zeile auf Start-Ausrichtung gesetzt.
-[2026-07-16 07:22 CEST] Phase 1 erweitert.
-- Game-Container stabilisiert.
-- World Preview feste Höhe und kontrolliertes Canvas-Verhalten.
 [2026-07-16 06:19 CEST] Phase 1 initial erstellt.
 - Komplettes Theme für Landing, Panels, Modal, HUD und Game-Viewport.
 - Dunkle Fantasy-Tech Anmutung für ein browserbasiertes RPG.
@@ -341,6 +342,7 @@ button {
   height: 420px;
   min-height: 420px;
   max-height: 420px;
+  padding: 0;
   border-radius: 1.2rem;
   border: 1px solid var(--color-border);
   overflow: hidden;
@@ -357,6 +359,7 @@ button {
   display: block;
   width: 100% !important;
   height: 100% !important;
+  margin: 0 !important;
 }
 
 .hud-preview {
@@ -551,7 +554,6 @@ button {
   }
 
   .game-container {
-    width: 100%;
     height: 420px;
     min-height: 420px;
     max-height: 420px;
