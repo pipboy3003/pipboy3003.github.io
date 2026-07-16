@@ -1,4 +1,8 @@
 /*
+[2026-07-16 07:36 CEST] Mobile-Optimierung ergänzt.
+- Mobile-first Verbesserungen für Topbar, Panels, HUD, Auth-Modal und World Preview.
+- Touch-freundlichere Buttons und Slot-Karten.
+- Einspaltiges Handy-Layout verfeinert.
 [2026-07-16 07:34 CEST] Diagnose- und Stabilitätsfix für World Preview.
 - World Preview hart auf feste Pixelgröße fixiert.
 - Canvas nicht mehr responsiv mitskalierend.
@@ -116,6 +120,7 @@ button {
   display: flex;
   align-items: center;
   gap: 1rem;
+  min-width: 0;
 }
 
 .brand-mark {
@@ -126,6 +131,7 @@ button {
   border: 1px solid var(--color-border);
   background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
   color: var(--color-primary);
+  flex: 0 0 auto;
 }
 
 .brand-wrap h1,
@@ -294,6 +300,7 @@ button {
 
 .slot-card {
   width: 100%;
+  min-height: 72px;
   text-align: left;
   padding: 1rem;
   border-radius: 1rem;
@@ -410,12 +417,13 @@ button {
 }
 
 .hud-skill {
-  width: 54px;
-  height: 54px;
+  width: 56px;
+  height: 56px;
   border-radius: 1rem;
   background: rgba(255,255,255,0.04);
   color: var(--color-text);
   font-weight: 700;
+  flex: 0 0 auto;
 }
 
 .system-log {
@@ -444,6 +452,7 @@ button {
 .primary-button,
 .secondary-button,
 .ghost-button {
+  min-height: 48px;
   padding: 0.9rem 1.15rem;
 }
 
@@ -465,6 +474,7 @@ button {
 
 .icon-button,
 .tab-button {
+  min-height: 44px;
   padding: 0.75rem 0.95rem;
   background: rgba(255,255,255,0.03);
   color: var(--color-text);
@@ -527,6 +537,7 @@ button {
 
 .field input {
   width: 100%;
+  min-height: 48px;
   padding: 0.95rem 1rem;
   color: var(--color-text);
   background: var(--color-surface-2);
@@ -574,10 +585,10 @@ button {
   }
 }
 
-@media (max-width: 720px) {
-  .app-shell {
-    width: min(100% - 1rem, 100%);
-    padding-top: 0.5rem;
+@media (max-width: 900px) {
+  .hero-panel,
+  .lower-grid {
+    grid-template-columns: 1fr;
   }
 
   .topbar {
@@ -585,28 +596,195 @@ button {
     align-items: stretch;
   }
 
-  .topbar-actions,
-  .hero-actions,
-  .modal-footer {
+  .topbar-actions {
+    justify-content: stretch;
     flex-wrap: wrap;
+  }
+
+  .topbar-actions > * {
+    flex: 1 1 160px;
+  }
+
+  .hero-actions {
+    flex-wrap: wrap;
+  }
+
+  .hero-actions > * {
+    flex: 1 1 180px;
+  }
+
+  .status-card {
+    width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    width: min(100% - 1rem, 100%);
+    padding-top: 0.5rem;
+  }
+
+  .topbar,
+  .hero-panel,
+  .panel,
+  .auth-modal {
+    border-radius: 1.1rem;
+  }
+
+  .topbar {
+    padding: 0.9rem;
   }
 
   .brand-wrap {
     align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .brand-mark {
+    width: 54px;
+    height: 54px;
+    padding: 0.6rem;
+  }
+
+  .hero-panel {
+    padding: 1rem;
+    gap: 1rem;
   }
 
   .hero-copy h2 {
     font-size: 1.9rem;
   }
 
+  .hero-text {
+    font-size: 0.98rem;
+  }
+
+  .content-grid,
+  .lower-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .panel {
+    padding: 1rem;
+  }
+
+  .slot-grid {
+    gap: 0.75rem;
+  }
+
+  .slot-card {
+    min-height: 76px;
+    padding: 0.95rem;
+  }
+
+  .world-panel,
   .game-container,
   .game-container canvas {
-    height: 320px !important;
-    min-height: 320px !important;
-    max-height: 320px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .game-container,
+  .game-container canvas {
+    height: 260px !important;
+    min-height: 260px !important;
+    max-height: 260px !important;
   }
 
   .hud-bar {
     grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+
+  .hud-actions {
+    gap: 0.6rem;
+  }
+
+  .hud-skill {
+    width: 52px;
+    height: 52px;
+  }
+
+  .system-log {
+    min-height: 160px;
+    max-height: 220px;
+  }
+
+  .auth-modal {
+    padding: 1rem;
+  }
+
+  .modal-head {
+    align-items: flex-start;
+  }
+
+  .auth-tabs,
+  .modal-footer,
+  .hero-actions {
+    flex-wrap: wrap;
+  }
+
+  .auth-tabs > *,
+  .modal-footer > *,
+  .hero-actions > * {
+    flex: 1 1 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-shell {
+    width: calc(100% - 0.75rem);
+  }
+
+  .topbar {
+    margin-bottom: 1rem;
+  }
+
+  .brand-wrap h1 {
+    font-size: 1.5rem;
+  }
+
+  .eyebrow,
+  .section-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+  }
+
+  .hero-copy h2 {
+    font-size: 1.65rem;
+  }
+
+  .hero-text {
+    font-size: 0.94rem;
+  }
+
+  .feature-list li,
+  .status-card,
+  .panel,
+  .auth-modal {
+    padding-left: 0.9rem;
+    padding-right: 0.9rem;
+  }
+
+  .game-container,
+  .game-container canvas {
+    height: 220px !important;
+    min-height: 220px !important;
+    max-height: 220px !important;
+  }
+
+  .primary-button,
+  .secondary-button,
+  .ghost-button,
+  .tab-button,
+  .icon-button {
+    width: 100%;
+  }
+
+  .hud-skill {
+    width: 48px;
+    height: 48px;
   }
 }
