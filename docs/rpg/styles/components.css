@@ -1,4 +1,7 @@
 /*
+[2026-07-16 21:10 CEST] Eigenes Delete-Dialog-Styling ergänzt.
+- Spielkonsistentes Lösch-Modal auf Basis von <dialog> erstellt.
+- Backdrop und Danger-State im gleichen Stil wie der Rest des Spiels.
 [2026-07-16 21:07 CEST] Auth-Zustände visuell getrennt.
 - Eingeloggt-Ansicht für Account-Status ergänzt.
 - Logout steht nun allein in einem sauberen User-State.
@@ -54,7 +57,8 @@
 .icon-button,
 .primary-button,
 .secondary-button,
-.ghost-button {
+.ghost-button,
+.danger-button {
   border: 1px solid var(--color-border);
   transition:
     transform 180ms ease,
@@ -100,7 +104,9 @@
 .secondary-button:hover,
 .secondary-button:focus-visible,
 .ghost-button:hover,
-.ghost-button:focus-visible {
+.ghost-button:focus-visible,
+.danger-button:hover,
+.danger-button:focus-visible {
   transform: translateY(-2px);
   border-color: var(--color-primary);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
@@ -219,13 +225,15 @@
 .secondary-button,
 .ghost-button,
 .icon-button,
-.tab-button {
+.tab-button,
+.danger-button {
   border-radius: 0.95rem;
 }
 
 .primary-button,
 .secondary-button,
-.ghost-button {
+.ghost-button,
+.danger-button {
   min-height: 48px;
   padding: 0.9rem 1.15rem;
 }
@@ -250,6 +258,13 @@
 .ghost-button {
   background: rgba(255, 255, 255, 0.03);
   color: var(--color-text-muted);
+}
+
+.danger-button {
+  background: linear-gradient(180deg, #d88484, #b95252);
+  color: #fff7f7;
+  border-color: rgba(221, 127, 127, 0.4);
+  font-weight: 800;
 }
 
 .icon-button,
@@ -281,7 +296,8 @@
   display: none;
 }
 
-.auth-modal {
+.auth-modal,
+.game-dialog {
   width: min(560px, 100%);
   padding: 1.4rem;
   border-radius: 1.5rem;
@@ -289,6 +305,20 @@
   background: var(--color-surface);
   color: var(--color-text);
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+}
+
+.game-dialog {
+  max-width: 560px;
+}
+
+.game-dialog::backdrop {
+  background: rgba(4, 8, 14, 0.68);
+  backdrop-filter: blur(10px);
+}
+
+.game-dialog-inner {
+  display: grid;
+  gap: 1rem;
 }
 
 .character-modal {
@@ -304,13 +334,19 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
+.danger-box {
+  border-color: rgba(221, 127, 127, 0.28);
+  background: rgba(221, 127, 127, 0.08);
+}
+
 .signed-in-box h3 {
   margin: 0;
   font-family: "Cinzel", serif;
   letter-spacing: 0.02em;
 }
 
-.auth-user-actions {
+.auth-user-actions,
+.dialog-actions {
   margin-top: 1rem;
   justify-content: flex-start;
 }
@@ -370,7 +406,8 @@
   .topbar,
   .hero-panel,
   .panel,
-  .auth-modal {
+  .auth-modal,
+  .game-dialog {
     border-radius: 1.1rem;
   }
 
@@ -394,7 +431,8 @@
     max-height: 220px;
   }
 
-  .auth-modal {
+  .auth-modal,
+  .game-dialog {
     padding: 1rem;
   }
 
@@ -404,13 +442,15 @@
 
   .auth-tabs,
   .modal-footer,
-  .hero-actions {
+  .hero-actions,
+  .dialog-actions {
     flex-wrap: wrap;
   }
 
   .auth-tabs > *,
   .modal-footer > *,
-  .hero-actions > * {
+  .hero-actions > *,
+  .dialog-actions > * {
     flex: 1 1 100%;
   }
 
@@ -423,7 +463,8 @@
   .feature-list li,
   .status-card,
   .panel,
-  .auth-modal {
+  .auth-modal,
+  .game-dialog {
     padding-left: 0.9rem;
     padding-right: 0.9rem;
   }
@@ -432,7 +473,8 @@
   .secondary-button,
   .ghost-button,
   .tab-button,
-  .icon-button {
+  .icon-button,
+  .danger-button {
     width: 100%;
   }
 
