@@ -8,13 +8,15 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebas
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "DEINE_API_KEY",
-  authDomain: "DEIN_PROJEKT.firebaseapp.com",
-  projectId: "DEIN_PROJEKT",
-  storageBucket: "DEIN_PROJEKT.firebasestorage.app",
-  messagingSenderId: "DEINE_SENDER_ID",
-  appId: "DEINE_APP_ID"
-};
+    apiKey: "AIzaSyBbYbswfsuyXhgK-t_Whz7sGven7J2fT2w",
+    authDomain: "rpg01-793eb.firebaseapp.com",
+    projectId: "rpg01-793eb",
+    storageBucket: "rpg01-793eb.firebasestorage.app",
+    messagingSenderId: "381934095221",
+    appId: "1:381934095221:web:71007bb26d223de0a7213c",
+    measurementId: "G-4GCT9YCJJ8"
+  };
+
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
