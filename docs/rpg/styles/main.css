@@ -1,17 +1,12 @@
 /*
+[2026-07-16 08:24 CEST] Phase 2 Character-UI ergänzt.
+- Aktive und gefüllte Character-Slots gestylt.
+- Character-Creation-Modal und Select-Feld ergänzt.
+- Enter-World-Button bleibt mobil und desktop-tauglich.
 [2026-07-16 07:36 CEST] Mobile-Optimierung ergänzt.
 - Mobile-first Verbesserungen für Topbar, Panels, HUD, Auth-Modal und World Preview.
 - Touch-freundlichere Buttons und Slot-Karten.
 - Einspaltiges Handy-Layout verfeinert.
-[2026-07-16 07:34 CEST] Diagnose- und Stabilitätsfix für World Preview.
-- World Preview hart auf feste Pixelgröße fixiert.
-- Canvas nicht mehr responsiv mitskalierend.
-- Container und Panel oben fixiert.
-- Layout für Diagnose bewusst strenger gemacht.
-[2026-07-16 07:28 CEST] Hard-Fix für World Preview Wachstum.
-- Canvas-Skalierung vollständig unter CSS-Kontrolle.
-- Fester Parent ohne Padding-Einfluss auf Phaser Scale-Verhalten.
-- Log-Höhe begrenzt, Grid oben ausgerichtet.
 */
 
 :root,
@@ -72,7 +67,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -300,12 +296,24 @@ button {
 
 .slot-card {
   width: 100%;
-  min-height: 72px;
+  min-height: 88px;
   text-align: left;
   padding: 1rem;
   border-radius: 1rem;
   background: rgba(255,255,255,0.03);
   color: var(--color-text);
+  display: grid;
+  gap: 0.35rem;
+}
+
+.slot-card.filled-slot {
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+}
+
+.slot-card.active-slot {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px rgba(212, 184, 120, 0.22), 0 12px 32px rgba(0,0,0,0.18);
+  background: linear-gradient(180deg, rgba(212, 184, 120, 0.12), rgba(255,255,255,0.03));
 }
 
 .slot-card:hover,
@@ -327,10 +335,17 @@ button {
   box-shadow: 0 12px 32px rgba(0,0,0,0.18);
 }
 
+.slot-badge {
+  font-size: 0.76rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
 .slot-name {
   display: block;
   font-weight: 700;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.1rem;
 }
 
 .slot-meta {
@@ -456,6 +471,12 @@ button {
   padding: 0.9rem 1.15rem;
 }
 
+.primary-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .primary-button {
   background: linear-gradient(180deg, var(--color-primary-strong), var(--color-primary));
   color: #140f08;
@@ -511,6 +532,10 @@ button {
   box-shadow: 0 24px 64px rgba(0,0,0,0.3);
 }
 
+.character-modal {
+  width: min(520px, 100%);
+}
+
 .modal-head {
   display: flex;
   align-items: flex-start;
@@ -535,7 +560,8 @@ button {
   color: var(--color-text-muted);
 }
 
-.field input {
+.field input,
+.select-field {
   width: 100%;
   min-height: 48px;
   padding: 0.95rem 1rem;
@@ -546,7 +572,8 @@ button {
   outline: none;
 }
 
-.field input:focus {
+.field input:focus,
+.select-field:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(212, 184, 120, 0.14);
 }
@@ -674,7 +701,7 @@ button {
   }
 
   .slot-card {
-    min-height: 76px;
+    min-height: 84px;
     padding: 0.95rem;
   }
 
