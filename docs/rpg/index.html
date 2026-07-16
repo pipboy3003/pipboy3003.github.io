@@ -1,0 +1,216 @@
+<!--
+[2026-07-16 06:19 CEST] Phase 1 initial erstellt.
+- Browserbasierter RPG-Starter mit Landing UI, Auth-Modal, HUD und Phaser-Canvas.
+- Firebase-Web-SDK per CDN vorbereitet.
+- Phaser 3 per CDN eingebunden.
+-->
+
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RPG Online - Phase 1</title>
+  <meta
+    name="description"
+    content="Phase-1-Starter für ein browserbasiertes Online-RPG mit GitHub Pages, Phaser und Firebase."
+  />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="./styles/main.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Zum Inhalt springen</a>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-wrap">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 64 64" role="img" aria-label="RPG Online Logo">
+            <path d="M32 6 52 18v28L32 58 12 46V18Z" fill="none" stroke="currentColor" stroke-width="3"/>
+            <path d="M32 15 44 22v14L32 43 20 36V22Z" fill="none" stroke="currentColor" stroke-width="2.5"/>
+            <path d="M32 23v12M26 29h12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <p class="eyebrow">GitHub Browser MMORPG Prototype</p>
+          <h1>RPG Online</h1>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button id="themeToggle" class="icon-button" type="button" aria-label="Theme umschalten">
+          <span aria-hidden="true">◐</span>
+        </button>
+        <button id="openAuthBtn" class="primary-button" type="button">Enter World</button>
+      </div>
+    </header>
+
+    <main id="main-content" class="main-layout">
+      <section class="hero-panel">
+        <div class="hero-copy">
+          <p class="section-label">Phase 1 Foundation Build</p>
+          <h2>Ein stylisches Browser-RPG, bereit für Login, Charaktere und Multiplayer.</h2>
+          <p class="hero-text">
+            Diese erste Version setzt das Fundament für dein Game: starke Oberfläche,
+            Firebase-Authentifizierung, Charakter-Slots, HUD und ein Phaser-Game-Viewport.
+          </p>
+
+          <div class="hero-actions">
+            <button id="heroAuthBtn" class="primary-button" type="button">Jetzt starten</button>
+            <button id="guestPreviewBtn" class="secondary-button" type="button">UI ansehen</button>
+          </div>
+
+          <ul class="feature-list" role="list">
+            <li>Phaser 3 Canvas als Spielkern</li>
+            <li>Firebase Auth vorbereitet</li>
+            <li>GitHub Pages kompatibel</li>
+            <li>Dunkle Fantasy-Tech UI</li>
+          </ul>
+        </div>
+
+        <div class="status-card">
+          <div class="status-row">
+            <span class="status-label">Build</span>
+            <span class="status-value online">Phase 1 Ready</span>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Auth</span>
+            <span id="authStatusText" class="status-value">Nicht angemeldet</span>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Engine</span>
+            <span class="status-value">Phaser 3</span>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Backend</span>
+            <span class="status-value">Firebase</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="content-grid">
+        <article class="panel character-panel">
+          <div class="panel-header">
+            <p class="section-label">Character Slots</p>
+            <h3>Heldenauswahl</h3>
+          </div>
+
+          <div class="slot-grid">
+            <button class="slot-card" type="button">
+              <span class="slot-name">Slot I</span>
+              <span class="slot-meta">Leer · Neuer Held</span>
+            </button>
+            <button class="slot-card" type="button">
+              <span class="slot-name">Slot II</span>
+              <span class="slot-meta">Leer · Neuer Held</span>
+            </button>
+            <button class="slot-card" type="button">
+              <span class="slot-name">Slot III</span>
+              <span class="slot-meta">Leer · Neuer Held</span>
+            </button>
+          </div>
+        </article>
+
+        <article class="panel world-panel">
+          <div class="panel-header">
+            <p class="section-label">World Preview</p>
+            <h3>Spielbereich</h3>
+          </div>
+
+          <div id="gameContainer" class="game-container" aria-label="Spielbereich"></div>
+        </article>
+      </section>
+
+      <section class="content-grid lower-grid">
+        <article class="panel hud-panel">
+          <div class="panel-header">
+            <p class="section-label">HUD Preview</p>
+            <h3>Adventure Interface</h3>
+          </div>
+
+          <div class="hud-preview">
+            <div class="hud-bar">
+              <span>HP</span>
+              <div class="bar-track"><div class="bar-fill hp"></div></div>
+              <strong>120 / 120</strong>
+            </div>
+
+            <div class="hud-bar">
+              <span>Mana</span>
+              <div class="bar-track"><div class="bar-fill mana"></div></div>
+              <strong>64 / 80</strong>
+            </div>
+
+            <div class="hud-actions">
+              <button class="hud-skill" type="button">1</button>
+              <button class="hud-skill" type="button">2</button>
+              <button class="hud-skill" type="button">3</button>
+              <button class="hud-skill" type="button">Q</button>
+              <button class="hud-skill" type="button">E</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel log-panel">
+          <div class="panel-header">
+            <p class="section-label">System Log</p>
+            <h3>Status</h3>
+          </div>
+
+          <div id="systemLog" class="system-log" aria-live="polite">
+            <p>System bereit.</p>
+            <p>Warte auf Benutzeraktion.</p>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <div id="authModal" class="modal-backdrop hidden" aria-hidden="true">
+    <section class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+      <div class="modal-head">
+        <div>
+          <p class="section-label">Firebase Auth</p>
+          <h2 id="authModalTitle">Betritt die Welt</h2>
+        </div>
+        <button id="closeAuthBtn" class="icon-button" type="button" aria-label="Dialog schließen">✕</button>
+      </div>
+
+      <div class="auth-tabs" role="tablist" aria-label="Authentifizierung">
+        <button id="loginTabBtn" class="tab-button active" type="button">Login</button>
+        <button id="registerTabBtn" class="tab-button" type="button">Registrieren</button>
+      </div>
+
+      <form id="authForm" class="auth-form">
+        <label class="field">
+          <span>E-Mail</span>
+          <input id="emailInput" name="email" type="email" autocomplete="email" placeholder="held@welt.de" required />
+        </label>
+
+        <label class="field">
+          <span>Passwort</span>
+          <input id="passwordInput" name="password" type="password" autocomplete="current-password" placeholder="••••••••" required />
+        </label>
+
+        <button id="submitAuthBtn" class="primary-button submit-button" type="submit">Einloggen</button>
+      </form>
+
+      <div class="modal-footer">
+        <p id="authFeedback" class="auth-feedback">Noch nicht verbunden.</p>
+        <button id="logoutBtn" class="ghost-button" type="button">Logout</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+
+  <script type="module" src="./scripts/app.js"></script>
+</body>
+</html>
