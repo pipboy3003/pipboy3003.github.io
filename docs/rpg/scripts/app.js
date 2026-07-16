@@ -1,4 +1,8 @@
 /*
+[2026-07-16 21:07 CEST] Auth-UI logisch nach Login-State getrennt.
+- Gäste sehen nur Login/Registrieren.
+- Eingeloggte User sehen nur Account-Status und Logout.
+- Auth-Modal folgt jetzt klaren Zuständen statt Misch-UI.
 [2026-07-16 20:52 CEST] Character-Menü für ausgeloggte User ausgeblendet.
 - Character-Panel wird über den Auth-State ein- und ausgeblendet.
 - Beim Logout bleibt der Bereich vollständig verborgen.
@@ -35,6 +39,11 @@ const state = {
 
 const elements = {
   authModal: document.getElementById("authModal"),
+  authGuestView: document.getElementById("authGuestView"),
+  authUserView: document.getElementById("authUserView"),
+  authTabs: document.getElementById("authTabs"),
+  signedInTitle: document.getElementById("signedInTitle"),
+  signedInText: document.getElementById("signedInText"),
   openAuthBtn: document.getElementById("openAuthBtn"),
   guestPreviewBtn: document.getElementById("guestPreviewBtn"),
   closeAuthBtn: document.getElementById("closeAuthBtn"),
@@ -111,6 +120,22 @@ function setAuthMode(mode) {
     : "Erstelle deinen ersten Abenteurer-Zugang.";
 }
 
+function updateAuthModalState(user) {
+  const isLoggedIn = Boolean(user);
+
+  elements.authGuestView.hidden = isLoggedIn;
+  elements.authUserView.hidden = !isLoggedIn;
+
+  if (isLoggedIn) {
+    elements.signedInTitle.textContent = "Du bist eingeloggt";
+    elements.signedInText.textContent = `Verbunden als ${user.email ?? user.uid}.`;
+  } else {
+    elements.signedInTitle.textContent = "Du bist eingeloggt";
+    elements.signedInText.textContent = "Dein Konto ist bereits verbunden.";
+    elements.authForm.reset();
+  }
+}
+
 function validateAuthInputs(email, password) {
   if (!email || !password) {
     throw new Error("Bitte E-Mail und Passwort eingeben.");
@@ -123,6 +148,7 @@ function validateAuthInputs(email, password) {
 
 function updateAuthUI(user) {
   state.currentUser = user;
+  updateAuthModalState(user);
 
   if (user) {
     elements.authStatusText.textContent = user.email || `UID ${user.uid}`;
@@ -292,6 +318,7 @@ function bindEvents() {
       setCharacterPanelVisibility(false);
       await logoutUser();
       log("Benutzer erfolgreich ausgeloggt.");
+      closeAuthModal();
     } catch (error) {
       log(`Logout-Fehler: ${error?.message || "Unbekannter Fehler"}`);
     }
@@ -326,6 +353,7 @@ function bindEvents() {
 function init() {
   setAuthMode("login");
   setCharacterPanelVisibility(false);
+  updateAuthModalState(null);
   bindEvents();
   gameModule.mountPhaserGame();
 
