@@ -1,4 +1,7 @@
 <!--
+[2026-07-16 20:52 CEST] Character-Menü für ausgeloggte User ausgeblendet.
+- Character-Panel startet jetzt mit hidden-Attribut.
+- Sichtbarkeit wird zur Laufzeit über den Auth-State gesteuert.
 [2026-07-16 11:44 CEST] Phase-2-Refactor in modulare Dateien vorbereitet.
 - HTML auf schlanke Struktur reduziert.
 - CSS und JS in kleinere Teilmodule ausgelagert.
@@ -104,7 +107,7 @@
       </section>
 
       <section class="content-grid">
-        <article class="panel character-panel">
+        <article id="characterPanel" class="panel character-panel" hidden>
           <div class="panel-header">
             <p class="section-label">Character Slots</p>
             <h3>Heldenauswahl</h3>
