@@ -1,4 +1,7 @@
 /*
+[2026-07-16 21:23 CEST] Phase 3 Weltstart angebunden.
+- App startet jetzt die Starter-Town-Map statt reiner Dummy-Welt.
+- Restliche Auth- und Character-Logik bleibt unangetastet.
 [2026-07-16 21:10 CEST] Delete-Dialog in App-State verdrahtet.
 - Custom-Delete-Dialog an Character-Modul übergeben.
 - Escape-Handling für Delete-Dialog ergänzt.
@@ -354,6 +357,10 @@ function bindEvents() {
     if (event.key === "Escape" && !elements.characterModal.classList.contains("hidden")) {
       characterModule.closeCharacterModal();
     }
+
+    if (event.key === "Escape" && elements.deleteDialog.open) {
+      characterModule.closeDeleteDialog();
+    }
   });
 }
 
@@ -374,7 +381,7 @@ function init() {
     }
   });
 
-  log("Phase 2 modular initialisiert.");
+  log("Phase 3 initialisiert.");
 }
 
 init();
