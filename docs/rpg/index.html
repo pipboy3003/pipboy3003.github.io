@@ -1,4 +1,8 @@
 <!--
+[2026-07-16 21:07 CEST] Auth-Modal logisch in Gast- und Login-Zustände getrennt.
+- Auth-Form und Tabs werden nur für ausgeloggte User gezeigt.
+- Logout-Bereich ist jetzt ein eigener eingeloggter Zustand.
+- Grundlage für saubere, zustandsabhängige Auth-UI ergänzt.
 [2026-07-16 20:52 CEST] Character-Menü für ausgeloggte User ausgeblendet.
 - Character-Panel startet jetzt mit hidden-Attribut.
 - Sichtbarkeit wird zur Laufzeit über den Auth-State gesteuert.
@@ -208,28 +212,41 @@
         <button id="closeAuthBtn" class="icon-button" type="button" aria-label="Dialog schließen">✕</button>
       </div>
 
-      <div class="auth-tabs" role="tablist" aria-label="Authentifizierung">
-        <button id="loginTabBtn" class="tab-button active" type="button">Login</button>
-        <button id="registerTabBtn" class="tab-button" type="button">Registrieren</button>
+      <div id="authGuestView">
+        <div id="authTabs" class="auth-tabs" role="tablist" aria-label="Authentifizierung">
+          <button id="loginTabBtn" class="tab-button active" type="button">Login</button>
+          <button id="registerTabBtn" class="tab-button" type="button">Registrieren</button>
+        </div>
+
+        <form id="authForm" class="auth-form">
+          <label class="field">
+            <span>E-Mail</span>
+            <input id="emailInput" name="email" type="email" autocomplete="email" placeholder="held@welt.de" required />
+          </label>
+
+          <label class="field">
+            <span>Passwort</span>
+            <input id="passwordInput" name="password" type="password" autocomplete="current-password" placeholder="••••••••" required />
+          </label>
+
+          <button id="submitAuthBtn" class="primary-button submit-button" type="submit">Einloggen</button>
+        </form>
+
+        <div class="modal-footer">
+          <p id="authFeedback" class="auth-feedback">Noch nicht verbunden.</p>
+        </div>
       </div>
 
-      <form id="authForm" class="auth-form">
-        <label class="field">
-          <span>E-Mail</span>
-          <input id="emailInput" name="email" type="email" autocomplete="email" placeholder="held@welt.de" required />
-        </label>
+      <div id="authUserView" hidden>
+        <div class="signed-in-box">
+          <p class="section-label">Account aktiv</p>
+          <h3 id="signedInTitle">Du bist eingeloggt</h3>
+          <p id="signedInText" class="auth-feedback">Dein Konto ist bereits verbunden.</p>
+        </div>
 
-        <label class="field">
-          <span>Passwort</span>
-          <input id="passwordInput" name="password" type="password" autocomplete="current-password" placeholder="••••••••" required />
-        </label>
-
-        <button id="submitAuthBtn" class="primary-button submit-button" type="submit">Einloggen</button>
-      </form>
-
-      <div class="modal-footer">
-        <p id="authFeedback" class="auth-feedback">Noch nicht verbunden.</p>
-        <button id="logoutBtn" class="ghost-button" type="button">Logout</button>
+        <div class="modal-footer auth-user-actions">
+          <button id="logoutBtn" class="ghost-button" type="button">Logout</button>
+        </div>
       </div>
     </section>
   </div>
