@@ -12,10 +12,7 @@ const vehicles = [
     nextInspectionDate: '2025-03-15',
     nextServiceDate: '2024-11-01',
     lastFuelingSummary: 'Zuletzt getankt vor 3 Tagen',
-    todos: [
-      'Bremsflüssigkeit wechseln',
-      'Software-Update Motorsteuerung',
-    ],
+    todos: ['Bremsflüssigkeit wechseln', 'Software-Update Motorsteuerung'],
     history: [
       { type: 'maintenance', date: '2024-04-10', odo: 208000, description: 'Ölwechsel + Filter', cost: 180 },
       { type: 'upgrade', date: '2023-12-05', odo: 205000, description: 'Winterreifen montiert', cost: 60 },
@@ -32,10 +29,7 @@ const vehicles = [
     nextInspectionDate: '2024-09-30',
     nextServiceDate: '2024-08-20',
     lastFuelingSummary: 'Zuletzt getankt vor 10 Tagen',
-    todos: [
-      'Lackpolitur komplett',
-      'Innenraumfilter tauschen',
-    ],
+    todos: ['Lackpolitur komplett', 'Innenraumfilter tauschen'],
     history: [
       { type: 'maintenance', date: '2024-03-01', odo: 143500, description: 'Große Inspektion', cost: 650 },
     ],
@@ -43,6 +37,38 @@ const vehicles = [
 ];
 
 let selectedVehicleId = vehicles[0]?.id ?? null;
+
+/* ===== Theme-Toggle (Hell/Dunkel, orange) ===== */
+function initTheme() {
+  const stored = localStorage.getItem('garageTheme');
+  let theme = stored;
+
+  if (!theme) {
+    const prefersDark =
+      window.matchMedia &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches;
+    theme = prefersDark ? 'dark' : 'light';
+  }
+
+  applyTheme(theme);
+
+  const btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+
+  btn.textContent = theme === 'dark' ? 'Hell' : 'Dunkel';
+
+  btn.addEventListener('click', () => {
+    const current = document.body.dataset.theme || 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    localStorage.setItem('garageTheme', next);
+    btn.textContent = next === 'dark' ? 'Hell' : 'Dunkel';
+  });
+}
+
+function applyTheme(theme) {
+  document.body.dataset.theme = theme;
+}
 
 /* ===== Screen-Handling: Intro -> Login -> Garage ===== */
 function showScreen(name) {
@@ -81,7 +107,7 @@ function initScreens() {
     }
   };
 
-  // Auto-Weiter nach der Animation
+  // Intro läuft kurz, dann weiter
   setTimeout(proceedFromIntro, 2500);
 
   if (introSkip) {
@@ -95,7 +121,7 @@ function initScreens() {
       const password = document.getElementById('login-password').value.trim();
       if (!email || !password) return;
 
-      // Platzhalter-Login – später durch Firebase ersetzen
+      // Platzhalter-Login: später durch Firebase ersetzen
       localStorage.setItem('garageLoggedIn', 'true');
       showScreen('garage');
     });
@@ -108,9 +134,8 @@ function initScreens() {
     });
   }
 
-  // Wenn bereits eingeloggt: nach Intro direkt Garage
   if (loggedIn) {
-    // Intro wird trotzdem kurz angezeigt, danach geht es zur Garage
+    // bleibt beim gleichen Ablauf: Intro -> Garage
   }
 }
 
@@ -218,9 +243,7 @@ function renderVehicleDetail() {
 }
 
 function formatKm(value) {
-  return value != null
-    ? `${value.toLocaleString('de-DE')} km`
-    : '— km';
+  return value != null ? `${value.toLocaleString('de-DE')} km` : '— km';
 }
 
 function labelForType(type) {
@@ -253,9 +276,7 @@ function setupEntryForm() {
     const desc = document.getElementById('entry-desc').value.trim();
     const costRaw = document.getElementById('entry-cost').value;
 
-    if (!date || !desc) {
-      return;
-    }
+    if (!date || !desc) return;
 
     const entry = {
       type,
@@ -310,8 +331,9 @@ function renderSelectedStats() {
 
 /* ===== Init ===== */
 document.addEventListener('DOMContentLoaded', () => {
-  initScreens();
-  setupEntryForm();
+  initTheme();      // Hell/Dunkel + Button
+  initScreens();    // Intro, Login, Garage
+  setupEntryForm(); // Eintrags-Formular
   renderVehicles();
   renderVehicleDetail();
   renderSelectedStats();
