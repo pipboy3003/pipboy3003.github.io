@@ -1,41 +1,32 @@
-/* ===== Design-Variablen (Standard: Light) ===== */
 :root {
-  --color-bg: #f4f5f7;
-  --color-bg-elevated: #ffffff;
-  --color-bg-sidebar: #111827;
-  --color-bg-header: #1f2933;
-
-  --color-text: #111827;
-  --color-text-muted: #6b7280;
-  --color-text-on-dark: #e5e7eb;
-
-  --color-accent: #22d3ee;   /* Cyan / technisch */
-  --color-border: #e5e7eb;
-
-  --radius-card: 12px;
-  --shadow-card: 0 10px 25px rgba(15, 23, 42, 0.08);
+  /* Light-Theme */
+  --bg: #f4f5f7;
+  --bg-elevated: #ffffff;
+  --bg-sidebar: #111827;
+  --bg-header: #1f2933;
+  --text: #111827;
+  --text-muted: #6b7280;
+  --text-on-dark: #e5e7eb;
+  --accent: #22d3ee;
+  --border: #e5e7eb;
+  --radius: 12px;
 }
 
-/* ===== Dark-Mode per System-Einstellung ===== */
+/* Dark automatisch nach System-Einstellung */
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg: #020617;
-    --color-bg-elevated: #0f172a;
-    --color-bg-sidebar: #020617;
-    --color-bg-header: #020617;
-
-    --color-text: #e5e7eb;
-    --color-text-muted: #9ca3af;
-    --color-text-on-dark: #e5e7eb;
-
-    --color-accent: #22c55e; /* Grün / „Terminal“-Look */
-    --color-border: #1f2937;
-
-    --shadow-card: 0 16px 40px rgba(15, 23, 42, 0.85);
+    --bg: #020617;
+    --bg-elevated: #0f172a;
+    --bg-sidebar: #020617;
+    --bg-header: #020617;
+    --text: #e5e7eb;
+    --text-muted: #9ca3af;
+    --text-on-dark: #e5e7eb;
+    --accent: #22c55e;
+    --border: #1f2937;
   }
 }
 
-/* ===== Globales Layout ===== */
 *,
 *::before,
 *::after {
@@ -45,26 +36,25 @@
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background-color: var(--color-bg);
-  color: var(--color-text);
+  background-color: var(--bg);
+  color: var(--text);
 }
 
-/* Mobile-First: App-Shell als Spalten-Layout */
 .app-shell {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
-/* Header oben */
+/* Header */
 .app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem;
-  background-color: var(--color-bg-header);
-  color: var(--color-text-on-dark);
-  border-bottom: 1px solid var(--color-border);
+  background-color: var(--bg-header);
+  color: var(--text-on-dark);
+  border-bottom: 1px solid var(--border);
 }
 
 .logo {
@@ -77,7 +67,7 @@ body {
   width: 28px;
   height: 28px;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--color-accent), #6366f1);
+  background: linear-gradient(135deg, var(--accent), #6366f1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -92,18 +82,18 @@ body {
 
 .header-actions .header-button {
   background: transparent;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border);
   border-radius: 999px;
   padding: 0.35rem 0.85rem;
   color: inherit;
   cursor: pointer;
 }
 
-/* Sidebar (mobil: horizontal oben unter Header) */
+/* Sidebar (mobil: horizontal unter Header) */
 .app-sidebar {
-  background-color: var(--color-bg-sidebar);
-  color: var(--color-text-on-dark);
-  border-bottom: 1px solid var(--color-border);
+  background-color: var(--bg-sidebar);
+  color: var(--text-on-dark);
+  border-bottom: 1px solid var(--border);
 }
 
 .sidebar-nav {
@@ -118,17 +108,17 @@ body {
   padding: 0.35rem 0.75rem;
   border-radius: 999px;
   text-decoration: none;
-  color: var(--color-text-on-dark);
+  color: var(--text-on-dark);
   border: 1px solid transparent;
   white-space: nowrap;
 }
 
 .nav-link-active {
-  border-color: var(--color-accent);
+  border-color: var(--accent);
   background-color: rgba(34, 211, 238, 0.12);
 }
 
-/* Hauptbereich */
+/* Main */
 .app-main {
   flex: 1;
   padding: 1rem;
@@ -147,7 +137,7 @@ body {
 
 .section-header p {
   margin: 0;
-  color: var(--color-text-muted);
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -160,17 +150,15 @@ body {
 }
 
 .vehicle-card {
-  background-color: var(--color-bg-elevated);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
-  border: 1px solid var(--color-border);
+  background-color: var(--bg-elevated);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
   padding: 0.75rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-/* Einfacher Platzhalter für Fahrzeugbild */
 .vehicle-card-header {
   display: flex;
   align-items: center;
@@ -181,7 +169,7 @@ body {
   width: 52px;
   height: 52px;
   border-radius: 0.75rem;
-  background: radial-gradient(circle at 30% 20%, var(--color-accent), #0f172a);
+  background: radial-gradient(circle at 30% 20%, var(--accent), #0f172a);
 }
 
 .vehicle-title {
@@ -190,10 +178,9 @@ body {
 
 .vehicle-subtitle {
   font-size: 0.85rem;
-  color: var(--color-text-muted);
+  color: var(--text-muted);
 }
 
-/* Badges */
 .badge-row {
   display: flex;
   flex-wrap: wrap;
@@ -204,12 +191,7 @@ body {
   font-size: 0.75rem;
   padding: 0.2rem 0.5rem;
   border-radius: 999px;
-  border: 1px solid var(--color-border);
-}
-
-.badge-danger {
-  border-color: #f97373;
-  color: #f97373;
+  border: 1px solid var(--border);
 }
 
 /* Stats */
@@ -221,10 +203,9 @@ body {
 }
 
 .stat-card {
-  background-color: var(--color-bg-elevated);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
-  border: 1px solid var(--color-border);
+  background-color: var(--bg-elevated);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
   padding: 0.75rem;
 }
 
@@ -233,23 +214,15 @@ body {
   font-weight: 600;
 }
 
-/* ===== Breakpoints: Tablet & Desktop ===== */
-
-/* Ab ~768px: Sidebar links, Main rechts, Grids breiter */
+/* Tablet / Desktop */
 @media (min-width: 768px) {
   .app-shell {
     flex-direction: row;
   }
 
-  .app-header {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-
   .app-sidebar {
     width: 220px;
-    border-right: 1px solid var(--color-border);
+    border-right: 1px solid var(--border);
     border-bottom: none;
     min-height: 100vh;
   }
@@ -271,7 +244,6 @@ body {
   }
 }
 
-/* Ab ~1024px: 3 Fahrzeug-Spalten */
 @media (min-width: 1024px) {
   .vehicle-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
