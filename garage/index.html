@@ -5,10 +5,7 @@
   <title>GarageCTRL</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Styles im Root -->
   <link rel="stylesheet" href="style.css">
-
-  <!-- Optional: Favicon (SVG-Rad) – Datei kannst du später ergänzen -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 <body>
@@ -19,7 +16,7 @@
         <span class="logo-text">GarageCTRL</span>
       </div>
       <div class="header-actions">
-        <button class="header-button">Profil</button>
+        <button class="header-button" type="button">Profil</button>
       </div>
     </header>
 
@@ -32,10 +29,56 @@
     </aside>
 
     <main class="app-main">
+      <!-- Fahrzeug-Formular -->
       <section class="main-section">
         <div class="section-header">
-          <h1>Deine Fahrzeuge</h1>
-          <p>Verwalte Wartung, Kosten und Tankvorgänge für deinen Fuhrpark.</p>
+          <h1>Neues Fahrzeug</h1>
+          <p>Lege ein Fahrzeug an, um Wartung, Kosten und Tankvorgänge zu tracken.</p>
+        </div>
+
+        <form id="vehicle-form" class="vehicle-form">
+          <div class="form-row">
+            <label for="make">Hersteller</label>
+            <input id="make" name="make" type="text" required placeholder="BMW">
+          </div>
+          <div class="form-row">
+            <label for="model">Modell</label>
+            <input id="model" name="model" type="text" required placeholder="330d Touring">
+          </div>
+          <div class="form-row">
+            <label for="plate">Kennzeichen</label>
+            <input id="plate" name="plate" type="text" required placeholder="S-KF 330">
+          </div>
+          <div class="form-row">
+            <label for="year">Baujahr</label>
+            <input id="year" name="year" type="number" min="1950" max="2100" required placeholder="2013">
+          </div>
+          <div class="form-row">
+            <label for="odometer">Kilometerstand</label>
+            <input id="odometer" name="odometer" type="number" min="0" placeholder="210000">
+          </div>
+          <div class="form-row">
+            <label for="price">Kfz-Preis (Anschaffung)</label>
+            <input id="price" name="price" type="number" min="0" step="100" placeholder="15000">
+          </div>
+          <div class="form-row">
+            <label for="nextInspection">Nächster TÜV</label>
+            <input id="nextInspection" name="nextInspection" type="date">
+          </div>
+          <div class="form-row">
+            <label for="nextService">Nächster Service</label>
+            <input id="nextService" name="nextService" type="date">
+          </div>
+
+          <button class="primary-button" type="submit">Fahrzeug hinzufügen</button>
+        </form>
+      </section>
+
+      <!-- Fahrzeug-Übersicht -->
+      <section class="main-section">
+        <div class="section-header">
+          <h2>Deine Fahrzeuge</h2>
+          <p>Tippe auf eine Karte, um Details, Wünsche und Historie zu sehen.</p>
         </div>
 
         <div id="vehicle-grid" class="vehicle-grid">
@@ -43,30 +86,42 @@
         </div>
       </section>
 
+      <!-- Fahrzeug-Details: Wünsche + Historie + Kennzahlen -->
       <section class="main-section">
         <div class="section-header">
-          <h2>Kennzahlen</h2>
+          <h2>Fahrzeug-Details</h2>
+          <p>Ausgewähltes Fahrzeug mit offenen Wünschen, erledigten Arbeiten und Kennzahlen.</p>
+        </div>
+
+        <div id="vehicle-detail" class="vehicle-detail">
+          <p>Wähle oben ein Fahrzeug aus.</p>
+        </div>
+      </section>
+
+      <!-- Kennzahlen (global, später aus Daten) -->
+      <section class="main-section">
+        <div class="section-header">
+          <h2>Kennzahlen (Gesamt)</h2>
         </div>
 
         <div class="stats-grid">
           <article class="stat-card">
-            <h3>Monatliche Kosten</h3>
-            <p class="stat-value">— €</p>
+            <h3>Fuhrpark-Anschaffungskosten</h3>
+            <p id="stat-total-price" class="stat-value">— €</p>
           </article>
           <article class="stat-card">
-            <h3>Fällige Services</h3>
-            <p class="stat-value">—</p>
+            <h3>Durchschnittlicher Kilometerstand</h3>
+            <p id="stat-average-odo" class="stat-value">— km</p>
           </article>
           <article class="stat-card">
-            <h3>Fällige TÜV-Termine</h3>
-            <p class="stat-value">—</p>
+            <h3>Anzahl Fahrzeuge</h3>
+            <p id="stat-vehicle-count" class="stat-value">—</p>
           </article>
         </div>
       </section>
     </main>
   </div>
 
-  <!-- JS im Root -->
   <script src="app.js" type="module"></script>
 </body>
 </html>
