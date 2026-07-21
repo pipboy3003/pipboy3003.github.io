@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>GarageCTRL</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Basis-Styles -->
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="logo">
+        <!-- später kleines SVG/Logo -->
+        <span class="logo-mark">GC</span>
+        <span class="logo-text">GarageCTRL</span>
+      </div>
+
+      <div class="header-actions">
+        <!-- später: User-Avatar / Login / Theme-Toggle -->
+        <button class="header-button">Profil</button>
+      </div>
+    </header>
+
+    <aside class="app-sidebar">
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-link nav-link-active">Garage</a>
+        <a href="#" class="nav-link">Statistiken</a>
+        <a href="#" class="nav-link">Einstellungen</a>
+      </nav>
+    </aside>
+
+    <main class="app-main">
+      <section class="main-section">
+        <div class="section-header">
+          <h1>Deine Fahrzeuge</h1>
+          <p>Verwalte Wartung, Kosten und Tankvorgänge für deinen Fuhrpark.</p>
+        </div>
+
+        <div id="vehicle-grid" class="vehicle-grid">
+          <!-- Cards werden von app.js gerendert -->
+        </div>
+      </section>
+
+      <section class="main-section">
+        <div class="section-header">
+          <h2>Kennzahlen</h2>
+        </div>
+
+        <div class="stats-grid">
+          <article class="stat-card">
+            <h3>Monatliche Kosten</h3>
+            <p class="stat-value">— €</p>
+          </article>
+          <article class="stat-card">
+            <h3>Fällige Services</h3>
+            <p class="stat-value">—</p>
+          </article>
+          <article class="stat-card">
+            <h3>Fällige TÜV-Termine</h3>
+            <p class="stat-value">—</p>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="assets/js/app.js" type="module"></script>
+</body>
+</html>
