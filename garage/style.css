@@ -1,0 +1,279 @@
+/* ===== Design-Variablen (Standard: Light) ===== */
+:root {
+  --color-bg: #f4f5f7;
+  --color-bg-elevated: #ffffff;
+  --color-bg-sidebar: #111827;
+  --color-bg-header: #1f2933;
+
+  --color-text: #111827;
+  --color-text-muted: #6b7280;
+  --color-text-on-dark: #e5e7eb;
+
+  --color-accent: #22d3ee;   /* Cyan / technisch */
+  --color-border: #e5e7eb;
+
+  --radius-card: 12px;
+  --shadow-card: 0 10px 25px rgba(15, 23, 42, 0.08);
+}
+
+/* ===== Dark-Mode per System-Einstellung ===== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #020617;
+    --color-bg-elevated: #0f172a;
+    --color-bg-sidebar: #020617;
+    --color-bg-header: #020617;
+
+    --color-text: #e5e7eb;
+    --color-text-muted: #9ca3af;
+    --color-text-on-dark: #e5e7eb;
+
+    --color-accent: #22c55e; /* Grün / „Terminal“-Look */
+    --color-border: #1f2937;
+
+    --shadow-card: 0 16px 40px rgba(15, 23, 42, 0.85);
+  }
+}
+
+/* ===== Globales Layout ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Mobile-First: App-Shell als Spalten-Layout */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header oben */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background-color: var(--color-bg-header);
+  color: var(--color-text-on-dark);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--color-accent), #6366f1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.logo-text {
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.header-actions .header-button {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* Sidebar (mobil: horizontal oben unter Header) */
+.app-sidebar {
+  background-color: var(--color-bg-sidebar);
+  color: var(--color-text-on-dark);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sidebar-nav {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  overflow-x: auto;
+}
+
+.nav-link {
+  font-size: 0.85rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  text-decoration: none;
+  color: var(--color-text-on-dark);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.nav-link-active {
+  border-color: var(--color-accent);
+  background-color: rgba(34, 211, 238, 0.12);
+}
+
+/* Hauptbereich */
+.app-main {
+  flex: 1;
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.main-section {
+  margin-bottom: 1.5rem;
+}
+
+.section-header h1,
+.section-header h2 {
+  margin: 0 0 0.25rem 0;
+}
+
+.section-header p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+/* Fahrzeug-Grid */
+.vehicle-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.vehicle-card {
+  background-color: var(--color-bg-elevated);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-border);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Einfacher Platzhalter für Fahrzeugbild */
+.vehicle-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.vehicle-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 0.75rem;
+  background: radial-gradient(circle at 30% 20%, var(--color-accent), #0f172a);
+}
+
+.vehicle-title {
+  font-weight: 600;
+}
+
+.vehicle-subtitle {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+/* Badges */
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+}
+
+.badge-danger {
+  border-color: #f97373;
+  color: #f97373;
+}
+
+/* Stats */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.stat-card {
+  background-color: var(--color-bg-elevated);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-border);
+  padding: 0.75rem;
+}
+
+.stat-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* ===== Breakpoints: Tablet & Desktop ===== */
+
+/* Ab ~768px: Sidebar links, Main rechts, Grids breiter */
+@media (min-width: 768px) {
+  .app-shell {
+    flex-direction: row;
+  }
+
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .app-sidebar {
+    width: 220px;
+    border-right: 1px solid var(--color-border);
+    border-bottom: none;
+    min-height: 100vh;
+  }
+
+  .sidebar-nav {
+    flex-direction: column;
+  }
+
+  .app-main {
+    padding: 1.5rem;
+  }
+
+  .vehicle-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Ab ~1024px: 3 Fahrzeug-Spalten */
+@media (min-width: 1024px) {
+  .vehicle-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
