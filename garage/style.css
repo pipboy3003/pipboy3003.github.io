@@ -1,5 +1,4 @@
 :root {
-  /* Light-Theme */
   --bg: #f4f5f7;
   --bg-elevated: #ffffff;
   --bg-sidebar: #111827;
@@ -12,7 +11,6 @@
   --radius: 12px;
 }
 
-/* Dark automatisch nach System-Einstellung */
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #020617;
@@ -89,7 +87,7 @@ body {
   cursor: pointer;
 }
 
-/* Sidebar (mobil: horizontal unter Header) */
+/* Sidebar */
 .app-sidebar {
   background-color: var(--bg-sidebar);
   color: var(--text-on-dark);
@@ -141,7 +139,49 @@ body {
   font-size: 0.9rem;
 }
 
-/* Fahrzeug-Grid */
+/* Formular */
+.vehicle-form {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  background-color: var(--bg-elevated);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 0.75rem;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-row label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.form-row input {
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+.primary-button {
+  justify-self: flex-start;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: none;
+  background-color: var(--accent);
+  color: #020617;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Fahrzeuge */
 .vehicle-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -157,6 +197,12 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  cursor: pointer;
+}
+
+.vehicle-card-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.4);
 }
 
 .vehicle-card-header {
@@ -192,6 +238,37 @@ body {
   padding: 0.2rem 0.5rem;
   border-radius: 999px;
   border: 1px solid var(--border);
+}
+
+/* Fahrzeug-Details */
+.vehicle-detail {
+  margin-top: 1rem;
+  background-color: var(--bg-elevated);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 0.75rem;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+.detail-card-title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.detail-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.detail-list li {
+  font-size: 0.85rem;
+  padding: 0.2rem 0;
 }
 
 /* Stats */
@@ -235,11 +312,19 @@ body {
     padding: 1.5rem;
   }
 
+  .vehicle-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .vehicle-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .detail-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
