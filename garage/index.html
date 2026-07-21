@@ -86,7 +86,7 @@
         </div>
       </section>
 
-      <!-- Fahrzeug-Details: Wünsche + Historie + Kennzahlen -->
+      <!-- Fahrzeug-Details + Eintrags-Formular -->
       <section class="main-section">
         <div class="section-header">
           <h2>Fahrzeug-Details</h2>
@@ -96,9 +96,38 @@
         <div id="vehicle-detail" class="vehicle-detail">
           <p>Wähle oben ein Fahrzeug aus.</p>
         </div>
+
+        <!-- Neuer Eintrag (Wartung/Reparatur/Upgrade) -->
+        <form id="entry-form" class="entry-form">
+          <div class="form-row">
+            <label for="entry-type">Typ</label>
+            <select id="entry-type" name="entryType">
+              <option value="maintenance">Wartung</option>
+              <option value="repair">Reparatur</option>
+              <option value="upgrade">Upgrade</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="entry-date">Datum</label>
+            <input id="entry-date" name="entryDate" type="date" required>
+          </div>
+          <div class="form-row">
+            <label for="entry-odo">Kilometer bei Eintrag</label>
+            <input id="entry-odo" name="entryOdo" type="number" min="0">
+          </div>
+          <div class="form-row">
+            <label for="entry-desc">Beschreibung</label>
+            <input id="entry-desc" name="entryDesc" type="text" required placeholder="Ölwechsel, Bremsen, Upgrade ...">
+          </div>
+          <div class="form-row">
+            <label for="entry-cost">Kosten (€)</label>
+            <input id="entry-cost" name="entryCost" type="number" min="0" step="10">
+          </div>
+          <button class="secondary-button" type="submit">Eintrag hinzufügen</button>
+        </form>
       </section>
 
-      <!-- Kennzahlen (global, später aus Daten) -->
+      <!-- Kennzahlen (Gesamt) -->
       <section class="main-section">
         <div class="section-header">
           <h2>Kennzahlen (Gesamt)</h2>
