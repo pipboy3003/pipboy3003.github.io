@@ -15,7 +15,6 @@ const vehicles = [
     todos: [
       'Bremsflüssigkeit wechseln',
       'Software-Update Motorsteuerung',
-      'Felgen aufbereiten',
     ],
     history: [
       { type: 'maintenance', date: '2024-04-10', odo: 208000, description: 'Ölwechsel + Filter', cost: 180 },
@@ -45,6 +44,77 @@ const vehicles = [
 
 let selectedVehicleId = vehicles[0]?.id ?? null;
 
+/* ===== Screen-Handling: Intro -> Login -> Garage ===== */
+function showScreen(name) {
+  const intro = document.getElementById('intro-screen');
+  const login = document.getElementById('login-screen');
+  const garage = document.getElementById('garage-screen');
+
+  if (!intro || !login || !garage) return;
+
+  intro.classList.add('screen-hidden');
+  login.classList.add('screen-hidden');
+  garage.style.display = 'none';
+
+  if (name === 'intro') {
+    intro.classList.remove('screen-hidden');
+  } else if (name === 'login') {
+    login.classList.remove('screen-hidden');
+  } else if (name === 'garage') {
+    garage.style.display = 'block';
+  }
+}
+
+function initScreens() {
+  const loggedIn = localStorage.getItem('garageLoggedIn') === 'true';
+  const introSkip = document.getElementById('intro-skip');
+  const loginForm = document.getElementById('login-form');
+  const logoutButton = document.getElementById('logout-button');
+
+  showScreen('intro');
+
+  const proceedFromIntro = () => {
+    if (localStorage.getItem('garageLoggedIn') === 'true') {
+      showScreen('garage');
+    } else {
+      showScreen('login');
+    }
+  };
+
+  // Auto-Weiter nach der Animation
+  setTimeout(proceedFromIntro, 2500);
+
+  if (introSkip) {
+    introSkip.addEventListener('click', proceedFromIntro);
+  }
+
+  if (loginForm) {
+    loginForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+      if (!email || !password) return;
+
+      // Platzhalter-Login – später durch Firebase ersetzen
+      localStorage.setItem('garageLoggedIn', 'true');
+      showScreen('garage');
+    });
+  }
+
+  if (logoutButton) {
+    logoutButton.addEventListener('click', () => {
+      localStorage.removeItem('garageLoggedIn');
+      showScreen('login');
+    });
+  }
+
+  // Wenn bereits eingeloggt: nach Intro direkt Garage
+  if (loggedIn) {
+    // Intro wird trotzdem kurz angezeigt, danach geht es zur Garage
+  }
+}
+
+/* ===== Garage-Rendering ===== */
 function renderVehicles() {
   const grid = document.getElementById('vehicle-grid');
   if (!grid) return;
@@ -69,7 +139,7 @@ function renderVehicles() {
       <div class="badge-row">
         <span class="badge">TÜV: ${v.nextInspectionDate || '—'}</span>
         <span class="badge">Service: ${v.nextServiceDate || '—'}</span>
-        <span class="badge">KM: ${v.odometer?.toLocaleString?.('de-DE') ?? '—'}</span>
+        <span class="badge">KM: ${formatKm(v.odometer)}</span>
       </div>
     `;
 
@@ -77,6 +147,7 @@ function renderVehicles() {
       selectedVehicleId = v.id;
       renderVehicles();
       renderVehicleDetail();
+      renderSelectedStats();
     });
 
     grid.appendChild(card);
@@ -97,9 +168,7 @@ function renderVehicleDetail() {
     ? `${vehicle.purchasePrice.toLocaleString('de-DE')} €`
     : '—';
 
-  const odoText = vehicle.odometer != null
-    ? `${vehicle.odometer.toLocaleString('de-DE')} km`
-    : '—';
+  const odoText = formatKm(vehicle.odometer);
 
   const totalHistoryCost = vehicle.history?.length
     ? vehicle.history.reduce((sum, e) => sum + (e.cost || 0), 0)
@@ -114,7 +183,7 @@ function renderVehicleDetail() {
           <li>Kennzeichen: ${vehicle.plate}</li>
           <li>Kilometerstand: ${odoText}</li>
           <li>Anschaffungspreis: ${priceText}</li>
-          <li>Summe Historie-Kosten: ${totalHistoryCost.toLocaleString('de-DE')} €</li>
+          <li>Summe Eintrags-Kosten: ${totalHistoryCost.toLocaleString('de-DE')} €</li>
         </ul>
       </div>
       <div>
@@ -136,7 +205,7 @@ function renderVehicleDetail() {
                   .map(
                     (e) =>
                       `<li>${e.date}: [${labelForType(e.type)}] ${e.description}` +
-                      `${e.odo != null ? ' • ' + e.odo.toLocaleString('de-DE') + ' km' : ''}` +
+                      `${e.odo != null ? ' • ' + formatKm(e.odo) : ''}` +
                       `${e.cost != null ? ' • ' + e.cost.toLocaleString('de-DE') + ' €' : ''}</li>`,
                   )
                   .join('')
@@ -146,6 +215,12 @@ function renderVehicleDetail() {
       </div>
     </div>
   `;
+}
+
+function formatKm(value) {
+  return value != null
+    ? `${value.toLocaleString('de-DE')} km`
+    : '— km';
 }
 
 function labelForType(type) {
@@ -161,50 +236,7 @@ function labelForType(type) {
   }
 }
 
-function setupVehicleForm() {
-  const form = document.getElementById('vehicle-form');
-  if (!form) return;
-
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-
-    const make = document.getElementById('make').value.trim();
-    const model = document.getElementById('model').value.trim();
-    const plate = document.getElementById('plate').value.trim();
-    const year = Number(document.getElementById('year').value);
-    const odometerRaw = document.getElementById('odometer').value;
-    const priceRaw = document.getElementById('price').value;
-    const nextInspectionDate = document.getElementById('nextInspection').value;
-    const nextServiceDate = document.getElementById('nextService').value;
-
-    if (!make || !model || !plate || !year) {
-      return;
-    }
-
-    const newVehicle = {
-      id: `v-${Date.now()}`,
-      make,
-      model,
-      year,
-      plate,
-      odometer: odometerRaw ? Number(odometerRaw) : null,
-      purchasePrice: priceRaw ? Number(priceRaw) : null,
-      nextInspectionDate,
-      nextServiceDate,
-      lastFuelingSummary: 'Tankbuch folgt',
-      todos: [],
-      history: [],
-    };
-
-    vehicles.push(newVehicle);
-    selectedVehicleId = newVehicle.id;
-    form.reset();
-    renderVehicles();
-    renderVehicleDetail();
-    renderStats();
-  });
-}
-
+/* ===== Eintrags-Formular ===== */
 function setupEntryForm() {
   const form = document.getElementById('entry-form');
   if (!form) return;
@@ -236,50 +268,51 @@ function setupEntryForm() {
     vehicle.history = vehicle.history || [];
     vehicle.history.push(entry);
 
-    // ggf. Fahrzeug-Kilometerstand aktualisieren
     if (entry.odo && (!vehicle.odometer || entry.odo > vehicle.odometer)) {
       vehicle.odometer = entry.odo;
     }
 
     form.reset();
     renderVehicleDetail();
-    renderStats();
+    renderSelectedStats();
   });
 }
 
-function renderStats() {
-  const totalPriceEl = document.getElementById('stat-total-price');
-  const avgOdoEl = document.getElementById('stat-average-odo');
-  const countEl = document.getElementById('stat-vehicle-count');
+/* ===== Kennzahlen für ausgewähltes Fahrzeug ===== */
+function renderSelectedStats() {
+  const priceEl = document.getElementById('stat-selected-price');
+  const odoEl = document.getElementById('stat-selected-odo');
+  const costsEl = document.getElementById('stat-selected-costs');
+  if (!priceEl || !odoEl || !costsEl) return;
 
-  if (!totalPriceEl || !avgOdoEl || !countEl) return;
+  const vehicle = vehicles.find((v) => v.id === selectedVehicleId);
+  if (!vehicle) {
+    priceEl.textContent = '— €';
+    odoEl.textContent = '— km';
+    costsEl.textContent = '— €';
+    return;
+  }
 
-  const count = vehicles.length;
-  countEl.textContent = count.toString();
+  const priceText = vehicle.purchasePrice != null
+    ? `${vehicle.purchasePrice.toLocaleString('de-DE')} €`
+    : '— €';
 
-  const prices = vehicles
-    .map((v) => v.purchasePrice)
-    .filter((p) => typeof p === 'number' && !Number.isNaN(p));
-  const totalPrice =
-    prices.length > 0 ? prices.reduce((sum, p) => sum + p, 0) : null;
+  const odoText = formatKm(vehicle.odometer);
 
-  totalPriceEl.textContent =
-    totalPrice != null ? `${totalPrice.toLocaleString('de-DE')} €` : '— €';
+  const totalHistoryCost = vehicle.history?.length
+    ? vehicle.history.reduce((sum, e) => sum + (e.cost || 0), 0)
+    : 0;
 
-  const odos = vehicles
-    .map((v) => v.odometer)
-    .filter((o) => typeof o === 'number' && !Number.isNaN(o));
-  const avgOdo =
-    odos.length > 0 ? Math.round(odos.reduce((sum, o) => sum + o, 0) / odos.length) : null;
-
-  avgOdoEl.textContent =
-    avgOdo != null ? `${avgOdo.toLocaleString('de-DE')} km` : '— km';
+  priceEl.textContent = priceText;
+  odoEl.textContent = odoText;
+  costsEl.textContent = `${totalHistoryCost.toLocaleString('de-DE')} €`;
 }
 
+/* ===== Init ===== */
 document.addEventListener('DOMContentLoaded', () => {
-  setupVehicleForm();
+  initScreens();
   setupEntryForm();
   renderVehicles();
   renderVehicleDetail();
-  renderStats();
+  renderSelectedStats();
 });
