@@ -17,6 +17,7 @@
         <span class="logo-text">GarageCTRL</span>
       </div>
       <div class="header-actions">
+        <button class="header-button" type="button" id="theme-toggle">Dunkel</button>
         <button class="header-button" type="button" id="logout-button">Logout</button>
       </div>
     </header>
@@ -37,23 +38,20 @@
           <p>Wähle ein Fahrzeug, um Details und Statistiken zu sehen.</p>
         </div>
 
-        <div id="vehicle-grid" class="vehicle-grid">
-          <!-- Cards kommen aus app.js -->
-        </div>
+        <div id="vehicle-grid" class="vehicle-grid"></div>
       </section>
 
       <!-- Fahrzeug-Details + Eintrags-Formular -->
       <section class="main-section">
         <div class="section-header">
           <h2>Fahrzeug-Details & Einträge</h2>
-          <p>Ausgewähltes Fahrzeug mit offenen Wünschen, Historie und Kennzahlen.</p>
+          <p>Ausgewähltes Fahrzeug mit Wünschen, Historie und Kennzahlen.</p>
         </div>
 
         <div id="vehicle-detail" class="vehicle-detail">
           <p>Wähle oben ein Fahrzeug aus.</p>
         </div>
 
-        <!-- Neuer Eintrag (Wartung/Reparatur/Upgrade) -->
         <form id="entry-form" class="entry-form">
           <div class="form-row">
             <label for="entry-type">Typ</label>
@@ -107,37 +105,37 @@
     </main>
   </div>
 
-  <!-- Intro-Screen mit Animation -->
+  <!-- Intro-Screen mit überarbeiteter Animation -->
   <div id="intro-screen" class="screen">
     <div class="screen-center">
       <div class="garage-scene">
-        <div class="garage-backdrop">
-          <div class="tool tool-1"></div>
-          <div class="tool tool-2"></div>
-          <div class="tool tool-3"></div>
-        </div>
+        <div class="garage-ground"></div>
+        <div class="garage-door-frame"></div>
         <div class="garage-door"></div>
-        <div class="car">
+
+        <div class="car-silhouette">
           <div class="car-body"></div>
+          <div class="car-window"></div>
           <div class="car-wheel car-wheel-front"></div>
           <div class="car-wheel car-wheel-rear"></div>
         </div>
-        <div class="rolling-wheel"></div>
+
+        <div class="wheel-alone"></div>
       </div>
       <div class="intro-text">
         <h1>GarageCTRL</h1>
-        <p>Deine digitale Garage mit Werkstattblick.</p>
-        <button id="intro-skip" class="primary-button">Garage betreten</button>
+        <p>Fahrzeuge, Werkstatt, Kosten – alles in deiner digitalen Garage.</p>
+        <button id="intro-skip" class="primary-button">Weiter</button>
       </div>
     </div>
   </div>
 
-  <!-- Login-Screen -->
+  <!-- Login-Screen mit reduziertem Card-Design -->
   <div id="login-screen" class="screen screen-hidden">
     <div class="screen-center">
       <div class="login-card">
         <h2>Login</h2>
-        <p class="login-subtitle">Melde dich an, um deine Fahrzeuge zu verwalten.</p>
+        <p class="login-subtitle">Melde dich an, um deine Garage zu öffnen.</p>
         <form id="login-form">
           <div class="form-row">
             <label for="login-email">E-Mail</label>
