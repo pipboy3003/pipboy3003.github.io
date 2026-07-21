@@ -18,8 +18,8 @@ const vehicles = [
       'Felgen aufbereiten',
     ],
     history: [
-      { date: '2024-04-10', description: 'Ölwechsel + Filter', cost: 180 },
-      { date: '2023-12-05', description: 'Winterreifen montiert', cost: 60 },
+      { type: 'maintenance', date: '2024-04-10', odo: 208000, description: 'Ölwechsel + Filter', cost: 180 },
+      { type: 'upgrade', date: '2023-12-05', odo: 205000, description: 'Winterreifen montiert', cost: 60 },
     ],
   },
   {
@@ -38,7 +38,7 @@ const vehicles = [
       'Innenraumfilter tauschen',
     ],
     history: [
-      { date: '2024-03-01', description: 'Große Inspektion', cost: 650 },
+      { type: 'maintenance', date: '2024-03-01', odo: 143500, description: 'Große Inspektion', cost: 650 },
     ],
   },
 ];
@@ -101,6 +101,10 @@ function renderVehicleDetail() {
     ? `${vehicle.odometer.toLocaleString('de-DE')} km`
     : '—';
 
+  const totalHistoryCost = vehicle.history?.length
+    ? vehicle.history.reduce((sum, e) => sum + (e.cost || 0), 0)
+    : 0;
+
   container.innerHTML = `
     <div class="detail-grid">
       <div>
@@ -110,6 +114,7 @@ function renderVehicleDetail() {
           <li>Kennzeichen: ${vehicle.plate}</li>
           <li>Kilometerstand: ${odoText}</li>
           <li>Anschaffungspreis: ${priceText}</li>
+          <li>Summe Historie-Kosten: ${totalHistoryCost.toLocaleString('de-DE')} €</li>
         </ul>
       </div>
       <div>
@@ -130,7 +135,9 @@ function renderVehicleDetail() {
               ? vehicle.history
                   .map(
                     (e) =>
-                      `<li>${e.date}: ${e.description} (${e.cost != null ? e.cost.toLocaleString('de-DE') + ' €' : '—'})</li>`,
+                      `<li>${e.date}: [${labelForType(e.type)}] ${e.description}` +
+                      `${e.odo != null ? ' • ' + e.odo.toLocaleString('de-DE') + ' km' : ''}` +
+                      `${e.cost != null ? ' • ' + e.cost.toLocaleString('de-DE') + ' €' : ''}</li>`,
                   )
                   .join('')
               : '<li>Noch keine Einträge.</li>'
@@ -141,7 +148,20 @@ function renderVehicleDetail() {
   `;
 }
 
-function setupForm() {
+function labelForType(type) {
+  switch (type) {
+    case 'maintenance':
+      return 'Wartung';
+    case 'repair':
+      return 'Reparatur';
+    case 'upgrade':
+      return 'Upgrade';
+    default:
+      return 'Eintrag';
+  }
+}
+
+function setupVehicleForm() {
   const form = document.getElementById('vehicle-form');
   if (!form) return;
 
@@ -185,6 +205,48 @@ function setupForm() {
   });
 }
 
+function setupEntryForm() {
+  const form = document.getElementById('entry-form');
+  if (!form) return;
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+
+    const vehicle = vehicles.find((v) => v.id === selectedVehicleId);
+    if (!vehicle) return;
+
+    const type = document.getElementById('entry-type').value;
+    const date = document.getElementById('entry-date').value;
+    const odoRaw = document.getElementById('entry-odo').value;
+    const desc = document.getElementById('entry-desc').value.trim();
+    const costRaw = document.getElementById('entry-cost').value;
+
+    if (!date || !desc) {
+      return;
+    }
+
+    const entry = {
+      type,
+      date,
+      odo: odoRaw ? Number(odoRaw) : null,
+      description: desc,
+      cost: costRaw ? Number(costRaw) : null,
+    };
+
+    vehicle.history = vehicle.history || [];
+    vehicle.history.push(entry);
+
+    // ggf. Fahrzeug-Kilometerstand aktualisieren
+    if (entry.odo && (!vehicle.odometer || entry.odo > vehicle.odometer)) {
+      vehicle.odometer = entry.odo;
+    }
+
+    form.reset();
+    renderVehicleDetail();
+    renderStats();
+  });
+}
+
 function renderStats() {
   const totalPriceEl = document.getElementById('stat-total-price');
   const avgOdoEl = document.getElementById('stat-average-odo');
@@ -215,7 +277,8 @@ function renderStats() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  setupForm();
+  setupVehicleForm();
+  setupEntryForm();
   renderVehicles();
   renderVehicleDetail();
   renderStats();
