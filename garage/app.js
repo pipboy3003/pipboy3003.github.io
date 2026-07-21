@@ -1,4 +1,4 @@
-// assets/js/app.js
+// app.js
 
 const demoVehicles = [
   {
@@ -29,10 +29,9 @@ function renderVehicles() {
 
   grid.innerHTML = '';
 
-  for (const v of demoVehicles) {
+  demoVehicles.forEach((v) => {
     const card = document.createElement('article');
     card.className = 'vehicle-card';
-
     card.innerHTML = `
       <div class="vehicle-card-header">
         <div class="vehicle-thumb"></div>
@@ -41,18 +40,14 @@ function renderVehicles() {
           <div class="vehicle-subtitle">${v.year} • ${v.plate}</div>
         </div>
       </div>
-
       <div class="badge-row">
         <span class="badge">TÜV: ${v.nextInspectionDate}</span>
         <span class="badge">Service: ${v.nextServiceDate}</span>
         <span class="badge">${v.lastFuelingSummary}</span>
       </div>
     `;
-
     grid.appendChild(card);
-  }
+  });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  renderVehicles();
-});
+document.addEventListener('DOMContentLoaded', renderVehicles);
