@@ -1,27 +1,54 @@
-:root {
-  --bg: #f4f5f7;
+/* Theme: hell/dunkel mit orange Akzent */
+body[data-theme="light"] {
+  --bg: #f5f5f4;
   --bg-elevated: #ffffff;
   --bg-sidebar: #111827;
   --bg-header: #1f2933;
   --text: #111827;
   --text-muted: #6b7280;
   --text-on-dark: #e5e7eb;
-  --accent: #22d3ee;
+  --accent: #fb923c; /* Orange */
   --border: #e5e7eb;
-  --radius: 12px;
 }
 
+body[data-theme="dark"] {
+  --bg: #020617;
+  --bg-elevated: #0b1120;
+  --bg-sidebar: #020617;
+  --bg-header: #020617;
+  --text: #e5e7eb;
+  --text-muted: #9ca3af;
+  --text-on-dark: #e5e7eb;
+  --accent: #fb923c;
+  --border: #1f2937;
+}
+
+/* Fallback nach Systempräferenz, wenn kein data-theme gesetzt ist */
 @media (prefers-color-scheme: dark) {
-  :root {
+  body:not([data-theme]) {
     --bg: #020617;
-    --bg-elevated: #0f172a;
+    --bg-elevated: #0b1120;
     --bg-sidebar: #020617;
     --bg-header: #020617;
     --text: #e5e7eb;
     --text-muted: #9ca3af;
     --text-on-dark: #e5e7eb;
-    --accent: #22c55e;
+    --accent: #fb923c;
     --border: #1f2937;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  body:not([data-theme]) {
+    --bg: #f5f5f4;
+    --bg-elevated: #ffffff;
+    --bg-sidebar: #111827;
+    --bg-header: #1f2933;
+    --text: #111827;
+    --text-muted: #6b7280;
+    --text-on-dark: #e5e7eb;
+    --accent: #fb923c;
+    --border: #e5e7eb;
   }
 }
 
@@ -38,7 +65,7 @@ body {
   color: var(--text);
 }
 
-/* ===== Garage-Screen (App) ===== */
+/* ===== Garage-Screen ===== */
 .app-shell {
   min-height: 100vh;
   display: flex;
@@ -65,7 +92,7 @@ body {
   width: 28px;
   height: 28px;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--accent), #6366f1);
+  background: radial-gradient(circle at 30% 30%, var(--accent), #fdba74);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -78,15 +105,22 @@ body {
   letter-spacing: 0.03em;
 }
 
-.header-actions .header-button {
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.header-button {
   background: transparent;
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 0.35rem 0.85rem;
   color: inherit;
   cursor: pointer;
+  font-size: 0.85rem;
 }
 
+/* Sidebar */
 .app-sidebar {
   background-color: var(--bg-sidebar);
   color: var(--text-on-dark);
@@ -112,9 +146,10 @@ body {
 
 .nav-link-active {
   border-color: var(--accent);
-  background-color: rgba(34, 211, 238, 0.12);
+  background-color: rgba(251, 146, 60, 0.14);
 }
 
+/* Main */
 .app-main {
   flex: 1;
   padding: 1rem;
@@ -136,7 +171,7 @@ body {
   font-size: 0.9rem;
 }
 
-/* Buttons & Form-Basis */
+/* Form-Basis */
 .form-row {
   display: flex;
   flex-direction: column;
@@ -164,11 +199,12 @@ body {
   border: none;
   font-weight: 600;
   cursor: pointer;
+  font-size: 0.9rem;
 }
 
 .primary-button {
   background-color: var(--accent);
-  color: #020617;
+  color: #1f2933;
 }
 
 .secondary-button {
@@ -184,7 +220,7 @@ body {
   grid-template-columns: 1fr;
   gap: 0.75rem;
   background-color: var(--bg-elevated);
-  border-radius: var(--radius);
+  border-radius: 12px;
   border: 1px solid var(--border);
   padding: 0.75rem;
 }
@@ -199,7 +235,7 @@ body {
 
 .vehicle-card {
   background-color: var(--bg-elevated);
-  border-radius: var(--radius);
+  border-radius: 12px;
   border: 1px solid var(--border);
   padding: 0.75rem;
   display: flex;
@@ -210,7 +246,7 @@ body {
 
 .vehicle-card-selected {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.4);
+  box-shadow: 0 0 0 1px rgba(251, 146, 60, 0.5);
 }
 
 .vehicle-card-header {
@@ -223,7 +259,7 @@ body {
   width: 52px;
   height: 52px;
   border-radius: 0.75rem;
-  background: radial-gradient(circle at 30% 20%, var(--accent), #0f172a);
+  background: radial-gradient(circle at 30% 20%, var(--accent), #1f2937);
 }
 
 .vehicle-title {
@@ -252,7 +288,7 @@ body {
 .vehicle-detail {
   margin-top: 1rem;
   background-color: var(--bg-elevated);
-  border-radius: var(--radius);
+  border-radius: 12px;
   border: 1px solid var(--border);
   padding: 0.75rem;
 }
@@ -279,7 +315,7 @@ body {
   padding: 0.2rem 0;
 }
 
-/* Stats */
+/* Stats (nur ausgewähltes Fahrzeug) */
 .stats-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -289,7 +325,7 @@ body {
 
 .stat-card {
   background-color: var(--bg-elevated);
-  border-radius: var(--radius);
+  border-radius: 12px;
   border: 1px solid var(--border);
   padding: 0.75rem;
 }
@@ -299,14 +335,14 @@ body {
   font-weight: 600;
 }
 
-/* ===== Intro- und Login-Screens (Overlays) ===== */
+/* ===== Intro- und Login-Screens ===== */
 .screen {
   position: fixed;
   inset: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: radial-gradient(circle at top, #0f172a, #020617);
+  background: radial-gradient(circle at top, #0b1120, #020617);
   color: var(--text-on-dark);
   z-index: 50;
 }
@@ -321,98 +357,107 @@ body {
   padding: 1rem;
 }
 
-/* Garage-Szene */
+/* neue, minimalistische Garage-Animation */
 .garage-scene {
   position: relative;
-  height: 260px;
+  height: 240px;
   border-radius: 18px;
-  background: linear-gradient(to bottom, #020617 35%, #0b1120 70%, #111827 100%);
+  background: linear-gradient(to bottom, #020617 40%, #0b1120 70%, #111827 100%);
   overflow: hidden;
   margin-bottom: 1rem;
 }
 
-.garage-backdrop {
+.garage-ground {
   position: absolute;
-  inset: 30px 40px auto 40px;
-  height: 120px;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  height: 36px;
+  background: linear-gradient(to top, #020617, #0b1120);
+}
+
+.garage-door-frame {
+  position: absolute;
+  left: 60px;
+  right: 60px;
+  bottom: 20px;
+  top: 40px;
+  border-radius: 12px;
+  border: 2px solid #1f2937;
   background: #020617;
-  border-radius: 8px;
-  border: 1px solid #1f2937;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-}
-
-.tool {
-  width: 14px;
-  height: 60px;
-  border-radius: 4px;
-  background: #1f2937;
-}
-
-.tool-2 {
-  height: 40px;
-}
-
-.tool-3 {
-  height: 50px;
 }
 
 .garage-door {
   position: absolute;
-  inset: 20px 30px auto 30px;
-  height: 180px;
+  left: 70px;
+  right: 70px;
+  bottom: 22px;
+  top: 42px;
   background: #0b1120;
   border-radius: 10px;
-  border: 2px solid #1f2937;
-  animation: door-open 2s ease-out forwards;
+  animation: door-slide-up 2s ease-out forwards;
 }
 
-.car {
+/* Car */
+.car-silhouette {
   position: absolute;
-  bottom: 40px;
-  left: -220px;
-  width: 220px;
+  bottom: 30px;
+  left: -240px;
+  width: 240px;
   height: 80px;
-  animation: car-drive 2.2s ease-out forwards;
+  animation: car-slide-in 2.4s ease-out forwards;
 }
 
 .car-body {
   position: absolute;
-  inset: 16px 16px 20px 16px;
-  background: linear-gradient(135deg, #22c55e, #0ea5e9);
-  border-radius: 16px;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  height: 36px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fb923c, #f97316);
+}
+
+.car-window {
+  position: absolute;
+  left: 50px;
+  right: 70px;
+  bottom: 32px;
+  height: 20px;
+  border-radius: 10px;
+  background: #0b1120;
 }
 
 .car-wheel {
   position: absolute;
-  bottom: 4px;
-  width: 38px;
-  height: 38px;
+  bottom: 10px;
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
   background: #020617;
   border: 3px solid #111827;
-  box-shadow: 0 0 0 4px #0f172a;
-  animation: wheel-spin 0.8s linear infinite;
+  box-shadow: 0 0 0 4px #0b1120;
+  animation: wheel-spin 0.9s linear infinite;
 }
 
 .car-wheel-front {
-  right: 24px;
+  right: 32px;
 }
 
 .car-wheel-rear {
-  left: 24px;
+  left: 32px;
 }
 
-.rolling-wheel {
+/* einzelner Reifen */
+.wheel-alone {
   position: absolute;
-  bottom: 8px;
+  bottom: 28px;
   right: -60px;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
-  border: 3px solid #22c55e;
-  animation: wheel-roll-in 2s ease-out forwards, wheel-spin 0.8s linear infinite;
+  border: 3px solid #fb923c;
+  animation: wheel-roll-in 2.4s ease-out forwards, wheel-spin 0.9s linear infinite;
 }
 
 /* Intro-Text */
@@ -434,7 +479,7 @@ body {
 .login-card {
   background-color: #020617;
   border-radius: 18px;
-  border: 1px solid #1f2937;
+  border: 1px solid #fb923c;
   padding: 1rem;
   box-shadow: 0 18px 45px rgba(15, 23, 42, 0.85);
 }
@@ -450,12 +495,13 @@ body {
 }
 
 /* Animationen */
-@keyframes car-drive {
+@keyframes car-slide-in {
   0% { transform: translateX(0); }
-  100% { transform: translateX(260px); }
+  70% { transform: translateX(260px); }
+  100% { transform: translateX(240px); }
 }
 
-@keyframes door-open {
+@keyframes door-slide-up {
   0% { transform: translateY(0); }
   100% { transform: translateY(-140px); }
 }
