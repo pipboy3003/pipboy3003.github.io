@@ -33,7 +33,7 @@ body[data-theme="dark"] {
   --border: #1f2937;
 }
 
-/* Fallback nach Systempräferenz, wenn kein data-theme gesetzt ist */
+/* Fallback nach Systempräferenz[web:54] */
 @media (prefers-color-scheme: dark) {
   body:not([data-theme]) {
     --bg: #020617;
@@ -85,14 +85,13 @@ body {
   color: var(--text);
 }
 
-/* ===== Landing mit Garage ===== */
+/* ===== Landing mit Garage & Login-Card (Glassmorphism) ===== */
 .landing {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
   background: var(--bg-landing);
-  color: var(--text-on-dark);
 }
 
 .landing-inner {
@@ -122,7 +121,6 @@ body {
   cursor: pointer;
 }
 
-/* Garage-Container */
 .garage-container {
   position: relative;
   border-radius: 24px;
@@ -172,7 +170,7 @@ body {
   transition: transform 0.9s ease-out;
 }
 
-/* Glas-Panel hinter Login (für Tiefe) */
+/* Glas-Panel hinter Login */
 .garage-panel-back {
   position: absolute;
   left: 52px;
@@ -184,7 +182,7 @@ body {
   border: 1px solid rgba(148, 163, 184, 0.35);
 }
 
-/* Auto (fährt nach Login rein) */
+/* Auto */
 .car-silhouette {
   position: absolute;
   bottom: 38px;
@@ -232,14 +230,17 @@ body {
   left: 34px;
 }
 
-/* Login-Panel (Glassmorphism) */
+/* Login-Panel & Card */
 .login-panel {
   position: absolute;
   inset: 40px 40px auto 40px;
   bottom: 40px;
   display: flex;
   justify-content: center;
-  pointer-events: none; /* nur der Card ist klickbar */
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
 }
 
 .login-background-panel {
@@ -277,9 +278,14 @@ body {
   color: #9ca3af;
 }
 
-/* Hover-Effekt: Tor hoch, Login leuchtet */
+/* Hover: Tor hoch, Login sichtbar */
 .garage-container:hover .garage-door {
   transform: translateY(-140px);
+}
+
+.garage-container:hover .login-panel {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .garage-container:hover .login-background-panel {
