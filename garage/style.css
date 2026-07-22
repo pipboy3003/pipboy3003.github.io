@@ -7,7 +7,7 @@ body[data-theme="light"] {
   --text: #111827;
   --text-muted: #6b7280;
   --text-on-dark: #e5e7eb;
-  --accent: #fb923c; /* Orange */
+  --accent: #fb923c;
   --border: #e5e7eb;
 }
 
@@ -23,7 +23,7 @@ body[data-theme="dark"] {
   --border: #1f2937;
 }
 
-/* Fallback nach Systempräferenz, wenn kein data-theme gesetzt ist */
+/* Fallback nach Systempräferenz */
 @media (prefers-color-scheme: dark) {
   body:not([data-theme]) {
     --bg: #020617;
@@ -65,11 +65,191 @@ body {
   color: var(--text);
 }
 
-/* ===== Garage-Screen ===== */
+/* ===== Landing mit Garage ===== */
+.landing {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at top, #0b1120, #020617);
+  color: var(--text-on-dark);
+}
+
+.landing-inner {
+  max-width: 900px;
+  width: 100%;
+  padding: 1rem;
+  position: relative;
+}
+
+.garage-container {
+  position: relative;
+  border-radius: 22px;
+  background: linear-gradient(to bottom, #020617 40%, #0b1120 80%, #111827 100%);
+  padding: 1rem;
+  overflow: hidden;
+}
+
+/* Garage-Szene */
+.garage-scene {
+  position: relative;
+  height: 260px;
+  border-radius: 18px;
+  background: linear-gradient(to bottom, #020617 40%, #0b1120 80%);
+  overflow: hidden;
+}
+
+.garage-ground {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 24px;
+  height: 36px;
+  background: linear-gradient(to top, #020617, #0b1120);
+}
+
+.garage-door-frame {
+  position: absolute;
+  left: 60px;
+  right: 60px;
+  bottom: 26px;
+  top: 46px;
+  border-radius: 12px;
+  border: 2px solid #1f2937;
+  background: #020617;
+}
+
+.garage-door {
+  position: absolute;
+  left: 70px;
+  right: 70px;
+  bottom: 28px;
+  top: 48px;
+  background: #0b1120;
+  border-radius: 10px;
+  transition: transform 0.9s ease-out;
+}
+
+/* Auto (fährt nach Login rein) */
+.car-silhouette {
+  position: absolute;
+  bottom: 38px;
+  left: -260px;
+  width: 260px;
+  height: 80px;
+}
+
+.car-body {
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  bottom: 24px;
+  height: 38px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fb923c, #f97316);
+}
+
+.car-window {
+  position: absolute;
+  left: 54px;
+  right: 80px;
+  bottom: 36px;
+  height: 22px;
+  border-radius: 10px;
+  background: #0b1120;
+}
+
+.car-wheel {
+  position: absolute;
+  bottom: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #020617;
+  border: 3px solid #111827;
+  box-shadow: 0 0 0 4px #0b1120;
+}
+
+.car-wheel-front {
+  right: 34px;
+}
+
+.car-wheel-rear {
+  left: 34px;
+}
+
+/* Login-Panel hinter dem Tor */
+.login-panel {
+  position: absolute;
+  inset: 40px 40px auto 40px;
+  bottom: 40px;
+  display: flex;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.login-card {
+  max-width: 360px;
+  width: 100%;
+  background-color: #020617;
+  border-radius: 18px;
+  border: 1px solid var(--accent);
+  padding: 1rem;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.85);
+}
+
+.login-card h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.6rem;
+}
+
+.login-subtitle {
+  margin: 0 0 0.8rem 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.login-small {
+  margin-top: 0.6rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Hover-Effekt: Tor auf, Login sichtbar */
+.garage-container:hover .garage-door {
+  transform: translateY(-140px);
+}
+
+.garage-container:hover .login-panel {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Theme-Button auf Landing */
+.landing-theme-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  color: var(--text-on-dark);
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+/* ===== App-Shell ===== */
 .app-shell {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+.app-hidden {
+  display: none;
 }
 
 .app-header {
@@ -315,7 +495,7 @@ body {
   padding: 0.2rem 0;
 }
 
-/* Stats (nur ausgewähltes Fahrzeug) */
+/* Stats */
 .stats-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -335,185 +515,18 @@ body {
   font-weight: 600;
 }
 
-/* ===== Intro- und Login-Screens ===== */
-.screen {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: radial-gradient(circle at top, #0b1120, #020617);
-  color: var(--text-on-dark);
-  z-index: 50;
+/* Animation: Auto fährt nach Login in Garage */
+.garage-container.garage-logged-in .garage-door {
+  transform: translateY(-140px);
 }
 
-.screen-hidden {
-  display: none;
+.garage-container.garage-logged-in .car-silhouette {
+  animation: car-drive-in 1.6s ease-out forwards;
 }
 
-.screen-center {
-  max-width: 800px;
-  width: 100%;
-  padding: 1rem;
-}
-
-/* neue, minimalistische Garage-Animation */
-.garage-scene {
-  position: relative;
-  height: 240px;
-  border-radius: 18px;
-  background: linear-gradient(to bottom, #020617 40%, #0b1120 70%, #111827 100%);
-  overflow: hidden;
-  margin-bottom: 1rem;
-}
-
-.garage-ground {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 18px;
-  height: 36px;
-  background: linear-gradient(to top, #020617, #0b1120);
-}
-
-.garage-door-frame {
-  position: absolute;
-  left: 60px;
-  right: 60px;
-  bottom: 20px;
-  top: 40px;
-  border-radius: 12px;
-  border: 2px solid #1f2937;
-  background: #020617;
-}
-
-.garage-door {
-  position: absolute;
-  left: 70px;
-  right: 70px;
-  bottom: 22px;
-  top: 42px;
-  background: #0b1120;
-  border-radius: 10px;
-  animation: door-slide-up 2s ease-out forwards;
-}
-
-/* Car */
-.car-silhouette {
-  position: absolute;
-  bottom: 30px;
-  left: -240px;
-  width: 240px;
-  height: 80px;
-  animation: car-slide-in 2.4s ease-out forwards;
-}
-
-.car-body {
-  position: absolute;
-  left: 20px;
-  right: 20px;
-  bottom: 20px;
-  height: 36px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #fb923c, #f97316);
-}
-
-.car-window {
-  position: absolute;
-  left: 50px;
-  right: 70px;
-  bottom: 32px;
-  height: 20px;
-  border-radius: 10px;
-  background: #0b1120;
-}
-
-.car-wheel {
-  position: absolute;
-  bottom: 10px;
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  background: #020617;
-  border: 3px solid #111827;
-  box-shadow: 0 0 0 4px #0b1120;
-  animation: wheel-spin 0.9s linear infinite;
-}
-
-.car-wheel-front {
-  right: 32px;
-}
-
-.car-wheel-rear {
-  left: 32px;
-}
-
-/* einzelner Reifen */
-.wheel-alone {
-  position: absolute;
-  bottom: 28px;
-  right: -60px;
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  border: 3px solid #fb923c;
-  animation: wheel-roll-in 2.4s ease-out forwards, wheel-spin 0.9s linear infinite;
-}
-
-/* Intro-Text */
-.intro-text {
-  text-align: center;
-}
-
-.intro-text h1 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.8rem;
-}
-
-.intro-text p {
-  margin: 0 0 0.75rem 0;
-  color: var(--text-muted);
-}
-
-/* Login */
-.login-card {
-  background-color: #020617;
-  border-radius: 18px;
-  border: 1px solid #fb923c;
-  padding: 1rem;
-  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.85);
-}
-
-.login-card h2 {
-  margin: 0 0 0.4rem 0;
-}
-
-.login-subtitle {
-  margin: 0 0 0.8rem 0;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
-/* Animationen */
-@keyframes car-slide-in {
+@keyframes car-drive-in {
   0% { transform: translateX(0); }
-  70% { transform: translateX(260px); }
-  100% { transform: translateX(240px); }
-}
-
-@keyframes door-slide-up {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(-140px); }
-}
-
-@keyframes wheel-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@keyframes wheel-roll-in {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-260px); }
+  100% { transform: translateX(280px); }
 }
 
 /* Layout ab Tablet */
