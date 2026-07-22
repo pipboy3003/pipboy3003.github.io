@@ -1,53 +1,73 @@
 /* Theme: hell/dunkel mit orange Akzent */
 body[data-theme="light"] {
-  --bg: #f5f5f4;
+  --bg: #f4f4f5;
   --bg-elevated: #ffffff;
+  --bg-elevated-soft: #f9fafb;
+  --bg-landing: radial-gradient(circle at top, #f9fafb, #e5e7eb);
+  --bg-glass: rgba(17, 24, 39, 0.08);
+  --bg-glass-strong: rgba(17, 24, 39, 0.12);
   --bg-sidebar: #111827;
   --bg-header: #1f2933;
   --text: #111827;
   --text-muted: #6b7280;
   --text-on-dark: #e5e7eb;
-  --accent: #fb923c;
+  --accent: #f97316;
+  --accent-soft: rgba(249, 115, 22, 0.18);
   --border: #e5e7eb;
 }
 
 body[data-theme="dark"] {
   --bg: #020617;
   --bg-elevated: #0b1120;
+  --bg-elevated-soft: #020617;
+  --bg-landing: radial-gradient(circle at top, #020617, #020617);
+  --bg-glass: rgba(15, 23, 42, 0.6);
+  --bg-glass-strong: rgba(15, 23, 42, 0.8);
   --bg-sidebar: #020617;
   --bg-header: #020617;
   --text: #e5e7eb;
   --text-muted: #9ca3af;
   --text-on-dark: #e5e7eb;
   --accent: #fb923c;
+  --accent-soft: rgba(251, 146, 60, 0.26);
   --border: #1f2937;
 }
 
-/* Fallback nach Systempräferenz */
+/* Fallback nach Systempräferenz, wenn kein data-theme gesetzt ist */
 @media (prefers-color-scheme: dark) {
   body:not([data-theme]) {
     --bg: #020617;
     --bg-elevated: #0b1120;
+    --bg-elevated-soft: #020617;
+    --bg-landing: radial-gradient(circle at top, #020617, #020617);
+    --bg-glass: rgba(15, 23, 42, 0.6);
+    --bg-glass-strong: rgba(15, 23, 42, 0.8);
     --bg-sidebar: #020617;
     --bg-header: #020617;
     --text: #e5e7eb;
     --text-muted: #9ca3af;
     --text-on-dark: #e5e7eb;
     --accent: #fb923c;
+    --accent-soft: rgba(251, 146, 60, 0.26);
     --border: #1f2937;
   }
 }
 
 @media (prefers-color-scheme: light) {
   body:not([data-theme]) {
-    --bg: #f5f5f4;
+    --bg: #f4f4f5;
     --bg-elevated: #ffffff;
+    --bg-elevated-soft: #f9fafb;
+    --bg-landing: radial-gradient(circle at top, #f9fafb, #e5e7eb);
+    --bg-glass: rgba(17, 24, 39, 0.08);
+    --bg-glass-strong: rgba(17, 24, 39, 0.12);
     --bg-sidebar: #111827;
     --bg-header: #1f2933;
     --text: #111827;
     --text-muted: #6b7280;
     --text-on-dark: #e5e7eb;
-    --accent: #fb923c;
+    --accent: #f97316;
+    --accent-soft: rgba(249, 115, 22, 0.18);
     --border: #e5e7eb;
   }
 }
@@ -71,23 +91,45 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: radial-gradient(circle at top, #0b1120, #020617);
+  background: var(--bg-landing);
   color: var(--text-on-dark);
 }
 
 .landing-inner {
   max-width: 900px;
   width: 100%;
-  padding: 1rem;
-  position: relative;
+  padding: 1.5rem;
 }
 
+.landing-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.landing-logo {
+  height: 36px;
+}
+
+.landing-theme-button {
+  background: transparent;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+/* Garage-Container */
 .garage-container {
   position: relative;
-  border-radius: 22px;
-  background: linear-gradient(to bottom, #020617 40%, #0b1120 80%, #111827 100%);
-  padding: 1rem;
+  border-radius: 24px;
+  background: linear-gradient(to bottom, var(--bg-elevated-soft) 40%, var(--bg-sidebar) 100%);
+  padding: 1.25rem;
   overflow: hidden;
+  box-shadow: 0 24px 50px rgba(15, 23, 42, 0.55);
 }
 
 /* Garage-Szene */
@@ -95,7 +137,7 @@ body {
   position: relative;
   height: 260px;
   border-radius: 18px;
-  background: linear-gradient(to bottom, #020617 40%, #0b1120 80%);
+  background: linear-gradient(to bottom, #020617 35%, #0b1120 80%);
   overflow: hidden;
 }
 
@@ -130,6 +172,18 @@ body {
   transition: transform 0.9s ease-out;
 }
 
+/* Glas-Panel hinter Login (für Tiefe) */
+.garage-panel-back {
+  position: absolute;
+  left: 52px;
+  right: 52px;
+  bottom: 32px;
+  top: 52px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
 /* Auto (fährt nach Login rein) */
 .car-silhouette {
   position: absolute;
@@ -146,7 +200,7 @@ body {
   bottom: 24px;
   height: 38px;
   border-radius: 18px;
-  background: linear-gradient(135deg, #fb923c, #f97316);
+  background: linear-gradient(135deg, var(--accent), #fed7aa);
 }
 
 .car-window {
@@ -156,7 +210,7 @@ body {
   bottom: 36px;
   height: 22px;
   border-radius: 10px;
-  background: #0b1120;
+  background: #020617;
 }
 
 .car-wheel {
@@ -178,67 +232,59 @@ body {
   left: 34px;
 }
 
-/* Login-Panel hinter dem Tor */
+/* Login-Panel (Glassmorphism) */
 .login-panel {
   position: absolute;
   inset: 40px 40px auto 40px;
   bottom: 40px;
   display: flex;
   justify-content: center;
-  opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  pointer-events: none; /* nur der Card ist klickbar */
+}
+
+.login-background-panel {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background: var(--bg-glass);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  backdrop-filter: blur(18px);
 }
 
 .login-card {
+  position: relative;
   max-width: 360px;
   width: 100%;
-  background-color: #020617;
-  border-radius: 18px;
-  border: 1px solid var(--accent);
-  padding: 1rem;
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.85);
+  padding: 1rem 1.2rem 1.1rem 1.2rem;
+  pointer-events: auto;
+  color: var(--text-on-dark);
 }
 
 .login-card h1 {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.6rem 0;
   font-size: 1.6rem;
 }
 
 .login-subtitle {
-  margin: 0 0 0.8rem 0;
-  color: var(--text-muted);
+  margin: 0 0 0.9rem 0;
   font-size: 0.9rem;
+  color: #cbd5f5;
 }
 
 .login-small {
-  margin-top: 0.6rem;
+  margin-top: 0.7rem;
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: #9ca3af;
 }
 
-/* Hover-Effekt: Tor auf, Login sichtbar */
+/* Hover-Effekt: Tor hoch, Login leuchtet */
 .garage-container:hover .garage-door {
   transform: translateY(-140px);
 }
 
-.garage-container:hover .login-panel {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Theme-Button auf Landing */
-.landing-theme-button {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: transparent;
-  border-radius: 999px;
-  border: 1px solid #334155;
-  color: var(--text-on-dark);
-  padding: 0.35rem 0.85rem;
-  font-size: 0.8rem;
-  cursor: pointer;
+.garage-container:hover .login-background-panel {
+  background: var(--bg-glass-strong);
+  box-shadow: 0 0 0 1px var(--accent-soft);
 }
 
 /* ===== App-Shell ===== */
@@ -246,6 +292,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: var(--bg);
 }
 
 .app-hidden {
@@ -262,27 +309,8 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.logo-mark {
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  background: radial-gradient(circle at 30% 30%, var(--accent), #fdba74);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-
-.logo-text {
-  font-weight: 600;
-  letter-spacing: 0.03em;
+.logo-img {
+  height: 32px;
 }
 
 .header-actions {
@@ -326,7 +354,7 @@ body {
 
 .nav-link-active {
   border-color: var(--accent);
-  background-color: rgba(251, 146, 60, 0.14);
+  background-color: var(--accent-soft);
 }
 
 /* Main */
@@ -368,7 +396,7 @@ body {
   padding: 0.4rem 0.5rem;
   border-radius: 6px;
   border: 1px solid var(--border);
-  background-color: var(--bg);
+  background-color: var(--bg-elevated-soft);
   color: var(--text);
 }
 
@@ -385,6 +413,11 @@ body {
 .primary-button {
   background-color: var(--accent);
   color: #1f2933;
+}
+
+.primary-button-full {
+  width: 100%;
+  margin-top: 0.7rem;
 }
 
 .secondary-button {
@@ -426,7 +459,7 @@ body {
 
 .vehicle-card-selected {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px rgba(251, 146, 60, 0.5);
+  box-shadow: 0 0 0 1px var(--accent-soft);
 }
 
 .vehicle-card-header {
@@ -515,7 +548,7 @@ body {
   font-weight: 600;
 }
 
-/* Animation: Auto fährt nach Login in Garage */
+/* Auto fährt nach Login rein */
 .garage-container.garage-logged-in .garage-door {
   transform: translateY(-140px);
 }
