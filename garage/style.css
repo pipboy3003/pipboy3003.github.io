@@ -85,7 +85,7 @@ body {
   color: var(--text);
 }
 
-/* ===== Landing mit Garage & Login-Card (Glassmorphism) ===== */
+/* ===== Landing mit Garage & Login-Card ===== */
 .landing {
   min-height: 100vh;
   display: flex;
@@ -230,7 +230,7 @@ body {
   left: 34px;
 }
 
-/* Login-Panel & Card */
+/* Login-Panel */
 .login-panel {
   position: absolute;
   inset: 40px 40px auto 40px;
