@@ -38,7 +38,7 @@ const vehicles = [
 
 let selectedVehicleId = vehicles[0]?.id ?? null;
 
-/* ===== Theme-Toggle (Hell/Dunkel, orange) ===== */
+/* ===== Theme-Toggle (Hell/Dunkel) ===== */
 function initTheme() {
   const stored = localStorage.getItem('garageTheme');
   let theme = stored;
@@ -46,72 +46,55 @@ function initTheme() {
   if (!theme) {
     const prefersDark =
       window.matchMedia &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches;
+      window.matchMedia('(prefers-color-scheme: dark)').matches; // nutzt prefers-color-scheme[web:54]
     theme = prefersDark ? 'dark' : 'light';
   }
 
   applyTheme(theme);
 
-  const btn = document.getElementById('theme-toggle');
-  if (!btn) return;
+  const btnLanding = document.getElementById('theme-toggle-landing');
+  const btnApp = document.getElementById('theme-toggle-app');
 
-  btn.textContent = theme === 'dark' ? 'Hell' : 'Dunkel';
+  const updateLabels = () => {
+    const current = document.body.dataset.theme || 'light';
+    const label = current === 'dark' ? 'Hell' : 'Dunkel';
+    if (btnLanding) btnLanding.textContent = label;
+    if (btnApp) btnApp.textContent = label;
+  };
 
-  btn.addEventListener('click', () => {
+  const toggle = () => {
     const current = document.body.dataset.theme || 'light';
     const next = current === 'dark' ? 'light' : 'dark';
     applyTheme(next);
     localStorage.setItem('garageTheme', next);
-    btn.textContent = next === 'dark' ? 'Hell' : 'Dunkel';
-  });
+    updateLabels();
+  };
+
+  if (btnLanding) btnLanding.addEventListener('click', toggle);
+  if (btnApp) btnApp.addEventListener('click', toggle);
+
+  updateLabels();
 }
 
 function applyTheme(theme) {
   document.body.dataset.theme = theme;
 }
 
-/* ===== Screen-Handling: Intro -> Login -> Garage ===== */
-function showScreen(name) {
-  const intro = document.getElementById('intro-screen');
-  const login = document.getElementById('login-screen');
-  const garage = document.getElementById('garage-screen');
-
-  if (!intro || !login || !garage) return;
-
-  intro.classList.add('screen-hidden');
-  login.classList.add('screen-hidden');
-  garage.style.display = 'none';
-
-  if (name === 'intro') {
-    intro.classList.remove('screen-hidden');
-  } else if (name === 'login') {
-    login.classList.remove('screen-hidden');
-  } else if (name === 'garage') {
-    garage.style.display = 'block';
-  }
-}
-
-function initScreens() {
-  const loggedIn = localStorage.getItem('garageLoggedIn') === 'true';
-  const introSkip = document.getElementById('intro-skip');
+/* ===== Auth & Screens ===== */
+function initAuthAndScreens() {
+  const landing = document.getElementById('landing');
+  const appShell = document.getElementById('app-shell');
   const loginForm = document.getElementById('login-form');
   const logoutButton = document.getElementById('logout-button');
 
-  showScreen('intro');
+  const loggedIn = localStorage.getItem('garageLoggedIn') === 'true';
 
-  const proceedFromIntro = () => {
-    if (localStorage.getItem('garageLoggedIn') === 'true') {
-      showScreen('garage');
-    } else {
-      showScreen('login');
-    }
-  };
-
-  // Intro läuft kurz, dann weiter
-  setTimeout(proceedFromIntro, 2500);
-
-  if (introSkip) {
-    introSkip.addEventListener('click', proceedFromIntro);
+  if (loggedIn) {
+    if (landing) landing.style.display = 'none';
+    if (appShell) appShell.classList.remove('app-hidden');
+  } else {
+    if (landing) landing.style.display = 'flex';
+    if (appShell) appShell.classList.add('app-hidden');
   }
 
   if (loginForm) {
@@ -121,21 +104,28 @@ function initScreens() {
       const password = document.getElementById('login-password').value.trim();
       if (!email || !password) return;
 
-      // Platzhalter-Login: später durch Firebase ersetzen
       localStorage.setItem('garageLoggedIn', 'true');
-      showScreen('garage');
+
+      // Auto fährt in die Garage
+      const container = document.getElementById('garage-container');
+      if (container) {
+        container.classList.add('garage-logged-in');
+      }
+
+      // kurz warten, dann Garage-Screen anzeigen
+      setTimeout(() => {
+        if (landing) landing.style.display = 'none';
+        if (appShell) appShell.classList.remove('app-hidden');
+      }, 1700);
     });
   }
 
   if (logoutButton) {
     logoutButton.addEventListener('click', () => {
       localStorage.removeItem('garageLoggedIn');
-      showScreen('login');
+      if (appShell) appShell.classList.add('app-hidden');
+      if (landing) landing.style.display = 'flex';
     });
-  }
-
-  if (loggedIn) {
-    // bleibt beim gleichen Ablauf: Intro -> Garage
   }
 }
 
@@ -299,7 +289,7 @@ function setupEntryForm() {
   });
 }
 
-/* ===== Kennzahlen für ausgewähltes Fahrzeug ===== */
+/* ===== Stats nur für ausgewähltes Fahrzeug ===== */
 function renderSelectedStats() {
   const priceEl = document.getElementById('stat-selected-price');
   const odoEl = document.getElementById('stat-selected-odo');
@@ -331,9 +321,9 @@ function renderSelectedStats() {
 
 /* ===== Init ===== */
 document.addEventListener('DOMContentLoaded', () => {
-  initTheme();      // Hell/Dunkel + Button
-  initScreens();    // Intro, Login, Garage
-  setupEntryForm(); // Eintrags-Formular
+  initTheme();
+  initAuthAndScreens();
+  setupEntryForm();
   renderVehicles();
   renderVehicleDetail();
   renderSelectedStats();
