@@ -5,17 +5,16 @@
   <title>GarageCTRL</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Styles - -->
- ->
-  >
-  /svg+xml" href="favicon.svg">
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="garage-favicon.png">
 </head>
 <body>
   <!-- Landing: Garage geschlossen, Login dahinter -->
   <div id="landing" class="landing">
     <div class="landing-inner">
       <div class="landing-header">
-        <img src="logo-garagectrl.svg" alt="GarageCTRL Logo" class="landing-logo">
+        <img src="garage-logo.png" alt="GarageCTRL Logo" class="landing-logo">
         <button id="theme-toggle-landing" class="landing-theme-button" type="button">
           Dunkel
         </button>
@@ -48,11 +47,11 @@
 
             <form id="login-form">
               <div class="form-row">
-                abel for="login-email">E-Mail</label>
+                <label for="login-email">E-Mail</label>
                 <input id="login-email" type="email" required placeholder="du@example.com">
               </div>
               <div class="form-row">
-                abel for="login-password">Passwort</label>
+                <label for="login-password">Passwort</label>
                 <input id="login-password" type="password" required placeholder="••••••••">
               </div>
               <button class="primary-button primary-button-full" type="submit">
@@ -73,7 +72,7 @@
   <div id="app-shell" class="app-shell app-hidden">
     <header class="app-header">
       <div class="logo">
-        <img src="logo-garagectrl.svg" alt="GarageCTRL Logo" class="logo-img">
+        <img src="garage-logo.png" alt="GarageCTRL Logo" class="logo-img">
       </div>
       <div class="header-actions">
         <button class="header-button" type="button" id="theme-toggle-app">Dunkel</button>
@@ -111,7 +110,7 @@
 
         <form id="entry-form" class="entry-form">
           <div class="form-row">
-            abel for="entry-type">Typ</label>
+            <label for="entry-type">Typ</label>
             <select id="entry-type" name="entryType">
               <option value="maintenance">Wartung</option>
               <option value="repair">Reparatur</option>
@@ -119,19 +118,19 @@
             </select>
           </div>
           <div class="form-row">
-            abel for="entry-date">Datum</label>
+            <label for="entry-date">Datum</label>
             <input id="entry-date" name="entryDate" type="date" required>
           </div>
           <div class="form-row">
-            abel for="entry-odo">Kilometer bei Eintrag</label>
+            <label for="entry-odo">Kilometer bei Eintrag</label>
             <input id="entry-odo" name="entryOdo" type="number" min="0">
           </div>
           <div class="form-row">
-            abel for="entry-desc">Beschreibung</label>
+            <label for="entry-desc">Beschreibung</label>
             <input id="entry-desc" name="entryDesc" type="text" required placeholder="Ölwechsel, Bremsen, Upgrade ...">
           </div>
           <div class="form-row">
-            abel for="entry-cost">Kosten (€)</label>
+            <label for="entry-cost">Kosten (€)</label>
             <input id="entry-cost" name="entryCost" type="number" min="0" step="10">
           </div>
           <button class="secondary-button" type="submit">Eintrag hinzufügen</button>
