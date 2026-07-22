@@ -9,15 +9,64 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 <body>
+  <!-- Landing: Garage geschlossen, Login dahinter -->
+  <div id="landing" class="landing">
+    <div class="landing-inner">
+      <div class="garage-container" id="garage-container">
+        <div class="garage-scene">
+          <div class="garage-ground"></div>
+          <div class="garage-door-frame"></div>
+          <div class="garage-door"></div>
+
+          <div class="car-silhouette">
+            <div class="car-body"></div>
+            <div class="car-window"></div>
+            <div class="car-wheel car-wheel-front"></div>
+            <div class="car-wheel car-wheel-rear"></div>
+          </div>
+        </div>
+
+        <div class="login-panel">
+          <div class="login-card">
+            <h1>GarageCTRL</h1>
+            <p class="login-subtitle">
+              Öffne deine digitale Garage – Login oder Registrierung.
+            </p>
+
+            <form id="login-form">
+              <div class="form-row">
+                <label for="login-email">E-Mail</label>
+                <input id="login-email" type="email" required placeholder="du@example.com">
+              </div>
+              <div class="form-row">
+                <label for="login-password">Passwort</label>
+                <input id="login-password" type="password" required placeholder="••••••••">
+              </div>
+              <button class="primary-button" type="submit">Garage öffnen</button>
+            </form>
+
+            <p class="login-small">
+              Noch kein Account? Registrierung folgt später – aktuell Demo-Login.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <button id="theme-toggle-landing" class="landing-theme-button" type="button">
+        Dunkel
+      </button>
+    </div>
+  </div>
+
   <!-- Haupt-App (Garage-Screen) -->
-  <div class="app-shell">
+  <div id="app-shell" class="app-shell app-hidden">
     <header class="app-header">
       <div class="logo">
         <span class="logo-mark">GC</span>
         <span class="logo-text">GarageCTRL</span>
       </div>
       <div class="header-actions">
-        <button class="header-button" type="button" id="theme-toggle">Dunkel</button>
+        <button class="header-button" type="button" id="theme-toggle-app">Dunkel</button>
         <button class="header-button" type="button" id="logout-button">Logout</button>
       </div>
     </header>
@@ -30,7 +79,7 @@
       </nav>
     </aside>
 
-    <main class="app-main" id="garage-screen">
+    <main class="app-main">
       <!-- Fahrzeug-Übersicht -->
       <section class="main-section">
         <div class="section-header">
@@ -103,52 +152,6 @@
         </div>
       </section>
     </main>
-  </div>
-
-  <!-- Intro-Screen mit überarbeiteter Animation -->
-  <div id="intro-screen" class="screen">
-    <div class="screen-center">
-      <div class="garage-scene">
-        <div class="garage-ground"></div>
-        <div class="garage-door-frame"></div>
-        <div class="garage-door"></div>
-
-        <div class="car-silhouette">
-          <div class="car-body"></div>
-          <div class="car-window"></div>
-          <div class="car-wheel car-wheel-front"></div>
-          <div class="car-wheel car-wheel-rear"></div>
-        </div>
-
-        <div class="wheel-alone"></div>
-      </div>
-      <div class="intro-text">
-        <h1>GarageCTRL</h1>
-        <p>Fahrzeuge, Werkstatt, Kosten – alles in deiner digitalen Garage.</p>
-        <button id="intro-skip" class="primary-button">Weiter</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Login-Screen mit reduziertem Card-Design -->
-  <div id="login-screen" class="screen screen-hidden">
-    <div class="screen-center">
-      <div class="login-card">
-        <h2>Login</h2>
-        <p class="login-subtitle">Melde dich an, um deine Garage zu öffnen.</p>
-        <form id="login-form">
-          <div class="form-row">
-            <label for="login-email">E-Mail</label>
-            <input id="login-email" type="email" required placeholder="du@example.com">
-          </div>
-          <div class="form-row">
-            <label for="login-password">Passwort</label>
-            <input id="login-password" type="password" required placeholder="••••••••">
-          </div>
-          <button class="primary-button" type="submit">Login</button>
-        </form>
-      </div>
-    </div>
   </div>
 
   <script src="app.js" type="module"></script>
