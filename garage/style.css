@@ -107,8 +107,8 @@ body {
   margin-bottom: 1rem;
 }
 
-.landing-logo {
-  height: 36px;
+.brand-logo {
+  height: 40px;
 }
 
 .landing-theme-button {
@@ -148,6 +148,7 @@ body {
   background: linear-gradient(to top, #020617, #0b1120);
 }
 
+/* Rahmen + Glow innen */
 .garage-door-frame {
   position: absolute;
   left: 60px;
@@ -157,143 +158,93 @@ body {
   border-radius: 12px;
   border: 2px solid #1f2937;
   background: #020617;
+  overflow: hidden;
 }
 
-.garage-door {
+.garage-inner-glow {
   position: absolute;
-  left: 70px;
-  right: 70px;
-  bottom: 28px;
-  top: 48px;
-  background: #0b1120;
+  inset: 8px;
   border-radius: 10px;
+  background: radial-gradient(circle at top, rgba(251, 146, 60, 0.2), rgba(15, 23, 42, 0.9));
+}
+
+/* Rolltor-Lamellen */
+.garage-rolldoor {
+  position: absolute;
+  inset: 12px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   transition: transform 0.9s ease-out;
 }
 
-/* Glas-Panel hinter Login */
-.garage-panel-back {
-  position: absolute;
-  left: 52px;
-  right: 52px;
-  bottom: 32px;
-  top: 52px;
-  border-radius: 16px;
-  background: rgba(15, 23, 42, 0.75);
-  border: 1px solid rgba(148, 163, 184, 0.35);
-}
-
-/* Auto */
-.car-silhouette {
-  position: absolute;
-  bottom: 38px;
-  left: -260px;
-  width: 260px;
-  height: 80px;
-}
-
-.car-body {
-  position: absolute;
-  left: 22px;
-  right: 22px;
-  bottom: 24px;
-  height: 38px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, var(--accent), #fed7aa);
-}
-
-.car-window {
-  position: absolute;
-  left: 54px;
-  right: 80px;
-  bottom: 36px;
-  height: 22px;
-  border-radius: 10px;
-  background: #020617;
-}
-
-.car-wheel {
-  position: absolute;
-  bottom: 12px;
-  width: 34px;
-  height: 34px;
+.rolldoor-slat,
+.rolldoor-slat-thin {
+  flex-shrink: 0;
   border-radius: 999px;
-  background: #020617;
-  border: 3px solid #111827;
-  box-shadow: 0 0 0 4px #0b1120;
+  background: linear-gradient(to right, #020617, #0b1120);
+  border: 1px solid rgba(148, 163, 184, 0.4);
 }
 
-.car-wheel-front {
-  right: 34px;
+.rolldoor-slat {
+  height: 16px;
 }
 
-.car-wheel-rear {
-  left: 34px;
+.rolldoor-slat-thin {
+  height: 8px;
 }
 
-/* Login-Panel */
+/* Login-Panel in der Garage */
 .login-panel {
   position: absolute;
-  inset: 40px 40px auto 40px;
-  bottom: 40px;
+  inset: 18px;
   display: flex;
   justify-content: center;
-  pointer-events: none;
-  opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-}
-
-.login-background-panel {
-  position: absolute;
-  inset: 0;
-  border-radius: 18px;
-  background: var(--bg-glass);
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  backdrop-filter: blur(18px);
+  align-items: center;
+  pointer-events: none; /* nur Card klickbar */
 }
 
 .login-card {
   position: relative;
   max-width: 360px;
   width: 100%;
-  padding: 1rem 1.2rem 1.1rem 1.2rem;
+  padding: 1.2rem 1.3rem 1.2rem 1.3rem;
   pointer-events: auto;
   color: var(--text-on-dark);
 }
 
 .login-card h1 {
-  margin: 0 0 0.6rem 0;
-  font-size: 1.6rem;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.7rem;
+  letter-spacing: 0.02em;
 }
 
 .login-subtitle {
-  margin: 0 0 0.9rem 0;
-  font-size: 0.9rem;
+  margin: 0 0 1rem 0;
+  font-size: 0.92rem;
+  line-height: 1.4;
   color: #cbd5f5;
 }
 
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
 .login-small {
-  margin-top: 0.7rem;
-  font-size: 0.75rem;
+  margin-top: 0.9rem;
+  font-size: 0.76rem;
   color: #9ca3af;
 }
 
-/* Hover: Tor hoch, Login sichtbar */
-.garage-container:hover .garage-door {
-  transform: translateY(-140px);
+/* Hover: Rolltor hoch, Login sichtbar */
+.garage-container:hover .garage-rolldoor {
+  transform: translateY(-130px);
 }
 
-.garage-container:hover .login-panel {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.garage-container:hover .login-background-panel {
-  background: var(--bg-glass-strong);
-  box-shadow: 0 0 0 1px var(--accent-soft);
-}
-
-/* ===== App-Shell ===== */
+/* App-Shell */
 .app-shell {
   min-height: 100vh;
   display: flex;
@@ -315,7 +266,12 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
-.logo-img {
+.logo {
+  display: flex;
+  align-items: center;
+}
+
+.app-header .brand-logo {
   height: 32px;
 }
 
@@ -423,7 +379,6 @@ body {
 
 .primary-button-full {
   width: 100%;
-  margin-top: 0.7rem;
 }
 
 .secondary-button {
@@ -555,8 +510,8 @@ body {
 }
 
 /* Auto fährt nach Login rein */
-.garage-container.garage-logged-in .garage-door {
-  transform: translateY(-140px);
+.garage-container.garage-logged-in .garage-rolldoor {
+  transform: translateY(-130px);
 }
 
 .garage-container.garage-logged-in .car-silhouette {
