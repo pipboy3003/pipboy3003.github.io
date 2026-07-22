@@ -7,61 +7,95 @@
 
   <!-- Styles -->
   <link rel="stylesheet" href="style.css">
-  <link rel="icon" type="image/png" href="garage-favicon.png">
+  <!-- Favicon: eigenes SVG-Rad -->
+  <link rel="icon" type="image/svg+xml" href="garage-favicon.svg">
 </head>
 <body>
-  <!-- Landing: Garage geschlossen, Login dahinter -->
+  <!-- Landing: Garage mit Rolltor, Login-Fenster IN der Garage -->
   <div id="landing" class="landing">
     <div class="landing-inner">
       <div class="landing-header">
-        <img src="garage-logo.png" alt="GarageCTRL Logo" class="landing-logo">
+        <!-- Brand-Logo: Rolltor + Text als Inline-SVG -->
+        <div class="brand">
+          <svg class="brand-logo" viewBox="0 0 180 40" xmlns="http://www.w3.org/2000/svg">
+            <!-- Rolltor-Rahmen -->
+            <rect x="2" y="4" width="64" height="32" rx="6" fill="none" stroke="#fb923c" stroke-width="2"/>
+            <!-- Tor-Lamellen -->
+            <rect x="6" y="8" width="56" height="4" rx="2" fill="#0b1120"/>
+            <rect x="6" y="14" width="56" height="4" rx="2" fill="#0b1120"/>
+            <rect x="6" y="20" width="56" height="4" rx="2" fill="#0b1120"/>
+            <rect x="6" y="26" width="56" height="4" rx="2" fill="#0b1120"/>
+            <rect x="6" y="32" width="56" height="2" rx="1" fill="#0b1120"/>
+
+            <!-- Schriftzug rechts daneben -->
+            <text x="80" y="24"
+                  font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+                  font-size="16"
+                  fill="#e5e7eb"
+                  font-weight="600">
+              GarageCTRL
+            </text>
+          </svg>
+        </div>
+
         <button id="theme-toggle-landing" class="landing-theme-button" type="button">
           Dunkel
         </button>
       </div>
 
       <div class="garage-container" id="garage-container">
+        <!-- Garage mit Rolltor -->
         <div class="garage-scene">
           <div class="garage-ground"></div>
-          <div class="garage-door-frame"></div>
-          <div class="garage-door"></div>
 
-          <div class="garage-panel-back"></div>
+          <div class="garage-door-frame">
+            <!-- Hintergrundfläche hinter Login (leichtes Glow) -->
+            <div class="garage-inner-glow"></div>
 
+            <!-- Rolltor (Lamellen), das beim Hover hochfährt -->
+            <div class="garage-rolldoor">
+              <div class="rolldoor-slat"></div>
+              <div class="rolldoor-slat"></div>
+              <div class="rolldoor-slat"></div>
+              <div class="rolldoor-slat"></div>
+              <div class="rolldoor-slat-thin"></div>
+            </div>
+
+            <!-- Login-Fenster in der Garage -->
+            <div class="login-panel">
+              <div class="login-card">
+                <h1>GarageCTRL</h1>
+                <p class="login-subtitle">
+                  Öffne deine digitale Garage – Login oder Registrierung.
+                </p>
+
+                <form id="login-form" class="login-form">
+                  <div class="form-row">
+                    <label for="login-email">E-Mail</label>
+                    <input id="login-email" type="email" required placeholder="du@example.com">
+                  </div>
+                  <div class="form-row">
+                    <label for="login-password">Passwort</label>
+                    <input id="login-password" type="password" required placeholder="••••••••">
+                  </div>
+                  <button class="primary-button primary-button-full" type="submit">
+                    Garage öffnen
+                  </button>
+                </form>
+
+                <p class="login-small">
+                  Demo-Login: Daten bleiben lokal in deinem Browser.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Auto, das nach Login in die Garage fährt -->
           <div class="car-silhouette">
             <div class="car-body"></div>
             <div class="car-window"></div>
             <div class="car-wheel car-wheel-front"></div>
             <div class="car-wheel car-wheel-rear"></div>
-          </div>
-        </div>
-
-        <div class="login-panel">
-          <div class="login-background-panel"></div>
-
-          <div class="login-card">
-            <h1>GarageCTRL</h1>
-            <p class="login-subtitle">
-              Öffne deine digitale Garage – Login oder Registrierung.
-            </p>
-
-            <form id="login-form">
-              <div class="form-row">
-                <label for="login-email">E-Mail</label>
-                <input id="login-email" type="email" required placeholder="du@example.com">
-              </div>
-              <div class="form-row">
-                <label for="login-password">Passwort</label>
-                <input id="login-password" type="password" required placeholder="••••••••">
-              </div>
-              <button class="primary-button primary-button-full" type="submit">
-                Garage öffnen
-              </button>
-            </form>
-
-            <p class="login-small">
-              Demo-Login: Daten bleiben lokal in deinem Browser.
-            </p>
           </div>
         </div>
       </div>
@@ -72,7 +106,22 @@
   <div id="app-shell" class="app-shell app-hidden">
     <header class="app-header">
       <div class="logo">
-        <img src="garage-logo.png" alt="GarageCTRL Logo" class="logo-img">
+        <!-- Brand-Logo auch im Header -->
+        <svg class="brand-logo" viewBox="0 0 180 40" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="4" width="64" height="32" rx="6" fill="none" stroke="#fb923c" stroke-width="2"/>
+          <rect x="6" y="8" width="56" height="4" rx="2" fill="#0b1120"/>
+          <rect x="6" y="14" width="56" height="4" rx="2" fill="#0b1120"/>
+          <rect x="6" y="20" width="56" height="4" rx="2" fill="#0b1120"/>
+          <rect x="6" y="26" width="56" height="4" rx="2" fill="#0b1120"/>
+          <rect x="6" y="32" width="56" height="2" rx="1" fill="#0b1120"/>
+          <text x="80" y="24"
+                font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+                font-size="16"
+                fill="#e5e7eb"
+                font-weight="600">
+            GarageCTRL
+          </text>
+        </svg>
       </div>
       <div class="header-actions">
         <button class="header-button" type="button" id="theme-toggle-app">Dunkel</button>
