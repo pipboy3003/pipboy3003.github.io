@@ -202,7 +202,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  pointer-events: none; /* nur Card klickbar */
+  pointer-events: none;
 }
 
 .login-card {
@@ -244,7 +244,7 @@ body {
   transform: translateY(-130px);
 }
 
-/* App-Shell */
+/* ===== App-Shell ===== */
 .app-shell {
   min-height: 100vh;
   display: flex;
@@ -516,6 +516,53 @@ body {
 
 .garage-container.garage-logged-in .car-silhouette {
   animation: car-drive-in 1.6s ease-out forwards;
+}
+
+.car-silhouette {
+  position: absolute;
+  bottom: 38px;
+  left: -260px;
+  width: 260px;
+  height: 80px;
+}
+
+.car-body {
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  bottom: 24px;
+  height: 38px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--accent), #fed7aa);
+}
+
+.car-window {
+  position: absolute;
+  left: 54px;
+  right: 80px;
+  bottom: 36px;
+  height: 22px;
+  border-radius: 10px;
+  background: #020617;
+}
+
+.car-wheel {
+  position: absolute;
+  bottom: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #020617;
+  border: 3px solid #111827;
+  box-shadow: 0 0 0 4px #0b1120;
+}
+
+.car-wheel-front {
+  right: 34px;
+}
+
+.car-wheel-rear {
+  left: 34px;
 }
 
 @keyframes car-drive-in {
