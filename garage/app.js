@@ -192,12 +192,12 @@ function renderVehicleDetail() {
     <div class="detail-grid">
       <div>
         <div class="detail-card-title">Basisdaten</div>
-        <ul class="detail-listst">
-          >${vehicle.make} ${vehicle.model} (${vehicle.year})</l/li>
-          >Kennzeichen: ${vehicle.plate}</li>
-          >Kilometerstand: ${odoText}</li>
-          >Anschaffungspreis: ${priceText}</li>
-          >Summe Eintrags-Kosten: ${totalHistoryCost.toLocaleString('de-DE')} €</li>
+        <ul class="detail-list">
+          <li>${vehicle.make} ${vehicle.model} (${vehicle.year})</li>
+          <li>Kennzeichen: ${vehicle.plate}</li>
+          <li>Kilometerstand: ${odoText}</li>
+          <li>Anschaffungspreis: ${priceText}</li>
+          <li>Summe Eintrags-Kosten: ${totalHistoryCost.toLocaleString('de-DE')} €</li>
         </ul>
       </div>
       <div>
@@ -205,8 +205,8 @@ function renderVehicleDetail() {
         <ul class="detail-list">
           ${
             vehicle.todos?.length
-              ? vehicle.todos.map((t) => `>• ${t}</li>`).join('')
-              : '>Keine offenen Punkte.</li>'
+              ? vehicle.todos.map((t) => `<li>• ${t}</li>`).join('')
+              : '<li>Keine offenen Punkte.</li>'
           }
         </ul>
       </div>
@@ -218,12 +218,12 @@ function renderVehicleDetail() {
               ? vehicle.history
                   .map(
                     (e) =>
-                      `>${e.date}: [${labelForType(e.type)}] ${e.description}` +
+                      `<li>${e.date}: [${labelForType(e.type)}] ${e.description}` +
                       `${e.odo != null ? ' • ' + formatKm(e.odo) : ''}` +
                       `${e.cost != null ? ' • ' + e.cost.toLocaleString('de-DE') + ' €' : ''}</li>`,
                   )
                   .join('')
-              : '>Noch keine Einträge.</li>'
+              : '<li>Noch keine Einträge.</li>'
           }
         </ul>
       </div>
@@ -295,7 +295,7 @@ function renderSelectedStats() {
   const costsEl = document.getElementById('stat-selected-costs');
   if (!priceEl || !odoEl || !costsEl) return;
 
-  const vehicle = vehi.find((v) => v.id === selectedVehicleId);
+  const vehicle = vehicles.find((v) => v.id === selectedVehicleId);
   if (!vehicle) {
     priceEl.textContent = '— €';
     odoEl.textContent = '— km';
