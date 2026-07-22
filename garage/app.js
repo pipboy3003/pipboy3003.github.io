@@ -46,7 +46,7 @@ function initTheme() {
   if (!theme) {
     const prefersDark =
       window.matchMedia &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches; // nutzt prefers-color-scheme[web:54]
+      window.matchMedia('(prefers-color-scheme: dark)').matches; // nutzt Systempräferenz[web:54]
     theme = prefersDark ? 'dark' : 'light';
   }
 
@@ -86,6 +86,7 @@ function initAuthAndScreens() {
   const appShell = document.getElementById('app-shell');
   const loginForm = document.getElementById('login-form');
   const logoutButton = document.getElementById('logout-button');
+  const garageContainer = document.getElementById('garage-container');
 
   const loggedIn = localStorage.getItem('garageLoggedIn') === 'true';
 
@@ -106,13 +107,10 @@ function initAuthAndScreens() {
 
       localStorage.setItem('garageLoggedIn', 'true');
 
-      // Auto fährt in die Garage
-      const container = document.getElementById('garage-container');
-      if (container) {
-        container.classList.add('garage-logged-in');
+      if (garageContainer) {
+        garageContainer.classList.add('garage-logged-in');
       }
 
-      // kurz warten, dann Garage-Screen anzeigen
       setTimeout(() => {
         if (landing) landing.style.display = 'none';
         if (appShell) appShell.classList.remove('app-hidden');
@@ -125,6 +123,7 @@ function initAuthAndScreens() {
       localStorage.removeItem('garageLoggedIn');
       if (appShell) appShell.classList.add('app-hidden');
       if (landing) landing.style.display = 'flex';
+      if (garageContainer) garageContainer.classList.remove('garage-logged-in');
     });
   }
 }
@@ -193,12 +192,12 @@ function renderVehicleDetail() {
     <div class="detail-grid">
       <div>
         <div class="detail-card-title">Basisdaten</div>
-        <ul class="detail-list">
-          <li>${vehicle.make} ${vehicle.model} (${vehicle.year})</li>
-          <li>Kennzeichen: ${vehicle.plate}</li>
-          <li>Kilometerstand: ${odoText}</li>
-          <li>Anschaffungspreis: ${priceText}</li>
-          <li>Summe Eintrags-Kosten: ${totalHistoryCost.toLocaleString('de-DE')} €</li>
+        <ul class="detail-listst">
+          >${vehicle.make} ${vehicle.model} (${vehicle.year})</l/li>
+          >Kennzeichen: ${vehicle.plate}</li>
+          >Kilometerstand: ${odoText}</li>
+          >Anschaffungspreis: ${priceText}</li>
+          >Summe Eintrags-Kosten: ${totalHistoryCost.toLocaleString('de-DE')} €</li>
         </ul>
       </div>
       <div>
@@ -206,8 +205,8 @@ function renderVehicleDetail() {
         <ul class="detail-list">
           ${
             vehicle.todos?.length
-              ? vehicle.todos.map((t) => `<li>• ${t}</li>`).join('')
-              : '<li>Keine offenen Punkte.</li>'
+              ? vehicle.todos.map((t) => `>• ${t}</li>`).join('')
+              : '>Keine offenen Punkte.</li>'
           }
         </ul>
       </div>
@@ -219,12 +218,12 @@ function renderVehicleDetail() {
               ? vehicle.history
                   .map(
                     (e) =>
-                      `<li>${e.date}: [${labelForType(e.type)}] ${e.description}` +
+                      `>${e.date}: [${labelForType(e.type)}] ${e.description}` +
                       `${e.odo != null ? ' • ' + formatKm(e.odo) : ''}` +
                       `${e.cost != null ? ' • ' + e.cost.toLocaleString('de-DE') + ' €' : ''}</li>`,
                   )
                   .join('')
-              : '<li>Noch keine Einträge.</li>'
+              : '>Noch keine Einträge.</li>'
           }
         </ul>
       </div>
@@ -294,7 +293,7 @@ function renderSelectedStats() {
   const priceEl = document.getElementById('stat-selected-price');
   const odoEl = document.getElementById('stat-selected-odo');
   const costsEl = document.getElementById('stat-selected-costs');
-  if (!priceEl || !odoEl || !costsEl) return;
+  if (!priceEl || !odoEl costsEl) return;
 
   const vehicle = vehicles.find((v) => v.id === selectedVehicleId);
   if (!vehicle) {
