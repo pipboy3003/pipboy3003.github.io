@@ -46,7 +46,7 @@ function initTheme() {
   if (!theme) {
     const prefersDark =
       window.matchMedia &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches; // nutzt Systempräferenz[web:54]
+      window.matchMedia('(prefers-color-scheme: dark)').matches;
     theme = prefersDark ? 'dark' : 'light';
   }
 
@@ -293,9 +293,9 @@ function renderSelectedStats() {
   const priceEl = document.getElementById('stat-selected-price');
   const odoEl = document.getElementById('stat-selected-odo');
   const costsEl = document.getElementById('stat-selected-costs');
-  if (!priceEl || !odoEl costsEl) return;
+  if (!priceEl || !odoEl || !costsEl) return;
 
-  const vehicle = vehicles.find((v) => v.id === selectedVehicleId);
+  const vehicle = vehi.find((v) => v.id === selectedVehicleId);
   if (!vehicle) {
     priceEl.textContent = '— €';
     odoEl.textContent = '— km';
