@@ -151,7 +151,7 @@ body {
   background: radial-gradient(circle at 50% 0%, #0b1120, #020617);
 }
 
-/* ===== Rolltor ===== */
+/* ===== Tor-Rahmen ===== */
 .garage-door-frame {
   position: absolute;
   left: 80px; right: 80px;
@@ -167,29 +167,34 @@ body {
   inset: 12px;
   border-radius: 14px;
   background: radial-gradient(circle at top, rgba(251, 146, 60, 0.25), rgba(15, 23, 42, 0.96));
+  z-index: 0;
 }
 
+/* ===== Rolltor ===== */
 .garage-rolldoor {
   position: absolute;
-  inset: 18px;
-  border-radius: 14px;
+  inset: 0;                        /* komplett den Rahmen ausfüllen, keine Lücken */
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;                          /* kein Gap – Slats lückenlos */
+  background: #0b1120;             /* solider Hintergrund, nichts scheint durch */
+  overflow: hidden;
   transition: transform 0.9s ease-out;
-  z-index: 2;
+  z-index: 10;                     /* immer über Login (z-index: 1) */
 }
 
+/* Slats: solide, opak, lückenlos */
 .rolldoor-slat,
 .rolldoor-slat-thin {
   flex-shrink: 0;
-  border-radius: 999px;
-  background: linear-gradient(to right, #020617, #0b1120);
-  border: 1px solid rgba(148, 163, 184, 0.45);
+  width: 100%;
+  background: #0f1a2e;
+  border-bottom: 2px solid #1e2d45; /* Lamellenlinien als untere Border */
 }
 
-.rolldoor-slat { height: 20px; }
-.rolldoor-slat-thin { height: 10px; }
+.rolldoor-slat       { height: 22px; }
+.rolldoor-slat-thin  { height: 12px; }
 
 /* ===== Logo auf dem Rolltor ===== */
 .rolldoor-logo {
@@ -200,24 +205,24 @@ body {
   width: 55%;
   max-width: 220px;
   pointer-events: none;
-  z-index: 5;
+  z-index: 12;                     /* über den Slats */
   opacity: 0.92;
   filter: drop-shadow(0 2px 10px rgba(251, 146, 60, 0.5));
   transition: opacity 0.4s ease;
 }
 
-/* Logo ausblenden wenn Tor offen (Hover, Klick, Login) */
+/* Logo ausblenden wenn Tor offen */
 .garage-container:hover .rolldoor-logo,
 .garage-container.rolldoor-open .rolldoor-logo,
 .garage-container.garage-logged-in .rolldoor-logo {
   opacity: 0;
 }
 
-/* ===== Rolltor Bewegung: Hover + Klick-Toggle + Login ===== */
+/* ===== Rolltor Bewegung ===== */
 .garage-container:hover .garage-rolldoor,
 .garage-container.rolldoor-open .garage-rolldoor,
 .garage-container.garage-logged-in .garage-rolldoor {
-  transform: translateY(-150px);
+  transform: translateY(-110%);    /* komplett aus dem Rahmen raus */
 }
 
 /* Tap-Hinweis */
@@ -238,7 +243,7 @@ body {
   justify-content: center;
   align-items: center;
   pointer-events: none;
-  z-index: 1;
+  z-index: 1;                      /* unter dem Rolltor */
 }
 
 .login-card {
@@ -552,10 +557,10 @@ body {
 }
 
 .car-wheel-front { right: 34px; }
-.car-wheel-rear { left: 34px; }
+.car-wheel-rear  { left: 34px; }
 
 @keyframes car-drive-in {
-  0% { transform: translateX(0); }
+  0%   { transform: translateX(0); }
   100% { transform: translateX(280px); }
 }
 
@@ -573,10 +578,10 @@ body {
   .sidebar-nav { flex-direction: column; }
   .app-main { padding: 1.5rem; }
 
-  .vehicle-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .detail-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .entry-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .vehicle-grid  { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats-grid    { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .detail-grid   { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .entry-form    { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (min-width: 1024px) {
