@@ -1,6 +1,10 @@
 // app.js
 
-const vehicles = [
+const STORAGE_KEY_VEHICLES = 'garageVehicles';
+const STORAGE_KEY_LOGGED_IN = 'garageLoggedIn';
+const STORAGE_KEY_THEME = 'garageTheme';
+
+const defaultVehicles = [
   {
     id: 'v1',
     make: 'BMW',
@@ -9,13 +13,13 @@ const vehicles = [
     plate: 'S-KF 330',
     odometer: 210000,
     purchasePrice: 15000,
-    nextInspectionDate: '2025-03-15',
-    nextServiceDate: '2024-11-01',
+    nextInspectionDate: '2027-03-15',
+    nextServiceDate: '2026-11-01',
     lastFuelingSummary: 'Zuletzt getankt vor 3 Tagen',
     todos: ['Bremsflüssigkeit wechseln', 'Software-Update Motorsteuerung'],
     history: [
-      { type: 'maintenance', date: '2024-04-10', odo: 208000, description: 'Ölwechsel + Filter', cost: 180 },
-      { type: 'upgrade', date: '2023-12-05', odo: 205000, description: 'Winterreifen montiert', cost: 60 },
+      { type: 'maintenance', date: '2026-04-10', odo: 208000, description: 'Ölwechsel + Filter', cost: 180 },
+      { type: 'upgrade', date: '2025-12-05', odo: 205000, description: 'Winterreifen montiert', cost: 60 },
     ],
   },
   {
@@ -26,30 +30,41 @@ const vehicles = [
     plate: 'S-MB 200',
     odometer: 145000,
     purchasePrice: 18500,
-    nextInspectionDate: '2024-09-30',
-    nextServiceDate: '2024-08-20',
+    nextInspectionDate: '2026-09-30',
+    nextServiceDate: '2026-08-20',
     lastFuelingSummary: 'Zuletzt getankt vor 10 Tagen',
     todos: ['Lackpolitur komplett', 'Innenraumfilter tauschen'],
     history: [
-      { type: 'maintenance', date: '2024-03-01', odo: 143500, description: 'Große Inspektion', cost: 650 },
+      { type: 'maintenance', date: '2026-03-01', odo: 143500, description: 'Große Inspektion', cost: 650 },
     ],
   },
 ];
 
+function loadVehicles() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_VEHICLES);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (_) {}
+  return JSON.parse(JSON.stringify(defaultVehicles));
+}
+
+function saveVehicles() {
+  try {
+    localStorage.setItem(STORAGE_KEY_VEHICLES, JSON.stringify(vehicles));
+  } catch (_) {}
+}
+
+let vehicles = loadVehicles();
 let selectedVehicleId = vehicles[0]?.id ?? null;
 
-/* ===== Theme-Toggle (Hell/Dunkel) ===== */
+/* ===== Theme-Toggle ===== */
 function initTheme() {
-  const stored = localStorage.getItem('garageTheme');
-  let theme = stored;
-
-  if (!theme) {
-    const prefersDark =
-      window.matchMedia &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches;
-    theme = prefersDark ? 'dark' : 'light';
-  }
-
+  const stored = localStorage.getItem(STORAGE_KEY_THEME);
+  const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+  const theme = stored ?? (prefersDark ? 'dark' : 'light');
   applyTheme(theme);
 
   const btnLanding = document.getElementById('theme-toggle-landing');
@@ -66,18 +81,34 @@ function initTheme() {
     const current = document.body.dataset.theme || 'light';
     const next = current === 'dark' ? 'light' : 'dark';
     applyTheme(next);
-    localStorage.setItem('garageTheme', next);
+    localStorage.setItem(STORAGE_KEY_THEME, next);
     updateLabels();
   };
 
   if (btnLanding) btnLanding.addEventListener('click', toggle);
   if (btnApp) btnApp.addEventListener('click', toggle);
 
+  // Label sofort korrekt setzen – kein Flackern
   updateLabels();
 }
 
 function applyTheme(theme) {
   document.body.dataset.theme = theme;
+}
+
+/* ===== Rolltor: Touch/Click-Toggle für Mobile ===== */
+function initRolldoorToggle() {
+  const garageContainer = document.getElementById('garage-container');
+  if (!garageContainer) return;
+
+  // Touch-Geräte: Tap öffnet/schließt Tor
+  garageContainer.addEventListener('click', (e) => {
+    // Nur wenn Klick direkt aufs Tor oder Container (nicht aufs Login-Formular)
+    const loginCard = garageContainer.querySelector('.login-card');
+    if (loginCard && loginCard.contains(e.target)) return;
+
+    garageContainer.classList.toggle('rolldoor-open');
+  });
 }
 
 /* ===== Auth & Screens ===== */
@@ -88,7 +119,7 @@ function initAuthAndScreens() {
   const logoutButton = document.getElementById('logout-button');
   const garageContainer = document.getElementById('garage-container');
 
-  const loggedIn = localStorage.getItem('garageLoggedIn') === 'true';
+  const loggedIn = localStorage.getItem(STORAGE_KEY_LOGGED_IN) === 'true';
 
   if (loggedIn) {
     if (landing) landing.style.display = 'none';
@@ -99,13 +130,24 @@ function initAuthAndScreens() {
   }
 
   if (loginForm) {
+    const errorEl = document.getElementById('login-error');
+
     loginForm.addEventListener('submit', (event) => {
       event.preventDefault();
       const email = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value.trim();
-      if (!email || !password) return;
 
-      localStorage.setItem('garageLoggedIn', 'true');
+      if (!email || !password) {
+        if (errorEl) {
+          errorEl.textContent = 'Bitte E-Mail und Passwort eingeben.';
+          errorEl.style.display = 'block';
+        }
+        return;
+      }
+
+      if (errorEl) errorEl.style.display = 'none';
+
+      localStorage.setItem(STORAGE_KEY_LOGGED_IN, 'true');
 
       if (garageContainer) {
         garageContainer.classList.add('garage-logged-in');
@@ -114,16 +156,22 @@ function initAuthAndScreens() {
       setTimeout(() => {
         if (landing) landing.style.display = 'none';
         if (appShell) appShell.classList.remove('app-hidden');
+        renderVehicles();
+        renderVehicleDetail();
+        renderSelectedStats();
       }, 1700);
     });
   }
 
   if (logoutButton) {
     logoutButton.addEventListener('click', () => {
-      localStorage.removeItem('garageLoggedIn');
+      localStorage.removeItem(STORAGE_KEY_LOGGED_IN);
       if (appShell) appShell.classList.add('app-hidden');
       if (landing) landing.style.display = 'flex';
-      if (garageContainer) garageContainer.classList.remove('garage-logged-in');
+      if (garageContainer) {
+        garageContainer.classList.remove('garage-logged-in');
+        garageContainer.classList.remove('rolldoor-open');
+      }
     });
   }
 }
@@ -237,14 +285,10 @@ function formatKm(value) {
 
 function labelForType(type) {
   switch (type) {
-    case 'maintenance':
-      return 'Wartung';
-    case 'repair':
-      return 'Reparatur';
-    case 'upgrade':
-      return 'Upgrade';
-    default:
-      return 'Eintrag';
+    case 'maintenance': return 'Wartung';
+    case 'repair': return 'Reparatur';
+    case 'upgrade': return 'Upgrade';
+    default: return 'Eintrag';
   }
 }
 
@@ -282,13 +326,16 @@ function setupEntryForm() {
       vehicle.odometer = entry.odo;
     }
 
+    // Persistenz: nach jedem neuen Eintrag speichern
+    saveVehicles();
+
     form.reset();
     renderVehicleDetail();
     renderSelectedStats();
   });
 }
 
-/* ===== Stats nur für ausgewähltes Fahrzeug ===== */
+/* ===== Stats ===== */
 function renderSelectedStats() {
   const priceEl = document.getElementById('stat-selected-price');
   const odoEl = document.getElementById('stat-selected-odo');
@@ -303,27 +350,30 @@ function renderSelectedStats() {
     return;
   }
 
-  const priceText = vehicle.purchasePrice != null
+  priceEl.textContent = vehicle.purchasePrice != null
     ? `${vehicle.purchasePrice.toLocaleString('de-DE')} €`
     : '— €';
 
-  const odoText = formatKm(vehicle.odometer);
+  odoEl.textContent = formatKm(vehicle.odometer);
 
   const totalHistoryCost = vehicle.history?.length
     ? vehicle.history.reduce((sum, e) => sum + (e.cost || 0), 0)
     : 0;
 
-  priceEl.textContent = priceText;
-  odoEl.textContent = odoText;
   costsEl.textContent = `${totalHistoryCost.toLocaleString('de-DE')} €`;
 }
 
 /* ===== Init ===== */
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
+  initRolldoorToggle();
   initAuthAndScreens();
   setupEntryForm();
-  renderVehicles();
-  renderVehicleDetail();
-  renderSelectedStats();
+
+  // App-Inhalte nur rendern wenn eingeloggt
+  if (localStorage.getItem(STORAGE_KEY_LOGGED_IN) === 'true') {
+    renderVehicles();
+    renderVehicleDetail();
+    renderSelectedStats();
+  }
 });

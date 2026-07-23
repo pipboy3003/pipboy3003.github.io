@@ -4,24 +4,17 @@
   <meta charset="UTF-8">
   <title>GarageCTRL</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Styles -->
   <link rel="stylesheet" href="style.css">
-
-  <!-- SVG-Favicon (Felge/Rad) -->
   <link rel="icon" type="image/svg+xml" href="garage-favicon.svg">
 </head>
 <body>
-  <!-- Landing: Garage mit Rolltor, Login-Fenster IN der Garage -->
   <div id="landing" class="landing">
     <div class="landing-inner">
       <div class="landing-header">
-        <!-- Brand-Logo: nur noch im App-Header, nicht mehr hier -->
-        <div class="brand"></div>
-
-        <button id="theme-toggle-landing" class="landing-theme-button" type="button">
-          Dunkel
-        </button>
+        <div class="brand">
+          <span class="brand-title">GarageCTRL</span>
+        </div>
+        <button id="theme-toggle-landing" class="landing-theme-button" type="button">Dunkel</button>
       </div>
 
       <div class="garage-container" id="garage-container">
@@ -29,14 +22,10 @@
           <div class="garage-ground"></div>
 
           <div class="garage-door-frame">
-            <!-- Glow hinter Login -->
             <div class="garage-inner-glow"></div>
 
-            <!-- Rolltor, das beim Hover hochfährt –– Logo sitzt drauf -->
             <div class="garage-rolldoor">
-              <!-- Logo auf dem Rolltor: fährt beim Hover mit hoch -->
               <img src="garage-logo.svg" alt="GarageCTRL Logo" class="rolldoor-logo">
-
               <div class="rolldoor-slat"></div>
               <div class="rolldoor-slat"></div>
               <div class="rolldoor-slat"></div>
@@ -44,13 +33,10 @@
               <div class="rolldoor-slat-thin"></div>
             </div>
 
-            <!-- Login-Fenster in der Garage -->
             <div class="login-panel">
               <div class="login-card">
                 <h1>GarageCTRL</h1>
-                <p class="login-subtitle">
-                  Öffne deine digitale Garage – Login oder Registrierung.
-                </p>
+                <p class="login-subtitle">Öffne deine digitale Garage – Login oder Registrierung.</p>
 
                 <form id="login-form" class="login-form">
                   <div class="form-row">
@@ -61,19 +47,15 @@
                     <label for="login-password">Passwort</label>
                     <input id="login-password" type="password" required placeholder="••••••••">
                   </div>
-                  <button class="primary-button primary-button-full" type="submit">
-                    Garage öffnen
-                  </button>
+                  <p id="login-error" class="login-error" style="display:none;"></p>
+                  <button class="primary-button primary-button-full" type="submit">Garage öffnen</button>
                 </form>
 
-                <p class="login-small">
-                  Demo-Login: Daten bleiben lokal in deinem Browser.
-                </p>
+                <p class="login-small">Demo-Login: Daten bleiben lokal in deinem Browser.</p>
               </div>
             </div>
           </div>
 
-          <!-- Auto, das nach Login in die Garage fährt -->
           <div class="car-silhouette">
             <div class="car-body"></div>
             <div class="car-window"></div>
@@ -81,15 +63,16 @@
             <div class="car-wheel car-wheel-rear"></div>
           </div>
         </div>
+
+        <!-- Tap-Hinweis für Mobile -->
+        <p class="rolldoor-hint">Tippen oder hovern um die Garage zu öffnen</p>
       </div>
     </div>
   </div>
 
-  <!-- Haupt-App (Garage-Screen) -->
   <div id="app-shell" class="app-shell app-hidden">
     <header class="app-header">
       <div class="logo">
-        <!-- Logo im Header -->
         <img src="garage-logo.svg" alt="GarageCTRL Logo" class="brand-logo">
       </div>
       <div class="header-actions">
@@ -112,7 +95,6 @@
           <h2>Fahrzeugauswahl</h2>
           <p>Wähle ein Fahrzeug, um Details und Statistiken zu sehen.</p>
         </div>
-
         <div id="vehicle-grid" class="vehicle-grid"></div>
       </section>
 
@@ -121,7 +103,6 @@
           <h2>Fahrzeug-Details & Einträge</h2>
           <p>Ausgewähltes Fahrzeug mit Wünschen, Historie und Kennzahlen.</p>
         </div>
-
         <div id="vehicle-detail" class="vehicle-detail">
           <p>Wähle oben ein Fahrzeug aus.</p>
         </div>
@@ -159,7 +140,6 @@
         <div class="section-header">
           <h2>Kennzahlen (ausgewähltes Fahrzeug)</h2>
         </div>
-
         <div class="stats-grid">
           <article class="stat-card">
             <h3>Anschaffungspreis</h3>
@@ -178,7 +158,6 @@
     </main>
   </div>
 
-  <!-- Scripts -->
   <script src="app.js" type="module"></script>
 </body>
 </html>

@@ -33,7 +33,6 @@ body[data-theme="dark"] {
   --border: #1f2937;
 }
 
-/* Fallback nach Systempräferenz */
 @media (prefers-color-scheme: dark) {
   body:not([data-theme]) {
     --bg: #020617;
@@ -74,9 +73,7 @@ body[data-theme="dark"] {
 
 *,
 *::before,
-*::after {
-  box-sizing: border-box;
-}
+*::after { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -85,14 +82,12 @@ body {
   color: var(--text);
 }
 
-/* ===== Landing mit Garage & Login-Card ===== */
-
-/* ganze Seite: Landing mittig im Viewport */
+/* ===== Landing ===== */
 .landing {
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  align-items: center; /* vertikal mittig */
+  align-items: center;
   background: var(--bg-landing);
 }
 
@@ -102,12 +97,18 @@ body {
   padding: 2rem 1.5rem;
 }
 
-/* Header oben: Logo + Theme-Button */
 .landing-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1.5rem;
+}
+
+.brand-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.06em;
 }
 
 .brand-logo {
@@ -124,7 +125,7 @@ body {
   cursor: pointer;
 }
 
-/* Garage-Container zentral, etwas größer */
+/* ===== Garage Container ===== */
 .garage-container {
   position: relative;
   border-radius: 28px;
@@ -132,9 +133,9 @@ body {
   padding: 2rem;
   overflow: hidden;
   box-shadow: 0 40px 80px rgba(15, 23, 42, 0.9);
+  cursor: pointer;
 }
 
-/* Garage-Szene */
 .garage-scene {
   position: relative;
   height: 320px;
@@ -143,23 +144,18 @@ body {
   overflow: hidden;
 }
 
-/* Boden */
 .garage-ground {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 32px;
+  left: 0; right: 0; bottom: 32px;
   height: 44px;
   background: radial-gradient(circle at 50% 0%, #0b1120, #020617);
 }
 
-/* Rahmen + Glow innen */
+/* ===== Rolltor ===== */
 .garage-door-frame {
   position: absolute;
-  left: 80px;
-  right: 80px;
-  bottom: 34px;
-  top: 60px;
+  left: 80px; right: 80px;
+  bottom: 34px; top: 60px;
   border-radius: 18px;
   border: 2px solid #1f2937;
   background: #020617;
@@ -173,7 +169,6 @@ body {
   background: radial-gradient(circle at top, rgba(251, 146, 60, 0.25), rgba(15, 23, 42, 0.96));
 }
 
-/* Rolltor-Lamellen */
 .garage-rolldoor {
   position: absolute;
   inset: 18px;
@@ -182,6 +177,7 @@ body {
   flex-direction: column;
   gap: 8px;
   transition: transform 0.9s ease-out;
+  z-index: 2;
 }
 
 .rolldoor-slat,
@@ -192,13 +188,8 @@ body {
   border: 1px solid rgba(148, 163, 184, 0.45);
 }
 
-.rolldoor-slat {
-  height: 20px;
-}
-
-.rolldoor-slat-thin {
-  height: 10px;
-}
+.rolldoor-slat { height: 20px; }
+.rolldoor-slat-thin { height: 10px; }
 
 /* ===== Logo auf dem Rolltor ===== */
 .rolldoor-logo {
@@ -215,12 +206,31 @@ body {
   transition: opacity 0.4s ease;
 }
 
-/* Logo blendet aus wenn Tor hochfährt */
-.garage-container:hover .rolldoor-logo {
+/* Logo ausblenden wenn Tor offen (Hover, Klick, Login) */
+.garage-container:hover .rolldoor-logo,
+.garage-container.rolldoor-open .rolldoor-logo,
+.garage-container.garage-logged-in .rolldoor-logo {
   opacity: 0;
 }
 
-/* Login-Panel in der Garage – zentriert */
+/* ===== Rolltor Bewegung: Hover + Klick-Toggle + Login ===== */
+.garage-container:hover .garage-rolldoor,
+.garage-container.rolldoor-open .garage-rolldoor,
+.garage-container.garage-logged-in .garage-rolldoor {
+  transform: translateY(-150px);
+}
+
+/* Tap-Hinweis */
+.rolldoor-hint {
+  text-align: center;
+  font-size: 0.75rem;
+  color: rgba(148, 163, 184, 0.5);
+  margin: 0.75rem 0 0 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ===== Login-Panel ===== */
 .login-panel {
   position: absolute;
   inset: 24px;
@@ -228,6 +238,7 @@ body {
   justify-content: center;
   align-items: center;
   pointer-events: none;
+  z-index: 1;
 }
 
 .login-card {
@@ -239,7 +250,6 @@ body {
   color: var(--text-on-dark);
 }
 
-/* Typografie im Login-Fenster */
 .login-card h1 {
   margin: 0 0 0.6rem 0;
   font-size: 1.9rem;
@@ -253,7 +263,15 @@ body {
   color: #cbd5f5;
 }
 
-/* Formular: Inputs ordentlich */
+.login-error {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.82rem;
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.15);
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+}
+
 .login-form {
   display: flex;
   flex-direction: column;
@@ -266,13 +284,7 @@ body {
   color: #9ca3af;
 }
 
-/* Hover: Rolltor hoch, Login bleibt */
-.garage-container:hover .garage-rolldoor {
-  transform: translateY(-150px);
-}
-
 /* ===== Generelle Form-Styles ===== */
-
 .form-row {
   display: flex;
   flex-direction: column;
@@ -294,11 +306,9 @@ body {
   font-size: 0.9rem;
 }
 
-.form-row input::placeholder {
-  color: #6b7280;
-}
+.form-row input::placeholder { color: #6b7280; }
 
-/* Buttons */
+/* ===== Buttons ===== */
 .primary-button,
 .secondary-button {
   padding: 0.55rem 1.2rem;
@@ -326,7 +336,6 @@ body {
 }
 
 /* ===== App-Shell ===== */
-
 .app-shell {
   min-height: 100vh;
   display: flex;
@@ -334,9 +343,7 @@ body {
   background-color: var(--bg);
 }
 
-.app-hidden {
-  display: none;
-}
+.app-hidden { display: none; }
 
 .app-header {
   display: flex;
@@ -348,19 +355,10 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-}
+.logo { display: flex; align-items: center; }
+.app-header .brand-logo { height: 32px; }
 
-.app-header .brand-logo {
-  height: 32px;
-}
-
-.header-actions {
-  display: flex;
-  gap: 0.5rem;
-}
+.header-actions { display: flex; gap: 0.5rem; }
 
 .header-button {
   background: transparent;
@@ -372,7 +370,7 @@ body {
   font-size: 0.85rem;
 }
 
-/* Sidebar */
+/* ===== Sidebar ===== */
 .app-sidebar {
   background-color: var(--bg-sidebar);
   color: var(--text-on-dark);
@@ -401,7 +399,7 @@ body {
   background-color: var(--accent-soft);
 }
 
-/* Main */
+/* ===== Main ===== */
 .app-main {
   flex: 1;
   padding: 1rem;
@@ -409,21 +407,14 @@ body {
   margin: 0 auto;
 }
 
-.main-section {
-  margin-bottom: 1.5rem;
-}
-
-.section-header h2 {
-  margin: 0 0 0.25rem 0;
-}
-
+.main-section { margin-bottom: 1.5rem; }
+.section-header h2 { margin: 0 0 0.25rem 0; }
 .section-header p {
   margin: 0;
   color: var(--text-muted);
   font-size: 0.9rem;
 }
 
-/* Eintrags-Formular im App-Bereich */
 .entry-form {
   margin-top: 1rem;
   display: grid;
@@ -435,7 +426,7 @@ body {
   padding: 0.75rem;
 }
 
-/* Fahrzeuge */
+/* ===== Fahrzeuge ===== */
 .vehicle-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -472,20 +463,10 @@ body {
   background: radial-gradient(circle at 30% 20%, var(--accent), #1f2937);
 }
 
-.vehicle-title {
-  font-weight: 600;
-}
+.vehicle-title { font-weight: 600; }
+.vehicle-subtitle { font-size: 0.85rem; color: var(--text-muted); }
 
-.vehicle-subtitle {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
-.badge-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
+.badge-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
 .badge {
   font-size: 0.75rem;
@@ -494,7 +475,7 @@ body {
   border: 1px solid var(--border);
 }
 
-/* Fahrzeug-Details */
+/* ===== Fahrzeug-Details ===== */
 .vehicle-detail {
   margin-top: 1rem;
   background-color: var(--bg-elevated);
@@ -509,23 +490,12 @@ body {
   gap: 0.75rem;
 }
 
-.detail-card-title {
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-}
+.detail-card-title { font-weight: 600; margin-bottom: 0.25rem; }
 
-.detail-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
+.detail-list { list-style: none; margin: 0; padding: 0; }
+.detail-list li { font-size: 0.85rem; padding: 0.2rem 0; }
 
-.detail-list li {
-  font-size: 0.85rem;
-  padding: 0.2rem 0;
-}
-
-/* Stats */
+/* ===== Stats ===== */
 .stats-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -540,16 +510,9 @@ body {
   padding: 0.75rem;
 }
 
-.stat-value {
-  font-size: 1.1rem;
-  font-weight: 600;
-}
+.stat-value { font-size: 1.1rem; font-weight: 600; }
 
-/* Auto fährt nach Login rein */
-.garage-container.garage-logged-in .garage-rolldoor {
-  transform: translateY(-150px);
-}
-
+/* ===== Auto nach Login ===== */
 .garage-container.garage-logged-in .car-silhouette {
   animation: car-drive-in 1.6s ease-out forwards;
 }
@@ -564,9 +527,7 @@ body {
 
 .car-body {
   position: absolute;
-  left: 22px;
-  right: 22px;
-  bottom: 24px;
+  left: 22px; right: 22px; bottom: 24px;
   height: 38px;
   border-radius: 18px;
   background: linear-gradient(135deg, var(--accent), #fed7aa);
@@ -574,9 +535,7 @@ body {
 
 .car-window {
   position: absolute;
-  left: 54px;
-  right: 80px;
-  bottom: 36px;
+  left: 54px; right: 80px; bottom: 36px;
   height: 22px;
   border-radius: 10px;
   background: #020617;
@@ -585,32 +544,24 @@ body {
 .car-wheel {
   position: absolute;
   bottom: 12px;
-  width: 34px;
-  height: 34px;
+  width: 34px; height: 34px;
   border-radius: 999px;
   background: #020617;
   border: 3px solid #111827;
   box-shadow: 0 0 0 4px #0b1120;
 }
 
-.car-wheel-front {
-  right: 34px;
-}
-
-.car-wheel-rear {
-  left: 34px;
-}
+.car-wheel-front { right: 34px; }
+.car-wheel-rear { left: 34px; }
 
 @keyframes car-drive-in {
   0% { transform: translateX(0); }
   100% { transform: translateX(280px); }
 }
 
-/* Layout ab Tablet */
+/* ===== Responsive ===== */
 @media (min-width: 768px) {
-  .app-shell {
-    flex-direction: row;
-  }
+  .app-shell { flex-direction: row; }
 
   .app-sidebar {
     width: 220px;
@@ -619,33 +570,15 @@ body {
     min-height: 100vh;
   }
 
-  .sidebar-nav {
-    flex-direction: column;
-  }
+  .sidebar-nav { flex-direction: column; }
+  .app-main { padding: 1.5rem; }
 
-  .app-main {
-    padding: 1.5rem;
-  }
-
-  .vehicle-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .stats-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .detail-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .entry-form {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  .vehicle-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .detail-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .entry-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (min-width: 1024px) {
-  .vehicle-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+  .vehicle-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
