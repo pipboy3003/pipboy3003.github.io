@@ -200,6 +200,26 @@ body {
   height: 10px;
 }
 
+/* ===== Logo auf dem Rolltor ===== */
+.rolldoor-logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 55%;
+  max-width: 220px;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0.92;
+  filter: drop-shadow(0 2px 10px rgba(251, 146, 60, 0.5));
+  transition: opacity 0.4s ease;
+}
+
+/* Logo blendet aus wenn Tor hochfährt */
+.garage-container:hover .rolldoor-logo {
+  opacity: 0;
+}
+
 /* Login-Panel in der Garage – zentriert */
 .login-panel {
   position: absolute;

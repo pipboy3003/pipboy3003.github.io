@@ -16,10 +16,8 @@
   <div id="landing" class="landing">
     <div class="landing-inner">
       <div class="landing-header">
-        <!-- Brand-Logo: Rolltor + Text als externes SVG -->
-        <div class="brand">
-          <img src="garage-logo.svg" alt="GarageCTRL Logo" class="brand-logo">
-        </div>
+        <!-- Brand-Logo: nur noch im App-Header, nicht mehr hier -->
+        <div class="brand"></div>
 
         <button id="theme-toggle-landing" class="landing-theme-button" type="button">
           Dunkel
@@ -34,8 +32,11 @@
             <!-- Glow hinter Login -->
             <div class="garage-inner-glow"></div>
 
-            <!-- Rolltor, das beim Hover hochfährt -->
+            <!-- Rolltor, das beim Hover hochfährt –– Logo sitzt drauf -->
             <div class="garage-rolldoor">
+              <!-- Logo auf dem Rolltor: fährt beim Hover mit hoch -->
+              <img src="garage-logo.svg" alt="GarageCTRL Logo" class="rolldoor-logo">
+
               <div class="rolldoor-slat"></div>
               <div class="rolldoor-slat"></div>
               <div class="rolldoor-slat"></div>
