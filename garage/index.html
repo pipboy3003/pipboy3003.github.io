@@ -8,68 +8,76 @@
   <link rel="icon" type="image/svg+xml" href="garage-favicon.svg">
 </head>
 <body>
+
+  <!-- ===== LANDING ===== -->
   <div id="landing" class="landing">
     <div class="landing-inner">
+
+      <!-- Header -->
       <div class="landing-header">
-        <div class="brand">
-          <span class="brand-title">GarageCTRL</span>
-        </div>
+        <span class="brand-title">GarageCTRL</span>
         <button id="theme-toggle-landing" class="landing-theme-button" type="button">Dunkel</button>
       </div>
 
-      <div class="garage-container" id="garage-container">
-        <div class="garage-scene">
-          <div class="garage-ground"></div>
+      <!-- Garage-Box -->
+      <div class="garage-wrap" id="garage-wrap">
 
-          <div class="garage-door-frame">
-            <div class="garage-inner-glow"></div>
-
-            <div class="garage-rolldoor">
-              <img src="garage-logo.svg" alt="GarageCTRL Logo" class="rolldoor-logo">
-              <div class="rolldoor-slat"></div>
-              <div class="rolldoor-slat"></div>
-              <div class="rolldoor-slat"></div>
-              <div class="rolldoor-slat"></div>
-              <div class="rolldoor-slat-thin"></div>
+        <!-- HINTERGRUND: Login sitzt hier, immer sichtbar sobald Tor oben -->
+        <div class="garage-back">
+          <div class="login-panel">
+            <div class="login-card">
+              <h1>GarageCTRL</h1>
+              <p class="login-subtitle">Logge dich ein, um deine Garage zu öffnen.</p>
+              <form id="login-form" class="login-form">
+                <div class="form-row">
+                  <label for="login-email">E-Mail</label>
+                  <input id="login-email" type="email" required placeholder="du@example.com">
+                </div>
+                <div class="form-row">
+                  <label for="login-password">Passwort</label>
+                  <input id="login-password" type="password" required placeholder="••••••••">
+                </div>
+                <p id="login-error" class="login-error" style="display:none;"></p>
+                <button class="primary-button primary-button-full" type="submit">Garage öffnen</button>
+              </form>
+              <p class="login-small">Demo-Login: beliebige E-Mail + Passwort.</p>
             </div>
-
-            <div class="login-panel">
-              <div class="login-card">
-                <h1>GarageCTRL</h1>
-                <p class="login-subtitle">Öffne deine digitale Garage – Login oder Registrierung.</p>
-
-                <form id="login-form" class="login-form">
-                  <div class="form-row">
-                    <label for="login-email">E-Mail</label>
-                    <input id="login-email" type="email" required placeholder="du@example.com">
-                  </div>
-                  <div class="form-row">
-                    <label for="login-password">Passwort</label>
-                    <input id="login-password" type="password" required placeholder="••••••••">
-                  </div>
-                  <p id="login-error" class="login-error" style="display:none;"></p>
-                  <button class="primary-button primary-button-full" type="submit">Garage öffnen</button>
-                </form>
-
-                <p class="login-small">Demo-Login: Daten bleiben lokal in deinem Browser.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="car-silhouette">
-            <div class="car-body"></div>
-            <div class="car-window"></div>
-            <div class="car-wheel car-wheel-front"></div>
-            <div class="car-wheel car-wheel-rear"></div>
           </div>
         </div>
 
-        <!-- Tap-Hinweis für Mobile -->
-        <p class="rolldoor-hint">Tippen oder hovern um die Garage zu öffnen</p>
+        <!-- TOR: liegt VOR dem Login, fährt hoch -->
+        <div class="garage-door" id="garage-door">
+          <!-- Logo mittig auf dem Tor -->
+          <img src="garage-logo.svg" alt="GarageCTRL" class="door-logo">
+          <!-- Lamellen -->
+          <div class="door-slats">
+            <div class="slat"></div>
+            <div class="slat"></div>
+            <div class="slat"></div>
+            <div class="slat"></div>
+            <div class="slat"></div>
+            <div class="slat"></div>
+            <div class="slat slat-thin"></div>
+          </div>
+        </div>
+
+        <!-- Auto-Animation nach Login -->
+        <div class="car" id="login-car">
+          <div class="car-body"></div>
+          <div class="car-window"></div>
+          <div class="car-wheel car-wheel-front"></div>
+          <div class="car-wheel car-wheel-rear"></div>
+        </div>
+
+        <!-- Boden -->
+        <div class="garage-floor"></div>
+
+        <p class="door-hint">Hovern oder tippen zum Öffnen</p>
       </div>
     </div>
   </div>
 
+  <!-- ===== APP-SHELL ===== -->
   <div id="app-shell" class="app-shell app-hidden">
     <header class="app-header">
       <div class="logo">
@@ -100,12 +108,10 @@
 
       <section class="main-section">
         <div class="section-header">
-          <h2>Fahrzeug-Details & Einträge</h2>
+          <h2>Fahrzeug-Details &amp; Einträge</h2>
           <p>Ausgewähltes Fahrzeug mit Wünschen, Historie und Kennzahlen.</p>
         </div>
-        <div id="vehicle-detail" class="vehicle-detail">
-          <p>Wähle oben ein Fahrzeug aus.</p>
-        </div>
+        <div id="vehicle-detail" class="vehicle-detail"><p>Wähle oben ein Fahrzeug aus.</p></div>
 
         <form id="entry-form" class="entry-form">
           <div class="form-row">
@@ -126,7 +132,7 @@
           </div>
           <div class="form-row">
             <label for="entry-desc">Beschreibung</label>
-            <input id="entry-desc" name="entryDesc" type="text" required placeholder="Ölwechsel, Bremsen, Upgrade ...">
+            <input id="entry-desc" name="entryDesc" type="text" required placeholder="Ölwechsel, Bremsen ...">
           </div>
           <div class="form-row">
             <label for="entry-cost">Kosten (€)</label>
@@ -137,22 +143,11 @@
       </section>
 
       <section class="main-section">
-        <div class="section-header">
-          <h2>Kennzahlen (ausgewähltes Fahrzeug)</h2>
-        </div>
+        <div class="section-header"><h2>Kennzahlen</h2></div>
         <div class="stats-grid">
-          <article class="stat-card">
-            <h3>Anschaffungspreis</h3>
-            <p id="stat-selected-price" class="stat-value">— €</p>
-          </article>
-          <article class="stat-card">
-            <h3>Kilometerstand</h3>
-            <p id="stat-selected-odo" class="stat-value">— km</p>
-          </article>
-          <article class="stat-card">
-            <h3>Summe Eintrags-Kosten</h3>
-            <p id="stat-selected-costs" class="stat-value">— €</p>
-          </article>
+          <article class="stat-card"><h3>Anschaffungspreis</h3><p id="stat-selected-price" class="stat-value">— €</p></article>
+          <article class="stat-card"><h3>Kilometerstand</h3><p id="stat-selected-odo" class="stat-value">— km</p></article>
+          <article class="stat-card"><h3>Eintrags-Kosten gesamt</h3><p id="stat-selected-costs" class="stat-value">— €</p></article>
         </div>
       </section>
     </main>

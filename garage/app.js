@@ -1,38 +1,28 @@
 // app.js
 
-const STORAGE_KEY_VEHICLES = 'garageVehicles';
+const STORAGE_KEY_VEHICLES  = 'garageVehicles';
 const STORAGE_KEY_LOGGED_IN = 'garageLoggedIn';
-const STORAGE_KEY_THEME = 'garageTheme';
+const STORAGE_KEY_THEME     = 'garageTheme';
 
 const defaultVehicles = [
   {
     id: 'v1',
-    make: 'BMW',
-    model: '330d Touring',
-    year: 2013,
-    plate: 'S-KF 330',
-    odometer: 210000,
-    purchasePrice: 15000,
+    make: 'BMW', model: '330d Touring', year: 2013,
+    plate: 'S-KF 330', odometer: 210000, purchasePrice: 15000,
     nextInspectionDate: '2027-03-15',
-    nextServiceDate: '2026-11-01',
-    lastFuelingSummary: 'Zuletzt getankt vor 3 Tagen',
+    nextServiceDate:    '2026-11-01',
     todos: ['Bremsflüssigkeit wechseln', 'Software-Update Motorsteuerung'],
     history: [
       { type: 'maintenance', date: '2026-04-10', odo: 208000, description: 'Ölwechsel + Filter', cost: 180 },
-      { type: 'upgrade', date: '2025-12-05', odo: 205000, description: 'Winterreifen montiert', cost: 60 },
+      { type: 'upgrade',     date: '2025-12-05', odo: 205000, description: 'Winterreifen montiert', cost: 60 },
     ],
   },
   {
     id: 'v2',
-    make: 'Mercedes',
-    model: 'C 200',
-    year: 2016,
-    plate: 'S-MB 200',
-    odometer: 145000,
-    purchasePrice: 18500,
+    make: 'Mercedes', model: 'C 200', year: 2016,
+    plate: 'S-MB 200', odometer: 145000, purchasePrice: 18500,
     nextInspectionDate: '2026-09-30',
-    nextServiceDate: '2026-08-20',
-    lastFuelingSummary: 'Zuletzt getankt vor 10 Tagen',
+    nextServiceDate:    '2026-08-20',
     todos: ['Lackpolitur komplett', 'Innenraumfilter tauschen'],
     history: [
       { type: 'maintenance', date: '2026-03-01', odo: 143500, description: 'Große Inspektion', cost: 650 },
@@ -42,154 +32,133 @@ const defaultVehicles = [
 
 function loadVehicles() {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY_VEHICLES);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    const raw = localStorage.getItem(STORAGE_KEY_VEHICLES);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length) return parsed;
     }
   } catch (_) {}
   return JSON.parse(JSON.stringify(defaultVehicles));
 }
 
 function saveVehicles() {
-  try {
-    localStorage.setItem(STORAGE_KEY_VEHICLES, JSON.stringify(vehicles));
-  } catch (_) {}
+  try { localStorage.setItem(STORAGE_KEY_VEHICLES, JSON.stringify(vehicles)); } catch (_) {}
 }
 
 let vehicles = loadVehicles();
 let selectedVehicleId = vehicles[0]?.id ?? null;
 
-/* ===== Theme-Toggle ===== */
+/* ===== THEME ===== */
 function initTheme() {
-  const stored = localStorage.getItem(STORAGE_KEY_THEME);
-  const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-  const theme = stored ?? (prefersDark ? 'dark' : 'light');
-  applyTheme(theme);
-
-  const btnLanding = document.getElementById('theme-toggle-landing');
-  const btnApp = document.getElementById('theme-toggle-app');
+  const stored     = localStorage.getItem(STORAGE_KEY_THEME);
+  const preferDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+  applyTheme(stored ?? (preferDark ? 'dark' : 'light'));
 
   const updateLabels = () => {
-    const current = document.body.dataset.theme || 'light';
-    const label = current === 'dark' ? 'Hell' : 'Dunkel';
-    if (btnLanding) btnLanding.textContent = label;
-    if (btnApp) btnApp.textContent = label;
+    const isDark = document.body.dataset.theme === 'dark';
+    document.querySelectorAll('.theme-btn').forEach(b => b.textContent = isDark ? 'Hell' : 'Dunkel');
   };
 
   const toggle = () => {
-    const current = document.body.dataset.theme || 'light';
-    const next = current === 'dark' ? 'light' : 'dark';
+    const next = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
     applyTheme(next);
     localStorage.setItem(STORAGE_KEY_THEME, next);
     updateLabels();
   };
 
-  if (btnLanding) btnLanding.addEventListener('click', toggle);
-  if (btnApp) btnApp.addEventListener('click', toggle);
-
-  // Label sofort korrekt setzen – kein Flackern
+  document.querySelectorAll('.theme-btn').forEach(b => b.addEventListener('click', toggle));
   updateLabels();
 }
 
-function applyTheme(theme) {
-  document.body.dataset.theme = theme;
-}
+function applyTheme(t) { document.body.dataset.theme = t; }
 
-/* ===== Rolltor: Touch/Click-Toggle für Mobile ===== */
-function initRolldoorToggle() {
-  const garageContainer = document.getElementById('garage-container');
-  if (!garageContainer) return;
-
-  // Touch-Geräte: Tap öffnet/schließt Tor
-  garageContainer.addEventListener('click', (e) => {
-    // Nur wenn Klick direkt aufs Tor oder Container (nicht aufs Login-Formular)
-    const loginCard = garageContainer.querySelector('.login-card');
-    if (loginCard && loginCard.contains(e.target)) return;
-
-    garageContainer.classList.toggle('rolldoor-open');
+/* ===== TOR TOGGLE (Mobile Tap) ===== */
+function initDoorToggle() {
+  const wrap = document.getElementById('garage-wrap');
+  if (!wrap) return;
+  wrap.addEventListener('click', (e) => {
+    // Klick innerhalb Login-Panel ignorieren
+    if (e.target.closest('.login-panel')) return;
+    wrap.classList.toggle('door-open');
   });
 }
 
-/* ===== Auth & Screens ===== */
-function initAuthAndScreens() {
-  const landing = document.getElementById('landing');
-  const appShell = document.getElementById('app-shell');
+/* ===== AUTH ===== */
+function initAuth() {
+  const landing   = document.getElementById('landing');
+  const appShell  = document.getElementById('app-shell');
   const loginForm = document.getElementById('login-form');
-  const logoutButton = document.getElementById('logout-button');
-  const garageContainer = document.getElementById('garage-container');
+  const logoutBtn = document.getElementById('logout-button');
+  const wrap      = document.getElementById('garage-wrap');
+  const car       = document.getElementById('login-car');
 
-  const loggedIn = localStorage.getItem(STORAGE_KEY_LOGGED_IN) === 'true';
-
-  if (loggedIn) {
-    if (landing) landing.style.display = 'none';
+  const showApp = () => {
+    if (landing)  landing.style.display  = 'none';
     if (appShell) appShell.classList.remove('app-hidden');
-  } else {
-    if (landing) landing.style.display = 'flex';
+  };
+
+  const showLanding = () => {
     if (appShell) appShell.classList.add('app-hidden');
+    if (landing)  landing.style.display  = 'flex';
+    if (wrap) {
+      wrap.classList.remove('door-open', 'car-driving');
+    }
+  };
+
+  // Bereits eingeloggt?
+  if (localStorage.getItem(STORAGE_KEY_LOGGED_IN) === 'true') {
+    showApp();
+    renderAll();
+    return;
   }
 
   if (loginForm) {
     const errorEl = document.getElementById('login-error');
-
-    loginForm.addEventListener('submit', (event) => {
-      event.preventDefault();
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
       const email = document.getElementById('login-email').value.trim();
-      const password = document.getElementById('login-password').value.trim();
+      const pw    = document.getElementById('login-password').value.trim();
 
-      if (!email || !password) {
-        if (errorEl) {
-          errorEl.textContent = 'Bitte E-Mail und Passwort eingeben.';
-          errorEl.style.display = 'block';
-        }
+      if (!email || !pw) {
+        if (errorEl) { errorEl.textContent = 'Bitte E-Mail und Passwort eingeben.'; errorEl.style.display = 'block'; }
         return;
       }
-
       if (errorEl) errorEl.style.display = 'none';
 
       localStorage.setItem(STORAGE_KEY_LOGGED_IN, 'true');
 
-      if (garageContainer) {
-        garageContainer.classList.add('garage-logged-in');
-      }
+      // Tor öffnen + Auto einfahren
+      if (wrap) wrap.classList.add('door-open', 'car-driving');
 
       setTimeout(() => {
-        if (landing) landing.style.display = 'none';
-        if (appShell) appShell.classList.remove('app-hidden');
-        renderVehicles();
-        renderVehicleDetail();
-        renderSelectedStats();
-      }, 1700);
+        showApp();
+        renderAll();
+      }, 1600);
     });
   }
 
-  if (logoutButton) {
-    logoutButton.addEventListener('click', () => {
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
       localStorage.removeItem(STORAGE_KEY_LOGGED_IN);
-      if (appShell) appShell.classList.add('app-hidden');
-      if (landing) landing.style.display = 'flex';
-      if (garageContainer) {
-        garageContainer.classList.remove('garage-logged-in');
-        garageContainer.classList.remove('rolldoor-open');
-      }
+      showLanding();
     });
   }
 }
 
-/* ===== Garage-Rendering ===== */
+/* ===== RENDER ===== */
+function renderAll() {
+  renderVehicles();
+  renderVehicleDetail();
+  renderSelectedStats();
+}
+
 function renderVehicles() {
   const grid = document.getElementById('vehicle-grid');
   if (!grid) return;
-
   grid.innerHTML = '';
-
-  vehicles.forEach((v) => {
+  vehicles.forEach(v => {
     const card = document.createElement('article');
-    card.className = 'vehicle-card';
-    if (v.id === selectedVehicleId) {
-      card.classList.add('vehicle-card-selected');
-    }
-
+    card.className = 'vehicle-card' + (v.id === selectedVehicleId ? ' vehicle-card-selected' : '');
     card.innerHTML = `
       <div class="vehicle-card-header">
         <div class="vehicle-thumb"></div>
@@ -201,179 +170,107 @@ function renderVehicles() {
       <div class="badge-row">
         <span class="badge">TÜV: ${v.nextInspectionDate || '—'}</span>
         <span class="badge">Service: ${v.nextServiceDate || '—'}</span>
-        <span class="badge">KM: ${formatKm(v.odometer)}</span>
-      </div>
-    `;
-
+        <span class="badge">${formatKm(v.odometer)}</span>
+      </div>`;
     card.addEventListener('click', () => {
       selectedVehicleId = v.id;
-      renderVehicles();
-      renderVehicleDetail();
-      renderSelectedStats();
+      renderAll();
     });
-
     grid.appendChild(card);
   });
 }
 
 function renderVehicleDetail() {
-  const container = document.getElementById('vehicle-detail');
-  if (!container) return;
+  const el = document.getElementById('vehicle-detail');
+  if (!el) return;
+  const v = vehicles.find(x => x.id === selectedVehicleId);
+  if (!v) { el.innerHTML = '<p>Wähle oben ein Fahrzeug aus.</p>'; return; }
 
-  const vehicle = vehicles.find((v) => v.id === selectedVehicleId);
-  if (!vehicle) {
-    container.innerHTML = '<p>Wähle oben ein Fahrzeug aus.</p>';
-    return;
-  }
+  const totalCost = (v.history || []).reduce((s, e) => s + (e.cost || 0), 0);
 
-  const priceText = vehicle.purchasePrice != null
-    ? `${vehicle.purchasePrice.toLocaleString('de-DE')} €`
-    : '—';
-
-  const odoText = formatKm(vehicle.odometer);
-
-  const totalHistoryCost = vehicle.history?.length
-    ? vehicle.history.reduce((sum, e) => sum + (e.cost || 0), 0)
-    : 0;
-
-  container.innerHTML = `
+  el.innerHTML = `
     <div class="detail-grid">
       <div>
         <div class="detail-card-title">Basisdaten</div>
         <ul class="detail-list">
-          <li>${vehicle.make} ${vehicle.model} (${vehicle.year})</li>
-          <li>Kennzeichen: ${vehicle.plate}</li>
-          <li>Kilometerstand: ${odoText}</li>
-          <li>Anschaffungspreis: ${priceText}</li>
-          <li>Summe Eintrags-Kosten: ${totalHistoryCost.toLocaleString('de-DE')} €</li>
+          <li>${v.make} ${v.model} (${v.year})</li>
+          <li>Kennzeichen: ${v.plate}</li>
+          <li>Kilometerstand: ${formatKm(v.odometer)}</li>
+          <li>Anschaffung: ${v.purchasePrice?.toLocaleString('de-DE') ?? '—'} €</li>
+          <li>Kosten gesamt: ${totalCost.toLocaleString('de-DE')} €</li>
         </ul>
       </div>
       <div>
-        <div class="detail-card-title">Wünsche / Upgrades</div>
-        <ul class="detail-list">
-          ${
-            vehicle.todos?.length
-              ? vehicle.todos.map((t) => `<li>• ${t}</li>`).join('')
-              : '<li>Keine offenen Punkte.</li>'
-          }
-        </ul>
+        <div class="detail-card-title">Wunschliste</div>
+        <ul class="detail-list">${(v.todos || []).map(t => `<li>• ${t}</li>`).join('') || '<li>Leer</li>'}</ul>
       </div>
       <div>
         <div class="detail-card-title">Historie</div>
         <ul class="detail-list">
-          ${
-            vehicle.history?.length
-              ? vehicle.history
-                  .map(
-                    (e) =>
-                      `<li>${e.date}: [${labelForType(e.type)}] ${e.description}` +
-                      `${e.odo != null ? ' • ' + formatKm(e.odo) : ''}` +
-                      `${e.cost != null ? ' • ' + e.cost.toLocaleString('de-DE') + ' €' : ''}</li>`,
-                  )
-                  .join('')
-              : '<li>Noch keine Einträge.</li>'
-          }
+          ${(v.history || []).map(e =>
+            `<li>${e.date} – [${labelType(e.type)}] ${e.description}${e.odo != null ? ' • ' + formatKm(e.odo) : ''}${e.cost != null ? ' • ' + e.cost.toLocaleString('de-DE') + ' €' : ''}</li>`
+          ).join('') || '<li>Keine Einträge</li>'}
         </ul>
       </div>
-    </div>
-  `;
+    </div>`;
 }
 
-function formatKm(value) {
-  return value != null ? `${value.toLocaleString('de-DE')} km` : '— km';
+function renderSelectedStats() {
+  const v = vehicles.find(x => x.id === selectedVehicleId);
+  const totalCost = v ? (v.history || []).reduce((s, e) => s + (e.cost || 0), 0) : null;
+  setText('stat-selected-price', v?.purchasePrice != null ? v.purchasePrice.toLocaleString('de-DE') + ' €' : '— €');
+  setText('stat-selected-odo',   v ? formatKm(v.odometer) : '— km');
+  setText('stat-selected-costs', totalCost != null ? totalCost.toLocaleString('de-DE') + ' €' : '— €');
 }
 
-function labelForType(type) {
-  switch (type) {
-    case 'maintenance': return 'Wartung';
-    case 'repair': return 'Reparatur';
-    case 'upgrade': return 'Upgrade';
-    default: return 'Eintrag';
-  }
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
 }
 
-/* ===== Eintrags-Formular ===== */
+function formatKm(v) {
+  return v != null ? v.toLocaleString('de-DE') + ' km' : '— km';
+}
+
+function labelType(t) {
+  return { maintenance: 'Wartung', repair: 'Reparatur', upgrade: 'Upgrade' }[t] || 'Eintrag';
+}
+
+/* ===== ENTRY FORM ===== */
 function setupEntryForm() {
   const form = document.getElementById('entry-form');
   if (!form) return;
-
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-
-    const vehicle = vehicles.find((v) => v.id === selectedVehicleId);
-    if (!vehicle) return;
-
-    const type = document.getElementById('entry-type').value;
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const v = vehicles.find(x => x.id === selectedVehicleId);
+    if (!v) return;
     const date = document.getElementById('entry-date').value;
-    const odoRaw = document.getElementById('entry-odo').value;
     const desc = document.getElementById('entry-desc').value.trim();
-    const costRaw = document.getElementById('entry-cost').value;
-
     if (!date || !desc) return;
-
     const entry = {
-      type,
+      type:        document.getElementById('entry-type').value,
       date,
-      odo: odoRaw ? Number(odoRaw) : null,
+      odo:         +document.getElementById('entry-odo').value  || null,
       description: desc,
-      cost: costRaw ? Number(costRaw) : null,
+      cost:        +document.getElementById('entry-cost').value || null,
     };
-
-    vehicle.history = vehicle.history || [];
-    vehicle.history.push(entry);
-
-    if (entry.odo && (!vehicle.odometer || entry.odo > vehicle.odometer)) {
-      vehicle.odometer = entry.odo;
-    }
-
-    // Persistenz: nach jedem neuen Eintrag speichern
+    v.history = v.history || [];
+    v.history.push(entry);
+    if (entry.odo && entry.odo > (v.odometer || 0)) v.odometer = entry.odo;
     saveVehicles();
-
     form.reset();
-    renderVehicleDetail();
-    renderSelectedStats();
+    renderAll();
   });
 }
 
-/* ===== Stats ===== */
-function renderSelectedStats() {
-  const priceEl = document.getElementById('stat-selected-price');
-  const odoEl = document.getElementById('stat-selected-odo');
-  const costsEl = document.getElementById('stat-selected-costs');
-  if (!priceEl || !odoEl || !costsEl) return;
-
-  const vehicle = vehicles.find((v) => v.id === selectedVehicleId);
-  if (!vehicle) {
-    priceEl.textContent = '— €';
-    odoEl.textContent = '— km';
-    costsEl.textContent = '— €';
-    return;
-  }
-
-  priceEl.textContent = vehicle.purchasePrice != null
-    ? `${vehicle.purchasePrice.toLocaleString('de-DE')} €`
-    : '— €';
-
-  odoEl.textContent = formatKm(vehicle.odometer);
-
-  const totalHistoryCost = vehicle.history?.length
-    ? vehicle.history.reduce((sum, e) => sum + (e.cost || 0), 0)
-    : 0;
-
-  costsEl.textContent = `${totalHistoryCost.toLocaleString('de-DE')} €`;
-}
-
-/* ===== Init ===== */
+/* ===== INIT ===== */
 document.addEventListener('DOMContentLoaded', () => {
-  initTheme();
-  initRolldoorToggle();
-  initAuthAndScreens();
-  setupEntryForm();
+  // Theme-Buttons mit einheitlicher Klasse versehen
+  document.getElementById('theme-toggle-landing')?.classList.add('theme-btn');
+  document.getElementById('theme-toggle-app')?.classList.add('theme-btn');
 
-  // App-Inhalte nur rendern wenn eingeloggt
-  if (localStorage.getItem(STORAGE_KEY_LOGGED_IN) === 'true') {
-    renderVehicles();
-    renderVehicleDetail();
-    renderSelectedStats();
-  }
+  initTheme();
+  initDoorToggle();
+  initAuth();
+  setupEntryForm();
 });
