@@ -33,7 +33,7 @@ body[data-theme="dark"] {
   --border: #1f2937;
 }
 
-/* Fallback nach Systempräferenz[web:54] */
+/* Fallback nach Systempräferenz */
 @media (prefers-color-scheme: dark) {
   body:not([data-theme]) {
     --bg: #020617;
@@ -95,47 +95,49 @@ body {
 }
 
 .landing-inner {
-  max-width: 900px;
+  max-width: 1000px;
   width: 100%;
-  padding: 1.5rem;
+  padding: 2rem 1.5rem;
 }
 
+/* Header oben */
 .landing-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .brand-logo {
-  height: 40px;
+  height: 44px;
 }
 
 .landing-theme-button {
   background: transparent;
   border-radius: 999px;
   border: 1px solid var(--border);
-  color: var(--text);
-  padding: 0.35rem 0.85rem;
-  font-size: 0.8rem;
+  color: var(--text-on-dark);
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
   cursor: pointer;
 }
 
+/* Garage-Container zentriert */
 .garage-container {
   position: relative;
   border-radius: 24px;
   background: linear-gradient(to bottom, var(--bg-elevated-soft) 40%, var(--bg-sidebar) 100%);
-  padding: 1.25rem;
+  padding: 1.75rem;
   overflow: hidden;
-  box-shadow: 0 24px 50px rgba(15, 23, 42, 0.55);
+  box-shadow: 0 32px 70px rgba(15, 23, 42, 0.8);
 }
 
 /* Garage-Szene */
 .garage-scene {
   position: relative;
-  height: 260px;
+  height: 280px;
   border-radius: 18px;
-  background: linear-gradient(to bottom, #020617 35%, #0b1120 80%);
+  background: linear-gradient(to bottom, #020617 30%, #0b1120 80%);
   overflow: hidden;
 }
 
@@ -143,19 +145,19 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 24px;
-  height: 36px;
+  bottom: 26px;
+  height: 40px;
   background: linear-gradient(to top, #020617, #0b1120);
 }
 
 /* Rahmen + Glow innen */
 .garage-door-frame {
   position: absolute;
-  left: 60px;
-  right: 60px;
-  bottom: 26px;
-  top: 46px;
-  border-radius: 12px;
+  left: 80px;
+  right: 80px;
+  bottom: 30px;
+  top: 54px;
+  border-radius: 16px;
   border: 2px solid #1f2937;
   background: #020617;
   overflow: hidden;
@@ -163,19 +165,19 @@ body {
 
 .garage-inner-glow {
   position: absolute;
-  inset: 8px;
-  border-radius: 10px;
-  background: radial-gradient(circle at top, rgba(251, 146, 60, 0.2), rgba(15, 23, 42, 0.9));
+  inset: 10px;
+  border-radius: 12px;
+  background: radial-gradient(circle at top, rgba(251, 146, 60, 0.18), rgba(15, 23, 42, 0.95));
 }
 
 /* Rolltor-Lamellen */
 .garage-rolldoor {
   position: absolute;
-  inset: 12px;
-  border-radius: 10px;
+  inset: 16px;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
   transition: transform 0.9s ease-out;
 }
 
@@ -184,21 +186,21 @@ body {
   flex-shrink: 0;
   border-radius: 999px;
   background: linear-gradient(to right, #020617, #0b1120);
-  border: 1px solid rgba(148, 163, 184, 0.4);
+  border: 1px solid rgba(148, 163, 184, 0.45);
 }
 
 .rolldoor-slat {
-  height: 16px;
+  height: 18px;
 }
 
 .rolldoor-slat-thin {
-  height: 8px;
+  height: 10px;
 }
 
-/* Login-Panel in der Garage */
+/* Login-Panel in der Garage – zentriert */
 .login-panel {
   position: absolute;
-  inset: 18px;
+  inset: 22px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -207,41 +209,43 @@ body {
 
 .login-card {
   position: relative;
-  max-width: 360px;
+  max-width: 420px;
   width: 100%;
-  padding: 1.2rem 1.3rem 1.2rem 1.3rem;
+  padding: 1.4rem 1.6rem 1.35rem 1.6rem;
   pointer-events: auto;
   color: var(--text-on-dark);
 }
 
+/* Typografie im Login-Fenster */
 .login-card h1 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.7rem;
+  margin: 0 0 0.55rem 0;
+  font-size: 1.8rem;
   letter-spacing: 0.02em;
 }
 
 .login-subtitle {
-  margin: 0 0 1rem 0;
-  font-size: 0.92rem;
-  line-height: 1.4;
+  margin: 0 0 1.05rem 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
   color: #cbd5f5;
 }
 
+/* Formular sauber strukturiert */
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
+  gap: 0.8rem;
 }
 
 .login-small {
-  margin-top: 0.9rem;
-  font-size: 0.76rem;
+  margin-top: 1rem;
+  font-size: 0.78rem;
   color: #9ca3af;
 }
 
-/* Hover: Rolltor hoch, Login sichtbar */
+/* Hover: Rolltor hoch, Login bleibt */
 .garage-container:hover .garage-rolldoor {
-  transform: translateY(-130px);
+  transform: translateY(-140px);
 }
 
 /* ===== App-Shell ===== */
@@ -362,9 +366,10 @@ body {
   color: var(--text);
 }
 
+/* Buttons */
 .primary-button,
 .secondary-button {
-  padding: 0.45rem 0.9rem;
+  padding: 0.5rem 1rem;
   border-radius: 999px;
   border: none;
   font-weight: 600;
@@ -511,7 +516,7 @@ body {
 
 /* Auto fährt nach Login rein */
 .garage-container.garage-logged-in .garage-rolldoor {
-  transform: translateY(-130px);
+  transform: translateY(-140px);
 }
 
 .garage-container.garage-logged-in .car-silhouette {
@@ -520,7 +525,7 @@ body {
 
 .car-silhouette {
   position: absolute;
-  bottom: 38px;
+  bottom: 40px;
   left: -260px;
   width: 260px;
   height: 80px;
