@@ -1,45 +1,16 @@
 <!doctype html>
-<html lang="de">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#07111f">
-  <link rel="icon" type="image/svg+xml" sizes="any" href="./favicon.svg">
-  <title>Nachtfahrt – Letzte Lieferung</title>
-  <link rel="stylesheet" href="./style.css">
-  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js"}}</script>
-</head>
-<body>
-  <main id="app">
-    <div id="viewport" aria-label="3D-Nachtstadt"></div>
-    <div class="vignette" aria-hidden="true"></div>
-    <header class="hud" id="hud" hidden>
-      <div class="brand"><span class="dot"></span> NACHTFAHRT <small>01 / PROTOTYP</small></div>
-      <div class="hud-pill"><span class="label">STATUS</span><span id="status">Freie Fahrt</span></div>
-    </header>
-    <div class="bottom-hud" id="bottomHud" hidden>
-      <div class="speed"><span id="speed">00</span><small>km/h*</small></div>
-      <div class="hint">WASD / PFEILTASTEN · FAHREN &nbsp; | &nbsp; C · KAMERA &nbsp; | &nbsp; ESC · PAUSE &nbsp; | &nbsp; R · RESET</div>
-      <button class="icon-btn" id="pauseButton" type="button" aria-label="Spiel pausieren">Ⅱ</button>
-    </div>
-    <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <section class="overlay" id="menu" aria-label="Startmenü">
-      <div class="panel">
-        <p class="eyebrow">DIE STADT SCHLÄFT NIE</p>
-        <h1>NACHT<span>FAHRT</span></h1>
-        <p class="subtitle">LETZTE LIEFERUNG</p>
-        <div class="rule"></div>
-        <p class="description">Eine Stadt. Eine Nacht. Ein Auto. Fahr los und lerne die Straßen kennen – die erste Lieferung folgt im nächsten Update.</p>
-        <button class="primary" id="startButton" type="button">NACHTSCHICHT STARTEN <span>→</span></button>
-        <p class="fine">WASD / Pfeiltasten: Fahren · C: Fünf Kameras · Esc: Pause · R: Zur Garage</p>
-        <p class="fine dim">Desktop & Tastatur empfohlen · Three.js wird über das Internet geladen.</p>
-      </div>
-    </section>
-    <section class="overlay hidden" id="pause" aria-label="Pause" aria-hidden="true">
-      <div class="panel compact"><p class="eyebrow">MOTOR IM LEERLAUF</p><h2>PAUSE</h2><button class="primary" id="resumeButton" type="button">WEITERFAHREN <span>→</span></button><button class="secondary" id="menuButton" type="button">ZUM HAUPTMENÜ</button></div>
-    </section>
-    <div class="error hidden" id="error" role="alert"></div>
-  </main>
-  <script type="module" src="./game.js?v=20260928-stadtviertel-ladenfronten"></script>
-</body>
-</html>
+<html lang="de"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#07111f"><link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<title>Nachtfahrt Racing</title><link rel="stylesheet" href="./style.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js"}}</script>
+</head><body><main id="app">
+<div id="viewport" aria-label="3D-Rennstrecke"></div><div class="vignette" aria-hidden="true"></div>
+<header class="hud" id="hud" hidden><div class="brand"><span class="dot"></span> NACHTFAHRT RACING <small>01 / RUNDKURS</small></div><div class="hud-pill"><span class="label">RENNEN</span><span id="status">Runde 1/3</span></div></header>
+<div class="bottom-hud" id="bottomHud" hidden><div class="speed"><span id="speed">00</span><small>km/h*</small></div><div class="hint">WASD / PFEILE · FAHREN &nbsp; | &nbsp; C · KAMERA &nbsp; | &nbsp; ESC · PAUSE &nbsp; | &nbsp; R · RESET (+5 S)</div><button class="icon-btn" id="pauseButton" type="button" aria-label="Rennen pausieren">Ⅱ</button></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<section class="overlay" id="menu" aria-label="Startmenü"><div class="panel"><p class="eyebrow">DIE NACHT GEHÖRT DIR</p><h1>NACHT<span>RENNEN</span></h1><p class="subtitle">DREI RUNDEN · EIN KURS</p><div class="rule"></div><p class="description">Ein geschlossener Nachtkurs mit Kurven, Randsteinen und Checkpoints. Fahre drei gültige Runden und schlage deine Bestzeit.</p><button class="primary" id="startButton" type="button">RENNEN STARTEN <span>→</span></button><p class="fine">WASD / Pfeiltasten: Fahren · C: Kamera · Esc: Pause · R: Reset (+5 Sekunden)</p><p class="fine dim">Desktop &amp; Tastatur empfohlen · Three.js benötigt Internet.</p></div></section>
+<section class="overlay hidden" id="pause" aria-label="Pause" aria-hidden="true"><div class="panel compact"><p class="eyebrow">MOTOR IM LEERLAUF</p><h2>PAUSE</h2><button class="primary" id="resumeButton" type="button">WEITERFAHREN <span>→</span></button><button class="secondary" id="menuButton" type="button">ZUM HAUPTMENÜ</button></div></section>
+<section class="overlay hidden" id="finish" aria-label="Rennergebnis"><div class="panel compact"><p class="eyebrow">DREI RUNDEN GESCHAFFT</p><h2 id="finishTitle">ZIEL ERREICHT</h2><p class="description">Deine Zeit: <strong id="finishTime">--:--.-</strong><br>Bestzeit: <strong id="bestTime">--:--.-</strong></p><button class="primary" id="againButton" type="button">NOCHMAL FAHREN <span>→</span></button><button class="secondary" id="finishMenuButton" type="button">ZUM HAUPTMENÜ</button></div></section>
+<div class="error hidden" id="error" role="alert"></div>
+</main><script type="module" src="./game.js?v=20260928-racing-v1"></script></body></html>

@@ -1,16 +1,15 @@
-# Nachtfahrt – Basepaket 1
+# Nachtfahrt Racing – Stand 0.1
 
-Das ist **eine fahrbare 3D-Grundversion**, noch **kein fertiges Liefer-Spiel**. Enthalten: Nachtstadt, Garagen-Start, Auto mit Arcade-Steuerung, Gebäude, Straßen, Beleuchtung, Regen, Start-/Pausemenü und Fahrbahnbegrenzung. Die Liefermissionen, Minikarte und Abrechnung folgen in späteren kompletten Dateipaketen.
+Ersetzt den bisherigen Stadt-/Liefer-Prototyp unter `/night` durch einen geschlossenen 3D-Rundkurs. Fahren, Bremsen, Lenken, Regen, fünf Kameras und der visuelle Fahrzeugstil bleiben erhalten. Neu: Rennstrecke, drei Checkpoints pro Runde, drei Runden, Rennzeit und lokal gespeicherte Bestzeit. Noch nicht enthalten: Gegner, Motorensound, Schadenssystem und Fahrzeugauswahl.
 
-## Upload ohne Terminal
+## Upload
 
-1. Im Repository `pipboy3003/pipboy3003.github.io` auf Branch `main` den Ordner `night` anlegen.
-2. Die drei Dateien `index.html`, `style.css` und `game.js` sowie diese `README.md` **direkt in `night/`** hochladen. Keine zusätzlichen Ordner zwischen `night` und `index.html`.
-3. Commit erstellen. Wenn GitHub Pages von `main` / Root veröffentlicht, die Adresse `https://pipboy3003.github.io/night/` aufrufen. Wenn Pages anders eingestellt ist, unter Settings > Pages den Veröffentlichungszweig prüfen.
-4. Die erste Anzeige ist das Startmenü. „Nachtschicht starten“ anklicken und mit WASD/Pfeiltasten fahren. Esc pausiert, R setzt zur Garage zurück.
+Die vollständigen Dateien `index.html`, `game.js` und `README.md` aus diesem Paket im bestehenden `/night`-Ordner ersetzen. `style.css` und `favicon.svg` bleiben erhalten. Kein npm oder Build; Three.js lädt online über CDN. Änderungen selbst committen. Alte Stadtdateien müssen nicht gelöscht werden; sie sind im Git-Verlauf erhalten.
 
-Three.js wird aus einem gepinnten jsDelivr-CDN geladen: für den **ersten** Stand ist daher Internetzugang nötig. Kein npm, kein Build und kein Firebase erforderlich. Auf GitHub Pages läuft die Seite als statische Datei. Für einen späteren Stand können wir Three.js lokal über Vite bündeln und eine passende Deployment-Pipeline bauen.
+## Steuerung
 
-## Noch offen
+W/Pfeil hoch Gas, S/Pfeil runter Bremsen/Rückwärts, A/D oder Pfeile Lenken, C Kamerawahl, Esc Pause, R Reset zur Startlinie mit fünf Sekunden Zeitstrafe. Starte über das Hauptmenü. Fahre den Rundkurs in der durch die Checkpoints angegebenen Reihenfolge; nach drei gültigen Runden erscheint die Ergebnisanzeige.
 
-Lieferungen, Zeitlimit, Auto-Schaden, Minikarte, Audio, Speichern und Auswertung sind noch **nicht** enthalten. Geschwindigkeitsanzeige `km/h*` ist ein grober Arcade-Anzeigewert, keine Messung. Keine Live-Browserprüfung in dieser Erstellungsumgebung; nach Upload bitte Menü, Stadtansicht, Steuerung, Pause und Browserkonsole testen.
+## Testcheck
+
+Startmenü, Start und Pause testen. Einmal gegen die Fahrtrichtung fahren: keine Rundenzählung. Checkpoints 1–3 in Fahrtrichtung passieren, danach Start/Ziel überqueren: Runde 2/3. Nach der dritten Runde Ergebnis und Bestzeit prüfen. R sollte zur Startlinie zurücksetzen und fünf Sekunden Zeitstrafe vergeben. Alle fünf Kameras beim Beschleunigen testen. Falls die Runde nicht zählt, das Checkpoint-Feedback prüfen und melden, an welcher Stelle es ausbleibt. Browser-Laufzeittest war beim Erstellen des Pakets nicht möglich.
