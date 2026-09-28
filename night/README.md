@@ -1,7 +1,9 @@
-# Nachtfahrt – erste Lieferung
+# Nachtfahrt – Auftragsbrief und Missionspfeil
 
-Stadt und Renn-Nacht bleiben getrennte Welten. Das Spiel startet nach dem Intro automatisch in der Nachtschicht. Im Nordwesten, auf der Straße vor dem Nachtkiosk, liegt eine orange Lieferzone. Fahre hinein und halte 1,2 Sekunden nahezu still: die Lieferung wird genau einmal abgeschlossen. Das HUD zeigt Entfernung oder Haltefortschritt. Weitere Lieferungen und Bezahlung folgen erst nach diesem Test.
+Dieses Update ändert nur die erste Lieferung. Vor Annahme ist der Nachtkiosk-Marker aus. Starte nach dem Loading-Screen mit Enter. Bleibe bei der Garage stehen und bestätige dort mit E: Erst dann wird die Mission aktiv und ein Brief von Mara erscheint. Leyla am Nachtkiosk bekommt Ersatzlampen und Sicherungen. Schließe den Brief mit Enter oder E.
 
-Upload: `mission.js` neu anlegen; `game.js`, `index.html`, `README.md` komplett ersetzen. `city-world.js`, `style.css`, `favicon.svg` unverändert lassen. Eigener Commit auf main.
+Während der Mission steht oben mittig ein orangefarbener Pfeil. Er zeigt **relativ zur Fahrtrichtung des Autos** auf das Missionsziel und nennt die ungefähre Distanz. Fahre zur orangefarbenen Zone auf der Straße vor dem Nachtkiosk und halte etwa 1,2 Sekunden an. Vor Annahme darf Durchfahren nichts auslösen. Ein abgeschlossener Auftrag bleibt beim Wechsel zur Rennstrecke innerhalb derselben Sitzung erledigt; ein Browser-Neuladen setzt ihn zurück.
 
-Test: Stadtstart, Marker auf der Nordweststraße, Hindurchfahren zählt nicht, Stopp zählt genau einmal, Wechsel mit E ins Rennen und R zurück – erledigte Lieferung bleibt in der laufenden Sitzung erledigt. Kein persistenter Spielstand über Browser-Neuladen. Im Browser noch nicht automatisch getestet.
+Upload nach `/night`: `mission.js`, `game.js`, `index.html`, `README.md` vollständig ersetzen. `city-world.js`, `style.css`, `favicon.svg` nicht ändern. Danach auf GitHub selbst committen.
+
+Tests: Nach Enter an Garage E drücken. Brief prüfen, schließen, Pfeil bei Drehung des Autos überprüfen, Kiosk anfahren, durchfahren zählt nicht, anhalten zählt genau einmal. Danach Rennen betreten und zurückkehren; Lieferung bleibt erledigt. Im Browser nicht automatisch getestet.

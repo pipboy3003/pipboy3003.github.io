@@ -1,11 +1,11 @@
-/* Nachtfahrt – erste Kiosk-Lieferung, 2026-09-28. Vollständige night/game.js */
+/* Nachtfahrt – Missionsbrief und mittiger Richtungspfeil. Vollständige night/game.js */
 import * as THREE from 'three';
 import {createCity} from './city-world.js';
 import {createFirstDelivery} from './mission.js';
 const $=id=>document.getElementById(id),viewport=$('viewport'),keys=new Set();
 let renderer,scene,camera,car,body,moon,rain,raindrops=[],cityData=null,kiosk=null;
-let world='city',playing=false,paused=false,velocity=0,heading=0;
-let pos=new THREE.Vector3(),last=performance.now(),zone=false,kioskDone=false;
+let world='city',playing=false,paused=false,briefOpen=false,velocity=0,heading=0;
+let pos=new THREE.Vector3(),last=performance.now(),zone=false,kioskDone=false,kioskStarted=false;
 let lap=1,checkpoint=0,elapsed=0,previousT=0;
 const circuit=new THREE.CatmullRomCurve3([
   [-188,-20],[-175,-123],[-94,-205],[35,-211],[164,-166],
@@ -60,15 +60,30 @@ function makeRain(){
   raindrops=Array.from({length:350},()=>({x:(Math.random()-.5)*115,y:Math.random()*65+2,z:(Math.random()-.5)*115}));
   scene.add(new THREE.Points(rain,new THREE.PointsMaterial({color:0x9cc0d4,size:.22,transparent:true,opacity:.42,depthWrite:false})));
 }
+function missionHud(){
+  const active=playing&&world==='city'&&kiosk?.active;
+  $('missionCompass').classList.toggle('hidden',!active);
+  if(active){
+    const dx=kiosk.target.x-pos.x,dz=kiosk.target.z-pos.z;
+    const bearing=Math.atan2(dx,-dz),relative=Math.atan2(Math.sin(bearing-heading),Math.cos(bearing-heading));
+    $('missionArrow').style.transform=`rotate(${relative*180/Math.PI}deg)`;
+    $('missionDistance').textContent=`NACHTKIOSK · ${Math.round(Math.hypot(dx,dz))} m`;
+  }
+  const nearGarage=playing&&world==='city'&&!kioskDone&&!kioskStarted&&!briefOpen&&
+    Math.hypot(pos.x-cityData.start.x,pos.z-cityData.start.z)<18&&Math.abs(velocity)<2.5;
+  $('garagePrompt').classList.toggle('hidden',!nearGarage);
+}
 function worldCity(returnFromRace=false){
   base();world='city';raceSamples.length=0;cityData=createCity(THREE,scene);
-  velocity=0;zone=false;checkpoint=0;
+  velocity=0;zone=false;checkpoint=0;briefOpen=false;$('letterOverlay').classList.add('hidden');
   pos.set(cityData.start.x,0,returnFromRace?-216:cityData.start.z);
   heading=returnFromRace?Math.PI:cityData.start.heading;
   carMake();makeRain();kiosk=createFirstDelivery(THREE,scene,kioskDone);
-  $('status').textContent=kioskDone?'NACHTSCHICHT · Lieferung 1/3 erledigt':'NACHTSCHICHT · Ziel: Nachtkiosk';
-  $('speed').textContent='00';
-  say(returnFromRace?'Zurück in der Nachtschicht.':'Nachtkiosk: orange Lieferzone auf der Nordweststraße.');
+  if(kioskStarted&&!kioskDone)kiosk.start();
+  $('status').textContent=kioskDone?'NACHTSCHICHT · Lieferung 1/3 erledigt':
+    kioskStarted?'NACHTSCHICHT · Ziel: Nachtkiosk':'NACHTSCHICHT · Garage: E für Auftrag';
+  $('speed').textContent='00';missionHud();
+  say(returnFromRace?'Zurück in der Nachtschicht.':'Bei der Garage E drücken, um den Auftrag anzunehmen.');
 }
 function raceNearest(x,z){
   let best=Infinity,t=0;
@@ -82,6 +97,8 @@ function raceNearest(x,z){
 }
 function worldRace(){
   base();world='race';cityData=null;kiosk=null;raceSamples.length=0;
+  briefOpen=false;$('letterOverlay').classList.add('hidden');
+  $('missionCompass').classList.add('hidden');$('garagePrompt').classList.add('hidden');
   velocity=0;lap=1;checkpoint=0;elapsed=0;previousT=0;
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700),mat(0x0c2227));
   ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
@@ -118,15 +135,23 @@ function worldRace(){
   carMake();makeRain();$('status').textContent='RENN-NACHT · RUNDE 1/3';$('speed').textContent='00';
   say('Rennstrecke betreten · 3 Runden.');
 }
-function playingOn(){
-  playing=true;paused=false;keys.clear();
-  $('menu').classList.add('hidden');$('pause').classList.add('hidden');
-  $('hud').hidden=false;$('bottomHud').hidden=false;
+function playingOn(){playing=true;paused=false;keys.clear();$('menu').classList.add('hidden');$('pause').classList.add('hidden');$('hud').hidden=false;$('bottomHud').hidden=false;missionHud()}
+function cameraChange(){cameraMode=(cameraMode+1)%cameraModes.length;camera.fov=cameraModes[cameraMode].fov;camera.updateProjectionMatrix();say('Kamera '+(cameraMode+1)+'/5: '+cameraModes[cameraMode].name)}
+function closeLetter(){
+  if(!briefOpen)return;
+  briefOpen=false;$('letterOverlay').classList.add('hidden');
+  say('Auftrag aktiv · Der orange Pfeil zeigt zum Nachtkiosk.');
+  missionHud();
 }
-function cameraChange(){
-  cameraMode=(cameraMode+1)%cameraModes.length;
-  camera.fov=cameraModes[cameraMode].fov;camera.updateProjectionMatrix();
-  say('Kamera '+(cameraMode+1)+'/5: '+cameraModes[cameraMode].name);
+function acceptAtGarage(){
+  if(world!=='city'||kioskDone||kioskStarted||!playing||paused)return false;
+  const near=Math.hypot(pos.x-cityData.start.x,pos.z-cityData.start.z)<18;
+  if(!near||Math.abs(velocity)>=2.5)return false;
+  if(!kiosk.start())return false;
+  kioskStarted=true;briefOpen=true;keys.clear();velocity=0;
+  $('speed').textContent='00';$('letterOverlay').classList.remove('hidden');
+  $('status').textContent='NACHTSCHICHT · Auftrag angenommen';missionHud();
+  return true;
 }
 function drive(dt,now){
   const gas=keys.has('KeyW')||keys.has('ArrowUp'),brake=keys.has('KeyS')||keys.has('ArrowDown');
@@ -149,10 +174,9 @@ function drive(dt,now){
   $('speed').textContent=String(Math.round(Math.abs(velocity)*3)).padStart(2,'0');
   if(world==='city'){
     const result=kiosk.update(pos.x,pos.z,velocity,dt,now);
-    if(result.delivered){kioskDone=true;say('Nachtkiosk beliefert! Lieferung 1/3 abgeschlossen.');}
+    if(result.delivered){kioskDone=true;say('Leyla hat die Ersatzlampen erhalten · Lieferung 1/3 erledigt.');}
     $('status').textContent='NACHTSCHICHT · '+result.text;
-    const gate=cityData.gate;
-    const inside=Math.hypot(pos.x-gate.x,pos.z-gate.z)<gate.radius;
+    const gate=cityData.gate,inside=Math.hypot(pos.x-gate.x,pos.z-gate.z)<gate.radius;
     if(inside&&Math.abs(velocity)<2.5&&!zone){zone=true;say('RENN-NACHT · Halte an und drücke E')}
     if(!inside||Math.abs(velocity)>=2.5)zone=false;
   }else{
@@ -172,6 +196,7 @@ function drive(dt,now){
     previousT=t;
     $('status').textContent=`RENN-NACHT · RUNDE ${Math.min(lap,3)}/3 · ${elapsed.toFixed(1)} s`;
   }
+  missionHud();
 }
 function updateRain(dt){
   const arr=rain.attributes.position.array;
@@ -184,7 +209,7 @@ function updateRain(dt){
 }
 function frame(now){
   requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;
-  if(playing&&!paused)drive(dt,now);
+  if(playing&&!paused&&!briefOpen)drive(dt,now);
   updateRain(dt);
   if(cameraMode===0){goal.set(pos.x+51,pos.y+86,pos.z+89);look.set(pos.x,pos.y+2,pos.z-5)}
   else{car.updateMatrixWorld(true);goal.copy(cameraModes[cameraMode].offset);car.localToWorld(goal);look.copy(cameraModes[cameraMode].look);car.localToWorld(look)}
@@ -213,9 +238,17 @@ $('enterRace').onclick=()=>{worldCity(true);playingOn()};
 $('resumeButton').onclick=()=>{paused=false;keys.clear();$('pause').classList.add('hidden')};
 $('menuButton').onclick=()=>{worldCity(true);playingOn()};
 $('pauseButton').onclick=()=>{paused=true;keys.clear();$('pause').classList.remove('hidden')};
+$('closeLetter').onclick=closeLetter;
 addEventListener('keydown',e=>{
+  if(briefOpen){
+    if(!e.repeat&&['KeyE','Enter','NumpadEnter','Escape'].includes(e.code)){e.preventDefault();closeLetter()}
+    return;
+  }
   if(playing&&['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
-  if(e.code==='KeyE'&&world==='city'&&zone&&playing&&!paused){worldRace();playingOn();return}
+  if(e.code==='KeyE'&&playing&&!paused&&!e.repeat){
+    if(acceptAtGarage())return;
+    if(world==='city'&&zone){worldRace();playingOn();return}
+  }
   if(e.code==='KeyC'&&playing&&!paused&&!e.repeat){cameraChange();return}
   if(e.code==='Escape'&&playing){paused=!paused;keys.clear();$('pause').classList.toggle('hidden',!paused);return}
   if(e.code==='KeyR'&&playing){worldCity(world==='race');playingOn();return}
