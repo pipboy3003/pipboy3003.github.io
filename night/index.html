@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+  <title>Nachtfahrt – Letzte Lieferung</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js"}}</script>
+</head>
+<body>
+  <main id="app">
+    <div id="viewport" aria-label="3D-Nachtstadt"></div>
+    <div class="vignette" aria-hidden="true"></div>
+    <header class="hud" id="hud" hidden>
+      <div class="brand"><span class="dot"></span> NACHTFAHRT <small>01 / PROTOTYP</small></div>
+      <div class="hud-pill"><span class="label">STATUS</span><span id="status">Freie Fahrt</span></div>
+    </header>
+    <div class="bottom-hud" id="bottomHud" hidden>
+      <div class="speed"><span id="speed">00</span><small>km/h*</small></div>
+      <div class="hint">WASD / PFEILTASTEN · FAHREN &nbsp; | &nbsp; ESC · PAUSE &nbsp; | &nbsp; R · RESET</div>
+      <button class="icon-btn" id="pauseButton" type="button" aria-label="Spiel pausieren">Ⅱ</button>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <section class="overlay" id="menu" aria-label="Startmenü">
+      <div class="panel">
+        <p class="eyebrow">DIE STADT SCHLÄFT NIE</p>
+        <h1>NACHT<span>FAHRT</span></h1>
+        <p class="subtitle">LETZTE LIEFERUNG</p>
+        <div class="rule"></div>
+        <p class="description">Eine Stadt. Eine Nacht. Ein Auto. Fahr los und lerne die Straßen kennen – die erste Lieferung folgt im nächsten Update.</p>
+        <button class="primary" id="startButton" type="button">NACHTSCHICHT STARTEN <span>→</span></button>
+        <p class="fine">WASD / Pfeiltasten: Fahren · Esc: Pause · R: Zur Garage</p>
+        <p class="fine dim">Desktop & Tastatur empfohlen · Three.js wird über das Internet geladen.</p>
+      </div>
+    </section>
+    <section class="overlay hidden" id="pause" aria-label="Pause" aria-hidden="true">
+      <div class="panel compact"><p class="eyebrow">MOTOR IM LEERLAUF</p><h2>PAUSE</h2><button class="primary" id="resumeButton" type="button">WEITERFAHREN <span>→</span></button><button class="secondary" id="menuButton" type="button">ZUM HAUPTMENÜ</button></div>
+    </section>
+    <div class="error hidden" id="error" role="alert"></div>
+  </main>
+  <script type="module" src="./game.js"></script>
+</body>
+</html>
