@@ -1,4 +1,4 @@
-/* Nachtfahrt – Höhenprofil, 2026-09-28. Vollständige night/game.js */
+/* Nachtfahrt – Hochstraße: Laternen und Randmauern, 2026-09-28. Vollständige night/game.js */
 import * as THREE from 'three';
 const viewport=document.getElementById('viewport'),menu=document.getElementById('menu');
 const pause=document.getElementById('pause'),error=document.getElementById('error');
@@ -62,6 +62,51 @@ function building(x,z,w,d,h,seed){
   }
   if(seed%3===0)box(scene,2,.8,2,x,h+.75,z,dark);
 }
+function addEdgeWalls(){
+  const concrete=m(0x74818b,{metalness:.05,roughness:.87,side:THREE.DoubleSide});
+  for(const side of [-1,1]){
+    const vertices=[],indices=[];
+    for(let i=0;i<scenicSamples.length;i++){
+      const p=scenicSamples[i],dir=scenicCurve.getTangent(p.t).normalize();
+      const nx=-dir.z*side,nz=dir.x*side;
+      const inner=scenicWidth/2+.07,outer=inner+.5;
+      const base=scenicElevation(p.t)+.18;
+      vertices.push(p.x+nx*inner,base,p.z+nz*inner);
+      vertices.push(p.x+nx*inner,base+1.15,p.z+nz*inner);
+      vertices.push(p.x+nx*outer,base,p.z+nz*outer);
+      vertices.push(p.x+nx*outer,base+1.15,p.z+nz*outer);
+      if(i<scenicSamples.length-1){
+        const k=i*4;
+        indices.push(k,k+4,k+1,k+1,k+4,k+5);
+        indices.push(k+2,k+3,k+6,k+3,k+7,k+6);
+        indices.push(k+1,k+5,k+3,k+3,k+5,k+7);
+      }
+    }
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+    geo.setIndex(indices);geo.computeVertexNormals();
+    const wall=new THREE.Mesh(geo,concrete);wall.receiveShadow=true;scene.add(wall);
+  }
+}
+function addElevatedLights(){
+  const steel=m(0x536a73,{metalness:.5,roughness:.38});
+  const bulb=m(0xffdb9a,{emissive:0xffae5d,emissiveIntensity:2.6});
+  for(let i=12;i<scenicSamples.length-12;i+=18){
+    const p=scenicSamples[i],dir=scenicCurve.getTangent(p.t).normalize();
+    const side=(Math.floor(i/18)%2===0)?1:-1;
+    const nx=-dir.z*side,nz=dir.x*side;
+    const roadY=scenicElevation(p.t)+.18;
+    const px=p.x+nx*(scenicWidth/2+1.9),pz=p.z+nz*(scenicWidth/2+1.9);
+    box(scene,.35,7,.35,px,roadY+3.5,pz,steel);
+    const lightX=px-nx*2.15,lightZ=pz-nz*2.15;
+    const mid=new THREE.Vector3((px+lightX)/2,roadY+7,(pz+lightZ)/2);
+    const arm=new THREE.Mesh(new THREE.CylinderGeometry(.11,.11,2.2,8),steel);
+    arm.position.copy(mid);arm.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(lightX-px,0,lightZ-pz).normalize());scene.add(arm);
+    const lamp=new THREE.Mesh(new THREE.SphereGeometry(.38,10,8),bulb);
+    lamp.position.set(lightX,roadY+6.8,lightZ);scene.add(lamp);
+    const glow=new THREE.PointLight(0xffc984,4.5,35,2);
+    glow.position.copy(lamp.position);scene.add(glow);
+  }
+}
 function addScenicRoad(){
   const vertices=[],indices=[],count=160;
   scenicSamples.length=0;
@@ -73,21 +118,18 @@ function addScenicRoad(){
     vertices.push(p.x-nx*scenicWidth/2,y+.18,p.z-nz*scenicWidth/2);
     if(i<count){const k=2*i;indices.push(k,k+1,k+2,k+1,k+3,k+2)}
   }
-  const geometry=new THREE.BufferGeometry();
-  geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
   geometry.setIndex(indices);geometry.computeVertexNormals();
   const mesh=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({color:0x1b303a,roughness:.47,metalness:.09,side:THREE.DoubleSide}));
   mesh.receiveShadow=true;mesh.castShadow=true;scene.add(mesh);
   const support=m(0x394b53);
-  for(let i=8;i<count-8;i+=12){
-    const p=scenicSamples[i],h=scenicElevation(p.t);
-    if(h>1)box(scene,2,h,2,p.x,h/2,p.z,support);
-  }
+  for(let i=8;i<count-8;i+=12){const p=scenicSamples[i],h=scenicElevation(p.t);if(h>1)box(scene,2,h,2,p.x,h/2,p.z,support)}
   for(let i=6;i<count-6;i+=8){
     const a=scenicSamples[i],b=scenicSamples[i+1];
     const dash=box(scene,.24,.015,4,a.x,scenicElevation(a.t)+.2,a.z,white);
     dash.rotation.y=Math.atan2(b.x-a.x,b.z-a.z);
   }
+  addEdgeWalls();addElevatedLights();
   const arrow=sign(scene,'NORDKURVE',-222,9,-249,'#ffbd72');arrow.rotation.y=Math.PI/2;
 }
 function city(){
@@ -109,8 +151,7 @@ function city(){
     building(x-18,z+22,42,32,12+(k*13)%22,k+4);
     building(x+24,z+22,30,37,17+(k*5)%20,k+6);
   }
-  box(scene,40,12,32,-274,6,0,m(0x273c46));
-  box(scene,1,8,14,-253.4,4,0,teal);
+  box(scene,40,12,32,-274,6,0,m(0x273c46));box(scene,1,8,14,-253.4,4,0,teal);
   const garageSign=sign(scene,'GARAGE',-251.9,9.4,0);garageSign.rotation.y=Math.PI/2;
   for(let a=-240;a<=240;a+=120)for(let b=-240;b<=240;b+=120){
     if((a+b)%240!==0)continue;
@@ -125,8 +166,7 @@ function city(){
   }
 }
 function makeCar(){
-  car=new THREE.Group();car.rotation.order='YXZ';scene.add(car);
-  body=new THREE.Group();car.add(body);
+  car=new THREE.Group();car.rotation.order='YXZ';scene.add(car);body=new THREE.Group();car.add(body);
   box(body,3.9,1.15,7.3,0,1.15,0,m(0x4ed2cd,{metalness:.55,roughness:.32}));
   box(body,3.3,1.2,3.65,0,2.17,.2,m(0x183747,{metalness:.38,roughness:.26}));
   box(body,3.35,.09,2.5,0,2.85,.1,m(0x66ddd5,{metalness:.45,roughness:.3}));
@@ -140,8 +180,7 @@ function makeCar(){
   }
   const left=new THREE.SpotLight(0xb5eaff,22,85,Math.PI/7,.55,1.2);
   left.position.set(-1,1.55,-3.5);left.target.position.set(-1,0,-28);car.add(left,left.target);
-  const right=left.clone();right.position.x=1;right.target.position.x=1;car.add(right,right.target);
-  car.position.copy(position);
+  const right=left.clone();right.position.x=1;right.target.position.x=1;car.add(right,right.target);car.position.copy(position);
 }
 function makeRain(){
   rain=new THREE.BufferGeometry();rain.setAttribute('position',new THREE.BufferAttribute(new Float32Array(480*3),3));
@@ -181,20 +220,18 @@ function nearestCurve(x,z){
 function road(x,z){
   const inGrid=Math.abs(x)<=249&&Math.abs(z)<=249;
   const gridRoad=inGrid&&(streetLines.some(s=>Math.abs(x-s)<roadWidth/2-1)||streetLines.some(s=>Math.abs(z-s)<roadWidth/2-1));
-  return gridRoad||nearestCurve(x,z).distance<scenicWidth/2-1;
+  return gridRoad||nearestCurve(x,z).distance<scenicWidth/2-2;
 }
 function roadHeight(x,z){
   if(z>-249)return 0;
   const near=nearestCurve(x,z);
-  return near.distance<scenicWidth/2-1?scenicElevation(near.t):0;
+  return near.distance<scenicWidth/2-2?scenicElevation(near.t):0;
 }
 function setCarHeight(){
   position.y=roadHeight(position.x,position.z);
   const dx=Math.sin(heading)*2.7,dz=-Math.cos(heading)*2.7;
-  const front=roadHeight(position.x+dx,position.z+dz);
-  const rear=roadHeight(position.x-dx,position.z-dz);
-  car.position.copy(position);car.rotation.y=-heading;
-  car.rotation.x=Math.atan2(front-rear,5.4);
+  const front=roadHeight(position.x+dx,position.z+dz),rear=roadHeight(position.x-dx,position.z-dz);
+  car.position.copy(position);car.rotation.y=-heading;car.rotation.x=Math.atan2(front-rear,5.4);
 }
 function reset(){position.set(-240,0,0);velocity=0;heading=0;car.position.copy(position);car.rotation.set(0,0,0);clearInput();notify('Zur Garage zurückgesetzt')}
 function changeCamera(){
@@ -205,7 +242,7 @@ function changeCamera(){
 }
 function setPause(value){if(!playing)return;paused=value;clearInput();pause.classList.toggle('hidden',!value);pause.setAttribute('aria-hidden',String(!value));statusLabel.textContent=value?'Pausiert':'Freie Fahrt'}
 function showMenu(){playing=false;paused=false;clearInput();menu.classList.remove('hidden');pause.classList.add('hidden');hud.hidden=true;bottomHud.hidden=true;statusLabel.textContent='Freie Fahrt'}
-function start(){reset();cameraMode=0;if(camera){camera.fov=52;camera.updateProjectionMatrix()}playing=true;paused=false;menu.classList.add('hidden');pause.classList.add('hidden');hud.hidden=false;bottomHud.hidden=false;notify('Nordkurve: jetzt mit Anstieg und Abfahrt')}
+function start(){reset();cameraMode=0;if(camera){camera.fov=52;camera.updateProjectionMatrix()}playing=true;paused=false;menu.classList.add('hidden');pause.classList.add('hidden');hud.hidden=false;bottomHud.hidden=false;notify('Nordkurve: jetzt mit Laternen und Randmauern')}
 function drive(dt){
   const gas=keys.has('KeyW')||keys.has('ArrowUp'),brake=keys.has('KeyS')||keys.has('ArrowDown');
   const steer=(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0);
