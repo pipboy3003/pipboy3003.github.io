@@ -1,6 +1,5 @@
-/* Nachtfahrt – Kamera-Update 2, 2026-09-28. Vollständige night/game.js */
+/* Nachtfahrt – Kamera- und Garagen-Fix, 2026-09-28. Vollständige night/game.js */
 import * as THREE from 'three';
-
 const viewport=document.getElementById('viewport');
 const menu=document.getElementById('menu');
 const pause=document.getElementById('pause');
@@ -10,8 +9,7 @@ const bottomHud=document.getElementById('bottomHud');
 const speedLabel=document.getElementById('speed');
 const statusLabel=document.getElementById('status');
 const toast=document.getElementById('toast');
-const streetLines=[-240,-120,0,120,240];
-const roadWidth=19;
+const streetLines=[-240,-120,0,120,240],roadWidth=19;
 const cameraModes=[
   {name:'Stadtblick',offset:null,look:null,fov:52},
   {name:'Verfolger nah',offset:new THREE.Vector3(0,26,33),look:new THREE.Vector3(0,2,-12),fov:52},
@@ -21,8 +19,7 @@ const cameraModes=[
 ];
 let cameraMode=0;
 const cameraLook=new THREE.Vector3(-240,2,-5);
-const cameraTarget=new THREE.Vector3();
-const lookTarget=new THREE.Vector3();
+const cameraTarget=new THREE.Vector3(),lookTarget=new THREE.Vector3();
 const clamp=THREE.MathUtils.clamp;
 let renderer,scene,camera,car,body,wheels=[],rain,raindrops=[];
 let playing=false,paused=false,velocity=0,heading=0;
@@ -32,8 +29,7 @@ let messageTimer=0,collisionCooldown=0;
 const keys=new Set();
 const m=(color,extra={})=>new THREE.MeshStandardMaterial({color,roughness:.75,...extra});
 const asphalt=m(0x172633,{roughness:.43,metalness:.14});
-const pavement=m(0x25333d);
-const dark=m(0x0d1926);
+const pavement=m(0x25333d),dark=m(0x0d1926);
 const white=m(0xdbe3d1,{emissive:0x434e3d,emissiveIntensity:.15});
 const teal=m(0x58e8db,{emissive:0x19b0a7,emissiveIntensity:2});
 const orange=m(0xffbd72,{emissive:0xe48738,emissiveIntensity:1.9});
@@ -49,8 +45,8 @@ function sign(parent,text,x,y,z,color='#6ce6e0'){
   ctx.strokeStyle=color;ctx.lineWidth=8;ctx.strokeRect(4,4,504,120);
   ctx.fillStyle=color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 55px Arial';ctx.fillText(text,256,65);
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
-  const plane=new THREE.Mesh(new THREE.PlaneGeometry(13,3.25),new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide,transparent:true}));
-  plane.position.set(x,y,z);parent.add(plane);
+  const plane=new THREE.Mesh(new THREE.PlaneGeometry(13,3.25),new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide,transparent:true,depthWrite:false}));
+  plane.position.set(x,y,z);plane.renderOrder=2;parent.add(plane);return plane;
 }
 function building(x,z,w,d,h,seed){
   const materials=[m(0x1d3040),m(0x253445),m(0x24394a),m(0x27323e)];
@@ -90,7 +86,9 @@ function city(){
   }
   box(scene,40,12,32,-274,6,0,m(0x273c46));
   box(scene,1,8,14,-253.4,4,0,teal);
-  sign(scene,'GARAGE',-252,10,0);
+  // Garagenfront zeigt nach Osten (+X). Die Tafel steht vollständig vor der Wand.
+  const garageSign=sign(scene,'GARAGE',-251.9,9.4,0);
+  garageSign.rotation.y=Math.PI/2;
   for(let a=-240;a<=240;a+=120)for(let b=-240;b<=240;b+=120){
     if((a+b)%240!==0)continue;
     const post=box(scene,.5,9,.5,a+12,4.5,b+12,m(0x344858));
@@ -103,8 +101,7 @@ function city(){
   }
 }
 function makeCar(){
-  car=new THREE.Group();scene.add(car);
-  body=new THREE.Group();car.add(body);
+  car=new THREE.Group();scene.add(car);body=new THREE.Group();car.add(body);
   box(body,3.9,1.15,7.3,0,1.15,0,m(0x4ed2cd,{metalness:.55,roughness:.32}));
   box(body,3.3,1.2,3.65,0,2.17,.2,m(0x183747,{metalness:.38,roughness:.26}));
   box(body,3.35,.09,2.5,0,2.85,.1,m(0x66ddd5,{metalness:.45,roughness:.3}));
@@ -124,8 +121,7 @@ function makeCar(){
   car.position.copy(position);
 }
 function makeRain(){
-  const positions=new Float32Array(480*3);
-  rain=new THREE.BufferGeometry();rain.setAttribute('position',new THREE.BufferAttribute(positions,3));
+  rain=new THREE.BufferGeometry();rain.setAttribute('position',new THREE.BufferAttribute(new Float32Array(480*3),3));
   const material=new THREE.PointsMaterial({color:0x9cc0d4,size:.22,transparent:true,opacity:.45,depthWrite:false});
   raindrops=Array.from({length:480},()=>({x:(Math.random()-.5)*115,y:Math.random()*65+2,z:(Math.random()-.5)*115}));
   const points=new THREE.Points(rain,material);scene.add(points);rain.userData.points=points;
@@ -133,56 +129,41 @@ function makeRain(){
 function setup(){
   try{
     renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
-    renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));
-    renderer.outputColorSpace=THREE.SRGBColorSpace;
-    renderer.toneMapping=THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure=1.65;renderer.shadowMap.enabled=true;
-    renderer.shadowMap.type=THREE.PCFSoftShadowMap;viewport.appendChild(renderer.domElement);
-    scene=new THREE.Scene();scene.background=new THREE.Color(0x0b1b2b);
-    scene.fog=new THREE.FogExp2(0x102032,.0022);
+    renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.outputColorSpace=THREE.SRGBColorSpace;
+    renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.65;
+    renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;viewport.appendChild(renderer.domElement);
+    scene=new THREE.Scene();scene.background=new THREE.Color(0x0b1b2b);scene.fog=new THREE.FogExp2(0x102032,.0022);
     camera=new THREE.PerspectiveCamera(52,1,.1,1100);
     scene.add(new THREE.HemisphereLight(0x8dbed5,0x1b202a,2.1));
     const moon=new THREE.DirectionalLight(0x9bb9d9,2.2);
     moon.position.set(-80,130,70);moon.castShadow=true;moon.shadow.mapSize.set(1024,1024);
     moon.shadow.camera.left=-95;moon.shadow.camera.right=95;moon.shadow.camera.top=95;moon.shadow.camera.bottom=-95;
     moon.shadow.bias=-.0008;scene.add(moon);window._nachtfahrtMoon=moon;
-    city();makeCar();makeRain();resize();
-    window.addEventListener('resize',resize);requestAnimationFrame(frame);
+    city();makeCar();makeRain();resize();window.addEventListener('resize',resize);requestAnimationFrame(frame);
   }catch(e){error.textContent='3D-Start fehlgeschlagen: '+e.message;error.classList.remove('hidden');console.error(e)}
 }
 function resize(){if(!renderer)return;const w=viewport.clientWidth,h=viewport.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
 function clearInput(){keys.clear()}
-function road(x,z){
-  const inside=Math.abs(x)<=249&&Math.abs(z)<=249;
-  return inside&&(streetLines.some(s=>Math.abs(x-s)<roadWidth/2-1)||streetLines.some(s=>Math.abs(z-s)<roadWidth/2-1));
-}
+function road(x,z){const inside=Math.abs(x)<=249&&Math.abs(z)<=249;return inside&&(streetLines.some(s=>Math.abs(x-s)<roadWidth/2-1)||streetLines.some(s=>Math.abs(z-s)<roadWidth/2-1))}
 function reset(){position.set(-240,0,0);velocity=0;heading=0;car.position.copy(position);car.rotation.y=0;clearInput();notify('Zur Garage zurückgesetzt')}
 function changeCamera(){
   cameraMode=(cameraMode+1)%cameraModes.length;
-  const mode=cameraModes[cameraMode];
-  camera.fov=mode.fov;camera.updateProjectionMatrix();
-  if(cameraMode>=3){
-    car.updateMatrixWorld(true);
-    cameraPoint.copy(mode.offset);car.localToWorld(cameraPoint);
-    cameraLook.copy(mode.look);car.localToWorld(cameraLook);
-  }
-  notify('Kamera: '+mode.name);
+  const mode=cameraModes[cameraMode];camera.fov=mode.fov;camera.updateProjectionMatrix();
+  if(cameraMode>=3){car.updateMatrixWorld(true);cameraPoint.copy(mode.offset);car.localToWorld(cameraPoint);cameraLook.copy(mode.look);car.localToWorld(cameraLook)}
+  notify('Kamera '+(cameraMode+1)+'/5: '+mode.name);
 }
 function setPause(value){if(!playing)return;paused=value;clearInput();pause.classList.toggle('hidden',!value);pause.setAttribute('aria-hidden',String(!value));statusLabel.textContent=value?'Pausiert':'Freie Fahrt'}
 function showMenu(){playing=false;paused=false;clearInput();menu.classList.remove('hidden');pause.classList.add('hidden');hud.hidden=true;bottomHud.hidden=true;statusLabel.textContent='Freie Fahrt'}
-function start(){reset();playing=true;paused=false;menu.classList.add('hidden');pause.classList.add('hidden');hud.hidden=false;bottomHud.hidden=false;notify('Willkommen zur Nachtschicht – C wechselt die Kamera!')}
+function start(){reset();cameraMode=0;if(camera){camera.fov=52;camera.updateProjectionMatrix()}playing=true;paused=false;menu.classList.add('hidden');pause.classList.add('hidden');hud.hidden=false;bottomHud.hidden=false;notify('Fünf Kameras: mit C durchschalten')}
 function drive(dt){
   const gas=keys.has('KeyW')||keys.has('ArrowUp'),brake=keys.has('KeyS')||keys.has('ArrowDown');
   const steer=(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0);
-  if(gas)velocity+=35*dt;
-  if(brake)velocity-=velocity>1?55*dt:24*dt;
+  if(gas)velocity+=35*dt;if(brake)velocity-=velocity>1?55*dt:24*dt;
   if(!gas&&!brake)velocity*=Math.exp(-1.55*dt);
   velocity=clamp(velocity,-13,39);if(Math.abs(velocity)<.12)velocity=0;
   heading+=steer*dt*1.65*clamp(Math.abs(velocity)/15,0,1)*(velocity<0?-1:1);
   const nx=position.x+Math.sin(heading)*velocity*dt,nz=position.z-Math.cos(heading)*velocity*dt;
-  if(road(nx,nz)){position.x=nx;position.z=nz}else{
-    velocity=0;if(collisionCooldown<=0){notify('Fahrbahn verlassen – vorsichtig!');collisionCooldown=2}
-  }
+  if(road(nx,nz)){position.x=nx;position.z=nz}else{velocity=0;if(collisionCooldown<=0){notify('Fahrbahn verlassen – vorsichtig!');collisionCooldown=2}}
   car.position.copy(position);car.rotation.y=-heading;
   body.rotation.z=THREE.MathUtils.lerp(body.rotation.z,-steer*velocity/39*.085,Math.min(1,dt*5));
   for(const wheel of wheels)wheel.rotation.x-=velocity*dt/.87;
@@ -194,32 +175,19 @@ function updateRain(dt){
     const drop=raindrops[i];drop.y-=dt*34;drop.x+=dt*2;
     if(drop.y<.3){drop.y=60;drop.x=(Math.random()-.5)*115;drop.z=(Math.random()-.5)*115}
     arr[i*3]=position.x+drop.x;arr[i*3+1]=drop.y;arr[i*3+2]=position.z+drop.z;
-  }
-  rain.attributes.position.needsUpdate=true;
+  }rain.attributes.position.needsUpdate=true;
 }
 function frame(time){
-  requestAnimationFrame(frame);
-  const dt=Math.min((time-last)/1000,.05);last=time;
+  requestAnimationFrame(frame);const dt=Math.min((time-last)/1000,.05);last=time;
   if(messageTimer>0){messageTimer-=dt;if(messageTimer<=0)toast.classList.remove('show')}
   if(collisionCooldown>0)collisionCooldown-=dt;
-  if(playing&&!paused)drive(dt);
-  updateRain(dt);
-  if(cameraMode===0){
-    cameraTarget.set(position.x+51,86,position.z+89);
-    lookTarget.set(position.x,2,position.z-5);
-  }else{
-    car.updateMatrixWorld(true);
-    cameraTarget.copy(cameraModes[cameraMode].offset);car.localToWorld(cameraTarget);
-    lookTarget.copy(cameraModes[cameraMode].look);car.localToWorld(lookTarget);
-  }
+  if(playing&&!paused)drive(dt);updateRain(dt);
+  if(cameraMode===0){cameraTarget.set(position.x+51,86,position.z+89);lookTarget.set(position.x,2,position.z-5)}
+  else{car.updateMatrixWorld(true);cameraTarget.copy(cameraModes[cameraMode].offset);car.localToWorld(cameraTarget);lookTarget.copy(cameraModes[cameraMode].look);car.localToWorld(lookTarget)}
   const response=Math.min(1,dt*(cameraMode===0?3:cameraMode>=3?14:6));
-  cameraPoint.lerp(cameraTarget,response);
-  cameraLook.lerp(lookTarget,response);
-  camera.position.copy(cameraPoint);
-  camera.lookAt(cameraLook);
-  const moon=window._nachtfahrtMoon;
-  moon.position.set(position.x-80,130,position.z+70);
-  moon.target.position.set(position.x,0,position.z);scene.add(moon.target);
+  cameraPoint.lerp(cameraTarget,response);cameraLook.lerp(lookTarget,response);
+  camera.position.copy(cameraPoint);camera.lookAt(cameraLook);
+  const moon=window._nachtfahrtMoon;moon.position.set(position.x-80,130,position.z+70);moon.target.position.set(position.x,0,position.z);scene.add(moon.target);
   renderer.render(scene,camera);
 }
 window.addEventListener('keydown',e=>{
@@ -229,8 +197,7 @@ window.addEventListener('keydown',e=>{
   if(e.code==='KeyC'&&playing&&!paused&&!e.repeat){changeCamera();return}
   if(!e.repeat)keys.add(e.code);
 });
-window.addEventListener('keyup',e=>keys.delete(e.code));
-window.addEventListener('blur',clearInput);
+window.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',clearInput);
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing&&!paused)setPause(true)});
 document.getElementById('startButton').addEventListener('click',start);
 document.getElementById('resumeButton').addEventListener('click',()=>setPause(false));

@@ -19,7 +19,7 @@
     </header>
     <div class="bottom-hud" id="bottomHud" hidden>
       <div class="speed"><span id="speed">00</span><small>km/h*</small></div>
-      <div class="hint">WASD / PFEILTASTEN · FAHREN &nbsp; | &nbsp; ESC · PAUSE &nbsp; | &nbsp; R · RESET</div>
+      <div class="hint">WASD / PFEILTASTEN · FAHREN &nbsp; | &nbsp; C · KAMERA &nbsp; | &nbsp; ESC · PAUSE &nbsp; | &nbsp; R · RESET</div>
       <button class="icon-btn" id="pauseButton" type="button" aria-label="Spiel pausieren">Ⅱ</button>
     </div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -31,7 +31,7 @@
         <div class="rule"></div>
         <p class="description">Eine Stadt. Eine Nacht. Ein Auto. Fahr los und lerne die Straßen kennen – die erste Lieferung folgt im nächsten Update.</p>
         <button class="primary" id="startButton" type="button">NACHTSCHICHT STARTEN <span>→</span></button>
-        <p class="fine">WASD / Pfeiltasten: Fahren · Esc: Pause · R: Zur Garage</p>
+        <p class="fine">WASD / Pfeiltasten: Fahren · C: Fünf Kameras · Esc: Pause · R: Zur Garage</p>
         <p class="fine dim">Desktop & Tastatur empfohlen · Three.js wird über das Internet geladen.</p>
       </div>
     </section>
@@ -40,6 +40,6 @@
     </section>
     <div class="error hidden" id="error" role="alert"></div>
   </main>
-  <script type="module" src="./game.js"></script>
+  <script type="module" src="./game.js?v=20260928-camera-garage-fix"></script>
 </body>
 </html>
