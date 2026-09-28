@@ -1,11 +1,7 @@
-# Nachtfahrt – Stadt + Renn-Nacht
+# Nachtfahrt – erste Lieferung
 
-Die ausführliche Lieferstadt ist aus dem letzten Stadtstand vor dem Rennspiel-Umbau wiederhergestellt: Straßenraster, drei farbige Viertel, Schaufenster, Garage, erhöhte kurvige Nordstraße mit Mauern und Laternen. Stadt und Rennstrecke sind getrennte 3D-Welten in derselben Seite. Physik, Auto, Regen und fünf Kameraansichten werden gemeinsam genutzt.
+Stadt und Renn-Nacht bleiben getrennte Welten. Das Spiel startet nach dem Intro automatisch in der Nachtschicht. Im Nordwesten, auf der Straße vor dem Nachtkiosk, liegt eine orange Lieferzone. Fahre hinein und halte 1,2 Sekunden nahezu still: die Lieferung wird genau einmal abgeschlossen. Das HUD zeigt Entfernung oder Haltefortschritt. Weitere Lieferungen und Bezahlung folgen erst nach diesem Test.
 
-**Start:** Nach dem animierten Intro automatisch freie Fahrt in der Stadt. Vom Start an der Garage auf der westlichen Straße nach Norden bis zum leuchtenden Tor an der Kreuzung (-240,-240) fahren, dort anhalten und `E` drücken. Nach dem Rennen `R` drücken, um in der Stadt nahe dem Tor zurückzukehren.
+Upload: `mission.js` neu anlegen; `game.js`, `index.html`, `README.md` komplett ersetzen. `city-world.js`, `style.css`, `favicon.svg` unverändert lassen. Eigener Commit auf main.
 
-**Upload:** `game.js`, `city-world.js`, `index.html`, `README.md` vollständig in `/night` hochladen. `style.css` und `favicon.svg` bleiben unverändert. Kein npm; Three.js benötigt Internet.
-
-**Steuerung:** W/S Gas/Bremse, A/D lenken, C durch fünf Kameras schalten, Esc Pause, E am Tor Rennstrecke betreten, R aus der Rennwelt zur Stadt.
-
-**Noch nicht enthalten:** echte Lieferaufträge und Garagen-Upgrades. Es wurde kein Browser-Rundentest automatisiert; bitte erst Stadt, Kamera, Tor, Rennen und Rückkehr manuell prüfen.
+Test: Stadtstart, Marker auf der Nordweststraße, Hindurchfahren zählt nicht, Stopp zählt genau einmal, Wechsel mit E ins Rennen und R zurück – erledigte Lieferung bleibt in der laufenden Sitzung erledigt. Kein persistenter Spielstand über Browser-Neuladen. Im Browser noch nicht automatisch getestet.

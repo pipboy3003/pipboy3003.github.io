@@ -1,11 +1,11 @@
-/* Nachtfahrt – Stadt aus dem alten Spiel + Rennmodus. Vollständige night/game.js */
+/* Nachtfahrt – erste Kiosk-Lieferung, 2026-09-28. Vollständige night/game.js */
 import * as THREE from 'three';
 import {createCity} from './city-world.js';
-const $=id=>document.getElementById(id);
-const viewport=$('viewport'),keys=new Set();
-let renderer,scene,camera,car,body,moon,rain,raindrops=[],cityData=null;
+import {createFirstDelivery} from './mission.js';
+const $=id=>document.getElementById(id),viewport=$('viewport'),keys=new Set();
+let renderer,scene,camera,car,body,moon,rain,raindrops=[],cityData=null,kiosk=null;
 let world='city',playing=false,paused=false,velocity=0,heading=0;
-let pos=new THREE.Vector3(),last=performance.now(),zone=false;
+let pos=new THREE.Vector3(),last=performance.now(),zone=false,kioskDone=false;
 let lap=1,checkpoint=0,elapsed=0,previousT=0;
 const circuit=new THREE.CatmullRomCurve3([
   [-188,-20],[-175,-123],[-94,-205],[35,-211],[164,-166],
@@ -31,29 +31,20 @@ function box(w,h,d,x,y,z,material){
 }
 function say(text){$('toast').textContent=text;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),2500)}
 function base(){
-  scene=new THREE.Scene();scene.background=new THREE.Color(0x0b1b2b);
-  scene.fog=new THREE.FogExp2(0x102032,.0022);
+  scene=new THREE.Scene();scene.background=new THREE.Color(0x0b1b2b);scene.fog=new THREE.FogExp2(0x102032,.0022);
   scene.add(new THREE.HemisphereLight(0x8dbed5,0x1b202a,2.1));
   moon=new THREE.DirectionalLight(0x9bb9d9,2.2);
-  moon.position.set(-80,130,70);moon.castShadow=true;
-  moon.shadow.mapSize.set(1024,1024);
-  moon.shadow.camera.left=-95;moon.shadow.camera.right=95;
-  moon.shadow.camera.top=95;moon.shadow.camera.bottom=-95;
+  moon.position.set(-80,130,70);moon.castShadow=true;moon.shadow.mapSize.set(1024,1024);
+  moon.shadow.camera.left=-95;moon.shadow.camera.right=95;moon.shadow.camera.top=95;moon.shadow.camera.bottom=-95;
   scene.add(moon,moon.target);
 }
 function carMake(){
   car=new THREE.Group();car.rotation.order='YXZ';body=new THREE.Group();car.add(body);scene.add(car);
-  function part(w,h,d,x,y,z,material){
-    const q=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
-    q.position.set(x,y,z);body.add(q);
-  }
-  part(3.9,1.15,7.3,0,1.15,0,cyan);
-  part(3.3,1.2,3.65,0,2.17,.2,mat(0x183747,{metalness:.38,roughness:.26}));
+  function part(w,h,d,x,y,z,material){const q=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);q.position.set(x,y,z);body.add(q)}
+  part(3.9,1.15,7.3,0,1.15,0,cyan);part(3.3,1.2,3.65,0,2.17,.2,mat(0x183747,{metalness:.38,roughness:.26}));
   part(3.35,.09,2.5,0,2.85,.1,cyan);
-  part(1,.38,.22,-1.04,1.3,-3.67,white);
-  part(1,.38,.22,1.04,1.3,-3.67,white);
-  part(.9,.29,.22,-1.07,1.3,3.67,red);
-  part(.9,.29,.22,1.07,1.3,3.67,red);
+  part(1,.38,.22,-1.04,1.3,-3.67,white);part(1,.38,.22,1.04,1.3,-3.67,white);
+  part(.9,.29,.22,-1.07,1.3,3.67,red);part(.9,.29,.22,1.07,1.3,3.67,red);
   const tire=mat(0x0a1018,{roughness:1});
   for(const s of [-1,1])for(const z of [-2.35,2.35]){
     const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.87,.87,.52,16),tire);
@@ -65,21 +56,19 @@ function carMake(){
   car.position.copy(pos);car.rotation.y=-heading;
 }
 function makeRain(){
-  rain=new THREE.BufferGeometry();
-  rain.setAttribute('position',new THREE.BufferAttribute(new Float32Array(350*3),3));
+  rain=new THREE.BufferGeometry();rain.setAttribute('position',new THREE.BufferAttribute(new Float32Array(350*3),3));
   raindrops=Array.from({length:350},()=>({x:(Math.random()-.5)*115,y:Math.random()*65+2,z:(Math.random()-.5)*115}));
-  const points=new THREE.Points(rain,new THREE.PointsMaterial({color:0x9cc0d4,size:.22,transparent:true,opacity:.42,depthWrite:false}));
-  scene.add(points);
+  scene.add(new THREE.Points(rain,new THREE.PointsMaterial({color:0x9cc0d4,size:.22,transparent:true,opacity:.42,depthWrite:false})));
 }
 function worldCity(returnFromRace=false){
   base();world='city';raceSamples.length=0;cityData=createCity(THREE,scene);
   velocity=0;zone=false;checkpoint=0;
   pos.set(cityData.start.x,0,returnFromRace?-216:cityData.start.z);
   heading=returnFromRace?Math.PI:cityData.start.heading;
-  carMake();makeRain();
-  $('status').textContent='NACHTSCHICHT · FREIE FAHRT';$('speed').textContent='00';
-  if(returnFromRace)say('Zurück in der Nachtschicht.');
-  else say('Lieferstadt geladen · Renn-Nacht im Norden.');
+  carMake();makeRain();kiosk=createFirstDelivery(THREE,scene,kioskDone);
+  $('status').textContent=kioskDone?'NACHTSCHICHT · Lieferung 1/3 erledigt':'NACHTSCHICHT · Ziel: Nachtkiosk';
+  $('speed').textContent='00';
+  say(returnFromRace?'Zurück in der Nachtschicht.':'Nachtkiosk: orange Lieferzone auf der Nordweststraße.');
 }
 function raceNearest(x,z){
   let best=Infinity,t=0;
@@ -92,14 +81,14 @@ function raceNearest(x,z){
   return {distance:Math.sqrt(best),t};
 }
 function worldRace(){
-  base();world='race';cityData=null;raceSamples.length=0;
+  base();world='race';cityData=null;kiosk=null;raceSamples.length=0;
   velocity=0;lap=1;checkpoint=0;elapsed=0;previousT=0;
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700),mat(0x0c2227));
   ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
   const vertices=[],faces=[];
   for(let i=0;i<=COUNT;i++){
-    const p=circuit.getPoint(i/COUNT),dir=circuit.getTangent(i/COUNT).normalize();
-    const nx=-dir.z,nz=dir.x;raceSamples.push({x:p.x,z:p.z});
+    const p=circuit.getPoint(i/COUNT),dir=circuit.getTangent(i/COUNT).normalize(),nx=-dir.z,nz=dir.x;
+    raceSamples.push({x:p.x,z:p.z});
     vertices.push(p.x+nx*RACE_WIDTH/2,.16,p.z+nz*RACE_WIDTH/2);
     vertices.push(p.x-nx*RACE_WIDTH/2,.16,p.z-nz*RACE_WIDTH/2);
     if(i<COUNT){const k=i*2;faces.push(k,k+1,k+2,k+1,k+3,k+2)}
@@ -108,8 +97,7 @@ function worldRace(){
   geo.setIndex(faces);geo.computeVertexNormals();
   const road=new THREE.Mesh(geo,mat(0x1b2c35,{side:THREE.DoubleSide}));road.receiveShadow=true;scene.add(road);
   for(let i=0;i<COUNT;i+=10){
-    const p=circuit.getPoint(i/COUNT),dir=circuit.getTangent(i/COUNT).normalize();
-    const nx=-dir.z,nz=dir.x;
+    const p=circuit.getPoint(i/COUNT),dir=circuit.getTangent(i/COUNT).normalize(),nx=-dir.z,nz=dir.x;
     for(const s of [-1,1]){
       const curb=box(1,.3,8,p.x+s*nx*11.5,.3,p.z+s*nz*11.5,mat(i%20?0xe4e8e5:0xd14655));
       curb.rotation.y=Math.atan2(dir.x,dir.z);
@@ -140,13 +128,12 @@ function cameraChange(){
   camera.fov=cameraModes[cameraMode].fov;camera.updateProjectionMatrix();
   say('Kamera '+(cameraMode+1)+'/5: '+cameraModes[cameraMode].name);
 }
-function drive(dt){
+function drive(dt,now){
   const gas=keys.has('KeyW')||keys.has('ArrowUp'),brake=keys.has('KeyS')||keys.has('ArrowDown');
   const steer=(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0);
   if(gas)velocity+=35*dt;if(brake)velocity-=velocity>1?55*dt:24*dt;
   if(!gas&&!brake)velocity*=Math.exp(-1.55*dt);
-  velocity=THREE.MathUtils.clamp(velocity,-13,39);
-  if(Math.abs(velocity)<.12)velocity=0;
+  velocity=THREE.MathUtils.clamp(velocity,-13,39);if(Math.abs(velocity)<.12)velocity=0;
   heading+=steer*dt*1.65*Math.min(1,Math.abs(velocity)/15)*(velocity<0?-1:1);
   const x=pos.x+Math.sin(heading)*velocity*dt,z=pos.z-Math.cos(heading)*velocity*dt;
   const allowed=world==='city'?cityData.isRoad(x,z):raceNearest(x,z).distance<RACE_WIDTH/2-2;
@@ -154,21 +141,22 @@ function drive(dt){
   if(world==='city'){
     pos.y=cityData.height(pos.x,pos.z);
     const dx=Math.sin(heading)*2.7,dz=-Math.cos(heading)*2.7;
-    const front=cityData.height(pos.x+dx,pos.z+dz);
-    const rear=cityData.height(pos.x-dx,pos.z-dz);
+    const front=cityData.height(pos.x+dx,pos.z+dz),rear=cityData.height(pos.x-dx,pos.z-dz);
     car.rotation.x=Math.atan2(front-rear,5.4);
   }
   car.position.copy(pos);car.rotation.y=-heading;
   body.rotation.z=THREE.MathUtils.lerp(body.rotation.z,-steer*velocity/39*.085,Math.min(1,dt*5));
   $('speed').textContent=String(Math.round(Math.abs(velocity)*3)).padStart(2,'0');
   if(world==='city'){
+    const result=kiosk.update(pos.x,pos.z,velocity,dt,now);
+    if(result.delivered){kioskDone=true;say('Nachtkiosk beliefert! Lieferung 1/3 abgeschlossen.');}
+    $('status').textContent='NACHTSCHICHT · '+result.text;
     const gate=cityData.gate;
     const inside=Math.hypot(pos.x-gate.x,pos.z-gate.z)<gate.radius;
     if(inside&&Math.abs(velocity)<2.5&&!zone){zone=true;say('RENN-NACHT · Halte an und drücke E')}
     if(!inside||Math.abs(velocity)>=2.5)zone=false;
   }else{
-    elapsed+=dt;
-    const t=raceNearest(pos.x,pos.z).t;
+    elapsed+=dt;const t=raceNearest(pos.x,pos.z).t;
     const tangent=circuit.getTangent(t).normalize();
     const forward=velocity>2&&(Math.sin(heading)*tangent.x-Math.cos(heading)*tangent.z)>.45;
     if(forward){
@@ -195,16 +183,11 @@ function updateRain(dt){
   rain.attributes.position.needsUpdate=true;
 }
 function frame(now){
-  requestAnimationFrame(frame);
-  const dt=Math.min(.05,(now-last)/1000);last=now;
-  if(playing&&!paused)drive(dt);
+  requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;
+  if(playing&&!paused)drive(dt,now);
   updateRain(dt);
   if(cameraMode===0){goal.set(pos.x+51,pos.y+86,pos.z+89);look.set(pos.x,pos.y+2,pos.z-5)}
-  else{
-    car.updateMatrixWorld(true);
-    goal.copy(cameraModes[cameraMode].offset);car.localToWorld(goal);
-    look.copy(cameraModes[cameraMode].look);car.localToWorld(look);
-  }
+  else{car.updateMatrixWorld(true);goal.copy(cameraModes[cameraMode].offset);car.localToWorld(goal);look.copy(cameraModes[cameraMode].look);car.localToWorld(look)}
   if(cameraMode>=3){camPos.copy(goal);camLook.copy(look)}
   else{const smoothing=Math.min(1,dt*(cameraMode===0?3:6));camPos.lerp(goal,smoothing);camLook.lerp(look,smoothing)}
   camera.position.copy(camPos);camera.lookAt(camLook);
@@ -214,20 +197,13 @@ function frame(now){
 function init(){
   try{
     renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
-    renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));
-    renderer.setSize(innerWidth,innerHeight);
-    renderer.outputColorSpace=THREE.SRGBColorSpace;
-    renderer.toneMapping=THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure=1.65;
-    renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+    renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.setSize(innerWidth,innerHeight);
+    renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure=1.65;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
     viewport.appendChild(renderer.domElement);
     camera=new THREE.PerspectiveCamera(52,innerWidth/innerHeight,.1,1100);
-    addEventListener('resize',()=>{
-      renderer.setSize(innerWidth,innerHeight);
-      camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
-    });
-    worldCity();requestAnimationFrame(frame);
-    window.nachtfahrtReady=true;
+    addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
+    worldCity();requestAnimationFrame(frame);window.nachtfahrtReady=true;
   }catch(err){window.nachtfahrtBootError=err.message;console.error('Nachtfahrt Startfehler',err)}
 }
 $('deliveryMode').onclick=()=>{if(world!=='city')worldCity();playingOn()};
@@ -245,7 +221,6 @@ addEventListener('keydown',e=>{
   if(e.code==='KeyR'&&playing){worldCity(world==='race');playingOn();return}
   if(!e.repeat)keys.add(e.code);
 });
-addEventListener('keyup',e=>keys.delete(e.code));
-addEventListener('blur',()=>keys.clear());
+addEventListener('keyup',e=>keys.delete(e.code));addEventListener('blur',()=>keys.clear());
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing&&!paused){paused=true;keys.clear();$('pause').classList.remove('hidden')}});
 init();
