@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="title" role="img" viewBox="0 0 64 64">
+  <title id="title">Nachtfahrt – Straße bei Nacht</title>
+  <defs>
+    <linearGradient id="night" x2="0" y2="1">
+      <stop stop-color="#102d3d"/>
+      <stop offset="1" stop-color="#07111f"/>
+    </linearGradient>
+  </defs>
+  <rect fill="url(#night)" height="64" rx="14" width="64"/>
+  <path d="M8 49 24 17h16l16 32" fill="#162a37" stroke="#61ded9" stroke-linejoin="round" stroke-width="2.5"/>
+  <path d="M19 48 28 22h8l9 26" fill="#233947"/>
+  <path d="M32 26v7m0 5v6" stroke="#ffbd72" stroke-linecap="round" stroke-width="3"/>
+  <path d="M12 50h40" stroke="#83ece2" stroke-linecap="round" stroke-width="2.5"/>
+  <circle cx="17" cy="17" fill="#ffbd72" r="2"/>
+</svg>
