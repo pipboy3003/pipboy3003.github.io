@@ -1,10 +1,17 @@
-/* Nachtfahrt – Kamerafix 2026-09-28: POV-Kameras bleiben fest am Fahrzeug. Vollständige night/game.js */
+/* Nachtfahrt – Nordkurve, 2026-09-28. Vollständige night/game.js */
 import * as THREE from 'three';
 const viewport=document.getElementById('viewport'),menu=document.getElementById('menu');
 const pause=document.getElementById('pause'),error=document.getElementById('error');
 const hud=document.getElementById('hud'),bottomHud=document.getElementById('bottomHud');
 const speedLabel=document.getElementById('speed'),statusLabel=document.getElementById('status');
 const toast=document.getElementById('toast'),streetLines=[-240,-120,0,120,240],roadWidth=19;
+const scenicWidth=20,scenicSamples=[];
+const scenicCurve=new THREE.CatmullRomCurve3([
+  new THREE.Vector3(-240,0,-240),new THREE.Vector3(-190,0,-303),
+  new THREE.Vector3(-110,0,-275),new THREE.Vector3(-30,0,-317),
+  new THREE.Vector3(48,0,-268),new THREE.Vector3(124,0,-312),
+  new THREE.Vector3(194,0,-270),new THREE.Vector3(240,0,-240)
+],false,'centripetal');
 const cameraModes=[
   {name:'Stadtblick',offset:null,look:null,fov:52},
   {name:'Verfolger nah',offset:new THREE.Vector3(0,26,33),look:new THREE.Vector3(0,2,-12),fov:52},
@@ -54,8 +61,32 @@ function building(x,z,w,d,h,seed){
   }
   if(seed%3===0)box(scene,2,.8,2,x,h+.75,z,dark);
 }
+function addScenicRoad(){
+  const vertices=[],indices=[],count=160;
+  scenicSamples.length=0;
+  for(let i=0;i<=count;i++){
+    const t=i/count,p=scenicCurve.getPoint(t),dir=scenicCurve.getTangent(t).normalize();
+    const nx=-dir.z,nz=dir.x;
+    scenicSamples.push({x:p.x,z:p.z});
+    vertices.push(p.x+nx*scenicWidth/2,.18,p.z+nz*scenicWidth/2);
+    vertices.push(p.x-nx*scenicWidth/2,.18,p.z-nz*scenicWidth/2);
+    if(i<count){const k=2*i;indices.push(k,k+1,k+2,k+1,k+3,k+2)}
+  }
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+  geometry.setIndex(indices);geometry.computeVertexNormals();
+  const mesh=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({color:0x1b303a,roughness:.47,metalness:.09,side:THREE.DoubleSide}));
+  mesh.receiveShadow=true;scene.add(mesh);
+  for(let i=6;i<count-6;i+=8){
+    const a=scenicSamples[i],b=scenicSamples[i+1];
+    const dash=box(scene,.24,.015,4,a.x,.193,a.z,white);
+    dash.rotation.y=Math.atan2(b.x-a.x,b.z-a.z);
+  }
+  const arrow=sign(scene,'NORDKURVE',-222,9,-249,'#ffbd72');
+  arrow.rotation.y=Math.PI/2;
+}
 function city(){
-  const ground=new THREE.Mesh(new THREE.PlaneGeometry(730,730),m(0x0d1923,{roughness:1}));
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(900,900),m(0x0d1923,{roughness:1}));
   ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
   for(const c of streetLines){
     box(scene,roadWidth,.09,595,c,.04,0,asphalt);box(scene,595,.09,roadWidth,0,.05,c,asphalt);
@@ -81,10 +112,11 @@ function city(){
     const post=box(scene,.5,9,.5,a+12,4.5,b+12,m(0x344858));
     post.castShadow=false;box(scene,2.4,.25,1,a+11,9,b+12,orange);
   }
+  addScenicRoad();
   const skyline=m(0x111e2b);
-  for(let t=-320;t<=320;t+=38){
-    box(scene,27,19+(Math.abs(t*7)%24),25,t,10,-333,skyline);
-    box(scene,25,20+(Math.abs(t*11)%29),24,t,11,333,skyline);
+  for(let t=-430;t<=430;t+=38){
+    box(scene,27,19+(Math.abs(t*7)%24),25,t,10,-411,skyline);
+    box(scene,25,20+(Math.abs(t*11)%29),24,t,11,411,skyline);
   }
 }
 function makeCar(){
@@ -129,7 +161,23 @@ function setup(){
 }
 function resize(){if(!renderer)return;const w=viewport.clientWidth,h=viewport.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
 function clearInput(){keys.clear()}
-function road(x,z){const inside=Math.abs(x)<=249&&Math.abs(z)<=249;return inside&&(streetLines.some(s=>Math.abs(x-s)<roadWidth/2-1)||streetLines.some(s=>Math.abs(z-s)<roadWidth/2-1))}
+function distanceToCurve(x,z){
+  let best=Infinity;
+  for(let i=1;i<scenicSamples.length;i++){
+    const a=scenicSamples[i-1],b=scenicSamples[i];
+    const dx=b.x-a.x,dz=b.z-a.z;
+    const t=clamp(((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz),0,1);
+    const px=a.x+t*dx,pz=a.z+t*dz;
+    const d=(x-px)*(x-px)+(z-pz)*(z-pz);
+    if(d<best)best=d;
+  }
+  return Math.sqrt(best);
+}
+function road(x,z){
+  const inGrid=Math.abs(x)<=249&&Math.abs(z)<=249;
+  const gridRoad=inGrid&&(streetLines.some(s=>Math.abs(x-s)<roadWidth/2-1)||streetLines.some(s=>Math.abs(z-s)<roadWidth/2-1));
+  return gridRoad||distanceToCurve(x,z)<scenicWidth/2-1;
+}
 function reset(){position.set(-240,0,0);velocity=0;heading=0;car.position.copy(position);car.rotation.y=0;clearInput();notify('Zur Garage zurückgesetzt')}
 function changeCamera(){
   cameraMode=(cameraMode+1)%cameraModes.length;
@@ -139,7 +187,7 @@ function changeCamera(){
 }
 function setPause(value){if(!playing)return;paused=value;clearInput();pause.classList.toggle('hidden',!value);pause.setAttribute('aria-hidden',String(!value));statusLabel.textContent=value?'Pausiert':'Freie Fahrt'}
 function showMenu(){playing=false;paused=false;clearInput();menu.classList.remove('hidden');pause.classList.add('hidden');hud.hidden=true;bottomHud.hidden=true;statusLabel.textContent='Freie Fahrt'}
-function start(){reset();cameraMode=0;if(camera){camera.fov=52;camera.updateProjectionMatrix()}playing=true;paused=false;menu.classList.add('hidden');pause.classList.add('hidden');hud.hidden=false;bottomHud.hidden=false;notify('Fünf Kameras: mit C durchschalten')}
+function start(){reset();cameraMode=0;if(camera){camera.fov=52;camera.updateProjectionMatrix()}playing=true;paused=false;menu.classList.add('hidden');pause.classList.add('hidden');hud.hidden=false;bottomHud.hidden=false;notify('Neue Nordkurve: im Norden zwischen beiden Außenstraßen')}
 function drive(dt){
   const gas=keys.has('KeyW')||keys.has('ArrowUp'),brake=keys.has('KeyS')||keys.has('ArrowDown');
   const steer=(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0);
@@ -169,13 +217,8 @@ function frame(time){
   if(playing&&!paused)drive(dt);updateRain(dt);
   if(cameraMode===0){cameraTarget.set(position.x+51,86,position.z+89);lookTarget.set(position.x,2,position.z-5)}
   else{car.updateMatrixWorld(true);cameraTarget.copy(cameraModes[cameraMode].offset);car.localToWorld(cameraTarget);lookTarget.copy(cameraModes[cameraMode].look);car.localToWorld(lookTarget)}
-  if(cameraMode>=3){
-    // POV-Ansichten dürfen nicht hinterhergleiten: sonst überholt die Karosserie die Kamera.
-    cameraPoint.copy(cameraTarget);cameraLook.copy(lookTarget);
-  }else{
-    const response=Math.min(1,dt*(cameraMode===0?3:6));
-    cameraPoint.lerp(cameraTarget,response);cameraLook.lerp(lookTarget,response);
-  }
+  if(cameraMode>=3){cameraPoint.copy(cameraTarget);cameraLook.copy(lookTarget)}
+  else{const response=Math.min(1,dt*(cameraMode===0?3:6));cameraPoint.lerp(cameraTarget,response);cameraLook.lerp(lookTarget,response)}
   camera.position.copy(cameraPoint);camera.lookAt(cameraLook);
   const moon=window._nachtfahrtMoon;moon.position.set(position.x-80,130,position.z+70);moon.target.position.set(position.x,0,position.z);scene.add(moon.target);
   renderer.render(scene,camera);
