@@ -1,4 +1,4 @@
-/* Nachtfahrt – Hochstraße: Laternen und Randmauern, 2026-09-28. Vollständige night/game.js */
+/* Nachtfahrt – Stadtviertel und Ladenfronten, 2026-09-28. Vollständige night/game.js */
 import * as THREE from 'three';
 const viewport=document.getElementById('viewport'),menu=document.getElementById('menu');
 const pause=document.getElementById('pause'),error=document.getElementById('error');
@@ -33,6 +33,23 @@ const white=m(0xdbe3d1,{emissive:0x434e3d,emissiveIntensity:.15});
 const teal=m(0x58e8db,{emissive:0x19b0a7,emissiveIntensity:2});
 const orange=m(0xffbd72,{emissive:0xe48738,emissiveIntensity:1.9});
 const red=m(0xff4c5e,{emissive:0xea1b33,emissiveIntensity:2});
+const districtWalls=[
+  [m(0x183847),m(0x244955),m(0x263e4d),m(0x152b39)],
+  [m(0x403246),m(0x403649),m(0x2f344c),m(0x4a3348)],
+  [m(0x3a3e40),m(0x344147),m(0x455049),m(0x343d45)]
+];
+const districtGlass=[
+  m(0x78f0e1,{emissive:0x23b6ac,emissiveIntensity:1.3}),
+  m(0xf9c298,{emissive:0xd57861,emissiveIntensity:1.35}),
+  m(0xe5b976,{emissive:0xae7f3d,emissiveIntensity:1.1})
+];
+const districtAccent=[teal,red,orange];
+const storeNames=[
+  'NACHTKIOSK','VINYL','BAR 24','SPÄTKAUF',
+  'CAFÉ NOVA','KINO','RAMEN','ARCADE',
+  'REIFEN','GARAGE 7','WERKSTATT','MARKT',
+  'DEPOT','TANKSTELLE','TEILELAGER','HOTEL'
+];
 function box(parent,w,h,d,x,y,z,material){
   const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
   mesh.position.set(x,y,z);mesh.receiveShadow=true;mesh.castShadow=h>1;parent.add(mesh);return mesh;
@@ -42,14 +59,13 @@ function sign(parent,text,x,y,z,color='#6ce6e0'){
   const canvas=document.createElement('canvas');canvas.width=512;canvas.height=128;
   const ctx=canvas.getContext('2d');ctx.fillStyle='rgba(4,20,35,.90)';ctx.fillRect(0,0,512,128);
   ctx.strokeStyle=color;ctx.lineWidth=8;ctx.strokeRect(4,4,504,120);
-  ctx.fillStyle=color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 55px Arial';ctx.fillText(text,256,65);
+  ctx.fillStyle=color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 52px Arial';ctx.fillText(text,256,65,485);
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
   const plane=new THREE.Mesh(new THREE.PlaneGeometry(13,3.25),new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide,transparent:true,depthWrite:false}));
   plane.position.set(x,y,z);plane.renderOrder=2;parent.add(plane);return plane;
 }
-function building(x,z,w,d,h,seed){
-  const materials=[m(0x1d3040),m(0x253445),m(0x24394a),m(0x27323e)];
-  box(scene,w,h,d,x,h/2+.12,z,materials[seed%materials.length]);
+function building(x,z,w,d,h,seed,district){
+  box(scene,w,h,d,x,h/2+.12,z,districtWalls[district][seed%4]);
   box(scene,w+.6,.35,d+.6,x,h+.28,z,m(0x0e1c29));
   const levels=Math.min(8,Math.floor(h/4));
   const warm=m(0xf0ae65,{emissive:0xd68c49,emissiveIntensity:1.25});
@@ -62,25 +78,30 @@ function building(x,z,w,d,h,seed){
   }
   if(seed%3===0)box(scene,2,.8,2,x,h+.75,z,dark);
 }
+function storefront(x,z,k,district){
+  const frontZ=z+38;
+  box(scene,24,2.9,.14,x-18,2.25,frontZ+.25,districtGlass[district]);
+  box(scene,2.7,3,.18,x-18,2.1,frontZ+.39,dark);
+  box(scene,29,.23,2.2,x-18,4.25,frontZ+1.25,districtAccent[district]);
+  const colors=['#6ce6e0','#ff8a99','#ffc27f'];
+  sign(scene,storeNames[k],x-18,6.4,frontZ+.55,colors[district]);
+  for(const side of [-1,1]){
+    box(scene,.3,2.8,.35,x-18+side*12,2.2,frontZ+.55,districtAccent[district]);
+  }
+}
 function addEdgeWalls(){
   const concrete=m(0x74818b,{metalness:.05,roughness:.87,side:THREE.DoubleSide});
   for(const side of [-1,1]){
     const vertices=[],indices=[];
     for(let i=0;i<scenicSamples.length;i++){
       const p=scenicSamples[i],dir=scenicCurve.getTangent(p.t).normalize();
-      const nx=-dir.z*side,nz=dir.x*side;
-      const inner=scenicWidth/2+.07,outer=inner+.5;
+      const nx=-dir.z*side,nz=dir.x*side,inner=scenicWidth/2+.07,outer=inner+.5;
       const base=scenicElevation(p.t)+.18;
       vertices.push(p.x+nx*inner,base,p.z+nz*inner);
       vertices.push(p.x+nx*inner,base+1.15,p.z+nz*inner);
       vertices.push(p.x+nx*outer,base,p.z+nz*outer);
       vertices.push(p.x+nx*outer,base+1.15,p.z+nz*outer);
-      if(i<scenicSamples.length-1){
-        const k=i*4;
-        indices.push(k,k+4,k+1,k+1,k+4,k+5);
-        indices.push(k+2,k+3,k+6,k+3,k+7,k+6);
-        indices.push(k+1,k+5,k+3,k+3,k+5,k+7);
-      }
+      if(i<scenicSamples.length-1){const k=i*4;indices.push(k,k+4,k+1,k+1,k+4,k+5,k+2,k+3,k+6,k+3,k+7,k+6,k+1,k+5,k+3,k+3,k+5,k+7)}
     }
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
     geo.setIndex(indices);geo.computeVertexNormals();
@@ -92,24 +113,21 @@ function addElevatedLights(){
   const bulb=m(0xffdb9a,{emissive:0xffae5d,emissiveIntensity:2.6});
   for(let i=12;i<scenicSamples.length-12;i+=18){
     const p=scenicSamples[i],dir=scenicCurve.getTangent(p.t).normalize();
-    const side=(Math.floor(i/18)%2===0)?1:-1;
-    const nx=-dir.z*side,nz=dir.x*side;
+    const side=(Math.floor(i/18)%2===0)?1:-1,nx=-dir.z*side,nz=dir.x*side;
     const roadY=scenicElevation(p.t)+.18;
     const px=p.x+nx*(scenicWidth/2+1.9),pz=p.z+nz*(scenicWidth/2+1.9);
     box(scene,.35,7,.35,px,roadY+3.5,pz,steel);
     const lightX=px-nx*2.15,lightZ=pz-nz*2.15;
-    const mid=new THREE.Vector3((px+lightX)/2,roadY+7,(pz+lightZ)/2);
     const arm=new THREE.Mesh(new THREE.CylinderGeometry(.11,.11,2.2,8),steel);
-    arm.position.copy(mid);arm.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(lightX-px,0,lightZ-pz).normalize());scene.add(arm);
+    arm.position.set((px+lightX)/2,roadY+7,(pz+lightZ)/2);
+    arm.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(lightX-px,0,lightZ-pz).normalize());scene.add(arm);
     const lamp=new THREE.Mesh(new THREE.SphereGeometry(.38,10,8),bulb);
     lamp.position.set(lightX,roadY+6.8,lightZ);scene.add(lamp);
-    const glow=new THREE.PointLight(0xffc984,4.5,35,2);
-    glow.position.copy(lamp.position);scene.add(glow);
+    const glow=new THREE.PointLight(0xffc984,4.5,35,2);glow.position.copy(lamp.position);scene.add(glow);
   }
 }
 function addScenicRoad(){
-  const vertices=[],indices=[],count=160;
-  scenicSamples.length=0;
+  const vertices=[],indices=[],count=160;scenicSamples.length=0;
   for(let i=0;i<=count;i++){
     const t=i/count,p=scenicCurve.getPoint(t),dir=scenicCurve.getTangent(t).normalize();
     const nx=-dir.z,nz=dir.x,y=scenicElevation(t);
@@ -118,9 +136,9 @@ function addScenicRoad(){
     vertices.push(p.x-nx*scenicWidth/2,y+.18,p.z-nz*scenicWidth/2);
     if(i<count){const k=2*i;indices.push(k,k+1,k+2,k+1,k+3,k+2)}
   }
-  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
-  geometry.setIndex(indices);geometry.computeVertexNormals();
-  const mesh=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({color:0x1b303a,roughness:.47,metalness:.09,side:THREE.DoubleSide}));
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+  geo.setIndex(indices);geo.computeVertexNormals();
+  const mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0x1b303a,roughness:.47,metalness:.09,side:THREE.DoubleSide}));
   mesh.receiveShadow=true;mesh.castShadow=true;scene.add(mesh);
   const support=m(0x394b53);
   for(let i=8;i<count-8;i+=12){const p=scenicSamples[i],h=scenicElevation(p.t);if(h>1)box(scene,2,h,2,p.x,h/2,p.z,support)}
@@ -145,11 +163,12 @@ function city(){
   for(let i=0;i<4;i++)for(let j=0;j<4;j++){
     const x=(streetLines[i]+streetLines[i+1])/2,z=(streetLines[j]+streetLines[j+1])/2;
     box(scene,97,.22,97,x,.05,z,pavement);
-    const k=i*4+j;
-    building(x-22,z-22,37,38,15+(k*7)%19,k);
-    building(x+22,z-20,34,32,14+(k*11)%18,k+2);
-    building(x-18,z+22,42,32,12+(k*13)%22,k+4);
-    building(x+24,z+22,30,37,17+(k*5)%20,k+6);
+    const k=i*4+j,district=j<2?(i<2?0:1):2;
+    building(x-22,z-22,37,38,15+(k*7)%19,k,district);
+    building(x+22,z-20,34,32,14+(k*11)%18,k+2,district);
+    building(x-18,z+22,42,32,12+(k*13)%22,k+4,district);
+    building(x+24,z+22,30,37,17+(k*5)%20,k+6,district);
+    storefront(x,z,k,district);
   }
   box(scene,40,12,32,-274,6,0,m(0x273c46));box(scene,1,8,14,-253.4,4,0,teal);
   const garageSign=sign(scene,'GARAGE',-251.9,9.4,0);garageSign.rotation.y=Math.PI/2;
@@ -242,7 +261,7 @@ function changeCamera(){
 }
 function setPause(value){if(!playing)return;paused=value;clearInput();pause.classList.toggle('hidden',!value);pause.setAttribute('aria-hidden',String(!value));statusLabel.textContent=value?'Pausiert':'Freie Fahrt'}
 function showMenu(){playing=false;paused=false;clearInput();menu.classList.remove('hidden');pause.classList.add('hidden');hud.hidden=true;bottomHud.hidden=true;statusLabel.textContent='Freie Fahrt'}
-function start(){reset();cameraMode=0;if(camera){camera.fov=52;camera.updateProjectionMatrix()}playing=true;paused=false;menu.classList.add('hidden');pause.classList.add('hidden');hud.hidden=false;bottomHud.hidden=false;notify('Nordkurve: jetzt mit Laternen und Randmauern')}
+function start(){reset();cameraMode=0;if(camera){camera.fov=52;camera.updateProjectionMatrix()}playing=true;paused=false;menu.classList.add('hidden');pause.classList.add('hidden');hud.hidden=false;bottomHud.hidden=false;notify('Neue Läden und Viertel: erkunde die Stadt!')}
 function drive(dt){
   const gas=keys.has('KeyW')||keys.has('ArrowUp'),brake=keys.has('KeyS')||keys.has('ArrowDown');
   const steer=(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0);
