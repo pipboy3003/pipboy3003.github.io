@@ -1,15 +1,10 @@
-/* Nachtfahrt – Kamera- und Garagen-Fix, 2026-09-28. Vollständige night/game.js */
+/* Nachtfahrt – Kamerafix 2026-09-28: POV-Kameras bleiben fest am Fahrzeug. Vollständige night/game.js */
 import * as THREE from 'three';
-const viewport=document.getElementById('viewport');
-const menu=document.getElementById('menu');
-const pause=document.getElementById('pause');
-const error=document.getElementById('error');
-const hud=document.getElementById('hud');
-const bottomHud=document.getElementById('bottomHud');
-const speedLabel=document.getElementById('speed');
-const statusLabel=document.getElementById('status');
-const toast=document.getElementById('toast');
-const streetLines=[-240,-120,0,120,240],roadWidth=19;
+const viewport=document.getElementById('viewport'),menu=document.getElementById('menu');
+const pause=document.getElementById('pause'),error=document.getElementById('error');
+const hud=document.getElementById('hud'),bottomHud=document.getElementById('bottomHud');
+const speedLabel=document.getElementById('speed'),statusLabel=document.getElementById('status');
+const toast=document.getElementById('toast'),streetLines=[-240,-120,0,120,240],roadWidth=19;
 const cameraModes=[
   {name:'Stadtblick',offset:null,look:null,fov:52},
   {name:'Verfolger nah',offset:new THREE.Vector3(0,26,33),look:new THREE.Vector3(0,2,-12),fov:52},
@@ -18,18 +13,14 @@ const cameraModes=[
   {name:'Stoßstange',offset:new THREE.Vector3(0,1.25,-4.35),look:new THREE.Vector3(0,1.4,-35),fov:75}
 ];
 let cameraMode=0;
-const cameraLook=new THREE.Vector3(-240,2,-5);
-const cameraTarget=new THREE.Vector3(),lookTarget=new THREE.Vector3();
+const cameraLook=new THREE.Vector3(-240,2,-5),cameraTarget=new THREE.Vector3(),lookTarget=new THREE.Vector3();
 const clamp=THREE.MathUtils.clamp;
 let renderer,scene,camera,car,body,wheels=[],rain,raindrops=[];
-let playing=false,paused=false,velocity=0,heading=0;
-let position=new THREE.Vector3(-240,0,0);
-let cameraPoint=new THREE.Vector3(-190,85,90),last=performance.now();
-let messageTimer=0,collisionCooldown=0;
+let playing=false,paused=false,velocity=0,heading=0,position=new THREE.Vector3(-240,0,0);
+let cameraPoint=new THREE.Vector3(-190,85,90),last=performance.now(),messageTimer=0,collisionCooldown=0;
 const keys=new Set();
 const m=(color,extra={})=>new THREE.MeshStandardMaterial({color,roughness:.75,...extra});
-const asphalt=m(0x172633,{roughness:.43,metalness:.14});
-const pavement=m(0x25333d),dark=m(0x0d1926);
+const asphalt=m(0x172633,{roughness:.43,metalness:.14}),pavement=m(0x25333d),dark=m(0x0d1926);
 const white=m(0xdbe3d1,{emissive:0x434e3d,emissiveIntensity:.15});
 const teal=m(0x58e8db,{emissive:0x19b0a7,emissiveIntensity:2});
 const orange=m(0xffbd72,{emissive:0xe48738,emissiveIntensity:1.9});
@@ -67,12 +58,10 @@ function city(){
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(730,730),m(0x0d1923,{roughness:1}));
   ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
   for(const c of streetLines){
-    box(scene,roadWidth,.09,595,c,.04,0,asphalt);
-    box(scene,595,.09,roadWidth,0,.05,c,asphalt);
+    box(scene,roadWidth,.09,595,c,.04,0,asphalt);box(scene,595,.09,roadWidth,0,.05,c,asphalt);
     for(let t=-280;t<280;t+=20){
       if(streetLines.some(s=>Math.abs(s-t)<15))continue;
-      box(scene,.22,.012,7,c,.105,t,white);
-      box(scene,7,.012,.22,t,.115,c,white);
+      box(scene,.22,.012,7,c,.105,t,white);box(scene,7,.012,.22,t,.115,c,white);
     }
   }
   for(let i=0;i<4;i++)for(let j=0;j<4;j++){
@@ -86,9 +75,7 @@ function city(){
   }
   box(scene,40,12,32,-274,6,0,m(0x273c46));
   box(scene,1,8,14,-253.4,4,0,teal);
-  // Garagenfront zeigt nach Osten (+X). Die Tafel steht vollständig vor der Wand.
-  const garageSign=sign(scene,'GARAGE',-251.9,9.4,0);
-  garageSign.rotation.y=Math.PI/2;
+  const garageSign=sign(scene,'GARAGE',-251.9,9.4,0);garageSign.rotation.y=Math.PI/2;
   for(let a=-240;a<=240;a+=120)for(let b=-240;b<=240;b+=120){
     if((a+b)%240!==0)continue;
     const post=box(scene,.5,9,.5,a+12,4.5,b+12,m(0x344858));
@@ -106,10 +93,8 @@ function makeCar(){
   box(body,3.3,1.2,3.65,0,2.17,.2,m(0x183747,{metalness:.38,roughness:.26}));
   box(body,3.35,.09,2.5,0,2.85,.1,m(0x66ddd5,{metalness:.45,roughness:.3}));
   box(body,3.4,.11,.12,0,2.13,-1.82,teal);
-  box(body,1,.38,.22,-1.04,1.3,-3.67,white);
-  box(body,1,.38,.22,1.04,1.3,-3.67,white);
-  box(body,.9,.29,.22,-1.07,1.3,3.67,red);
-  box(body,.9,.29,.22,1.07,1.3,3.67,red);
+  box(body,1,.38,.22,-1.04,1.3,-3.67,white);box(body,1,.38,.22,1.04,1.3,-3.67,white);
+  box(body,.9,.29,.22,-1.07,1.3,3.67,red);box(body,.9,.29,.22,1.07,1.3,3.67,red);
   const tire=m(0x0a1018,{roughness:1});
   for(const side of [-1,1])for(const rear of [-1,1]){
     const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.87,.87,.52,16),tire);
@@ -184,8 +169,13 @@ function frame(time){
   if(playing&&!paused)drive(dt);updateRain(dt);
   if(cameraMode===0){cameraTarget.set(position.x+51,86,position.z+89);lookTarget.set(position.x,2,position.z-5)}
   else{car.updateMatrixWorld(true);cameraTarget.copy(cameraModes[cameraMode].offset);car.localToWorld(cameraTarget);lookTarget.copy(cameraModes[cameraMode].look);car.localToWorld(lookTarget)}
-  const response=Math.min(1,dt*(cameraMode===0?3:cameraMode>=3?14:6));
-  cameraPoint.lerp(cameraTarget,response);cameraLook.lerp(lookTarget,response);
+  if(cameraMode>=3){
+    // POV-Ansichten dürfen nicht hinterhergleiten: sonst überholt die Karosserie die Kamera.
+    cameraPoint.copy(cameraTarget);cameraLook.copy(lookTarget);
+  }else{
+    const response=Math.min(1,dt*(cameraMode===0?3:6));
+    cameraPoint.lerp(cameraTarget,response);cameraLook.lerp(lookTarget,response);
+  }
   camera.position.copy(cameraPoint);camera.lookAt(cameraLook);
   const moon=window._nachtfahrtMoon;moon.position.set(position.x-80,130,position.z+70);moon.target.position.set(position.x,0,position.z);scene.add(moon.target);
   renderer.render(scene,camera);
