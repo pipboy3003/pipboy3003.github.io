@@ -1,12 +1,20 @@
 <!doctype html><html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="favicon.svg"><title>Nachtfahrt</title><link rel="stylesheet" href="style.css">
+<style>
+.press-enter{position:absolute;z-index:3;left:50%;bottom:8%;transform:translateX(-50%);padding:15px 28px;color:#eafffa;border:1px solid #72eadf;background:rgba(5,23,34,.86);box-shadow:0 0 24px rgba(82,226,217,.22);font:800 clamp(14px,2vw,21px) Arial,sans-serif;letter-spacing:.16em;white-space:nowrap;text-align:center;animation:enterPulse 1.6s ease-in-out infinite}
+.press-enter kbd{font:inherit;color:#ffc481}
+@keyframes enterPulse{50%{box-shadow:0 0 38px rgba(82,226,217,.7);border-color:#d0fff9}}
+@media(max-width:600px){.press-enter{white-space:normal;width:86%;letter-spacing:.1em}}
+@media(prefers-reduced-motion:reduce){.press-enter{animation:none}}
+</style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js"}}</script>
 </head><body><main id="app">
 <section id="intro"><div class="skyline"></div><div class="road"><i></i><i></i><i></i></div>
 <div class="head">● NACHTFAHRT <small>LAST DELIVERY / 01</small></div>
 <div class="loaderTitle"><p>NACHTSCHICHT WIRD VORBEREITET</p><h1>NACHT<span>FAHRT</span></h1><em id="loadingStatus">Stadtlichter einschalten · Pakete verladen · Motor starten</em></div>
 <div class="courier"><b></b><i></i><span>▣</span><span>▣</span></div><div class="loadbar"><i></i></div>
+<div id="enterPrompt" class="press-enter hidden" role="status" aria-live="polite">ZUM SPIELSTART <kbd>ENTER</kbd> DRÜCKEN</div>
 <button id="reloadButton" class="hidden" type="button" onclick="location.reload()">ERNEUT LADEN</button></section>
 <section id="modes" class="hidden"><button id="deliveryMode" type="button">NACHTSCHICHT</button><button id="raceMode" type="button">RENN-NACHT</button></section>
 <div id="viewport"></div><header id="hud" hidden><b>● NACHTFAHRT</b><span id="status"></span></header>
@@ -16,23 +24,32 @@
 </main>
 <script>
 (()=>{
-  const intro=document.getElementById('intro'),status=document.getElementById('loadingStatus');
-  const started=performance.now();let done=false;
+  const intro=document.getElementById('intro');
+  const status=document.getElementById('loadingStatus');
+  const prompt=document.getElementById('enterPrompt');
+  const started=performance.now();
+  let ready=false,entered=false,failed=false;
   const timer=setInterval(()=>{
-    if(done)return;
+    if(ready||failed)return;
     if(window.nachtfahrtBootError||performance.now()-started>15000){
-      done=true;clearInterval(timer);
+      failed=true;clearInterval(timer);
       status.textContent='Spielstart fehlgeschlagen. Internetverbindung prüfen und erneut laden.';
       document.getElementById('reloadButton').classList.remove('hidden');return;
     }
     if(window.nachtfahrtReady&&document.querySelector('#viewport canvas')&&performance.now()-started>2800){
-      done=true;clearInterval(timer);
-      document.getElementById('deliveryMode').click();
-      requestAnimationFrame(()=>requestAnimationFrame(()=>{
-        intro.classList.add('out');setTimeout(()=>intro.remove(),700);
-      }));
+      ready=true;clearInterval(timer);status.textContent='NACHTSCHICHT BEREIT';
+      prompt.classList.remove('hidden');
     }
   },100);
+  window.addEventListener('keydown',event=>{
+    if(!ready||failed||entered||event.repeat)return;
+    if(event.code!=='Enter'&&event.code!=='NumpadEnter')return;
+    event.preventDefault();entered=true;prompt.classList.add('hidden');
+    document.getElementById('deliveryMode').click();
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      intro.classList.add('out');setTimeout(()=>intro.remove(),700);
+    }));
+  });
 })();
 </script>
 <script type="module" src="game.js?v=20260928-kiosk-mission-1"></script></body></html>
