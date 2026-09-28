@@ -1,11 +1,28 @@
-/* Nachtfahrt – Missionsbrief und mittiger Richtungspfeil. Vollständige night/game.js */
+/* Nachtfahrt – Nachrichtenkette, Geldbeutel und Teileinventar. Vollständige night/game.js */
 import * as THREE from 'three';
 import {createCity} from './city-world.js';
-import {createFirstDelivery} from './mission.js';
+import {MISSIONS,createMissionManager} from './mission.js';
 const $=id=>document.getElementById(id),viewport=$('viewport'),keys=new Set();
-let renderer,scene,camera,car,body,moon,rain,raindrops=[],cityData=null,kiosk=null;
-let world='city',playing=false,paused=false,briefOpen=false,velocity=0,heading=0;
-let pos=new THREE.Vector3(),last=performance.now(),zone=false,kioskDone=false,kioskStarted=false;
+const SAVE_KEY='nachtfahrt-profile-v1';
+function loadProfile(){
+  try{
+    const raw=JSON.parse(localStorage.getItem(SAVE_KEY)||'{}');
+    const stage=Number.isInteger(raw.stage)?Math.max(0,Math.min(MISSIONS.length,raw.stage)):0;
+    const wallet=Number.isFinite(raw.wallet)?Math.max(0,Math.min(1000000,Math.floor(raw.wallet))):0;
+    const completed=Array.isArray(raw.completed)?raw.completed.filter(id=>MISSIONS.some(m=>m.id===id)):[];
+    const inventory={};
+    for(const m of MISSIONS){
+      const qty=Number(raw.inventory?.[m.part.id]);
+      inventory[m.part.id]=Number.isInteger(qty)?Math.max(0,Math.min(99,qty)):0;
+    }
+    return {stage,wallet,completed:[...new Set(completed)],inventory,active:stage<MISSIONS.length&&raw.active===true};
+  }catch{return {stage:0,wallet:0,completed:[],inventory:{},active:false}}
+}
+const profile=loadProfile();
+function saveProfile(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(profile))}catch(e){console.warn('Speichern nicht möglich',e)}}
+let renderer,scene,camera,car,body,moon,rain,raindrops=[],cityData=null,mission=null;
+let world='city',playing=false,paused=false,briefOpen=false,inventoryOpen=false,letterMode='',velocity=0,heading=0;
+let pos=new THREE.Vector3(),last=performance.now(),zone=false;
 let lap=1,checkpoint=0,elapsed=0,previousT=0;
 const circuit=new THREE.CatmullRomCurve3([
   [-188,-20],[-175,-123],[-94,-205],[35,-211],[164,-166],
@@ -25,11 +42,26 @@ const mat=(color,extra={})=>new THREE.MeshStandardMaterial({color,roughness:.72,
 const cyan=mat(0x4ed2cd,{metalness:.55,roughness:.32});
 const white=mat(0xe7efeb,{emissive:0x45564d,emissiveIntensity:.2});
 const red=mat(0xff5264,{emissive:0xd22b42,emissiveIntensity:2});
-function box(w,h,d,x,y,z,material){
-  const q=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
-  q.position.set(x,y,z);q.castShadow=h>1;q.receiveShadow=true;scene.add(q);return q;
-}
+function box(w,h,d,x,y,z,material){const q=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);q.position.set(x,y,z);q.castShadow=h>1;q.receiveShadow=true;scene.add(q);return q}
 function say(text){$('toast').textContent=text;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),2500)}
+function renderWallet(){
+  $('walletHud').textContent=profile.wallet.toLocaleString('de-DE')+' €';
+  $('walletDetail').textContent=profile.wallet.toLocaleString('de-DE')+' €';
+  const list=$('inventoryList');list.replaceChildren();
+  for(const m of MISSIONS){
+    const qty=profile.inventory[m.part.id]||0;
+    if(qty>0){
+      const li=document.createElement('li'),name=document.createElement('span'),count=document.createElement('strong');
+      name.textContent=m.part.name;count.textContent='× '+qty;li.append(name,count);list.append(li);
+    }
+  }
+  if(!list.children.length){const li=document.createElement('li');li.textContent='Noch keine Teile gefunden.';list.append(li)}
+}
+function toggleInventory(force){
+  if(!playing||briefOpen)return;
+  inventoryOpen=typeof force==='boolean'?force:!inventoryOpen;
+  keys.clear();$('inventoryPanel').classList.toggle('hidden',!inventoryOpen);renderWallet();
+}
 function base(){
   scene=new THREE.Scene();scene.background=new THREE.Color(0x0b1b2b);scene.fog=new THREE.FogExp2(0x102032,.0022);
   scene.add(new THREE.HemisphereLight(0x8dbed5,0x1b202a,2.1));
@@ -61,29 +93,31 @@ function makeRain(){
   scene.add(new THREE.Points(rain,new THREE.PointsMaterial({color:0x9cc0d4,size:.22,transparent:true,opacity:.42,depthWrite:false})));
 }
 function missionHud(){
-  const active=playing&&world==='city'&&kiosk?.active;
+  const active=playing&&world==='city'&&mission?.active;
   $('missionCompass').classList.toggle('hidden',!active);
   if(active){
-    const dx=kiosk.target.x-pos.x,dz=kiosk.target.z-pos.z;
+    const dx=mission.current.x-pos.x,dz=mission.current.z-pos.z;
     const bearing=Math.atan2(dx,-dz),relative=Math.atan2(Math.sin(bearing-heading),Math.cos(bearing-heading));
     $('missionArrow').style.transform=`rotate(${relative*180/Math.PI}deg)`;
-    $('missionDistance').textContent=`NACHTKIOSK · ${Math.round(Math.hypot(dx,dz))} m`;
+    $('missionDistance').textContent=`${mission.current.recipient.split(' · ')[1].toUpperCase()} · ${Math.round(Math.hypot(dx,dz))} m`;
   }
-  const nearGarage=playing&&world==='city'&&!kioskDone&&!kioskStarted&&!briefOpen&&
+  const atGarage=playing&&world==='city'&&profile.stage===0&&!mission?.active&&!briefOpen&&
     Math.hypot(pos.x-cityData.start.x,pos.z-cityData.start.z)<18&&Math.abs(velocity)<2.5;
-  $('garagePrompt').classList.toggle('hidden',!nearGarage);
+  const nextMessage=playing&&world==='city'&&profile.stage>0&&profile.stage<MISSIONS.length&&!profile.active&&!briefOpen;
+  $('garagePrompt').textContent=nextMessage?'E DRÜCKEN · NÄCHSTE NACHRICHT':'GARAGE · E DRÜCKEN: NACHRICHT LESEN';
+  $('garagePrompt').classList.toggle('hidden',!(atGarage||nextMessage));
 }
 function worldCity(returnFromRace=false){
   base();world='city';raceSamples.length=0;cityData=createCity(THREE,scene);
-  velocity=0;zone=false;checkpoint=0;briefOpen=false;$('letterOverlay').classList.add('hidden');
+  velocity=0;zone=false;briefOpen=false;inventoryOpen=false;
+  $('letterOverlay').classList.add('hidden');$('inventoryPanel').classList.add('hidden');
   pos.set(cityData.start.x,0,returnFromRace?-216:cityData.start.z);
   heading=returnFromRace?Math.PI:cityData.start.heading;
-  carMake();makeRain();kiosk=createFirstDelivery(THREE,scene,kioskDone);
-  if(kioskStarted&&!kioskDone)kiosk.start();
-  $('status').textContent=kioskDone?'NACHTSCHICHT · Lieferung 1/3 erledigt':
-    kioskStarted?'NACHTSCHICHT · Ziel: Nachtkiosk':'NACHTSCHICHT · Garage: E für Auftrag';
-  $('speed').textContent='00';missionHud();
-  say(returnFromRace?'Zurück in der Nachtschicht.':'Bei der Garage E drücken, um den Auftrag anzunehmen.');
+  carMake();makeRain();mission=createMissionManager(THREE,scene,profile.stage,profile.active);
+  $('status').textContent=profile.stage>=MISSIONS.length?'NACHTSCHICHT · ALLE LIEFERUNGEN FERTIG':
+    profile.active?'NACHTSCHICHT · '+mission.current.recipient:'NACHTSCHICHT · E für Nachricht';
+  $('speed').textContent='00';renderWallet();missionHud();
+  say(returnFromRace?'Zurück in der Nachtschicht.':'Bei der Garage E drücken, um den Auftrag zu lesen.');
 }
 function raceNearest(x,z){
   let best=Infinity,t=0;
@@ -96,8 +130,8 @@ function raceNearest(x,z){
   return {distance:Math.sqrt(best),t};
 }
 function worldRace(){
-  base();world='race';cityData=null;kiosk=null;raceSamples.length=0;
-  briefOpen=false;$('letterOverlay').classList.add('hidden');
+  base();world='race';cityData=null;mission=null;raceSamples.length=0;
+  briefOpen=false;inventoryOpen=false;$('letterOverlay').classList.add('hidden');$('inventoryPanel').classList.add('hidden');
   $('missionCompass').classList.add('hidden');$('garagePrompt').classList.add('hidden');
   velocity=0;lap=1;checkpoint=0;elapsed=0;previousT=0;
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700),mat(0x0c2227));
@@ -132,26 +166,54 @@ function worldRace(){
   }
   const p=circuit.getPoint(.005),dir=circuit.getTangent(.005).normalize();
   pos.set(p.x,0,p.z);heading=Math.atan2(dir.x,-dir.z);
-  carMake();makeRain();$('status').textContent='RENN-NACHT · RUNDE 1/3';$('speed').textContent='00';
+  carMake();makeRain();$('status').textContent='RENN-NACHT · RUNDE 1/3';$('speed').textContent='00';renderWallet();
   say('Rennstrecke betreten · 3 Runden.');
 }
 function playingOn(){playing=true;paused=false;keys.clear();$('menu').classList.add('hidden');$('pause').classList.add('hidden');$('hud').hidden=false;$('bottomHud').hidden=false;missionHud()}
 function cameraChange(){cameraMode=(cameraMode+1)%cameraModes.length;camera.fov=cameraModes[cameraMode].fov;camera.updateProjectionMatrix();say('Kamera '+(cameraMode+1)+'/5: '+cameraModes[cameraMode].name)}
-function closeLetter(){
-  if(!briefOpen)return;
-  briefOpen=false;$('letterOverlay').classList.add('hidden');
-  say('Auftrag aktiv · Der orange Pfeil zeigt zum Nachtkiosk.');
+function openLetter(mode,m){
+  letterMode=mode;briefOpen=true;inventoryOpen=false;velocity=0;keys.clear();
+  $('speed').textContent='00';$('inventoryPanel').classList.add('hidden');$('letterOverlay').classList.remove('hidden');
+  $('letterTitle').textContent=mode==='reward'?'Nachricht von '+m.recipient.split(' · ')[0]:m.title;
+  $('letterBody').textContent=mode==='reward'
+    ?`${m.recipient.split(' · ')[0]} hat die Fracht erhalten. Gute Arbeit! Deine Belohnung wurde dem Geldbeutel und dem Teileinventar gutgeschrieben.`
+    :m.story;
+  $('letterMeta').textContent=mode==='reward'
+    ?`BELOHNUNG: +${m.pay} €  ·  +1 ${m.part.name}  ·  ${profile.stage<MISSIONS.length?'NÄCHSTE NACHRICHT VERFÜGBAR':'ALLE LIEFERUNGEN ERLEDIGT'}`
+    :`ABSENDER: ${m.sender}  ·  EMPFÄNGER: ${m.recipient}  ·  FRACHT: ${m.cargo}`;
+  $('closeLetter').textContent=mode==='reward'
+    ?profile.stage<MISSIONS.length?'NÄCHSTE NACHRICHT [E / ENTER]':'ZURÜCK ZUM SPIEL [E / ENTER]'
+    :'VERSTANDEN · LOSFAHREN [E / ENTER]';
   missionHud();
 }
-function acceptAtGarage(){
-  if(world!=='city'||kioskDone||kioskStarted||!playing||paused)return false;
-  const near=Math.hypot(pos.x-cityData.start.x,pos.z-cityData.start.z)<18;
-  if(!near||Math.abs(velocity)>=2.5)return false;
-  if(!kiosk.start())return false;
-  kioskStarted=true;briefOpen=true;keys.clear();velocity=0;
-  $('speed').textContent='00';$('letterOverlay').classList.remove('hidden');
-  $('status').textContent='NACHTSCHICHT · Auftrag angenommen';missionHud();
-  return true;
+function dismissLetter(acceptNext=true){
+  if(!briefOpen)return;
+  const wasReward=letterMode==='reward';
+  briefOpen=false;letterMode='';$('letterOverlay').classList.add('hidden');
+  if(wasReward&&acceptNext&&world==='city'&&mission&&!mission.done){
+    startNextMission();return;
+  }
+  missionHud();
+}
+function startNextMission(){
+  if(world!=='city'||!mission||mission.done||mission.active)return false;
+  if(!mission.start())return false;
+  profile.active=true;saveProfile();openLetter('brief',mission.current);return true;
+}
+function completeDelivery(m){
+  if(!profile.completed.includes(m.id)){
+    profile.completed.push(m.id);
+    profile.wallet+=m.pay;
+    profile.inventory[m.part.id]=(profile.inventory[m.part.id]||0)+1;
+  }
+  mission.advance();profile.stage=mission.stage;profile.active=false;
+  saveProfile();renderWallet();openLetter('reward',m);
+}
+function acceptWithE(){
+  if(world!=='city'||!playing||paused||briefOpen||inventoryOpen||!mission||mission.active||mission.done)return false;
+  const first=mission.stage===0;
+  if(first&&(Math.hypot(pos.x-cityData.start.x,pos.z-cityData.start.z)>=18||Math.abs(velocity)>=2.5))return false;
+  return startNextMission();
 }
 function drive(dt,now){
   const gas=keys.has('KeyW')||keys.has('ArrowUp'),brake=keys.has('KeyS')||keys.has('ArrowDown');
@@ -173,8 +235,8 @@ function drive(dt,now){
   body.rotation.z=THREE.MathUtils.lerp(body.rotation.z,-steer*velocity/39*.085,Math.min(1,dt*5));
   $('speed').textContent=String(Math.round(Math.abs(velocity)*3)).padStart(2,'0');
   if(world==='city'){
-    const result=kiosk.update(pos.x,pos.z,velocity,dt,now);
-    if(result.delivered){kioskDone=true;say('Leyla hat die Ersatzlampen erhalten · Lieferung 1/3 erledigt.');}
+    const result=mission.update(pos.x,pos.z,velocity,dt,now);
+    if(result.completed){completeDelivery(result.completed);say('Lieferung übergeben · Belohnung erhalten!')}
     $('status').textContent='NACHTSCHICHT · '+result.text;
     const gate=cityData.gate,inside=Math.hypot(pos.x-gate.x,pos.z-gate.z)<gate.radius;
     if(inside&&Math.abs(velocity)<2.5&&!zone){zone=true;say('RENN-NACHT · Halte an und drücke E')}
@@ -209,7 +271,7 @@ function updateRain(dt){
 }
 function frame(now){
   requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;
-  if(playing&&!paused&&!briefOpen)drive(dt,now);
+  if(playing&&!paused&&!briefOpen&&!inventoryOpen)drive(dt,now);
   updateRain(dt);
   if(cameraMode===0){goal.set(pos.x+51,pos.y+86,pos.z+89);look.set(pos.x,pos.y+2,pos.z-5)}
   else{car.updateMatrixWorld(true);goal.copy(cameraModes[cameraMode].offset);car.localToWorld(goal);look.copy(cameraModes[cameraMode].look);car.localToWorld(look)}
@@ -228,7 +290,7 @@ function init(){
     viewport.appendChild(renderer.domElement);
     camera=new THREE.PerspectiveCamera(52,innerWidth/innerHeight,.1,1100);
     addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
-    worldCity();requestAnimationFrame(frame);window.nachtfahrtReady=true;
+    renderWallet();worldCity();requestAnimationFrame(frame);window.nachtfahrtReady=true;
   }catch(err){window.nachtfahrtBootError=err.message;console.error('Nachtfahrt Startfehler',err)}
 }
 $('deliveryMode').onclick=()=>{if(world!=='city')worldCity();playingOn()};
@@ -238,15 +300,20 @@ $('enterRace').onclick=()=>{worldCity(true);playingOn()};
 $('resumeButton').onclick=()=>{paused=false;keys.clear();$('pause').classList.add('hidden')};
 $('menuButton').onclick=()=>{worldCity(true);playingOn()};
 $('pauseButton').onclick=()=>{paused=true;keys.clear();$('pause').classList.remove('hidden')};
-$('closeLetter').onclick=closeLetter;
+$('closeLetter').onclick=()=>dismissLetter(true);
+$('inventoryButton').onclick=()=>toggleInventory();
+$('closeInventory').onclick=()=>toggleInventory(false);
 addEventListener('keydown',e=>{
   if(briefOpen){
-    if(!e.repeat&&['KeyE','Enter','NumpadEnter','Escape'].includes(e.code)){e.preventDefault();closeLetter()}
+    if(!e.repeat&&['KeyE','Enter','NumpadEnter'].includes(e.code)){e.preventDefault();dismissLetter(true)}
+    else if(!e.repeat&&e.code==='Escape'){e.preventDefault();dismissLetter(false)}
     return;
   }
+  if(inventoryOpen){if(['KeyI','Escape'].includes(e.code)&&!e.repeat){e.preventDefault();toggleInventory(false)}return}
   if(playing&&['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
+  if(e.code==='KeyI'&&playing&&!e.repeat){toggleInventory();return}
   if(e.code==='KeyE'&&playing&&!paused&&!e.repeat){
-    if(acceptAtGarage())return;
+    if(acceptWithE())return;
     if(world==='city'&&zone){worldRace();playingOn();return}
   }
   if(e.code==='KeyC'&&playing&&!paused&&!e.repeat){cameraChange();return}

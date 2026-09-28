@@ -1,9 +1,24 @@
-# Nachtfahrt – Auftragsbrief und Missionspfeil
+# Nachtfahrt – drei Lieferungen, Nachrichten und Inventar
 
-Dieses Update ändert nur die erste Lieferung. Vor Annahme ist der Nachtkiosk-Marker aus. Starte nach dem Loading-Screen mit Enter. Bleibe bei der Garage stehen und bestätige dort mit E: Erst dann wird die Mission aktiv und ein Brief von Mara erscheint. Leyla am Nachtkiosk bekommt Ersatzlampen und Sicherungen. Schließe den Brief mit Enter oder E.
+Dieses Paket ersetzt vier Dateien im bestehenden Ordner `/night`: `mission.js`, `game.js`, `index.html`, `README.md`. `city-world.js`, `style.css` und `favicon.svg` bleiben unverändert. Alle betroffenen Dateien liegen im ZIP vollständig vor.
 
-Während der Mission steht oben mittig ein orangefarbener Pfeil. Er zeigt **relativ zur Fahrtrichtung des Autos** auf das Missionsziel und nennt die ungefähre Distanz. Fahre zur orangefarbenen Zone auf der Straße vor dem Nachtkiosk und halte etwa 1,2 Sekunden an. Vor Annahme darf Durchfahren nichts auslösen. Ein abgeschlossener Auftrag bleibt beim Wechsel zur Rennstrecke innerhalb derselben Sitzung erledigt; ein Browser-Neuladen setzt ihn zurück.
+## Ablauf
 
-Upload nach `/night`: `mission.js`, `game.js`, `index.html`, `README.md` vollständig ersetzen. `city-world.js`, `style.css`, `favicon.svg` nicht ändern. Danach auf GitHub selbst committen.
+Nach dem animierten Intro Enter drücken. Bei der Garage im Stillstand E drücken: Missionsbrief lesen und mit E/Enter schließen. Dem orangefarbenen Pfeil folgen; die Abgabe erfordert 1,2 Sekunden fast im Stillstand. Nach jeder Lieferung erscheint eine neue Nachricht mit Belohnung. E/Enter nimmt die nächste Nachricht an und öffnet ihren Brief; Esc schließt nur die Belohnungsnachricht, sodass die nächste Mission später mit E gestartet werden kann.
 
-Tests: Nach Enter an Garage E drücken. Brief prüfen, schließen, Pfeil bei Drehung des Autos überprüfen, Kiosk anfahren, durchfahren zählt nicht, anhalten zählt genau einmal. Danach Rennen betreten und zurückkehren; Lieferung bleibt erledigt. Im Browser nicht automatisch getestet.
+1. Mara → Leyla am Nachtkiosk: Ersatzlampen und Sicherungen. Belohnung 80 € und LED-Leuchtmodul. Lieferfeld (-198, -120).
+2. Leyla → Enzo im Café Nova: Kaffeebohnen. Belohnung 100 € und kompaktes Werkzeugset. Lieferfeld (42, -120).
+3. Enzo → Sven am Nachtdepot: versiegelte Fahrzeugteile. Belohnung 140 € und Performance-Reifensatz. Lieferfeld (162, 120).
+
+Geldbeutel steht im HUD. Teileinventar mit dem HUD-Button oder `I` öffnen. Guthaben, Teile und Missionsstand werden lokal im Browser unter `nachtfahrt-profile-v1` gespeichert; auf demselben Browser nicht doppelt auszahlbar. Es gibt noch keine Cloud-Synchronisierung. Die Rückkehr-zur-Garage-Abrechnung kommt in einem späteren Paket.
+
+## Testfolge
+
+1. Spiel starten; vor E darf kein aktiver Missionspfeil vorhanden sein.
+2. Kioskbrief öffnen; durchfahren zählt nicht, Anhalten zählt einmal.
+3. Nach Zahlung den Geldbeutel (+80 €) und das Inventar (LED-Leuchtmodul ×1) prüfen.
+4. Folgemission per E annehmen; Café und Depot ebenso testen.
+5. Vor und nach einem Browser-Neuladen Geldbeutel und Missionsstand vergleichen.
+6. Zwischen Lieferungen in den Rennmodus wechseln und zurückkehren: der Fortschritt bleibt erhalten.
+
+Bei Bedarf für einen erneuten Test aller drei Missionen im Browser-Speicher den einzelnen Schlüssel `nachtfahrt-profile-v1` löschen. Syntax und datengetriebene Missionsfolge wurden geprüft; ein kompletter Browser-Test war nicht möglich.
