@@ -1,1 +1,37 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="favicon.svg"><title>Nachtfahrt</title><link rel="stylesheet" href="style.css"><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js"}}</script></head><body><main id="app"><section id="intro"><div class="skyline"></div><div class="road"><i></i><i></i><i></i></div><div class="head">● NACHTFAHRT <small>LAST DELIVERY / 01</small></div><div class="loaderTitle"><p>NACHTSCHICHT WIRD VORBEREITET</p><h1>NACHT<span>FAHRT</span></h1><em>Stadtlichter einschalten · Pakete verladen · Motor starten</em></div><div class="courier"><b></b><i></i><span>▣</span><span>▣</span></div><div class="loadbar"><i></i></div></section><section id="modes" class="hidden"><button id="deliveryMode">NACHTSCHICHT</button><button id="raceMode">RENN-NACHT</button></section><div id="viewport"></div><header id="hud" hidden><b>● NACHTFAHRT</b><span id="status"></span></header><div id="bottomHud" hidden><b id="speed">00</b><small>km/h*</small><em>WASD · FAHREN | E · STRECKE | ESC · PAUSE | R · STADT</em><button id="pauseButton">Ⅱ</button></div><div id="toast"></div><section class="overlay hidden" id="menu"><div><h1>NACHT<span>RENNEN</span></h1><button id="startButton">RENNEN STARTEN</button><button id="enterRace">ZUR STADT</button></div></section><section class="overlay hidden" id="pause"><div><h2>PAUSE</h2><button id="resumeButton">WEITER</button><button id="menuButton">MENÜ</button></div></section></main><script>setTimeout(()=>{const a=document.querySelector('#intro');a.classList.add('out');setTimeout(()=>{a.remove();document.querySelector('#deliveryMode').click()},650)},3000)</script><script type="module" src="game.js"></script></body></html>
+<!doctype html><html lang="de"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="favicon.svg"><title>Nachtfahrt</title><link rel="stylesheet" href="style.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js"}}</script>
+</head><body><main id="app">
+<section id="intro"><div class="skyline"></div><div class="road"><i></i><i></i><i></i></div>
+<div class="head">● NACHTFAHRT <small>LAST DELIVERY / 01</small></div>
+<div class="loaderTitle"><p>NACHTSCHICHT WIRD VORBEREITET</p><h1>NACHT<span>FAHRT</span></h1><em id="loadingStatus">Stadtlichter einschalten · Pakete verladen · Motor starten</em></div>
+<div class="courier"><b></b><i></i><span>▣</span><span>▣</span></div><div class="loadbar"><i></i></div><button id="reloadButton" class="hidden" type="button" onclick="location.reload()">ERNEUT LADEN</button></section>
+<section id="modes" class="hidden"><button id="deliveryMode" type="button">NACHTSCHICHT</button><button id="raceMode" type="button">RENN-NACHT</button></section>
+<div id="viewport"></div><header id="hud" hidden><b>● NACHTFAHRT</b><span id="status"></span></header>
+<div id="bottomHud" hidden><b id="speed">00</b><small>km/h*</small><em>WASD · FAHREN | E · STRECKE | ESC · PAUSE | R · STADT</em><button id="pauseButton" type="button">Ⅱ</button></div><div id="toast"></div>
+<section class="overlay hidden" id="menu"><div><h1>NACHT<span>RENNEN</span></h1><button id="startButton" type="button">RENNEN STARTEN</button><button id="enterRace" type="button">ZUR STADT</button></div></section>
+<section class="overlay hidden" id="pause"><div><h2>PAUSE</h2><button id="resumeButton" type="button">WEITER</button><button id="menuButton" type="button">ZUR STADT</button></div></section>
+</main>
+<script>
+(()=>{
+  const intro=document.getElementById('intro'),status=document.getElementById('loadingStatus');
+  const started=performance.now();let done=false;
+  const timer=setInterval(()=>{
+    if(done)return;
+    if(window.nachtfahrtBootError||performance.now()-started>15000){
+      done=true;clearInterval(timer);
+      status.textContent='Spielstart fehlgeschlagen. Internetverbindung prüfen und erneut laden.';
+      document.getElementById('reloadButton').classList.remove('hidden');return;
+    }
+    if(window.nachtfahrtReady&&document.querySelector('#viewport canvas')&&performance.now()-started>2800){
+      done=true;clearInterval(timer);
+      document.getElementById('deliveryMode').click();
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        intro.classList.add('out');setTimeout(()=>intro.remove(),700);
+      }));
+    }
+  },100);
+})();
+</script>
+<script type="module" src="game.js?v=20260928-start-fix"></script></body></html>
