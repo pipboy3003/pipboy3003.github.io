@@ -1,30 +1,50 @@
 /*
 ================================================================================
 CHANGELOG & TIMESTAMPS
-Date / Time (CEST): 2026-09-30 17:50:00
-Version: 1.0.0
+Date / Time (CEST): 2026-09-30 17:53:00
+Version: 1.0.1
 Author: pipboy3003
 Changes:
-- Initial JavaScript logic:
-  - Automatisches Ausblenden des Maustastisch-Preloaders nach Asset-Ladevorgang.
-  - Interaktiver Kalender: Dynamische Monats- und Tagesberechnung, Verhindern vergangener Tage.
-  - Dynamischer Live-Preisrechner (Paket-Grundpreis + modulare Addons).
-  - Synchronisierung der Paketkarten mit den Radio-Buttons im Buchungsbereich.
-  - WhatsApp- & E-Mail-Generator: Formatiert Gästedaten, Wünsche und Preis direkt für den Versand.
+- Preloader-Logik überarbeitet:
+  - 'removePreloader()' entfernt die Scroll-Sperre am body ('preloader-active').
+  - Zweistufige Ausblendung: Erst CSS-Klasse 'fade-out', anschließend nach 600ms 'destroyed' (display: none).
+  - Doppelte Absicherung: Sowohl 'window.onload' als auch ein harter Fallback-Timer (max. 2000ms), damit der Screen niemals hängenbleibt.
+- Bestehende Logik für Kalender, Preiskalkulation und Buchung beibehalten.
 ================================================================================
 */
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // ================= 1. PRELOADER =================
+  // ================= 1. PRELOADER LOGIK & SCROLL-RELEASE =================
   const preloader = document.getElementById('preloader');
-  window.addEventListener('load', () => {
+  let preloaderRemoved = false;
+
+  function removePreloader() {
+    if (preloaderRemoved || !preloader) return;
+    preloaderRemoved = true;
+
+    // Weiche Transition einleiten
+    preloader.classList.add('fade-out');
+    // Scrollen der Webseite freigeben
+    document.body.classList.remove('preloader-active');
+
+    // Nach Beendigung der CSS-Animation komplett aus dem Rendering entfernen
     setTimeout(() => {
-      if (preloader) {
-        preloader.classList.add('hidden');
-      }
-    }, 1200); // Sanfte Verzögerung für den Ladescreen
-  });
+      preloader.classList.add('destroyed');
+    }, 600);
+  }
+
+  // Reguläres Ausblenden bei fertigem Ladevorgang
+  if (document.readyState === 'complete') {
+    setTimeout(removePreloader, 1000);
+  } else {
+    window.addEventListener('load', () => {
+      setTimeout(removePreloader, 1000);
+    });
+  }
+
+  // Absoluter Fail-Safe-Timer: Spätestens nach 2 Sekunden wird die Seite freigegeben
+  setTimeout(removePreloader, 2000);
 
   // ================= 2. STATE & PREISE =================
   const packageData = {
@@ -253,7 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const data = validateBooking();
     if (!data) return;
 
-    // HIER EIGENE WHATSAPP-NUMMER EINTRAGEN (im Format: 491701234567 ohne +)
+    // Telefonnummer im internationalen Format ohne führendes Plus
     const hostWhatsAppNumber = '491701234567';
 
     const message = `*Buchungsanfrage: MausTastisch Private Retreat* 🐭✨%0A%0A` +
@@ -275,7 +295,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const data = validateBooking();
     if (!data) return;
 
-    // HIER EIGENE E-MAIL-ADRESSE EINTRAGEN
     const hostEmail = 'ihre-adresse@beispiel.de';
 
     const subject = encodeURIComponent(`Buchungsanfrage MausTastisch: ${data.package} am ${data.date}`);
