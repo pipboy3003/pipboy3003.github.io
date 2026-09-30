@@ -1,18 +1,13 @@
 <!--
 ================================================================================
 CHANGELOG & TIMESTAMPS
-Date / Time (CEST): 2026-09-30 17:50:00
-Version: 1.0.0
+Date / Time (CEST): 2026-09-30 17:53:00
+Version: 1.0.1
 Author: pipboy3003
 Changes:
-- Initial release: Luxus-Resort & Boutique-Webseite "MausTastisch Private Retreat".
-- Integrierter Preloader / Ladescreen mit animierter Vektor-Luxusmaus und Ladebalken.
-- Hero-Section mit Parallax-Atmosphäre und edlem Slogan.
-- Interaktive Paketauswahl (Beauty, Gourmet, Wellness, Übernachtung).
-- Modulare Add-Ons (Gourmet-Dinner, Champagner-Service, Overnight Suite).
-- Interaktiver Live-Kalender zur Datumsauswahl.
-- Dynamischer Preisrechner mit Echtzeit-Aktualisierung.
-- Vollständiges Buchungsformular inklusive direkter WhatsApp- & E-Mail-Schnittstelle.
+- Bugfix Preloader: Klasse 'preloader-active' am body hinzugefügt, um Scrollen während des Ladens komplett zu unterbinden.
+- Fail-Safe Fallback: Preloader wird nach Ablauf der Animation restlos aus dem DOM-Renderbaum ausgeblendet (display: none).
+- Vollständige HTML-Struktur beibehalten.
 ================================================================================
 -->
 <!DOCTYPE html>
@@ -26,7 +21,7 @@ Changes:
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="preloader-active">
 
   <!-- ================= LOADING SCREEN ================= -->
   <div id="preloader" class="preloader">
@@ -374,8 +369,8 @@ Changes:
   <!-- ================= FOOTER ================= -->
   <footer class="footer">
     <div class="container footer-content">
+      <div class="footer-mouse">🐭</div>
       <div class="footer-logo">
-        <span class="footer-mouse">🐭</span>
         <h3>MausTastisch Private Retreat</h3>
         <p>Ihr privates Refugium für außergewöhnliche Momente und pure Erholung.</p>
       </div>
