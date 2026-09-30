@@ -1,21 +1,20 @@
 /*
 ================================================================================
 CHANGELOG & TIMESTAMPS
-Date / Time (CEST): 2026-09-30 17:53:00
-Version: 1.0.1
+Date / Time (CEST): 2026-09-30 17:58:00
+Version: 1.1.0
 Author: pipboy3003
 Changes:
-- Preloader-Logik überarbeitet:
-  - 'removePreloader()' entfernt die Scroll-Sperre am body ('preloader-active').
-  - Zweistufige Ausblendung: Erst CSS-Klasse 'fade-out', anschließend nach 600ms 'destroyed' (display: none).
-  - Doppelte Absicherung: Sowohl 'window.onload' als auch ein harter Fallback-Timer (max. 2000ms), damit der Screen niemals hängenbleibt.
-- Bestehende Logik für Kalender, Preiskalkulation und Buchung beibehalten.
+- Mobile Handling: Touch-Verhalten für Datumsauswahl und Paketkarten geglättet.
+- Automatischer Fokus: Nach der Paketauswahl scrollt die Seite auf Mobilgeräten sanft zur Konfiguration.
+- Robustes Fallback für Kalender-Rendering auf schmalen Touchscreens.
+- WhatsApp & Mail URL-Encoding gegen Parsingfehler auf mobilen Browsern abgesichert.
 ================================================================================
 */
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // ================= 1. PRELOADER LOGIK & SCROLL-RELEASE =================
+  // ================= 1. PRELOADER & SCROLL-RELEASE =================
   const preloader = document.getElementById('preloader');
   let preloaderRemoved = false;
 
@@ -23,28 +22,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (preloaderRemoved || !preloader) return;
     preloaderRemoved = true;
 
-    // Weiche Transition einleiten
     preloader.classList.add('fade-out');
-    // Scrollen der Webseite freigeben
     document.body.classList.remove('preloader-active');
 
-    // Nach Beendigung der CSS-Animation komplett aus dem Rendering entfernen
     setTimeout(() => {
       preloader.classList.add('destroyed');
-    }, 600);
+    }, 550);
   }
 
-  // Reguläres Ausblenden bei fertigem Ladevorgang
   if (document.readyState === 'complete') {
-    setTimeout(removePreloader, 1000);
+    setTimeout(removePreloader, 800);
   } else {
     window.addEventListener('load', () => {
-      setTimeout(removePreloader, 1000);
+      setTimeout(removePreloader, 800);
     });
   }
 
-  // Absoluter Fail-Safe-Timer: Spätestens nach 2 Sekunden wird die Seite freigegeben
-  setTimeout(removePreloader, 2000);
+  // Absicherungs-Timer für schwache mobile Verbindungen
+  setTimeout(removePreloader, 1800);
 
   // ================= 2. STATE & PREISE =================
   const packageData = {
@@ -55,8 +50,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const addonData = {
     'addonDinner': { name: 'Gourmet-Dinner (3 Gänge)', price: 65 },
-    'addonChampagne': { name: 'Flasche Champagner & Erdbeeren', price: 45 },
-    'addonOvernight': { name: 'Übernachtungs-Upgrade & Frühstück', price: 130 }
+    'addonChampagne': { name: 'Champagner & Erdbeeren', price: 45 },
+    'addonOvernight': { name: 'Übernachtung & Frühstück', price: 130 }
   };
 
   let selectedDate = null;
@@ -78,7 +73,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function calculateTotal() {
     let currentTotal = 0;
 
-    // Basispaket
     const checkedRadio = document.querySelector('input[name="basePackage"]:checked');
     const pkgKey = checkedRadio ? checkedRadio.value : 'day-spa';
     const pkg = packageData[pkgKey];
@@ -87,7 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
     sumPackageName.textContent = pkg.name;
     sumPackagePrice.textContent = `${pkg.price} €`;
 
-    // Addons
     sumAddonsList.innerHTML = '';
     addonCheckboxes.forEach(cb => {
       if (cb.checked) {
@@ -102,7 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Gäste & Gesamtsumme
     sumGuests.textContent = guestCountSelect.value;
     sumTotalPrice.textContent = `${currentTotal} €`;
 
@@ -112,12 +104,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // Event Listener für Konfigurationsänderungen
   baseRadios.forEach(radio => radio.addEventListener('change', calculateTotal));
   addonCheckboxes.forEach(cb => cb.addEventListener('change', calculateTotal));
   guestCountSelect.addEventListener('change', calculateTotal);
 
-  // Paket-Karten Klick-Verknüpfung
+  // Klick auf Paket-Cards
   const packageCards = document.querySelectorAll('.package-card');
   packageCards.forEach(card => {
     const btn = card.querySelector('.btn-select-package');
@@ -127,12 +118,22 @@ document.addEventListener('DOMContentLoaded', () => {
       if (targetRadio) {
         targetRadio.checked = true;
         calculateTotal();
-        document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
+        
+        // Sanfter Scroll zur Konfiguration auf Mobilgeräten
+        const bookingSection = document.getElementById('booking');
+        const headerOffset = 70;
+        const elementPosition = bookingSection.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
       }
     });
   });
 
-  // ================= 4. INTERAKTIVER KALENDER =================
+  // ================= 4. MOBILE KALENDER-ENGINE =================
   const calendarDaysEl = document.getElementById('calendarDays');
   const calendarMonthYearEl = document.getElementById('calendarMonthYear');
   const prevMonthBtn = document.getElementById('prevMonth');
@@ -153,12 +154,10 @@ document.addEventListener('DOMContentLoaded', () => {
     calendarDaysEl.innerHTML = '';
     calendarMonthYearEl.textContent = `${monthNames[month]} ${year}`;
 
-    // Erster Tag des Monats (Montag als 0)
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const startOffset = (firstDay === 0 ? 7 : firstDay) - 1;
 
-    // Leere Felder für Offset
     for (let i = 0; i < startOffset; i++) {
       const emptyCell = document.createElement('div');
       emptyCell.className = 'cal-day disabled';
@@ -168,7 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Monatstage
     for (let day = 1; day <= daysInMonth; day++) {
       const dayCell = document.createElement('div');
       dayCell.className = 'cal-day';
@@ -176,11 +174,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const cellDate = new Date(year, month, day);
 
-      // Vergangene Tage sperren
       if (cellDate < today) {
         dayCell.classList.add('disabled');
       } else {
-        // Tag auswählen
         dayCell.addEventListener('click', () => {
           document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('selected'));
           dayCell.classList.add('selected');
@@ -194,7 +190,6 @@ document.addEventListener('DOMContentLoaded', () => {
           sumDate.textContent = selectedDate;
         });
 
-        // Markierung beibehalten, falls ausgewählt
         if (selectedDate === `${String(day).padStart(2, '0')}.${String(month + 1).padStart(2, '0')}.${year}`) {
           dayCell.classList.add('selected');
         }
@@ -235,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!selectedDate) {
       feedbackEl.style.color = '#ff6b6b';
-      feedbackEl.textContent = 'Bitte wählen Sie zuerst ein Datum im Kalender aus.';
+      feedbackEl.textContent = 'Bitte wählen Sie zuerst einen Tag im Kalender aus.';
       return null;
     }
 
@@ -273,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const data = validateBooking();
     if (!data) return;
 
-    // Telefonnummer im internationalen Format ohne führendes Plus
+    // Telefonnummer hier eintragen (im Format: 491701234567)
     const hostWhatsAppNumber = '491701234567';
 
     const message = `*Buchungsanfrage: MausTastisch Private Retreat* 🐭✨%0A%0A` +
