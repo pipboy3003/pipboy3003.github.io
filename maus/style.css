@@ -1,14 +1,13 @@
 /*
 ================================================================================
 CHANGELOG & TIMESTAMPS
-Date / Time (CEST): 2026-09-30 17:50:00
-Version: 1.0.0
+Date / Time (CEST): 2026-09-30 17:53:00
+Version: 1.0.1
 Author: pipboy3003
 Changes:
-- Initial stylesheet: Modernes Luxus-Dark-Theme (Anthrazit, Obsidian, Champagnergold).
-- CSS-Animationen für den süßen Maus-Preloader (Pulse, Schnurrhaar-Fade, Goldglanz).
-- Responsive Grid-Strukturen für Pakete, Features und Kalender.
-- Edle UI-Komponenten (Glassmorphism, goldene Border-Gradients, weiche Schatten).
+- Preloader-Scroll-Sperre: 'body.preloader-active' verhindert Scrollen während des Ladevorgangs.
+- Preloader-Sicherheit: 'pointer-events: none' und harte Ausblendung ('display: none') nach Fade-Out integriert.
+- Vermeidung von Ghost-Scrollbars bei aktivem Ladescreen.
 ================================================================================
 */
 
@@ -56,21 +55,36 @@ body {
   overflow-x: hidden;
 }
 
+/* Scroll-Sperre bei aktivem Ladebildschirm */
+body.preloader-active {
+  overflow: hidden !important;
+  height: 100vh !important;
+}
+
 /* ================= PRELOADER ================= */
 .preloader {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   background: radial-gradient(circle at center, #1e222c 0%, #0d0e12 100%);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 99999;
-  transition: opacity 0.8s ease, visibility 0.8s ease;
+  z-index: 999999;
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
+  pointer-events: all;
 }
 
-.preloader.hidden {
+.preloader.fade-out {
   opacity: 0;
   visibility: hidden;
+  pointer-events: none;
+}
+
+.preloader.destroyed {
+  display: none !important;
 }
 
 .preloader-content {
@@ -110,7 +124,6 @@ body {
 }
 
 .mouse-crown {
-  fill: url(#gold-grad);
   fill: var(--gold-primary);
   stroke: #fff;
   stroke-width: 1;
@@ -169,7 +182,7 @@ body {
   width: 0%;
   height: 100%;
   background: var(--gold-gradient);
-  animation: loadProgress 1.8s ease-in-out forwards;
+  animation: loadProgress 1.4s ease-in-out forwards;
 }
 
 @keyframes loadProgress {
@@ -939,9 +952,8 @@ body {
 }
 
 .footer-mouse {
-  font-size: 2rem;
-  display: inline-block;
-  margin-bottom: 12px;
+  font-size: 2.2rem;
+  margin-bottom: 10px;
 }
 
 .footer-logo h3 {
