@@ -1,0 +1,22 @@
+<!doctype html>
+<!-- 2026-10-01 11:31 CEST: Eigenständige Startseite für das Werkstatt- und Fahrspiel angelegt. -->
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Garage & Drive</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header><span class="eyebrow">BROWSER-SPIEL · PROTOTYP</span><h1>Garage & Drive</h1><p>Diagnostizieren. Reparieren. Probefahren.</p></header>
+    <section class="panel" aria-labelledby="job-title">
+      <div class="topline"><h2 id="job-title">Auftrag 001: Bremsen prüfen</h2><span id="status" role="status">Fahrzeug angenommen</span></div>
+      <p id="instruction">Das Fahrzeug zieht beim Bremsen nach rechts. Starte mit der Diagnose.</p>
+      <div class="actions"><button id="diagnose">Diagnose starten</button><button id="repair" disabled>Reparatur durchführen</button><button id="drive" disabled>Probefahrt starten</button><button id="reset" class="secondary">Neustart</button></div>
+    </section>
+    <section class="panel" aria-labelledby="scene-title"><div class="topline"><h2 id="scene-title">Fahrzeugansicht</h2><span id="mode">Werkstatt</span></div><canvas id="scene" aria-label="Spielansicht mit Fahrzeug und Teststrecke"></canvas><p class="hint">Probefahrt: W / ↑ beschleunigen, S / ↓ bremsen, A/D oder ←/→ lenken.</p></section>
+  </main>
+  <script src="game.js" defer></script>
+</body>
+</html>
