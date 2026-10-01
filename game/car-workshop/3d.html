@@ -1,24 +1,3 @@
 <!doctype html>
-<!-- 2026-10-01 11:35 CEST: Eigenständige 3D-Werkstattdemo mit drehbarer Fahrzeugansicht und Beleuchtung. -->
-<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Garage & Drive – 3D-Werkstatt</title><style>html,body{margin:0;height:100%;font-family:system-ui,sans-serif;background:#09111d;color:#eef7ff}main{height:100%;display:flex;flex-direction:column}header{padding:14px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;background:#101e2d}a{color:#65e2cc}h1{font-size:1.15rem;margin:0}#scene{flex:1;min-height:300px;position:relative}#scene canvas{display:block}footer{padding:12px 20px;background:#101e2d;color:#bfd0df;font-size:.9rem}#error{position:absolute;inset:15px auto auto 15px;color:#fff;background:#822;padding:12px;display:none}</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/"}}</script></head><body><main><header><h1>Garage & Drive · 3D-Werkstatt</h1><a href="index.html">← Zurück zum Spiel</a></header><div id="scene"><div id="error" role="alert"></div></div><footer>Maus ziehen: Kamera drehen · Mausrad: Zoomen · Demo-Fahrzeug ohne externe Modelle. Three.js benötigt Internet und WebGL.</footer></main><script type="module">
-// 2026-10-01 11:35 CEST: Prozedurales Fahrzeug, Werkstatt, Schatten und Orbit-Kamera ergänzt.
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-const box=document.getElementById('scene'),error=document.getElementById('error');
-try {
-const scene=new THREE.Scene();scene.background=new THREE.Color('#162536');scene.fog=new THREE.Fog('#162536',18,55);
-const camera=new THREE.PerspectiveCamera(55,1,.1,100);camera.position.set(7,5,9);
-const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.6;box.appendChild(renderer.domElement);
-const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,1,0);controls.enableDamping=true;controls.minDistance=4;controls.maxDistance=20;controls.maxPolarAngle=Math.PI*.48;controls.update();
-scene.add(new THREE.HemisphereLight('#c9e7ff','#263745',2));const light=new THREE.DirectionalLight('#fff4de',3);light.position.set(-4,9,5);light.castShadow=true;light.shadow.mapSize.set(1024,1024);light.shadow.camera.left=-12;light.shadow.camera.right=12;light.shadow.camera.top=12;light.shadow.camera.bottom=-12;scene.add(light);
-const mat=(color,metalness=0,roughness=.5)=>new THREE.MeshStandardMaterial({color,metalness,roughness});const paint=mat('#bd3837',.55,.24),glass=mat('#5b8295',.3,.19),rubber=mat('#14181c'),metal=mat('#8a9ba6',.8,.3),floor=mat('#43515f'),wall=mat('#26384c');
-function cube(parent,w,h,d,x,y,z,m){const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh}
-const ground=cube(scene,30,.2,30,0,-.15,0,floor);ground.castShadow=false;cube(scene,22,8,.3,0,3.9,-9,wall);cube(scene,.3,8,18,-11,3.9,0,wall);cube(scene,.3,8,18,11,3.9,0,wall);
-for(let i=-4;i<=4;i++){cube(scene,.06,.01,12,i*1.6,-.03,0,mat(i%2?'#405368':'#536579'));}
-const car=new THREE.Group();scene.add(car);cube(car,2.1,.5,4.1,0,.84,0,paint);cube(car,1.9,.55,2,0,1.36,-.25,paint);cube(car,1.72,.04,1.05,0,1.67,-.22,glass);cube(car,1.83,.22,.72,0,1.38,.65,glass);cube(car,1.84,.22,.6,0,1.38,-1.15,glass);
-for(const x of [-1.08,1.08])for(const z of [-1.32,1.32]){const tire=new THREE.Mesh(new THREE.CylinderGeometry(.38,.38,.23,24),rubber);tire.rotation.z=Math.PI/2;tire.position.set(x,.39,z);tire.castShadow=true;car.add(tire);const rim=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.24,24),metal);rim.rotation.z=Math.PI/2;rim.position.copy(tire.position);car.add(rim)}
-for(const x of [-.7,.7]){cube(car,.32,.12,.035,x,.93,2.07,mat('#fff6cf'));cube(car,.3,.11,.035,x,.96,-2.08,mat('#d92e26'))}cube(car,1.25,.18,.06,0,.7,2.09,metal);
-for(const x of [-7,7]){cube(scene,.22,6,.22,x,3,-5,metal);cube(scene,3,.12,.55,x,6,-5,mat('#d9efff'));}
-const resize=()=>{const w=box.clientWidth,h=box.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)};new ResizeObserver(resize).observe(box);resize();renderer.setAnimationLoop(()=>{controls.update();renderer.render(scene,camera)});
-}catch(e){error.textContent='3D-Ansicht nicht verfügbar: '+e.message;error.style.display='block';}
-</script></body></html>
+<!-- 2026-10-01 11:45 CEST: Alte 3D-Direktseite leitet zum einzigen Spieleinstieg index.html. -->
+<html lang="de"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./index.html"><title>Weiterleitung zum Spiel</title><link rel="canonical" href="./index.html"></head><body><a href="./index.html">Spiel über index.html starten</a><script>location.replace('./index.html')</script></body></html>

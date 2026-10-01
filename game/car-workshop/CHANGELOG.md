@@ -1,7 +1,15 @@
 <!-- 2026-10-01 11:31 CEST: Changelog für das neue Spiel angelegt. -->
 <!-- 2026-10-01 11:35 CEST: Eigenständige 3D-Werkstattdemo dokumentiert. -->
 <!-- 2026-10-01 11:39 CEST: Spielbare 3D-Vorabversion und Favicon dokumentiert. -->
+<!-- 2026-10-01 11:45 CEST: Bugfix, zentraler Spieleinstieg und animierter Startbildschirm dokumentiert. -->
 # Changelog
+
+## 2026-10-01 11:45 CEST
+
+- Fehler bei der Radwahl behoben: Rad-Objekte statt boolescher Marker an die Auswahl übergeben.
+- 3D-Spiel unter index.html zusammengeführt, alte Direktseiten leiten auf den Einstieg um.
+- Animierten Fahrzeug-Zusammenbau, Enter-Start und responsives Intro eingebaut.
+- Favicon im zentralen Einstieg eingebunden.
 
 ## 2026-10-01 11:39 CEST
 
