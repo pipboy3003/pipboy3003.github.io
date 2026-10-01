@@ -2,7 +2,16 @@
 <!-- 2026-10-01 11:35 CEST: Eigenständige 3D-Werkstattdemo dokumentiert. -->
 <!-- 2026-10-01 11:39 CEST: Spielbare 3D-Vorabversion und Favicon dokumentiert. -->
 <!-- 2026-10-01 11:45 CEST: Bugfix, zentraler Spieleinstieg und animierter Startbildschirm dokumentiert. -->
+<!-- 2026-10-01 11:49 CEST: Fahrzeugdesign, Beleuchtung, UI und Auftragsfortschritt dokumentiert. -->
 # Changelog
+
+## 2026-10-01 11:49 CEST
+
+- 3D-Limousine mit abgerundeter Karosserie, Fenstern, Kühlergrill, Spiegeln, Zierleisten, Felgenspeichen und Antenne ergänzt.
+- Scheinwerfer und Bremslichter mit tatsächlichen Lichtquellen und emissiven Materialien ergänzt.
+- Werkstattbeleuchtung, Kontrast, Buttons und Ergebnisfenster aufgewertet.
+- Reparaturbestätigung und Ergebnisbildschirm nach 300 Metern ergänzt.
+- Drei wiederkehrende Aufträge, Guthaben und lokaler Speicherstand eingeführt.
 
 ## 2026-10-01 11:45 CEST
 
