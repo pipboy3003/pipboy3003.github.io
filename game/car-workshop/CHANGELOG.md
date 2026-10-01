@@ -3,7 +3,15 @@
 <!-- 2026-10-01 11:39 CEST: Spielbare 3D-Vorabversion und Favicon dokumentiert. -->
 <!-- 2026-10-01 11:45 CEST: Bugfix, zentraler Spieleinstieg und animierter Startbildschirm dokumentiert. -->
 <!-- 2026-10-01 11:49 CEST: Fahrzeugdesign, Beleuchtung, UI und Auftragsfortschritt dokumentiert. -->
+<!-- 2026-10-01 11:53 CEST: Demontage, acht Aufträge und Fahr-Tacho dokumentiert. -->
 # Changelog
+
+## 2026-10-01 11:53 CEST
+
+- Anklickbare Radpositionen, Frontscheinwerfer und Batterie als physisch demontierbare Prüfteile ergänzt.
+- Prüfschritte Demontieren, Befund, Wiedermontage beziehungsweise Austausch eingeführt.
+- Acht wiederkehrende Aufträge für Bremsen, Reifen, Scheinwerfer und Batterie ergänzt.
+- Separaten Tacho mit km/h-Anzeige und animierter Nadel während der Probefahrt ergänzt.
 
 ## 2026-10-01 11:49 CEST
 
