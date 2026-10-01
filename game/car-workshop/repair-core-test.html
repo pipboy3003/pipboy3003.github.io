@@ -1,0 +1,16 @@
+<!doctype html>
+<!-- 2026-10-01 12:00 CEST: Browser-Selbsttest für Positionen, korrekte Demontagereihenfolge und Probefahrt ergänzt. -->
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Garage & Drive – Kern-Selbsttest</title><style>body{font:16px system-ui;background:#0b1725;color:#e9f7f4;padding:24px;max-width:850px;margin:auto}li{margin:9px 0}.ok{color:#73ebcf}.fail{color:#ff7777}</style></head><body><h1>Reparaturkern: Selbsttest</h1><p>Diese Seite testet nur den neuen Kern auf dem Entwicklungsbranch; sie verändert kein Spiel.</p><ol id="tests"></ol><script type="module">
+import {LOCATIONS,MISSIONS,createRepair,inspect,step,testDrive,missionAt} from './repair-core.js';
+const out=document.getElementById('tests');let failed=0;function check(name,condition){const li=document.createElement('li');li.className=condition?'ok':'fail';li.textContent=(condition?'✓ ':'✗ ')+name;out.append(li);if(!condition)failed++}
+check('Rechts liegt bei Fahrtrichtung -Z auf -X',LOCATIONS.frontRight.x<0&&LOCATIONS.rearRight.x<0);
+check('Links liegt bei Fahrtrichtung -Z auf +X',LOCATIONS.frontLeft.x>0&&LOCATIONS.rearLeft.x>0);
+check('Zwölf unterschiedliche Auftragsdefinitionen',MISSIONS.length===12&&new Set(MISSIONS.map(m=>m.id)).size===12);
+check('Nächster Auftrag nach dem letzten',missionAt(12).id===MISSIONS[0].id);
+const brake=createRepair(MISSIONS[0]);let blocked=false;try{inspect(brake,'brake','frontRight')}catch{blocked=true}check('Bremsbelag ohne Rad-Demontage gesperrt',blocked);
+step(brake,'removeWheel');check('Falsche Seite wird nicht als Fehler anerkannt',inspect(brake,'brake','frontLeft')===false);check('Richtige Position wird akzeptiert',inspect(brake,'brake','frontRight')===true);
+step(brake,'removePad');step(brake,'installPart');blocked=false;try{testDrive(brake,{meters:300,kmh:60})}catch{blocked=true}check('Probefahrt ohne Wiedermontage gesperrt',blocked);
+step(brake,'installWheel');check('300 m ohne Bremsprüfung reichen nicht',testDrive(brake,{meters:300,kmh:50})===false);check('Bremsprüfung nach Fahrt besteht',testDrive(brake,{meters:300,kmh:5,braking:true})===true);
+const battery=createRepair(MISSIONS[3]);blocked=false;try{inspect(battery,'battery','engine')}catch{blocked=true}check('Batterie ohne geöffnete Haube gesperrt',blocked);step(battery,'openHood');inspect(battery,'battery','engine');step(battery,'removePart');step(battery,'installPart');check('Batterie benötigt Starttest',testDrive(battery,{meters:300})===false&&testDrive(battery,{meters:300,engineStarted:true})===true);
+const title=document.createElement('h2');title.textContent=failed?`${failed} Test(s) fehlgeschlagen`:'Alle Kern-Tests bestanden';out.after(title);
+</script></body></html>
